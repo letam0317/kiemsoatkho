@@ -128,11 +128,14 @@ label .lbl{font-size:11px; color:var(--muted);}
 .pane{animation:fadeUp .32s ease both; will-change:opacity, transform;}
 @keyframes fadeUp{from{opacity:0; transform:translate3d(0,8px,0);} to{opacity:1; transform:translate3d(0,0,0);}}
 
-/* ===== THẺ CHỈ SỐ ===== */
-.cards{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-bottom:16px;}
-.card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+/* ===== THẺ CHỈ SỐ (7 thẻ — bấm để xem chi tiết) ===== */
+.cards{display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:10px; margin-bottom:16px;}
+.card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; box-shadow:var(--shadow);
+  display:flex; flex-direction:column; min-height:92px;}
+.card.clickable{cursor:pointer; transition:transform .14s ease, border-color .18s ease, box-shadow .18s ease;}
+.card.clickable:hover{transform:translateY(-2px); border-color:var(--accent);}
 .card .num{font-size:24px; font-weight:700; line-height:1;}
-.card .cap{font-size:11px; color:var(--muted); margin-top:5px;}
+.card .cap{font-size:11px; color:var(--muted); margin-top:6px; line-height:1.32;}
 
 /* ===== BỘ LỌC ===== */
 .filters{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:16px;
@@ -148,16 +151,23 @@ label .lbl{font-size:11px; color:var(--muted);}
 .table-wrap{overflow-x:auto; max-height:72vh;}
 table{width:100%; border-collapse:collapse; font-size:12.5px;}
 thead th{position:sticky; top:0; background:var(--surface2); text-align:left; color:var(--muted); font-weight:600; padding:9px 12px; white-space:nowrap; z-index:2;}
-tbody td{padding:9px 12px; border-top:1px solid var(--border); vertical-align:middle; white-space:nowrap;}
+tbody td{padding:9px 12px; border-top:1px solid var(--border); vertical-align:middle; white-space:nowrap; font-size:inherit;}
 tbody tr{cursor:pointer;}
 tbody tr:hover{background:var(--hover);}
 .row-img{width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid var(--border);}
 .row-none{color:var(--muted);}
-/* cột Lỗi vi phạm ăn hết phần dư (các cột khác co theo nội dung) → hết trống 2 bên */
-thead th.c-loi, tbody td.c-loi{white-space:normal; width:100%; min-width:240px; line-height:1.35;}
-/* cột Vị trí: vừa khớp bề rộng cột Ngày khai báo; mã dài xuống dòng tại dấu "-" (vẫn đủ dữ liệu) */
-thead th.c-vitri, tbody td.c-vitri{white-space:normal; width:140px; min-width:132px; max-width:150px; line-height:1.35;}
-.code-link{color:var(--accent); font-weight:700; text-decoration:none;}
+/* (1) Ngày khai báo + Trạng thái: cùng cỡ chữ, không xuống dòng, canh giữa dòng, số canh đều */
+thead th.c-ngay, tbody td.c-ngay{white-space:nowrap; font-variant-numeric:tabular-nums; vertical-align:middle;}
+thead th.c-status, tbody td.c-status{white-space:nowrap; vertical-align:middle;}
+/* (2) Vị trí: đủ chỗ cho "F0-A1-5L1-18-01-01" + ~3 ký tự đệm mỗi bên, KHÔNG xuống dòng */
+thead th.c-vitri, tbody td.c-vitri{white-space:nowrap; min-width:24ch; padding-left:20px; padding-right:20px;}
+/* (3) Lỗi vi phạm: thu hẹp còn ~2/3, cắt bớt bằng "…", KHÔNG xuống dòng (hover xem đủ) */
+thead th.c-loi, tbody td.c-loi{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:320px; width:320px;}
+/* (4) NV vi phạm + QL trực tiếp: vừa "Hà trọng thúc bằng bằng bằng", KHÔNG xuống dòng */
+thead th.c-nv, tbody td.c-nv, thead th.c-ql, tbody td.c-ql{white-space:nowrap; min-width:22ch;}
+/* cột đệm cuối: ăn hết phần dư để các cột trên giữ đúng kích thước */
+thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var(--border);}
+.code-link{color:var(--accent); font-weight:700; text-decoration:none; white-space:nowrap;}
 .code-link:hover{text-decoration:underline;}
 
 /* ===== DANH SÁCH THẺ (MOBILE) ===== */
@@ -269,7 +279,26 @@ thead th.c-vitri, tbody td.c-vitri{white-space:normal; width:140px; min-width:13
 .dp-foot #dpSel{font-size:12px; color:var(--muted);}
 .dp-foot button{margin-left:6px;}
 
+/* ===== POP-UP THỐNG KÊ (danh sách task theo loại) ===== */
+#statModal{position:fixed; inset:0; background:var(--overlay); z-index:48; display:none; align-items:flex-start; justify-content:center; padding:16px; overflow-y:auto;
+  opacity:0; transition:opacity .22s ease; will-change:opacity;}
+#statModal.show{display:flex; opacity:1;}
+#statModal .modal-box{max-width:1400px;}
+.stat-sub{font-size:12px; color:var(--muted); font-weight:400; margin-left:8px;}
+#stBody{padding:0;}
+.stat-table-wrap{overflow-x:auto; max-height:74vh;}
+.stat-group-h{padding:10px 16px; background:var(--surface2); border-top:1px solid var(--border); font-weight:700; font-size:13px; position:sticky; top:0; z-index:2;}
+.stat-group-h .cnt{color:var(--muted); font-weight:500; font-size:12px; margin-left:6px;}
+.stat-empty{padding:36px; text-align:center; color:var(--muted);}
+#statModal table{width:100%; border-collapse:collapse; font-size:12.5px;}
+#statModal thead th{position:sticky; top:0; background:var(--surface2); text-align:left; color:var(--muted); font-weight:600; padding:9px 12px; white-space:nowrap; z-index:1;}
+#statModal tbody td{padding:9px 12px; border-top:1px solid var(--border); vertical-align:middle; white-space:nowrap;}
+#statModal tbody tr{cursor:pointer;}
+#statModal tbody tr:hover{background:var(--hover);}
+#statModal td.c-loi{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:360px;}
+
 /* ===== RESPONSIVE ===== */
+@media (max-width:1200px){ .cards{grid-template-columns:repeat(4,minmax(0,1fr));} }
 @media (max-width:820px){
   .cards{grid-template-columns:repeat(2,1fr);}
   .filters{grid-template-columns:1fr 1fr;}
@@ -318,6 +347,8 @@ thead th.c-vitri, tbody td.c-vitri{white-space:normal; width:140px; min-width:13
       <div class="card"><div class="sk sk-card"></div></div>
       <div class="card"><div class="sk sk-card"></div></div>
       <div class="card"><div class="sk sk-card"></div></div>
+      <div class="card"><div class="sk sk-card"></div></div>
+      <div class="card"><div class="sk sk-card"></div></div>
     </div>
 
     <button class="btn-filter" id="btnFilter">Bộ lọc — chạm để mở</button>
@@ -348,11 +379,11 @@ thead th.c-vitri, tbody td.c-vitri{white-space:normal; width:140px; min-width:13
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>Ngày khai báo</th><th class="c-vitri">Vị trí</th><th class="c-loi">Lỗi vi phạm</th><th>Nhân viên vi phạm</th>
-            <th>Quản lý trực tiếp</th><th>Hình ảnh</th><th>Trạng thái</th><th>Mã</th>
+            <th class="c-ngay">Ngày khai báo</th><th class="c-vitri">Vị trí</th><th class="c-loi">Lỗi vi phạm</th><th class="c-nv">Nhân viên vi phạm</th>
+            <th class="c-ql">Quản lý trực tiếp</th><th>Hình ảnh</th><th class="c-status">Trạng thái</th><th>Mã</th><th class="c-flex"></th>
           </tr></thead>
           <tbody id="tbody">
-            <tr><td colspan="8"><div class="sk sk-line" style="width:90%"></div><div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:80%"></div></td></tr>
+            <tr><td colspan="9"><div class="sk sk-line" style="width:90%"></div><div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:80%"></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -381,6 +412,17 @@ thead th.c-vitri, tbody td.c-vitri{white-space:normal; width:140px; min-width:13
   </div>
 </div>
 
+<!-- ===== POP-UP THỐNG KÊ ===== -->
+<div id="statModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2 id="stTitle"></h2>
+      <button id="stClose">Đóng</button>
+    </div>
+    <div id="stBody"></div>
+  </div>
+</div>
+
 <!-- ===== LIGHTBOX CAROUSEL ===== -->
 <div id="lightbox">
   <button id="lbClose">Đóng</button>
@@ -399,7 +441,15 @@ const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1v
 
 let H = [], ROWS = [];
 let iCode, iLink, iName, iStatus, iCreatedAt, iAnh, iNgayVP, iLoi, iViTri, iNVVP, iQLTT, iVideo;
+let iB2loi, iKP, iB11ND, STATUS_COLS = [];
 let firstLoad = true, dangCho = false, galleries = {};
+
+/* Bảng tra Mã NV → Họ tên do người dùng khai báo tay (ưu tiên cao nhất).
+   Thêm dòng "mã":"Họ tên" vào đây nếu muốn ép hiển thị tên cụ thể. */
+const NV_MAP = {};
+/* Bảng tra Mã NV → Họ tên TỰ SUY RA từ dữ liệu (tên người tự xác nhận ở B1.1),
+   dựng lại mỗi lần tải để mọi task cùng 1 mã đều hiện cùng 1 tên. */
+let NAME_BY_CODE = {};
 let gFrom = '', gTo = '';                  // khoảng ngày lọc (ISO yyyy-mm-dd), rỗng = tất cả
 let dpView = {y:0,m:0}, selStart='', selEnd='', dpDragging=false;
 
@@ -433,11 +483,27 @@ function ngayISO(v){
   m = String(v).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return m[3]+"-"+m[2].padStart(2,"0")+"-"+m[1].padStart(2,"0");
   return String(v).slice(0,10);
 }
-// Nhân viên vi phạm: CHỈ hiện khi ô là HỌ TÊN (có chữ). Dãy số/trống → để trống.
-const nvvp = r => {
-  const c = iNVVP>=0 ? String(r[iNVVP]||"").trim() : "";
-  return (c && /\p{L}/u.test(c)) ? c : "";
+// Mã NV vi phạm gốc ở bước B1 (chỉ có số hoặc rỗng)
+const codeVP = r => (iNVVP>=0 ? String(r[iNVVP]||"").trim() : "");
+// Tên hiển thị NV vi phạm: NV_MAP (tay) → NAME_BY_CODE (suy ra) → mã
+const nameVP = r => {
+  const c = codeVP(r);
+  if(!c) return "";
+  return NV_MAP[c] || NAME_BY_CODE[c] || c;
 };
+// Khoá gộp NV (không trùng): dùng mã làm khoá, hiển thị theo nameVP
+const keyVP = r => codeVP(r);
+const b2Loi = r => (iB2loi>=0 ? String(r[iB2loi]||"").trim() : "");
+const kpVP  = r => (iKP>=0 ? String(r[iKP]||"").trim() : "");
+const daHuy = r => STATUS_COLS.some(i => /cancel/i.test(String(r[i]||"")));
+// Khoá thời gian để sắp xếp (mới nhất → cũ nhất)
+function tsOf(v){
+  const m = String(v).match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)$/);
+  if(m) return new Date(+m[1],+m[2],+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0)).getTime();
+  const iso = ngayISO(v); const p = iso.split("-");
+  return p.length===3 ? new Date(+p[0],+p[1]-1,+p[2]).getTime() : 0;
+}
+const cmpNgayDesc = (a,b) => tsOf(b[iNgayVP]) - tsOf(a[iNgayVP]);
 // Tách danh sách URL media từ 1 ô
 function mediaUrls(val){
   return String(val).split("\n").map(s=>s.trim()).filter(s=>s.indexOf("http")===0)
@@ -458,6 +524,16 @@ function taiDuLieu(){
       iNgayVP=idxOf("Ngày vi phạm"); iLoi=idxOf("Lỗi vi phạm"); iViTri=idxOf("Vị trí ghi nhận");
       iNVVP=H.findIndex(h=>nhanCuoi(h).toLowerCase()==="nhân viên vi phạm");
       iQLTT=H.findIndex(h=>/quản lý trực tiếp/i.test(nhanCuoi(h)));
+      iB2loi=idxOf("B2. QLTT xác nhận và giải trình ▸ Xác nhận lỗi");
+      iKP=idxOf("B4.1 Audit kiểm tra khắc phục ▸ Xác nhận khắc phục");
+      iB11ND=idxOf("B1.1 Nhân viên xác nhận lỗi vi phạm ▸ Người thực hiện");
+      STATUS_COLS=H.map((h,i)=>i).filter(i=>H[i]==="Status"||nhanCuoi(H[i]).toLowerCase()==="status");
+      // Dựng bảng Mã NV → Họ tên từ tên người tự xác nhận ở B1.1 (mỗi mã lấy tên đầu tiên gặp được)
+      NAME_BY_CODE={};
+      if(iB11ND>=0) ROWS.forEach(r=>{
+        const c=codeVP(r), nm=String(r[iB11ND]||"").trim();
+        if(c && !NAME_BY_CODE[c] && /\p{L}/u.test(nm)) NAME_BY_CODE[c]=nm;
+      });
       napLoc(); render();
       const gio = new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
       $('meta').textContent = ROWS.length + " task · cập nhật lúc " + gio + " · tự làm mới mỗi 5 phút · nhấp 1 dòng để xem chi tiết.";
@@ -489,43 +565,64 @@ function loc(){
     const ng=ngayISO(r[iNgayVP]);
     if(gFrom&&ng&&ng<gFrom)return false; if(gTo&&ng&&ng>gTo)return false;
     if(st&&dichStatus(r[iStatus])!==st)return false; if(lo&&r[iLoi]!==lo)return false;
-    if(tim&&!((String(r[iViTri])+" "+r[iCode]+" "+r[iLoi]+" "+nvvp(r)+" "+(iQLTT>=0?r[iQLTT]:"")).toLowerCase().includes(tim)))return false;
+    if(tim&&!((String(r[iViTri])+" "+r[iCode]+" "+r[iLoi]+" "+codeVP(r)+" "+nameVP(r)+" "+(iQLTT>=0?r[iQLTT]:"")).toLowerCase().includes(tim)))return false;
     return true;
   });
 }
 
-const the=(cap,num,cls)=>`<div class="card"><div class="num" ${cls?`style="color:${cls}"`:''}>${num}</div><div class="cap">${cap}</div></div>`;
+const the=(cap,num,cls,stat)=>`<div class="card clickable" data-stat="${stat}" title="Bấm để xem chi tiết"><div class="num" ${cls?`style="color:${cls}"`:''}>${num}</div><div class="cap">${cap}</div></div>`;
+
+/* ===== ĐỊNH NGHĨA 7 Ô THỐNG KÊ =====
+   fn(d) → { rows, count } ; nếu group=true thì pop-up gộp theo NV vi phạm (không trùng) */
+const STATS = {
+  nv:    {cap:"Nhân viên vi phạm", color:"var(--accent)", group:true,
+          pick:d=>d.filter(r=>codeVP(r)),
+          count:rows=>new Set(rows.map(keyVP)).size},
+  chuaXM:{cap:"Chưa xác minh NV vi phạm (B1)", color:"var(--warn)",
+          pick:d=>d.filter(r=>!codeVP(r))},
+  loiCN: {cap:"Lỗi cá nhân", color:"var(--bad)",
+          pick:d=>d.filter(r=>b2Loi(r)==="Lỗi cá nhân")},
+  koCN:  {cap:"Không phải lỗi cá nhân", color:"var(--info)",
+          pick:d=>d.filter(r=>b2Loi(r)==="Không phải lỗi cá nhân")},
+  kpDat: {cap:"Kiểm tra khắc phục Đạt", color:"var(--good)",
+          pick:d=>d.filter(r=>kpVP(r)==="Đạt")},
+  kpChua:{cap:"Kiểm tra khắc phục chưa Đạt", color:"var(--bad)",
+          pick:d=>d.filter(r=>kpVP(r)==="Không đạt")},
+  huy:   {cap:"Đã huỷ ở tất cả các bước", color:"var(--muted)",
+          pick:d=>d.filter(daHuy)},
+};
+const STAT_ORDER=["nv","chuaXM","loiCN","koCN","kpDat","kpChua","huy"];
 
 /* ===== RENDER (debounce bằng requestAnimationFrame — mượt, không lag) ===== */
-let rafId=null;
+let rafId=null, curD=[];
 function render(){ if(rafId) cancelAnimationFrame(rafId); rafId=requestAnimationFrame(_render); }
 function _render(){
-  const d=loc();
-  const coAnh=d.filter(r=>isMedia(r[iAnh])).length;
-  const coVideo=iVideo>=0 ? d.filter(r=>isMedia(r[iVideo])).length : 0;
-  $('cards').innerHTML =
-    the("Task vi phạm",d.length)+
-    the("Có ảnh",coAnh,"var(--good)")+
-    the("Có clip",coVideo,"var(--info)")+
-    the("Lỗi khác nhau",new Set(d.map(r=>r[iLoi]).filter(Boolean)).size,"var(--warn)")+
-    the("Vị trí khác nhau",new Set(d.map(r=>r[iViTri]).filter(Boolean)).size,"var(--accent)");
+  const d=loc().sort(cmpNgayDesc);   // (6) mới nhất → cũ nhất
+  curD=d;
+  // (5) 7 thẻ thống kê — có pop-up chi tiết
+  $('cards').innerHTML = STAT_ORDER.map(k=>{
+    const s=STATS[k], rows=s.pick(d);
+    const num=s.count?s.count(rows):rows.length;
+    return the(s.cap,num,s.color,k);
+  }).join('');
   $('dem').textContent=d.length+" task";
 
-  // Bảng (desktop) — thứ tự: Ngày khai báo / Vị trí / Lỗi / NV vi phạm / QL trực tiếp / Hình ảnh / Trạng thái / Mã(link)
+  // Bảng (desktop) — Ngày khai báo / Vị trí / Lỗi / NV vi phạm / QL trực tiếp / Hình ảnh / Trạng thái / Mã(link)
   $('tbody').innerHTML = d.map(r=>{
     const gi=ROWS.indexOf(r);
     const anh=isMedia(r[iAnh])?`<img class="row-img" loading="lazy" src="${esc(mediaUrls(r[iAnh])[0].url)}">`:'<span class="row-none">—</span>';
     const ma=r[iLink]?`<a class="code-link" href="${esc(r[iLink])}" target="_blank" rel="noopener">${esc(r[iCode])}</a>`:esc(r[iCode]);
     return `<tr data-i="${gi}">
-      <td>${esc(fmtNgay(r[iNgayVP]))}</td>
+      <td class="c-ngay">${esc(fmtNgay(r[iNgayVP]))}</td>
       <td class="c-vitri">${esc(r[iViTri])}</td>
       <td class="c-loi" title="${esc(r[iLoi])}">${esc(r[iLoi])}</td>
-      <td>${esc(nvvp(r))}</td>
-      <td>${iQLTT>=0?esc(r[iQLTT]||'—'):'—'}</td>
+      <td class="c-nv">${esc(nameVP(r)||'—')}</td>
+      <td class="c-ql">${iQLTT>=0?esc(r[iQLTT]||'—'):'—'}</td>
       <td>${anh}</td>
-      <td>${esc(dichStatus(r[iStatus]))}</td>
-      <td>${ma}</td></tr>`;
-  }).join('') || '<tr><td colspan="8"><div class="empty-row">Không có task khớp bộ lọc.</div></td></tr>';
+      <td class="c-status">${esc(dichStatus(r[iStatus]))}</td>
+      <td>${ma}</td>
+      <td class="c-flex"></td></tr>`;
+  }).join('') || '<tr><td colspan="9"><div class="empty-row">Không có task khớp bộ lọc.</div></td></tr>';
 
   // Danh sách thẻ (mobile)
   const kv=(l,v)=> v?`<div class="cl-kv">${l}: <b>${esc(v)}</b></div>`:'';
@@ -538,11 +635,54 @@ function _render(){
       <div class="cl-body">
         <div class="cl-top">${maM}<span class="badge">${esc(dichStatus(r[iStatus]))}</span></div>
         <div class="cl-loi">${esc(r[iLoi]||'')}</div>
-        ${kv('Vị trí',r[iViTri])}${kv('Ngày khai báo',fmtNgay(r[iNgayVP]))}${kv('NV vi phạm',nvvp(r))}${kv('QL trực tiếp',iQLTT>=0?r[iQLTT]:'')}
+        ${kv('Vị trí',r[iViTri])}${kv('Ngày khai báo',fmtNgay(r[iNgayVP]))}${kv('NV vi phạm',nameVP(r))}${kv('QL trực tiếp',iQLTT>=0?r[iQLTT]:'')}
       </div>
     </div>`;
   }).join('') || '<div class="empty-row">Không có task khớp bộ lọc.</div>';
 }
+
+/* ===== POP-UP CHI TIẾT THỐNG KÊ ===== */
+function rowsTableHTML(rows){
+  const tr = rows.map(r=>{
+    const gi=ROWS.indexOf(r);
+    const ma=r[iLink]?`<a class="code-link" href="${esc(r[iLink])}" target="_blank" rel="noopener">${esc(r[iCode])}</a>`:esc(r[iCode]);
+    return `<tr data-i="${gi}">
+      <td class="c-ngay">${esc(fmtNgay(r[iNgayVP]))}</td>
+      <td>${esc(r[iViTri]||'—')}</td>
+      <td class="c-loi" title="${esc(r[iLoi])}">${esc(r[iLoi]||'—')}</td>
+      <td>${esc(nameVP(r)||'—')}</td>
+      <td>${iQLTT>=0?esc(r[iQLTT]||'—'):'—'}</td>
+      <td>${esc(dichStatus(r[iStatus]))}</td>
+      <td>${ma}</td></tr>`;
+  }).join('');
+  return `<table><thead><tr>
+    <th>Ngày khai báo</th><th>Vị trí</th><th>Lỗi vi phạm</th><th>NV vi phạm</th>
+    <th>QL trực tiếp</th><th>Trạng thái</th><th>Mã</th></tr></thead><tbody>${tr}</tbody></table>`;
+}
+function moThongKe(key){
+  const s=STATS[key]; if(!s) return;
+  const rows=s.pick(curD).slice().sort(cmpNgayDesc);
+  const num=s.count?s.count(rows):rows.length;
+  let body;
+  if(!rows.length){ body=`<div class="stat-empty">Không có task nào.</div>`; }
+  else if(s.group){
+    // Gộp theo NV vi phạm (không trùng), nhóm nhiều task xếp trước
+    const map=new Map();
+    rows.forEach(r=>{ const k=keyVP(r); if(!map.has(k)) map.set(k,{name:nameVP(r),list:[]}); map.get(k).list.push(r); });
+    const groups=[...map.values()].sort((a,b)=>b.list.length-a.list.length);
+    body=`<div class="stat-table-wrap">`+groups.map(g=>
+      `<div class="stat-group-h">${esc(g.name)}<span class="cnt">· ${g.list.length} task</span></div>`+
+      rowsTableHTML(g.list.sort(cmpNgayDesc))
+    ).join('')+`</div>`;
+  } else {
+    body=`<div class="stat-table-wrap">${rowsTableHTML(rows)}</div>`;
+  }
+  const donvi = s.group ? (num+" nhân viên · "+rows.length+" task") : (num+" task");
+  $('stTitle').innerHTML = esc(s.cap)+`<span class="stat-sub">${donvi}</span>`;
+  $('stBody').innerHTML = body;
+  $('statModal').classList.add('show');
+}
+function dongThongKe(){ $('statModal').classList.remove('show'); }
 
 /* ===== MODAL CHI TIẾT — HORIZONTAL STEPPER ===== */
 function moChiTiet(i){
@@ -714,13 +854,20 @@ document.addEventListener('click', e=>{
 });
 $('mClose').addEventListener('click', dongModal);
 $('modal').addEventListener('click', e=>{ if(e.target.id==='modal') dongModal(); });
+// Thẻ thống kê -> pop-up chi tiết
+$('cards').addEventListener('click', e=>{ const c=e.target.closest('[data-stat]'); if(c) moThongKe(c.dataset.stat); });
+$('stClose').addEventListener('click', dongThongKe);
+$('statModal').addEventListener('click', e=>{ if(e.target.id==='statModal') dongThongKe(); });
 $('lbClose').addEventListener('click', dongLB);
 $('lbPrev').addEventListener('click', e=>{ e.stopPropagation(); lbMove(-1); });
 $('lbNext').addEventListener('click', e=>{ e.stopPropagation(); lbMove(1); });
 $('lightbox').addEventListener('click', e=>{ if(e.target.id==='lightbox') dongLB(); });
 document.addEventListener('keydown', e=>{
   if(!$('lightbox').classList.contains('show')){
-    if(e.key==='Escape' && $('modal').classList.contains('show')) dongModal();
+    if(e.key==='Escape'){
+      if($('modal').classList.contains('show')) dongModal();
+      else if($('statModal').classList.contains('show')) dongThongKe();
+    }
     return;
   }
   if(e.key==='Escape') dongLB();
