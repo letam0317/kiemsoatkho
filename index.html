@@ -159,8 +159,8 @@ tbody tr:hover{background:var(--hover);}
 /* (1) Ngày khai báo + Trạng thái: cùng cỡ chữ, không xuống dòng, canh giữa dòng, số canh đều */
 thead th.c-ngay, tbody td.c-ngay{white-space:nowrap; font-variant-numeric:tabular-nums; vertical-align:middle;}
 thead th.c-status, tbody td.c-status{white-space:nowrap; vertical-align:middle;}
-/* (2) Vị trí: đủ chỗ cho "F0-A1-5L1-18-01-01" + ~3 ký tự đệm mỗi bên, KHÔNG xuống dòng */
-thead th.c-vitri, tbody td.c-vitri{white-space:nowrap; min-width:24ch; padding-left:20px; padding-right:20px;}
+/* (2) Vị trí: vừa khít dãy "F0-A9-501-01-01-011111" (~22 ký tự), KHÔNG xuống dòng */
+thead th.c-vitri, tbody td.c-vitri{white-space:nowrap; width:22ch; min-width:22ch;}
 /* (3) Lỗi vi phạm: thu hẹp còn ~2/3, cắt bớt bằng "…", KHÔNG xuống dòng (hover xem đủ) */
 thead th.c-loi, tbody td.c-loi{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:320px; width:320px;}
 /* (4) NV vi phạm + QL trực tiếp: vừa "Hà trọng thúc bằng bằng bằng", KHÔNG xuống dòng */
