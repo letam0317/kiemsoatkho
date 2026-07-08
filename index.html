@@ -1,38 +1,63 @@
 <!DOCTYPE html>
-<html lang="vi" data-theme="vs-dark">
+<html lang="vi" data-theme="tokyo">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="Kiem soat kho 5S" />
-<meta name="theme-color" content="#1e1e1e" />
+<meta name="theme-color" content="#1a1b26" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230e639c'/%3E%3Ctext x='50%25' y='54%25' font-family='Arial' font-size='30' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'%3E5S%3C/text%3E%3C/svg%3E" />
 <title>Kiểm soát kho 5S — Dashboard</title>
 <style>
-/* ===== HỆ MÀU (CSS VARIABLES) — 4 THEME PHONG CÁCH VS CODE ===== */
-:root, [data-theme="vs-dark"]{
-  --bg:#1e1e1e; --surface:#252526; --surface2:#2d2d30; --border:#3e3e42;
-  --text:#d4d4d4; --muted:#8a8a8a; --accent:#0e639c; --accent-hover:#1177bb; --accent-text:#ffffff;
-  --hover:#2a2d2e; --shadow:0 4px 16px rgba(0,0,0,.45); --skeleton:#2d2d30; --skeleton-hi:#3a3a3d;
-  --good:#4ec9b0; --info:#569cd6; --warn:#d7ba7d; --bad:#f48771; --overlay:rgba(0,0,0,.6);
+/* ===== HỆ MÀU (CSS VARIABLES) — CÁC THEME ĐƯỢC ĐÁNH GIÁ CAO ===== */
+/* Tokyo Night (mặc định) */
+:root, [data-theme="tokyo"]{
+  --bg:#1a1b26; --surface:#1f2335; --surface2:#24283b; --border:#2f334d;
+  --text:#c0caf5; --muted:#787c99; --accent:#7aa2f7; --accent-hover:#8fb0ff; --accent-text:#0b0e18;
+  --hover:#24283b; --shadow:0 8px 28px rgba(0,0,0,.5); --skeleton:#24283b; --skeleton-hi:#2f334d;
+  --good:#9ece6a; --info:#7dcfff; --warn:#e0af68; --bad:#f7768e; --overlay:rgba(12,13,20,.72);
 }
-[data-theme="vs-light"]{
-  --bg:#f3f3f3; --surface:#ffffff; --surface2:#e9e9e9; --border:#cfcfcf;
-  --text:#1e1e1e; --muted:#6b6b6b; --accent:#005fb8; --accent-hover:#0a6ec4; --accent-text:#ffffff;
-  --hover:#eaf3fb; --shadow:0 4px 16px rgba(0,0,0,.12); --skeleton:#e6e6e6; --skeleton-hi:#f4f4f4;
-  --good:#0a7d63; --info:#005fb8; --warn:#8a6d1a; --bad:#c4372b; --overlay:rgba(30,30,30,.5);
+/* Dracula */
+[data-theme="dracula"]{
+  --bg:#282a36; --surface:#2d2f3d; --surface2:#343746; --border:#44475a;
+  --text:#f8f8f2; --muted:#8b8fa3; --accent:#bd93f9; --accent-hover:#cba6ff; --accent-text:#1a1b23;
+  --hover:#343746; --shadow:0 8px 28px rgba(0,0,0,.45); --skeleton:#343746; --skeleton-hi:#44475a;
+  --good:#50fa7b; --info:#8be9fd; --warn:#f1fa8c; --bad:#ff5555; --overlay:rgba(20,21,28,.72);
 }
-[data-theme="hc"]{
-  --bg:#000000; --surface:#000000; --surface2:#0a0a0a; --border:#ffe600;
-  --text:#ffffff; --muted:#cfcfcf; --accent:#00ff6a; --accent-hover:#4dff96; --accent-text:#000000;
-  --hover:#111111; --shadow:none; --skeleton:#141414; --skeleton-hi:#242424;
-  --good:#00ff6a; --info:#00e0ff; --warn:#ffe600; --bad:#ff5b5b; --overlay:rgba(0,0,0,.85);
+/* Nord */
+[data-theme="nord"]{
+  --bg:#2e3440; --surface:#333b4a; --surface2:#3b4252; --border:#434c5e;
+  --text:#e5e9f0; --muted:#8b93a7; --accent:#88c0d0; --accent-hover:#9fd0de; --accent-text:#22272e;
+  --hover:#3b4252; --shadow:0 8px 28px rgba(0,0,0,.4); --skeleton:#3b4252; --skeleton-hi:#434c5e;
+  --good:#a3be8c; --info:#81a1c1; --warn:#ebcb8b; --bad:#bf616a; --overlay:rgba(20,24,31,.72);
 }
-[data-theme="onedark"]{
-  --bg:#282c34; --surface:#21252b; --surface2:#2c313c; --border:#3b4048;
-  --text:#abb2bf; --muted:#6b7280; --accent:#61afef; --accent-hover:#7cc0ff; --accent-text:#0b0e14;
-  --hover:#2c313c; --shadow:0 6px 22px rgba(0,0,0,.55); --skeleton:#2c313c; --skeleton-hi:#3a4150;
-  --good:#98c379; --info:#61afef; --warn:#e5c07b; --bad:#e06c75; --overlay:rgba(15,17,26,.7);
+/* Catppuccin Mocha */
+[data-theme="mocha"]{
+  --bg:#1e1e2e; --surface:#242438; --surface2:#313244; --border:#45475a;
+  --text:#cdd6f4; --muted:#8087a2; --accent:#89b4fa; --accent-hover:#a0c4ff; --accent-text:#181825;
+  --hover:#313244; --shadow:0 8px 28px rgba(0,0,0,.45); --skeleton:#313244; --skeleton-hi:#45475a;
+  --good:#a6e3a1; --info:#89dceb; --warn:#f9e2af; --bad:#f38ba8; --overlay:rgba(17,17,27,.72);
+}
+/* Catppuccin Latte (sáng) */
+[data-theme="latte"]{
+  --bg:#eff1f5; --surface:#ffffff; --surface2:#e6e9ef; --border:#ccd0da;
+  --text:#4c4f69; --muted:#8c8fa1; --accent:#1e66f5; --accent-hover:#3178ff; --accent-text:#ffffff;
+  --hover:#e6e9ef; --shadow:0 4px 18px rgba(76,79,105,.10); --skeleton:#e6e9ef; --skeleton-hi:#f2f3f7;
+  --good:#40a02b; --info:#209fb5; --warn:#df8e1d; --bad:#d20f39; --overlay:rgba(76,79,105,.42);
+}
+/* Solarized Light (sáng) */
+[data-theme="solar"]{
+  --bg:#fdf6e3; --surface:#fffbf0; --surface2:#eee8d5; --border:#e0dac0;
+  --text:#586e75; --muted:#93a1a1; --accent:#268bd2; --accent-hover:#3a9be0; --accent-text:#ffffff;
+  --hover:#eee8d5; --shadow:0 4px 18px rgba(88,110,117,.12); --skeleton:#eee8d5; --skeleton-hi:#f7f2df;
+  --good:#859900; --info:#2aa198; --warn:#b58900; --bad:#dc322f; --overlay:rgba(88,110,117,.38);
+}
+/* Factory — theo phong cách stocklocationfactory (sáng, corporate) */
+[data-theme="factory"]{
+  --bg:#f5f7fa; --surface:#ffffff; --surface2:#eef1f5; --border:#e8ecf1;
+  --text:#1f2937; --muted:#6b7280; --accent:#2563eb; --accent-hover:#1d4ed8; --accent-text:#ffffff;
+  --hover:#eef4ff; --shadow:0 1px 2px rgba(16,24,40,.04),0 6px 20px rgba(16,24,40,.07); --skeleton:#eef1f5; --skeleton-hi:#f7f9fc;
+  --good:#0d9488; --info:#2563eb; --warn:#d97706; --bad:#b42318; --overlay:rgba(17,24,39,.5);
 }
 
 /* ===== RESET + NỀN TẢNG ===== */
@@ -47,7 +72,7 @@ body{
 .card,.panel,.tab,button,input,select,th,td,.step-body,.filters,header,.modal-box,.foot,.placeholder{
   transition:background-color .3s ease, border-color .3s ease, color .25s ease;
 }
-.wrap{max-width:1180px; margin:0 auto; padding:14px 14px 40px;}
+.wrap{width:100%; max-width:2100px; margin:0 auto; padding:16px clamp(12px,2.4vw,44px) 44px;}
 .hidden{display:none !important;}
 .muted{color:var(--muted);}
 a{color:var(--accent); text-decoration:none;}
@@ -217,10 +242,13 @@ tbody tr:hover{background:var(--hover);}
     </div>
     <div class="head-right">
       <select id="themeSel" title="Đổi giao diện">
-        <option value="vs-dark">VS Dark</option>
-        <option value="vs-light">VS Light</option>
-        <option value="hc">High Contrast</option>
-        <option value="onedark">One Dark Pro</option>
+        <option value="tokyo">Tokyo Night</option>
+        <option value="dracula">Dracula</option>
+        <option value="nord">Nord</option>
+        <option value="mocha">Catppuccin Mocha</option>
+        <option value="latte">Catppuccin Latte</option>
+        <option value="solar">Solarized Light</option>
+        <option value="factory">Factory (SLF)</option>
       </select>
       <button id="btnReload" title="Đọc lại dữ liệu mới nhất từ Sheet">Tải lại</button>
       <button id="btnSync" class="primary" title="Ép hệ thống kéo dữ liệu mới nhất (cần PIN)">Cập nhật ngay</button>
@@ -524,7 +552,7 @@ function setTheme(t){
   document.documentElement.setAttribute('data-theme', t);
   $('themeSel').value = t;
   try{ localStorage.setItem('dash5s-theme', t); }catch(e){}
-  const tc={'vs-dark':'#1e1e1e','vs-light':'#f3f3f3','hc':'#000000','onedark':'#282c34'}[t]||'#1e1e1e';
+  const tc={tokyo:'#1a1b26',dracula:'#282a36',nord:'#2e3440',mocha:'#1e1e2e',latte:'#eff1f5',solar:'#fdf6e3',factory:'#f5f7fa'}[t]||'#1a1b26';
   document.querySelector('meta[name=theme-color]').setAttribute('content', tc);
 }
 
@@ -593,8 +621,10 @@ $('btnFilter').addEventListener('click',()=>{
 
 /* ===== KHỞI ĐỘNG ===== */
 (function init(){
-  let t='vs-dark';
-  try{ t=localStorage.getItem('dash5s-theme')||'vs-dark'; }catch(e){}
+  let t='tokyo';
+  try{ t=localStorage.getItem('dash5s-theme')||'tokyo'; }catch(e){}
+  const valid=['tokyo','dracula','nord','mocha','latte','solar','factory'];
+  if(!valid.includes(t)) t='tokyo';
   setTheme(t);
   taiDuLieu();
   // Tự làm mới ONLINE mỗi 5 phút + khi quay lại tab (không hiện skeleton lại -> không giật)
