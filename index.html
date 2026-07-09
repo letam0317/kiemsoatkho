@@ -101,6 +101,8 @@ a:hover{text-decoration:underline;}
 
 /* ===== HEADER ===== */
 header{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px;}
+header>div:first-child{flex:1 1 auto; min-width:0;}
+.head-right{flex:0 0 auto;}
 header h1{font-size:20px; font-weight:700; margin:0; letter-spacing:-.2px;}
 /* ===== TIÊU ĐỀ THƯƠNG HIỆU — 8 kiểu chọn được (Cá nhân hoá) ===== */
 header h1.brand-title{margin:0; min-width:0;}
@@ -149,8 +151,20 @@ header h1.brand-title{margin:0; min-width:0;}
 #meta{margin:5px 0 0; font-size:12px; color:var(--muted);}
 .head-right{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
 
-/* ===== MENU CÀI ĐẶT (gộp: cá nhân hoá + dữ liệu) ===== */
+/* ===== MENU CÀI ĐẶT (nút 3 gạch, gộp: cá nhân hoá + dữ liệu) ===== */
 .settings{position:relative;}
+#btnSettings{width:40px; height:38px; padding:0; display:inline-flex; align-items:center; justify-content:center;}
+#btnSettings .bars, #btnSettings .bars::before, #btnSettings .bars::after{
+  content:""; display:block; width:18px; height:2px; background:var(--text); border-radius:2px;
+  transition:transform .22s ease, opacity .18s ease;}
+#btnSettings .bars{position:relative;}
+#btnSettings .bars::before{position:absolute; left:0; top:-6px;}
+#btnSettings .bars::after{position:absolute; left:0; top:6px;}
+/* mở -> biến thành dấu X */
+#btnSettings.open .bars{background:transparent;}
+#btnSettings.open .bars::before{transform:translateY(6px) rotate(45deg);}
+#btnSettings.open .bars::after{transform:translateY(-6px) rotate(-45deg);}
+#btnSettings.open{border-color:var(--accent);}
 .settings-pop{position:absolute; top:calc(100% + 8px); right:0; z-index:46; width:288px; max-width:92vw;
   background:var(--surface); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); padding:15px;
   display:flex; flex-direction:column; gap:16px; transform-origin:top right; animation:popIn .16s cubic-bezier(.16,1,.3,1);}
@@ -387,6 +401,18 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
 #statModal tbody tr:hover{background:var(--hover);}
 #statModal td.c-loi{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:360px;}
 
+/* ===== TỐI ƯU CUỘN (chống giật/lag khi nhiều dòng) ===== */
+/* Bỏ render các dòng ngoài màn hình -> cuộn mượt dù hàng trăm task */
+tbody tr{content-visibility:auto; contain-intrinsic-size:auto 44px;}
+.cl-item{content-visibility:auto; contain-intrinsic-size:auto 92px;}
+/* Cột ngày & trạng thái cố định bề rộng -> không giật cột khi content-visibility đổi dòng hiển thị */
+thead th.c-ngay, tbody td.c-ngay{width:120px;}
+thead th.c-anh, tbody td.c-anh{width:64px;}
+thead th.c-status, tbody td.c-status{width:150px;}
+.rm-vid{background:var(--surface2);}
+/* watermark hasaki tách layer riêng -> không vẽ lại khi cuộn */
+#hskMark{transform:translateZ(0);}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width:1200px){ .cards{grid-template-columns:repeat(4,minmax(0,1fr));} }
 @media (max-width:820px){
@@ -401,12 +427,9 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
 /* ===== ĐIỆN THOẠI NHỎ — tối ưu gọn, dễ chạm, 1 cột ===== */
 @media (max-width:560px){
   .wrap{padding:12px 12px 30px;}
-  header{gap:10px;}
-  .head-right{width:100%;}
-  .settings{width:100%;}
-  #btnSettings{width:100%;}
-  /* menu cài đặt trải rộng, dễ chạm trên điện thoại */
-  .settings-pop{width:100%; max-width:none; left:0; right:0;}
+  header{gap:10px; flex-wrap:nowrap;}
+  /* nút 3 gạch nhỏ gọn, luôn ở góc phải; menu xổ xuống rộng vừa phải, sát mép phải */
+  .settings-pop{width:min(300px,92vw); right:0; left:auto;}
   .cards{gap:8px;}
   .card{padding:11px; min-height:78px;}
   .card .num{font-size:20px;}
@@ -435,7 +458,7 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
     </div>
     <div class="head-right">
       <div class="settings" id="settingsWrap">
-        <button id="btnSettings" title="Cài đặt hiển thị & dữ liệu">Cài đặt</button>
+        <button id="btnSettings" title="Cài đặt hiển thị & dữ liệu" aria-label="Mở cài đặt"><span class="bars"></span></button>
         <div class="settings-pop hidden" id="settingsPop">
           <div class="set-sec">
             <div class="set-h">Cá nhân hoá</div>
@@ -473,12 +496,13 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
   </header>
 
   <nav class="tabs">
-    <button class="tab active" data-tab="5s">5S</button>
+    <button class="tab active" data-tab="tong">Tổng hợp</button>
+    <button class="tab" data-tab="task">Task vi phạm</button>
     <button class="tab" data-tab="kk">Kiểm kê</button>
   </nav>
 
-  <!-- ===== TAB 5S ===== -->
-  <section id="pane-5s" class="pane">
+  <!-- ===== TAB TỔNG HỢP (thống kê) ===== -->
+  <section id="pane-tong" class="pane">
     <div class="cards" id="cards">
       <div class="card"><div class="sk sk-card"></div></div>
       <div class="card"><div class="sk sk-card"></div></div>
@@ -488,7 +512,11 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
       <div class="card"><div class="sk sk-card"></div></div>
       <div class="card"><div class="sk sk-card"></div></div>
     </div>
+    <p class="foot">Các thẻ thống kê tổng hợp theo bộ lọc đang chọn ở tab <b>Task vi phạm</b>. Bấm 1 thẻ để xem danh sách chi tiết.</p>
+  </section>
 
+  <!-- ===== TAB TASK VI PHẠM (bộ lọc + bảng) ===== -->
+  <section id="pane-task" class="pane hidden">
     <button class="btn-filter" id="btnFilter">Bộ lọc — chạm để mở</button>
     <div class="filters collapsed" id="filterGrid">
       <div class="date-filter" id="dateFilter">
@@ -518,7 +546,7 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
         <table>
           <thead><tr>
             <th class="c-ngay">Ngày khai báo</th><th class="c-vitri">Vị trí</th><th class="c-loi">Lỗi vi phạm</th><th class="c-nv">Nhân viên vi phạm</th>
-            <th class="c-ql">Quản lý trực tiếp</th><th>Hình ảnh</th><th class="c-status">Trạng thái</th><th class="c-flex"></th>
+            <th class="c-ql">Quản lý trực tiếp</th><th class="c-anh">Hình ảnh</th><th class="c-status">Trạng thái</th><th class="c-flex"></th>
           </tr></thead>
           <tbody id="tbody">
             <tr><td colspan="8"><div class="sk sk-line" style="width:90%"></div><div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:80%"></div></td></tr>
@@ -750,8 +778,8 @@ function thumbCell(r, gi, cls){
   if(!media.length) return cls==='cl' ? '<div class="cl-noimg">—</div>' : '<span class="row-none">—</span>';
   const first = media[0];
   const thumb = first.type==='vid'
-    ? `<video class="rm-thumb" src="${esc(first.url)}" preload="metadata" muted></video><span class="rm-play"></span>`
-    : `<img class="rm-thumb" loading="lazy" src="${esc(first.url)}">`;
+    ? `<span class="rm-thumb rm-vid"></span><span class="rm-play"></span>`   // ô CSS, KHÔNG tải video (mượt khi cuộn); bấm mới mở clip
+    : `<img class="rm-thumb" loading="lazy" decoding="async" src="${esc(first.url)}">`;
   const badge = media.length>1 ? `<span class="media-badge">${media.length}</span>` : '';
   return `<span class="row-media rm-${cls}${media.length>1?' multi':''}" data-mg="${gi}" title="${media.length>1?'Có '+media.length+' ảnh/clip — bấm để xem':'Bấm để xem'}">${thumb}${badge}</span>`;
 }
@@ -784,7 +812,7 @@ function taiDuLieu(){
       napLoc(); render();
       const gio = new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
       $('meta').textContent = ROWS.length + " task · cập nhật lúc " + gio + " · tự làm mới mỗi 5 phút · nhấp 1 dòng để xem chi tiết.";
-      if(firstLoad){ $('pane-5s').style.animation='none'; requestAnimationFrame(()=>{ $('pane-5s').style.animation=''; }); firstLoad=false; }
+      if(firstLoad){ $('pane-tong').style.animation='none'; requestAnimationFrame(()=>{ $('pane-tong').style.animation=''; }); firstLoad=false; }
     }catch(e){ $('meta').textContent = "Lỗi đọc dữ liệu: " + e.message; }
     delete window[cb];
   };
@@ -864,7 +892,7 @@ function _render(){
       <td class="c-loi" title="${esc(r[iLoi])}">${esc(r[iLoi])}</td>
       <td class="c-nv">${esc(nameVP(r)||'—')}</td>
       <td class="c-ql">${iQLTT>=0?esc(r[iQLTT]||'—'):'—'}</td>
-      <td>${anh}</td>
+      <td class="c-anh">${anh}</td>
       <td class="c-status">${statusCell(r)}</td>
       <td class="c-flex"></td></tr>`;
   }).join('') || '<tr><td colspan="8"><div class="empty-row">Không có task khớp bộ lọc.</div></td></tr>';
@@ -1079,9 +1107,11 @@ function setTitle(t){
 /* ===== TABS ===== */
 function setTab(name){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
-  const s5=$('pane-5s'), skk=$('pane-kk');
-  if(name==='5s'){ skk.classList.add('hidden'); s5.classList.remove('hidden'); s5.style.animation='none'; requestAnimationFrame(()=>s5.style.animation=''); }
-  else { s5.classList.add('hidden'); skk.classList.remove('hidden'); skk.style.animation='none'; requestAnimationFrame(()=>skk.style.animation=''); }
+  ['tong','task','kk'].forEach(n=>{
+    const el=$('pane-'+n); if(!el) return;
+    if(n===name){ el.classList.remove('hidden'); el.style.animation='none'; requestAnimationFrame(()=>el.style.animation=''); }
+    else el.classList.add('hidden');
+  });
 }
 
 /* ===== ÉP CẬP NHẬT (cần PIN) ===== */
@@ -1167,9 +1197,10 @@ $('btnSync').addEventListener('click',capNhatNgay);
 $('themeSel').addEventListener('change', e=>setTheme(e.target.value));
 $('titleSel').addEventListener('change', e=>setTitle(e.target.value));
 // ---- Menu Cài đặt (đóng/mở + click ra ngoài thì đóng) ----
-$('btnSettings').addEventListener('click', e=>{ e.stopPropagation(); $('settingsPop').classList.toggle('hidden'); });
+function dongCaiDat(){ $('settingsPop').classList.add('hidden'); $('btnSettings').classList.remove('open'); }
+$('btnSettings').addEventListener('click', e=>{ e.stopPropagation(); const hid=$('settingsPop').classList.toggle('hidden'); $('btnSettings').classList.toggle('open', !hid); });
 $('settingsPop').addEventListener('click', e=>e.stopPropagation());
-document.addEventListener('click', e=>{ if(!$('settingsPop').classList.contains('hidden') && !e.target.closest('#settingsWrap')) $('settingsPop').classList.add('hidden'); });
+document.addEventListener('click', e=>{ if(!$('settingsPop').classList.contains('hidden') && !e.target.closest('#settingsWrap')) dongCaiDat(); });
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
 $('btnFilter').addEventListener('click',()=>{
   const g=$('filterGrid'), dong=g.classList.toggle('collapsed');
