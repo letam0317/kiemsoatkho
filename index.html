@@ -72,8 +72,8 @@
 #hskMark{position:fixed; inset:0; display:none; align-items:center; justify-content:center; pointer-events:none; z-index:0; overflow:hidden;}
 [data-theme="hasaki"] #hskMark{display:flex;}
 #hskMark img{
-  width:min(48vw,560px); height:auto; opacity:.08;
-  filter:drop-shadow(0 24px 60px rgba(50,110,81,.28)); transform:rotate(-6deg); user-select:none;
+  width:min(48vw,560px); height:auto; opacity:.07;
+  transform:rotate(-6deg); user-select:none;
 }
 [data-theme="hasaki"] body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-size:15px;}
 [data-theme="hasaki"] header h1{font-size:22px; letter-spacing:-.3px;}
@@ -90,9 +90,11 @@ body{
   transition:background-color .3s ease, color .25s ease;
 }
 /* Chỉ transition các thành phần cần đổi màu khi chuyển theme (mượt, không lag) */
-.card,.panel,.tab,button,input,select,th,td,.step-body,.filters,header,.modal-box,.foot,.placeholder{
+.card,.panel,.tab,button,input,select,.step-body,.filters,header,.modal-box,.foot,.placeholder{
   transition:background-color .3s ease, border-color .3s ease, color .25s ease;
 }
+/* KHÔNG transition ô bảng: hover đổi nền khi cuộn sẽ gây giật -> đổi tức thì */
+tbody tr:hover{background:var(--hover);}
 .wrap{width:100%; max-width:2100px; margin:0 auto; padding:16px clamp(12px,2.4vw,44px) 44px; position:relative; z-index:1;}
 .hidden{display:none !important;}
 .muted{color:var(--muted);}
@@ -401,11 +403,11 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
 #statModal tbody tr:hover{background:var(--hover);}
 #statModal td.c-loi{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:360px;}
 
-/* ===== TỐI ƯU CUỘN (chống giật/lag khi nhiều dòng) ===== */
-/* Bỏ render các dòng ngoài màn hình -> cuộn mượt dù hàng trăm task */
-tbody tr{content-visibility:auto; contain-intrinsic-size:auto 44px;}
-.cl-item{content-visibility:auto; contain-intrinsic-size:auto 92px;}
-/* Cột ngày & trạng thái cố định bề rộng -> không giật cột khi content-visibility đổi dòng hiển thị */
+/* ===== TỐI ƯU CUỘN — dữ liệu LUÔN render sẵn, chỉ giảm chi phí VẼ (không defer render) ===== */
+/* Giới hạn vùng vẽ của bảng/thẻ + cuộn quán tính mượt trên di động */
+.table-wrap{contain:paint; -webkit-overflow-scrolling:touch;}
+.cardlist{-webkit-overflow-scrolling:touch;}
+/* Cột ngày/ảnh/trạng thái cố định bề rộng -> bảng ổn định, không nhảy cột khi cuộn */
 thead th.c-ngay, tbody td.c-ngay{width:120px;}
 thead th.c-anh, tbody td.c-anh{width:64px;}
 thead th.c-status, tbody td.c-status{width:150px;}
