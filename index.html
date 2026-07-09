@@ -490,6 +490,7 @@ thead th.c-status, tbody td.c-status{width:150px;}
             <div class="set-h">Dữ liệu</div>
             <button id="btnReload">Tải lại dữ liệu</button>
             <button id="btnSync" class="primary">Cập nhật ngay (cần PIN)</button>
+            <button id="btnSyncTS">Cập nhật chấm công (cần PIN)</button>
             <a id="lnkSheet" class="set-link" href="#" target="_blank" rel="noopener">Mở Google Sheet nguồn ↗</a>
           </div>
         </div>
@@ -1136,6 +1137,20 @@ function capNhatNgay(){
   document.body.appendChild(s);
 }
 
+/* ===== ÉP CẬP NHẬT CHẤM CÔNG (cần PIN) — kéo hr.hasaki.vn → tab CHAM-CONG ===== */
+function capNhatChamCong(){
+  const pin=prompt("Nhập PIN để cập nhật CHẤM CÔNG ngay:");
+  if(!pin) return;
+  const cb="ts_"+Date.now();
+  window[cb]=resp=>{ delete window[cb];
+    alert(resp&&resp.status==='success' ? (resp.message||"Đã gửi yêu cầu. Chấm công sẽ mới trên Sheet sau ~2–3 phút.") : ((resp&&resp.message)||"Không gửi được yêu cầu."));
+  };
+  const s=document.createElement('script');
+  s.src=APPSCRIPT_URL+"?action=requestTimesheet&pin="+encodeURIComponent(pin)+"&callback="+cb;
+  s.onerror=()=>{ alert("Không kết nối được máy chủ."); delete window[cb]; };
+  document.body.appendChild(s);
+}
+
 /* ===== SỰ KIỆN ===== */
 // Nhấp 1 dòng (bảng hoặc thẻ) -> mở chi tiết
 document.addEventListener('click', e=>{
@@ -1196,6 +1211,7 @@ document.addEventListener('pointerup', ()=>{ if(dpDragging){ dpDragging=false; p
 document.addEventListener('click', e=>{ if(!$('datePop').classList.contains('hidden') && !e.target.closest('#dateFilter')) closeDatePop(); });
 $('btnReload').addEventListener('click',()=>{ if(!dangCho) taiDuLieu(); });
 $('btnSync').addEventListener('click',capNhatNgay);
+$('btnSyncTS').addEventListener('click',capNhatChamCong);
 $('themeSel').addEventListener('change', e=>setTheme(e.target.value));
 $('titleSel').addEventListener('change', e=>setTitle(e.target.value));
 // ---- Menu Cài đặt (đóng/mở + click ra ngoài thì đóng) ----
