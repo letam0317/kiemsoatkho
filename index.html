@@ -415,6 +415,26 @@ thead th.c-status, tbody td.c-status{width:150px;}
 /* watermark hasaki tách layer riêng -> không vẽ lại khi cuộn */
 #hskMark{transform:translateZ(0);}
 
+/* ===== TAB HẠNG MỤC 5S ===== */
+.hm-bar{display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap:wrap;}
+.hm-bar input{flex:1 1 260px; max-width:460px; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:9px 12px;}
+.hm-bar input:focus{outline:none; border-color:var(--accent);}
+#pane-hangmuc td, #pane-hangmuc th{vertical-align:top;}
+#pane-hangmuc td.hm-stt{text-align:center; font-weight:700; color:var(--accent); width:44px;}
+#pane-hangmuc td.hm-qd{white-space:pre-wrap; min-width:300px; max-width:520px; line-height:1.45;}
+#pane-hangmuc td.hm-loi{white-space:pre-wrap; min-width:200px; max-width:340px; line-height:1.4; color:var(--bad);}
+#pane-hangmuc td.hm-nv{white-space:normal; min-width:120px; font-weight:600;}
+#pane-hangmuc td.hm-pen{white-space:nowrap; font-variant-numeric:tabular-nums;}
+
+/* ===== MODAL FORM GHI NHẬN 5S (nhúng form-5s qua iframe) ===== */
+#ghiModal{position:fixed; inset:0; background:var(--overlay); z-index:70; display:none; align-items:center; justify-content:center; padding:12px; opacity:0; transition:opacity .2s ease;}
+#ghiModal.show{display:flex; opacity:1;}
+#ghiModal .gm-box{background:var(--surface); border:1px solid var(--border); border-radius:14px; width:100%; max-width:600px; height:94vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow);}
+#ghiModal .gm-head{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:11px 15px; border-bottom:1px solid var(--border); font-weight:700; font-size:14px;}
+#ghiModal iframe{flex:1; width:100%; border:0; background:#fff;}
+#btnGhiNhan{background:var(--accent); color:var(--accent-text); border-color:var(--accent); font-weight:600;}
+#btnGhiNhan:hover{background:var(--accent-hover); border-color:var(--accent-hover);}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width:1200px){ .cards{grid-template-columns:repeat(4,minmax(0,1fr));} }
 @media (max-width:820px){
@@ -459,6 +479,7 @@ thead th.c-status, tbody td.c-status{width:150px;}
       <p id="meta">Đang tải dữ liệu…</p>
     </div>
     <div class="head-right">
+      <button id="btnGhiNhan" title="Ghi nhận vi phạm 5S (cần PIN)">+ Ghi nhận 5S</button>
       <div class="settings" id="settingsWrap">
         <button id="btnSettings" title="Cài đặt hiển thị & dữ liệu" aria-label="Mở cài đặt"><span class="bars"></span></button>
         <div class="settings-pop hidden" id="settingsPop">
@@ -499,8 +520,9 @@ thead th.c-status, tbody td.c-status{width:150px;}
   </header>
 
   <nav class="tabs">
-    <button class="tab active" data-tab="tong">Tổng hợp</button>
+    <button class="tab active" data-tab="tong">Tổng quan</button>
     <button class="tab" data-tab="task">Task vi phạm</button>
+    <button class="tab" data-tab="hangmuc">Hạng mục 5S</button>
     <button class="tab" data-tab="kk">Kiểm kê</button>
   </nav>
 
@@ -561,6 +583,22 @@ thead th.c-status, tbody td.c-status{width:150px;}
     <p class="foot">Dữ liệu đọc trực tuyến từ Google Sheet (tab <b>5S-TASKS</b>, nguồn workflow 591) · tự làm mới mỗi 5 phút. Bấm <b>Cập nhật ngay</b> (cần PIN) để ép hệ thống kéo dữ liệu mới nhất.</p>
   </section>
 
+  <!-- ===== TAB HẠNG MỤC 5S (đọc QUY-DINH trực tiếp, đồng bộ thời gian thực) ===== -->
+  <section id="pane-hangmuc" class="pane hidden">
+    <div class="hm-bar">
+      <input type="text" id="hmTim" placeholder="Tìm quy định / lỗi vi phạm / nghiệp vụ…">
+      <span id="hmDem" class="muted"></span>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><span>Quy định &amp; hạng mục 5S</span><span class="muted" style="font-weight:400;font-size:12px">nguồn: tab QUY-DINH · tự đồng bộ</span></div>
+      <div class="table-wrap" id="hmWrap">
+        <div style="padding:16px"><div class="sk sk-line" style="width:90%"></div><div class="sk sk-line" style="width:75%"></div><div class="sk sk-line" style="width:85%"></div></div>
+      </div>
+      <div class="cardlist" id="hmCards"></div>
+    </div>
+    <p class="foot">Bảng quy định 5S đọc trực tiếp từ Google Sheet (tab <b>QUY-DINH</b>) · tự làm mới mỗi 5 phút — chỉnh trên Sheet là dashboard &amp; form ghi nhận cập nhật theo.</p>
+  </section>
+
   <!-- ===== TAB KIỂM KÊ (placeholder) ===== -->
   <section id="pane-kk" class="pane hidden">
     <div class="placeholder">
@@ -599,6 +637,14 @@ thead th.c-status, tbody td.c-status{width:150px;}
   <button class="lb-btn" id="lbPrev">Trước</button>
   <div id="lbContent"></div>
   <button class="lb-btn" id="lbNext">Sau</button>
+</div>
+
+<!-- ===== MODAL GHI NHẬN 5S (nhúng form-5s) ===== -->
+<div id="ghiModal">
+  <div class="gm-box">
+    <div class="gm-head"><span>Ghi nhận vi phạm 5S</span><button id="gmClose">Đóng</button></div>
+    <iframe id="gmFrame" title="Form ghi nhận 5S" allow="camera;microphone"></iframe>
+  </div>
 </div>
 
 <script>
@@ -1110,12 +1156,52 @@ function setTitle(t){
 /* ===== TABS ===== */
 function setTab(name){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
-  ['tong','task','kk'].forEach(n=>{
+  ['tong','task','hangmuc','kk'].forEach(n=>{
     const el=$('pane-'+n); if(!el) return;
     if(n===name){ el.classList.remove('hidden'); el.style.animation='none'; requestAnimationFrame(()=>el.style.animation=''); }
     else el.classList.add('hidden');
   });
+  if(name==='hangmuc'){ taiQuyDinh(); }   // đọc lại QUY-DINH mỗi lần mở tab (đồng bộ mới nhất)
 }
+
+/* ===== TAB HẠNG MỤC 5S — đọc tab QUY-DINH trực tiếp (gviz), đồng bộ thời gian thực ===== */
+const TAB_QD="QUY-DINH"; let QD=[];
+function taiQuyDinh(){
+  const cb="qd_"+Date.now()+"_"+Math.floor(performance.now());
+  window[cb]=resp=>{ try{
+    const rows=((resp.table&&resp.table.rows)||[]).map(r=>(r.c||[]).map(c=>c?(c.v==null?"":c.v):""));
+    QD=rows.filter(r=>/^\d+$/.test(String(r[0]).trim()));   // chỉ giữ dòng có STT là số (bỏ header phụ)
+    renderQuyDinh();
+  }catch(e){ $('hmWrap').innerHTML='<div class="empty-row">Lỗi đọc QUY-DINH: '+esc(e.message)+'</div>'; } delete window[cb]; };
+  const s=document.createElement('script');
+  s.src="https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?sheet="+encodeURIComponent(TAB_QD)+"&headers=1&tqx=out:json;responseHandler:"+cb;
+  s.onerror=()=>{ $('hmWrap').innerHTML='<div class="empty-row">Không tải được tab QUY-DINH.</div>'; delete window[cb]; };
+  document.body.appendChild(s); setTimeout(()=>s.remove(),30000);
+}
+function penTxt(r){
+  const lvl=(n,d,x,h)=>d?("L"+n+": "+d+"đ"+(String(h).trim()==='Có'?' · hạ KN':'')+(x&&String(x).trim()&&String(x).trim()!=='Không'?' · '+x:'')):"";
+  return [lvl(1,r[3],r[5],r[4]),lvl(2,r[6],r[8],r[7]),lvl(3,r[9],r[11],r[10])].filter(Boolean).join("\n");
+}
+function renderQuyDinh(){
+  const tim=($('hmTim').value||"").toLowerCase().trim();
+  const d=QD.filter(r=> !tim || (r[1]+" "+r[2]+" "+r[12]+" "+r[13]).toLowerCase().includes(tim));
+  $('hmDem').textContent=d.length+" quy định";
+  $('hmWrap').innerHTML='<table><thead><tr><th class="hm-stt">STT</th><th>Quy định chi tiết</th><th>Lỗi vi phạm</th><th class="hm-nv">Nghiệp vụ</th><th>Điểm / Xử lý</th><th>Nhóm kỹ năng</th></tr></thead><tbody>'+
+    (d.map(r=>`<tr><td class="hm-stt">${esc(r[0])}</td><td class="hm-qd">${esc(r[1])}</td><td class="hm-loi">${esc(r[2])}</td><td class="hm-nv">${esc(r[12])}</td><td class="hm-pen">${esc(penTxt(r))}</td><td>${esc(r[13])}</td></tr>`).join('')||'<tr><td colspan="6"><div class="empty-row">Không có quy định khớp.</div></td></tr>')+
+    '</tbody></table>';
+  $('hmCards').innerHTML=d.map(r=>`<div class="cl-item" style="cursor:default"><div class="cl-body"><div class="cl-top"><b>Quy định #${esc(r[0])}</b><span class="badge">${esc(r[12])}</span></div><div class="cl-loi">${esc(r[2])}</div><div class="cl-kv" style="white-space:pre-wrap;margin-top:4px">${esc(r[1])}</div><div class="cl-kv" style="white-space:pre-line;margin-top:4px;color:var(--muted)">${esc(penTxt(r))}</div></div></div>`).join('')||'<div class="empty-row">Không có quy định khớp.</div>';
+}
+
+/* ===== GHI NHẬN 5S — nhúng form-5s qua iframe, mở khi nhập đúng PIN ===== */
+const FORM_URL="https://letam0317.github.io/th76tamle/form-5s/";
+function moGhiNhan(){
+  const pin=prompt("Nhập PIN để ghi nhận vi phạm 5S:");
+  if(pin===null) return;
+  if(pin.trim()!=="233135"){ alert("Sai PIN."); return; }
+  if(!$('gmFrame').getAttribute('src')) $('gmFrame').setAttribute('src',FORM_URL);   // nạp form lần đầu
+  $('ghiModal').classList.add('show');
+}
+function dongGhiNhan(){ $('ghiModal').classList.remove('show'); }
 
 /* ===== ÉP CẬP NHẬT (cần PIN) ===== */
 function capNhatNgay(){
@@ -1183,7 +1269,8 @@ $('lightbox').addEventListener('touchend', e=>{
 document.addEventListener('keydown', e=>{
   if(!$('lightbox').classList.contains('show')){
     if(e.key==='Escape'){
-      if($('modal').classList.contains('show')) dongModal();
+      if($('ghiModal').classList.contains('show')) dongGhiNhan();
+      else if($('modal').classList.contains('show')) dongModal();
       else if($('statModal').classList.contains('show')) dongThongKe();
     }
     return;
@@ -1194,6 +1281,10 @@ document.addEventListener('keydown', e=>{
 });
 
 ['fStatus','fLoi','fTim'].forEach(id=>$(id).addEventListener('input',render));
+$('hmTim').addEventListener('input',renderQuyDinh);
+$('btnGhiNhan').addEventListener('click',moGhiNhan);
+$('gmClose').addEventListener('click',dongGhiNhan);
+$('ghiModal').addEventListener('click',e=>{ if(e.target.id==='ghiModal') dongGhiNhan(); });
 
 // ---- Date picker wiring ----
 $('btnDate').addEventListener('click', e=>{ e.stopPropagation(); $('datePop').classList.contains('hidden')?openDatePop():closeDatePop(); });
