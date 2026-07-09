@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
-<title>Audit Hasaki | Kiểm soát kho</title>
+<title>AUDIT HASAKI | Kiểm soát kho</title>
 <style>
 /* ===== HỆ MÀU (CSS VARIABLES) — CÁC THEME ĐƯỢC ĐÁNH GIÁ CAO ===== */
 /* Tokyo Night (mặc định) */
@@ -63,6 +63,11 @@
   --good:#326e51; --info:#2f7d63; --warn:#c98a1e; --bad:#c0392b; --overlay:rgba(20,40,30,.5);
 }
 
+/* ===== MÀU THƯƠNG HIỆU CHO TIÊU ĐỀ — luôn tương phản tốt trên MỌI theme ===== */
+/* theme SÁNG: dùng xanh lá thương hiệu Hasaki #326e51; theme TỐI: dùng tông xanh sáng hơn cùng hệ để luôn nổi bật */
+:root,[data-theme="tokyo"],[data-theme="dracula"],[data-theme="nord"],[data-theme="mocha"]{--brand:#5fcf95;}
+[data-theme="hasaki"],[data-theme="latte"],[data-theme="solar"]{--brand:#326e51;}
+
 /* ===== HASAKI: watermark logo bóng mờ + font Inter (CHỈ theme hasaki) ===== */
 #hskMark{position:fixed; inset:0; display:none; align-items:center; justify-content:center; pointer-events:none; z-index:0; overflow:hidden;}
 [data-theme="hasaki"] #hskMark{display:flex;}
@@ -97,7 +102,12 @@ a:hover{text-decoration:underline;}
 /* ===== HEADER ===== */
 header{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px;}
 header h1{font-size:20px; font-weight:700; margin:0; letter-spacing:-.2px;}
-#meta{margin:3px 0 0; font-size:12px; color:var(--muted);}
+/* Tiêu đề "AUDIT HASAKI| KIỂM SOÁT KHO": hiện đại, viết hoa, to/nổi bật nhưng không thô */
+header h1.brand-title{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; margin:0; line-height:1.02;}
+.bt-main,.bt-sub{color:var(--brand); text-transform:uppercase; white-space:nowrap; text-shadow:0 1px 1px rgba(0,0,0,.10);}
+.bt-main{font-weight:800; font-size:clamp(19px,2.4vw,30px); letter-spacing:.6px;}
+.bt-sub{font-weight:700; font-size:clamp(14px,1.7vw,21px); letter-spacing:.6px; opacity:.9;}
+#meta{margin:5px 0 0; font-size:12px; color:var(--muted);}
 .head-right{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
 
 /* ===== NÚT & INPUT ===== */
@@ -156,6 +166,21 @@ tbody tr{cursor:pointer;}
 tbody tr:hover{background:var(--hover);}
 .row-img{width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid var(--border);}
 .row-none{color:var(--muted);}
+/* ===== CỘT HÌNH ẢNH: bấm mở LIGHTBOX (không mở chi tiết); báo hiệu có nhiều ảnh/clip ===== */
+.row-media{position:relative; display:inline-block; line-height:0; cursor:zoom-in; vertical-align:middle;}
+.row-media .rm-thumb{display:block; object-fit:cover; border:1px solid var(--border); background:var(--surface2);}
+.rm-tb .rm-thumb{width:44px; height:44px; border-radius:6px;}
+.rm-cl .rm-thumb{width:64px; height:64px; border-radius:10px;}
+/* thẻ xếp chồng phía sau -> gợi ý "còn nhiều" */
+.row-media.multi::after{content:""; position:absolute; top:-3px; right:-3px; bottom:3px; left:3px; border:1px solid var(--border); background:var(--surface2); z-index:-1;}
+.rm-tb.multi::after{border-radius:6px;} .rm-cl.multi::after{border-radius:10px;}
+/* huy hiệu đếm tổng số ảnh/clip */
+.media-badge{position:absolute; bottom:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px; border-radius:9px;
+  background:var(--accent); color:var(--accent-text); font-size:10px; font-weight:700; line-height:17px; text-align:center;
+  border:1.5px solid var(--surface); box-shadow:0 1px 3px rgba(0,0,0,.28);}
+/* tam giác play khi item đầu là clip */
+.rm-play{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:20px; height:20px; border-radius:50%; background:rgba(0,0,0,.5); pointer-events:none;}
+.rm-play::before{content:""; position:absolute; top:50%; left:54%; transform:translate(-50%,-50%); border-style:solid; border-width:5px 0 5px 8px; border-color:transparent transparent transparent #fff;}
 /* (1) Ngày khai báo + Trạng thái: cùng cỡ chữ, không xuống dòng, canh giữa dòng, số canh đều */
 thead th.c-ngay, tbody td.c-ngay{white-space:nowrap; font-variant-numeric:tabular-nums; vertical-align:middle;}
 thead th.c-status, tbody td.c-status{white-space:nowrap; vertical-align:middle;}
@@ -308,7 +333,31 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
   .filters.collapsed{display:none;}
   .table-wrap{display:none;}
   .cardlist{display:block;}
-  header h1{font-size:18px;}
+}
+/* ===== ĐIỆN THOẠI NHỎ — tối ưu gọn, dễ chạm, 1 cột ===== */
+@media (max-width:560px){
+  .wrap{padding:12px 12px 30px;}
+  header{gap:10px;}
+  header h1.brand-title{gap:7px;}
+  .bt-main{font-size:20px;} .bt-sub{font-size:15px;}
+  .head-right{width:100%;}
+  .head-right #themeSel{flex:1 1 100%;}
+  .head-right button{flex:1 1 0;}
+  .cards{gap:8px;}
+  .card{padding:11px; min-height:78px;}
+  .card .num{font-size:20px;}
+  [data-theme="hasaki"] .card .num{font-size:22px;}
+  .filters{grid-template-columns:1fr;}
+  .panel-head{padding:10px 14px;}
+  .cl-item{padding:12px;}
+  .rm-cl .rm-thumb,.cl-noimg{width:72px; height:72px;}
+  /* modal chi tiết: mỗi bước rộng gần full màn hình -> vuốt xem từng bước */
+  .step{flex:0 0 84vw; width:84vw;}
+  .modal-head h2{font-size:13px;}
+  /* lightbox: nút nhỏ gọn, sát mép */
+  .lb-btn{padding:9px 12px; font-size:13px;}
+  #lbPrev{left:8px;} #lbNext{right:8px;}
+  #lbClose{padding:7px 12px;} #lbCount{top:14px;}
 }
 </style>
 </head>
@@ -317,7 +366,7 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
 <div class="wrap">
   <header>
     <div>
-      <h1>Audit Hasaki | Kiểm soát kho</h1>
+      <h1 class="brand-title"><span class="bt-main">AUDIT HASAKI|</span><span class="bt-sub">KIỂM SOÁT KHO</span></h1>
       <p id="meta">Đang tải dữ liệu…</p>
     </div>
     <div class="head-right">
@@ -443,7 +492,7 @@ const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1v
 let H = [], ROWS = [];
 let iCode, iLink, iName, iStatus, iCreatedAt, iAnh, iNgayVP, iLoi, iViTri, iNVVP, iQLTT, iVideo;
 let iB2loi, iKP, iB11ND, STATUS_COLS = [];
-let firstLoad = true, dangCho = false, galleries = {};
+let firstLoad = true, dangCho = false, galleries = {}, rowGal = {};
 
 /* Bảng tra Mã NV → Họ tên do người dùng khai báo tay (ưu tiên cao nhất).
    Thêm dòng "mã":"Họ tên" vào đây nếu muốn ép hiển thị tên cụ thể. */
@@ -509,6 +558,21 @@ const cmpNgayDesc = (a,b) => tsOf(b[iNgayVP]) - tsOf(a[iNgayVP]);
 function mediaUrls(val){
   return String(val).split("\n").map(s=>s.trim()).filter(s=>s.indexOf("http")===0)
     .map(u=>({url:u, type:isVideo(u)?'vid':'img'}));
+}
+// Media của MỤC 1 "Thông tin chung" = Hình ảnh vi phạm + Video vi phạm
+const mediaTTC = r => [].concat(iAnh>=0?mediaUrls(r[iAnh]):[], iVideo>=0?mediaUrls(r[iVideo]):[]);
+// Ô hình ảnh (bảng 'tb' / thẻ mobile 'cl'): thumbnail item đầu + huy hiệu đếm + play cho clip.
+// Lưu danh sách media theo chỉ số dòng để click mở lightbox (KHÔNG mở chi tiết).
+function thumbCell(r, gi, cls){
+  const media = mediaTTC(r);
+  rowGal[gi] = media;
+  if(!media.length) return cls==='cl' ? '<div class="cl-noimg">—</div>' : '<span class="row-none">—</span>';
+  const first = media[0];
+  const thumb = first.type==='vid'
+    ? `<video class="rm-thumb" src="${esc(first.url)}" preload="metadata" muted></video><span class="rm-play"></span>`
+    : `<img class="rm-thumb" loading="lazy" src="${esc(first.url)}">`;
+  const badge = media.length>1 ? `<span class="media-badge">${media.length}</span>` : '';
+  return `<span class="row-media rm-${cls}${media.length>1?' multi':''}" data-mg="${gi}" title="${media.length>1?'Có '+media.length+' ảnh/clip — bấm để xem':'Bấm để xem'}">${thumb}${badge}</span>`;
 }
 
 /* ===== TẢI DỮ LIỆU (gviz JSONP) ===== */
@@ -599,7 +663,7 @@ let rafId=null, curD=[];
 function render(){ if(rafId) cancelAnimationFrame(rafId); rafId=requestAnimationFrame(_render); }
 function _render(){
   const d=loc().sort(cmpNgayDesc);   // (6) mới nhất → cũ nhất
-  curD=d;
+  curD=d; rowGal={};
   // (5) 7 thẻ thống kê — có pop-up chi tiết
   $('cards').innerHTML = STAT_ORDER.map(k=>{
     const s=STATS[k], rows=s.pick(d);
@@ -611,7 +675,7 @@ function _render(){
   // Bảng (desktop) — Ngày khai báo / Vị trí / Lỗi / NV vi phạm / QL trực tiếp / Hình ảnh / Trạng thái / Mã(link)
   $('tbody').innerHTML = d.map(r=>{
     const gi=ROWS.indexOf(r);
-    const anh=isMedia(r[iAnh])?`<img class="row-img" loading="lazy" src="${esc(mediaUrls(r[iAnh])[0].url)}">`:'<span class="row-none">—</span>';
+    const anh=thumbCell(r,gi,'tb');
     const ma=r[iLink]?`<a class="code-link" href="${esc(r[iLink])}" target="_blank" rel="noopener">${esc(r[iCode])}</a>`:esc(r[iCode]);
     return `<tr data-i="${gi}">
       <td class="c-ngay">${esc(fmtNgay(r[iNgayVP]))}</td>
@@ -629,7 +693,7 @@ function _render(){
   const kv=(l,v)=> v?`<div class="cl-kv">${l}: <b>${esc(v)}</b></div>`:'';
   $('cardList').innerHTML = d.map(r=>{
     const gi=ROWS.indexOf(r);
-    const anh=isMedia(r[iAnh])?`<img class="cl-img" loading="lazy" src="${esc(mediaUrls(r[iAnh])[0].url)}">`:'<div class="cl-noimg">—</div>';
+    const anh=thumbCell(r,gi,'cl');
     const maM=r[iLink]?`<a class="code-link cl-code" href="${esc(r[iLink])}" target="_blank" rel="noopener">${esc(r[iCode])}</a>`:`<span class="cl-code">${esc(r[iCode])}</span>`;
     return `<div class="cl-item" data-i="${gi}">
       ${anh}
@@ -847,6 +911,9 @@ function capNhatNgay(){
 /* ===== SỰ KIỆN ===== */
 // Nhấp 1 dòng (bảng hoặc thẻ) -> mở chi tiết
 document.addEventListener('click', e=>{
+  // Ảnh ở cột Hình ảnh -> CHỈ mở lightbox media Mục 1 (không mở chi tiết các bước)
+  const rm=e.target.closest('.row-media');
+  if(rm){ e.preventDefault(); e.stopPropagation(); const g=rowGal[rm.dataset.mg]||[]; if(g.length) openLB(g,0); return; }
   const row=e.target.closest('[data-i]');
   if(row && !e.target.closest('.thumb') && !e.target.closest('a')){ moChiTiet(+row.dataset.i); return; }
   // Thumb trong modal -> lightbox carousel
@@ -863,6 +930,13 @@ $('lbClose').addEventListener('click', dongLB);
 $('lbPrev').addEventListener('click', e=>{ e.stopPropagation(); lbMove(-1); });
 $('lbNext').addEventListener('click', e=>{ e.stopPropagation(); lbMove(1); });
 $('lightbox').addEventListener('click', e=>{ if(e.target.id==='lightbox') dongLB(); });
+// Vuốt trái/phải để chuyển ảnh (điện thoại)
+let lbTX=0, lbTY=0;
+$('lightbox').addEventListener('touchstart', e=>{ lbTX=e.changedTouches[0].clientX; lbTY=e.changedTouches[0].clientY; }, {passive:true});
+$('lightbox').addEventListener('touchend', e=>{
+  const dx=e.changedTouches[0].clientX-lbTX, dy=e.changedTouches[0].clientY-lbTY;
+  if(Math.abs(dx)>50 && Math.abs(dx)>Math.abs(dy)){ e.preventDefault(); lbMove(dx<0?1:-1); }
+}, {passive:false});
 document.addEventListener('keydown', e=>{
   if(!$('lightbox').classList.contains('show')){
     if(e.key==='Escape'){
