@@ -449,7 +449,8 @@ thead th.c-status, tbody td.c-status{width:150px;}
 #btnGhiNhan{background:var(--accent); color:var(--accent-text); border-color:var(--accent); font-weight:600;}
 #btnGhiNhan:hover{background:var(--accent-hover); border-color:var(--accent-hover);}
 /* ===== CỘT BIÊN BẢN ===== */
-thead th.c-bb, tbody td.c-bb{width:118px; white-space:normal;}
+thead th.c-bb{width:118px; white-space:nowrap;}
+tbody td.c-bb{width:118px; white-space:normal;}
 .bb-cell{display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap;}
 .bb-thumb{width:30px; height:30px; object-fit:cover; border-radius:5px; border:1px solid var(--border); cursor:zoom-in;}
 .bb-up{padding:3px 8px; font-size:12px; line-height:1.3; border-radius:6px; white-space:nowrap;}
@@ -715,7 +716,7 @@ const TAB = "5S-TASKS";
 const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec";
 
 let H = [], ROWS = [];
-let iCode, iLink, iName, iStatus, iCreatedAt, iAnh, iNgayVP, iLoi, iViTri, iNVVP, iQLTT, iVideo, iNVName;
+let iCode, iLink, iName, iStatus, iCreatedAt, iAnh, iNgayVP, iLoi, iViTri, iNVVP, iQLTT, iVideo, iNVName, iBienBan;
 let iB2loi, iKP, iB11ND, STATUS_COLS = [];
 let firstLoad = true, dangCho = false, galleries = {}, rowGal = {};
 
@@ -906,7 +907,7 @@ function taiDuLieu(){
       iAnh=idxOf("Hình ảnh vi phạm"); iVideo=idxOf("Video vi phạm");
       iNgayVP=idxOf("Ngày vi phạm"); iLoi=idxOf("Lỗi vi phạm"); iViTri=idxOf("Vị trí ghi nhận");
       iNVVP=H.findIndex(h=>nhanCuoi(h).toLowerCase()==="nhân viên vi phạm");
-      iNVName=idxOf("Tên NV vi phạm");
+      iNVName=idxOf("Tên NV vi phạm"); iBienBan=idxOf("Biên bản");
       iQLTT=H.findIndex(h=>/quản lý trực tiếp/i.test(nhanCuoi(h)));
       iB2loi=idxOf("B2. QLTT xác nhận và giải trình ▸ Xác nhận lỗi");
       iKP=idxOf("B4.1 Audit kiểm tra khắc phục ▸ Xác nhận khắc phục");
@@ -1270,25 +1271,14 @@ function moGhiNhan(){
 }
 function dongGhiNhan(){ $('ghiModal').classList.remove('show'); }
 
-/* ===== BIÊN BẢN (cột cạnh Trạng thái): tải ảnh lên + lưu tab BIEN-BAN ===== */
-let bbMap={}, bbCode='';
+/* ===== BIÊN BẢN (cột trong 5S-TASKS, sau cùng): tải ảnh -> Apps Script ghi thẳng vào 5S-TASKS ===== */
+let bbLocal={}, bbCode='';   // bbLocal: overlay hiện ngay sau khi tải (sheet cập nhật sau đồng bộ)
 function bbCell(r){
   const code=String(r[iCode]||'').trim();
-  const imgs=bbMap[code]||[];
+  const sheetUrls=(iBienBan>=0?String(r[iBienBan]||''):'').split(/[\n,]/).map(s=>s.trim()).filter(s=>/^https?:/.test(s));
+  const imgs=[...new Set([...sheetUrls, ...(bbLocal[code]||[])])];
   const thumbs=imgs.map(u=>`<img class="bb-thumb" src="${esc(u)}" loading="lazy" data-bb="${esc(u)}" title="Xem biên bản">`).join('');
   return `<span class="bb-cell">${thumbs}<button class="bb-up" data-code="${esc(code)}" title="Tải biên bản lên">＋ Ảnh</button></span>`;
-}
-function taiBienBan(){
-  const cb="bb_"+Date.now()+"_"+Math.floor(performance.now());
-  window[cb]=resp=>{ try{
-    const m={}; const rows=((resp.table&&resp.table.rows)||[]).map(r=>(r.c||[]).map(c=>c?(c.v==null?"":c.v):""));
-    rows.forEach(r=>{ const code=String(r[1]||"").trim(), url=String(r[2]||"").trim(); if(code&&/^https?:/.test(url)) (m[code]=m[code]||[]).push(url); });
-    bbMap=m; render();
-  }catch(e){} delete window[cb]; };
-  const s=document.createElement('script');
-  s.src="https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?sheet="+encodeURIComponent("BIEN-BAN")+"&headers=1&tqx=out:json;responseHandler:"+cb;
-  s.onerror=()=>{ delete window[cb]; };   // tab chưa tồn tại -> bỏ qua
-  document.body.appendChild(s); setTimeout(()=>s.remove(),30000);
 }
 async function taiBienBanLen(files){
   if(!bbCode || !files || !files.length) return;
@@ -1301,7 +1291,7 @@ async function taiBienBanLen(files){
   try{
     const res=await fetch(APPSCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"uploadBienBan",code,files:arr})});
     const j=await res.json();
-    if(j&&j.status==="success"&&j.urls){ (bbMap[code]=bbMap[code]||[]).push(...j.urls); render(); }
+    if(j&&j.status==="success"&&j.urls){ (bbLocal[code]=bbLocal[code]||[]).push(...j.urls); render(); }
     else alert("Không tải được biên bản: "+((j&&j.message)||"?"));
   }catch(e){ alert("Lỗi kết nối khi tải biên bản: "+e.message); }
 }
@@ -1437,10 +1427,9 @@ $('btnFilter').addEventListener('click',()=>{
   setTitle(tt);
   // Link tới Google Sheet nguồn (tab 5S-TASKS)
   $('lnkSheet').href = "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/edit#gid=0";
-  taiDuLieu();
-  taiBienBan();   // nạp danh sách biên bản đã tải (tab BIEN-BAN)
+  taiDuLieu();   // biên bản nằm trong cột "Biên bản" của 5S-TASKS -> tải cùng dữ liệu
   // Tự làm mới ONLINE mỗi 5 phút + khi quay lại tab (không hiện skeleton lại -> không giật)
-  setInterval(()=>{ if(!dangCho){ taiDuLieu(); taiBienBan(); } }, 5*60*1000);
+  setInterval(()=>{ if(!dangCho) taiDuLieu(); }, 5*60*1000);
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && !dangCho && ROWS.length) taiDuLieu(); });
 })();
 </script>
