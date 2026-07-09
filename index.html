@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
-<title>AUDIT HASAKI</title>
+<title>AUDIT</title>
 <style>
 /* ===== HỆ MÀU (CSS VARIABLES) — CÁC THEME ĐƯỢC ĐÁNH GIÁ CAO ===== */
 /* Tokyo Night (mặc định) */
@@ -504,13 +504,86 @@ const TAB = "5S-TASKS";
 const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec";
 
 let H = [], ROWS = [];
-let iCode, iLink, iName, iStatus, iCreatedAt, iAnh, iNgayVP, iLoi, iViTri, iNVVP, iQLTT, iVideo;
+let iCode, iLink, iName, iStatus, iCreatedAt, iAnh, iNgayVP, iLoi, iViTri, iNVVP, iQLTT, iVideo, iNVName;
 let iB2loi, iKP, iB11ND, STATUS_COLS = [];
 let firstLoad = true, dangCho = false, galleries = {}, rowGal = {};
 
 /* Bảng tra Mã NV → Họ tên do người dùng khai báo tay (ưu tiên cao nhất).
    Thêm dòng "mã":"Họ tên" vào đây nếu muốn ép hiển thị tên cụ thể. */
-const NV_MAP = {};
+const NV_MAP = {
+  "17131": "Lưu Học Danh",
+  "23751": "Phùng Lê Cao Minh",
+  "38125": "Mai Lê Hoàng Phi",
+  "221628": "Mai Thành Ý",
+  "221986": "Nguyễn Thị Kim Ngân",
+  "230442": "Hà Trọng Thúc Bằng",
+  "231911": "Trần Quang Lực",
+  "232086": "Thạch Nghĩa",
+  "232178": "Nguyễn Thị Yến Nhi",
+  "232563": "Lê Ngân Bảo Khánh",
+  "232969": "Nguyễn Đức Luyện",
+  "233038": "Nguyễn Chí Hữu",
+  "233135": "Lê Chí Tâm",
+  "240349": "Lê Thị Ngọc Hương",
+  "240354": "Nguyễn Thị Tuyết Trâm",
+  "240519": "Lu Ngọc Phượng",
+  "241418": "Châu Ngọc Bảo Thy",
+  "241492": "Nguyễn Thị Tuyết Nga",
+  "241615": "Đinh Ngọc Kiều Oanh",
+  "241616": "Nguyễn Ngọc Thanh Ngân",
+  "241744": "Huỳnh Ngọc Tuyền",
+  "241940": "Lê Hồng Đào",
+  "242024": "Võ Nguyễn Tấn Lộc",
+  "242484": "Võ Minh Hùng",
+  "242485": "Phùng Lê Cao Minh",
+  "243582": "Nguyễn Ngọc Thùy Vân",
+  "243600": "Phạm Thị Yến Nhi",
+  "243980": "Nguyễn Thị Phương Anh",
+  "250083": "Nguyễn Thị Thanh Tuyến",
+  "250462": "Mạc Kiết My",
+  "250608": "Lê Bá Thành",
+  "250751": "Hoàng Thị Cẩm Ly",
+  "250753": "Nguyễn Ngọc Thạch",
+  "250884": "Nguyễn Kiệm",
+  "250965": "Nguyễn Huyền Trang",
+  "251215": "Bùi Văn Non",
+  "251308": "Trương Thanh Bình",
+  "251599": "Dương Thị Út Nghĩa",
+  "251726": "Huỳnh Thị Mỹ Trinh",
+  "251962": "Trần Nguyên Phúc",
+  "252039": "Nguyễn Hoài Sang",
+  "252134": "Trần Thị Phương",
+  "252177": "Ngô Phương Vy",
+  "252324": "Đoàn Lại Khánh Nguyên",
+  "252481": "Trần Ngọc Hương Trà",
+  "252813": "Trần Thị Phương Thảo",
+  "253225": "Nguyễn Thanh Trúc",
+  "253327": "Võ Thị Kim Quyên",
+  "253397": "Đỗ Minh Hoan",
+  "253604": "Nguyễn Thị Phương Hoài Tâm",
+  "253627": "Nguyễn Thị Quế Chi",
+  "254007": "Phạm Trần Hữu Đức",
+  "254064": "Trần Thị Ngọc Anh",
+  "254301": "Hà Thanh Trúc",
+  "254384": "Nguyễn Hoàng Tú Uyên",
+  "254393": "Ma Nguyễn Thanh Vân",
+  "254719": "Nguyễn Thị Mỹ Duyên",
+  "254987": "Phan Thanh Hiền",
+  "260077": "Nguyễn Hoàng Minh Thám",
+  "260189": "Mai Lê Hoàng Phi",
+  "260190": "Dương Thanh Phong",
+  "260394": "Nguyễn Thị Kim Yến",
+  "260535": "Phạm Thị Kim Loan",
+  "260612": "Nguyễn Thị Thu Thủy",
+  "260970": "Lương Thùy Dương",
+  "260997": "Đỗ Tấn Kiên",
+  "261209": "Lê Tứ Quý",
+  "261362": "Vũ Minh Thư",
+  "261365": "Nguyễn Ngọc Bảo Hân",
+  "261552": "Phạm Vũ Thành Trung",
+  "261624": "Hoàng Trọng Phát",
+  "262169": "Trần Thị Cẩm Hồng"
+};
 /* Bảng tra Mã NV → Họ tên TỰ SUY RA từ dữ liệu (tên người tự xác nhận ở B1.1),
    dựng lại mỗi lần tải để mọi task cùng 1 mã đều hiện cùng 1 tên. */
 let NAME_BY_CODE = {};
@@ -566,8 +639,14 @@ const codeVP = r => (iNVVP>=0 ? String(r[iNVVP]||"").trim() : "");
 // Tên hiển thị NV vi phạm: NV_MAP (tay) → NAME_BY_CODE (suy ra) → mã
 const nameVP = r => {
   const c = codeVP(r);
-  if(!c) return "";
-  return NV_MAP[c] || NAME_BY_CODE[c] || c;
+  const codes = c ? c.split(",").map(x=>x.trim()).filter(Boolean) : [];
+  // (1) Ưu tiên cột "Tên NV vi phạm" (bộ đồng bộ tự tra danh bạ WMS) — CHỈ lấy phần là CHỮ, bỏ mọi token còn là số.
+  let names = iNVName>=0 ? String(r[iNVName]||"").split(",").map(s=>s.trim()).filter(s=>/\p{L}/u.test(s)) : [];
+  // (2) Chưa có -> tra NV_MAP / tên tự xác nhận B1.1 theo từng mã.
+  if(!names.length && codes.length) names = codes.map(x=>NV_MAP[x]||NAME_BY_CODE[x]||"").filter(Boolean);
+  if(names.length) return names.join(", ");
+  // Có mã nhưng không tra được tên (NV đã nghỉ / ngoài danh bạ) -> KHÔNG hiển thị dãy số.
+  return codes.length ? "Chưa rõ tên" : "";
 };
 // Khoá gộp NV (không trùng): dùng mã làm khoá, hiển thị theo nameVP
 const keyVP = r => codeVP(r);
@@ -616,6 +695,7 @@ function taiDuLieu(){
       iAnh=idxOf("Hình ảnh vi phạm"); iVideo=idxOf("Video vi phạm");
       iNgayVP=idxOf("Ngày vi phạm"); iLoi=idxOf("Lỗi vi phạm"); iViTri=idxOf("Vị trí ghi nhận");
       iNVVP=H.findIndex(h=>nhanCuoi(h).toLowerCase()==="nhân viên vi phạm");
+      iNVName=idxOf("Tên NV vi phạm");
       iQLTT=H.findIndex(h=>/quản lý trực tiếp/i.test(nhanCuoi(h)));
       iB2loi=idxOf("B2. QLTT xác nhận và giải trình ▸ Xác nhận lỗi");
       iKP=idxOf("B4.1 Audit kiểm tra khắc phục ▸ Xác nhận khắc phục");
