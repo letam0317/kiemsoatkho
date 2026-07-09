@@ -448,6 +448,12 @@ thead th.c-status, tbody td.c-status{width:150px;}
 #ghiModal iframe{flex:1; width:100%; border:0; background:#fff;}
 #btnGhiNhan{background:var(--accent); color:var(--accent-text); border-color:var(--accent); font-weight:600;}
 #btnGhiNhan:hover{background:var(--accent-hover); border-color:var(--accent-hover);}
+/* ===== CỘT BIÊN BẢN ===== */
+thead th.c-bb, tbody td.c-bb{width:118px; white-space:normal;}
+.bb-cell{display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap;}
+.bb-thumb{width:30px; height:30px; object-fit:cover; border-radius:5px; border:1px solid var(--border); cursor:zoom-in;}
+.bb-up{padding:3px 8px; font-size:12px; line-height:1.3; border-radius:6px; white-space:nowrap;}
+.bb-up:hover{border-color:var(--accent); color:var(--accent);}
 
 /* ===== RESPONSIVE ===== */
 @media (max-width:1200px){ .cards{grid-template-columns:repeat(4,minmax(0,1fr));} }
@@ -585,10 +591,10 @@ thead th.c-status, tbody td.c-status{width:150px;}
         <table>
           <thead><tr>
             <th class="c-ngay">Ngày khai báo</th><th class="c-vitri">Vị trí</th><th class="c-loi">Lỗi vi phạm</th><th class="c-nv">Nhân viên vi phạm</th>
-            <th class="c-ql">Quản lý trực tiếp</th><th class="c-anh">Hình ảnh</th><th class="c-status">Trạng thái</th><th class="c-flex"></th>
+            <th class="c-ql">Quản lý trực tiếp</th><th class="c-anh">Hình ảnh</th><th class="c-status">Trạng thái</th><th class="c-bb">Biên bản</th><th class="c-flex"></th>
           </tr></thead>
           <tbody id="tbody">
-            <tr><td colspan="8"><div class="sk sk-line" style="width:90%"></div><div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:80%"></div></td></tr>
+            <tr><td colspan="9"><div class="sk sk-line" style="width:90%"></div><div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:80%"></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -625,10 +631,11 @@ thead th.c-status, tbody td.c-status{width:150px;}
           </ul>
         </div>
         <div class="hm-lg-card">
-          <div class="hm-lg-t">KPI trừ theo trách nhiệm xác minh</div>
+          <div class="hm-lg-t">KPI trừ theo trách nhiệm xác minh <span style="font-weight:500;color:var(--muted)">(áp dụng cho Quản lý nghiệp vụ — QLPTCH / QLĐG)</span></div>
+          <p style="margin:0 0 7px">Dành cho <b>quản lý nghiệp vụ phụ trách Khu vực/Vị trí</b>: mức trừ tuỳ khả năng truy ra cá nhân vi phạm.</p>
           <ul>
-            <li><b class="hm-neg">−1</b> — Lỗi Quản lý nghiệp vụ phụ trách Khu vực/Vị trí <b>không xác minh được</b> cá nhân/nhóm chịu trách nhiệm</li>
-            <li><b class="hm-neg">−0.2</b> — Lỗi Quản lý nghiệp vụ <b>xác minh được</b> cá nhân/nhóm chịu trách nhiệm</li>
+            <li><b class="hm-neg">−1</b> — QL <b>không xác minh được</b> cá nhân/nhóm chịu trách nhiệm</li>
+            <li><b class="hm-neg">−0.2</b> — QL <b>xác minh được</b> cá nhân/nhóm chịu trách nhiệm</li>
             <li><b>0</b> — Không phát sinh vi phạm hạng mục</li>
           </ul>
         </div>
@@ -697,6 +704,8 @@ thead th.c-status, tbody td.c-status{width:150px;}
     <iframe id="gmFrame" title="Form ghi nhận 5S" allow="camera;microphone"></iframe>
   </div>
 </div>
+<input type="file" id="bbFile" accept="image/*" multiple style="display:none">
+
 
 <script>
 "use strict";
@@ -995,8 +1004,9 @@ function _render(){
       <td class="c-ql">${iQLTT>=0?esc(r[iQLTT]||'—'):'—'}</td>
       <td class="c-anh">${anh}</td>
       <td class="c-status">${statusCell(r)}</td>
+      <td class="c-bb">${bbCell(r)}</td>
       <td class="c-flex"></td></tr>`;
-  }).join('') || '<tr><td colspan="8"><div class="empty-row">Không có task khớp bộ lọc.</div></td></tr>';
+  }).join('') || '<tr><td colspan="9"><div class="empty-row">Không có task khớp bộ lọc.</div></td></tr>';
 
   // Danh sách thẻ (mobile)
   const kv=(l,v)=> v?`<div class="cl-kv">${l}: <b>${esc(v)}</b></div>`:'';
@@ -1009,6 +1019,7 @@ function _render(){
         <div class="cl-top">${statusBadge(r)}</div>
         <div class="cl-loi">${esc(r[iLoi]||'')}</div>
         ${kv('Vị trí',r[iViTri])}${kv('Ngày khai báo',fmtNgay(r[iNgayVP]))}${kv('NV vi phạm',nameVP(r))}${kv('QL trực tiếp',iQLTT>=0?r[iQLTT]:'')}
+        <div class="cl-kv" style="margin-top:6px">Biên bản: ${bbCell(r)}</div>
       </div>
     </div>`;
   }).join('') || '<div class="empty-row">Không có task khớp bộ lọc.</div>';
@@ -1230,20 +1241,21 @@ function taiQuyDinh(){
   s.onerror=()=>{ $('hmWrap').innerHTML='<div class="empty-row">Không tải được tab QUY-DINH.</div>'; delete window[cb]; };
   document.body.appendChild(s); setTimeout(()=>s.remove(),30000);
 }
-// Điểm KPI + xử lý cho 1 lần vi phạm (đ + hạ kỹ năng + biện pháp xử lý)
-function lanTxt(d,x,h){
-  if(!d && d!==0 && String(d).trim()==="") return "—";
-  if(String(d).trim()==="") return "—";
-  return d+"đ"+(String(h).trim()==='Có'?' · hạ KN':'')+(x&&String(x).trim()&&String(x).trim()!=='Không'?' · '+x:'');
+// Hiển thị KPI trừ 1 lần vi phạm: "-X% KPI" (0 -> "0% KPI"; rỗng -> "—")
+function lanTxt(d){
+  const s=String(d).trim();
+  if(s==="") return "—";
+  if(s==="0"||Number(s)===0) return "0% KPI";
+  return "−"+s+"% KPI";
 }
 function renderQuyDinh(){
   const tim=($('hmTim').value||"").toLowerCase().trim();
-  const d=QD.filter(r=> !tim || (r[1]+" "+r[2]+" "+r[12]).toLowerCase().includes(tim));
+  const d=QD.filter(r=> !tim || String(r[1]).toLowerCase().includes(tim));
   $('hmDem').textContent=d.length+" hạng mục";
-  $('hmWrap').innerHTML='<table><thead><tr><th class="hm-stt">STT</th><th>Quy định chi tiết</th><th>Lỗi vi phạm</th><th class="hm-nv">Nghiệp vụ</th><th class="hm-lan">Vi phạm lần 1</th><th class="hm-lan">Vi phạm lần 2</th><th class="hm-lan">Vi phạm lần 3+</th></tr></thead><tbody>'+
-    (d.map(r=>`<tr><td class="hm-stt">${esc(r[0])}</td><td class="hm-qd">${esc(r[1])}</td><td class="hm-loi">${esc(r[2])}</td><td class="hm-nv">${esc(r[12])}</td><td class="hm-lan">${esc(lanTxt(r[3],r[5],r[4]))}</td><td class="hm-lan">${esc(lanTxt(r[6],r[8],r[7]))}</td><td class="hm-lan">${esc(lanTxt(r[9],r[11],r[10]))}</td></tr>`).join('')||'<tr><td colspan="7"><div class="empty-row">Không có hạng mục khớp.</div></td></tr>')+
+  $('hmWrap').innerHTML='<table><thead><tr><th class="hm-stt">STT</th><th>Hạng mục 5S</th><th class="hm-lan">Vi phạm lần 1</th><th class="hm-lan">Vi phạm lần 2</th><th class="hm-lan">Vi phạm lần 3+</th></tr></thead><tbody>'+
+    (d.map(r=>`<tr><td class="hm-stt">${esc(r[0])}</td><td class="hm-qd">${esc(r[1])}</td><td class="hm-lan">${esc(lanTxt(r[3]))}</td><td class="hm-lan">${esc(lanTxt(r[6]))}</td><td class="hm-lan">${esc(lanTxt(r[9]))}</td></tr>`).join('')||'<tr><td colspan="5"><div class="empty-row">Không có hạng mục khớp.</div></td></tr>')+
     '</tbody></table>';
-  $('hmCards').innerHTML=d.map(r=>`<div class="cl-item" style="cursor:default"><div class="cl-body"><div class="cl-top"><b>Hạng mục #${esc(r[0])}</b><span class="badge">${esc(r[12])}</span></div><div class="cl-loi">${esc(r[2])}</div><div class="cl-kv" style="white-space:pre-wrap;margin-top:4px">${esc(r[1])}</div><div class="cl-kv" style="margin-top:6px"><b>L1:</b> ${esc(lanTxt(r[3],r[5],r[4]))} · <b>L2:</b> ${esc(lanTxt(r[6],r[8],r[7]))} · <b>L3+:</b> ${esc(lanTxt(r[9],r[11],r[10]))}</div></div></div>`).join('')||'<div class="empty-row">Không có hạng mục khớp.</div>';
+  $('hmCards').innerHTML=d.map(r=>`<div class="cl-item" style="cursor:default"><div class="cl-body"><div class="cl-top"><b>Hạng mục #${esc(r[0])}</b></div><div class="cl-kv" style="white-space:pre-wrap;margin-top:2px;color:var(--text)">${esc(r[1])}</div><div class="cl-kv" style="margin-top:6px;color:var(--muted)"><b>L1:</b> ${esc(lanTxt(r[3]))} · <b>L2:</b> ${esc(lanTxt(r[6]))} · <b>L3+:</b> ${esc(lanTxt(r[9]))}</div></div></div>`).join('')||'<div class="empty-row">Không có hạng mục khớp.</div>';
 }
 
 /* ===== GHI NHẬN 5S — nhúng form-5s qua iframe, mở khi nhập đúng PIN ===== */
@@ -1256,6 +1268,42 @@ function moGhiNhan(){
   $('ghiModal').classList.add('show');
 }
 function dongGhiNhan(){ $('ghiModal').classList.remove('show'); }
+
+/* ===== BIÊN BẢN (cột cạnh Trạng thái): tải ảnh lên + lưu tab BIEN-BAN ===== */
+let bbMap={}, bbCode='';
+function bbCell(r){
+  const code=String(r[iCode]||'').trim();
+  const imgs=bbMap[code]||[];
+  const thumbs=imgs.map(u=>`<img class="bb-thumb" src="${esc(u)}" loading="lazy" data-bb="${esc(u)}" title="Xem biên bản">`).join('');
+  return `<span class="bb-cell">${thumbs}<button class="bb-up" data-code="${esc(code)}" title="Tải biên bản lên">＋ Ảnh</button></span>`;
+}
+function taiBienBan(){
+  const cb="bb_"+Date.now()+"_"+Math.floor(performance.now());
+  window[cb]=resp=>{ try{
+    const m={}; const rows=((resp.table&&resp.table.rows)||[]).map(r=>(r.c||[]).map(c=>c?(c.v==null?"":c.v):""));
+    rows.forEach(r=>{ const code=String(r[1]||"").trim(), url=String(r[2]||"").trim(); if(code&&/^https?:/.test(url)) (m[code]=m[code]||[]).push(url); });
+    bbMap=m; render();
+  }catch(e){} delete window[cb]; };
+  const s=document.createElement('script');
+  s.src="https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?sheet="+encodeURIComponent("BIEN-BAN")+"&headers=1&tqx=out:json;responseHandler:"+cb;
+  s.onerror=()=>{ delete window[cb]; };   // tab chưa tồn tại -> bỏ qua
+  document.body.appendChild(s); setTimeout(()=>s.remove(),30000);
+}
+async function taiBienBanLen(files){
+  if(!bbCode || !files || !files.length) return;
+  const code=bbCode; const arr=[];
+  for(const f of files){ if(!/^image\//.test(f.type)) continue;
+    const b64=await new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>res(String(fr.result).split(',')[1]); fr.readAsDataURL(f); });
+    arr.push({name:f.name, mime:f.type||'image/jpeg', base64:b64});
+  }
+  if(!arr.length){ alert("Vui lòng chọn tệp ảnh."); return; }
+  try{
+    const res=await fetch(APPSCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"uploadBienBan",code,files:arr})});
+    const j=await res.json();
+    if(j&&j.status==="success"&&j.urls){ (bbMap[code]=bbMap[code]||[]).push(...j.urls); render(); }
+    else alert("Không tải được biên bản: "+((j&&j.message)||"?"));
+  }catch(e){ alert("Lỗi kết nối khi tải biên bản: "+e.message); }
+}
 
 /* ===== ÉP CẬP NHẬT (cần PIN) ===== */
 function capNhatNgay(){
@@ -1297,6 +1345,11 @@ document.addEventListener('click', e=>{
   // Ảnh ở cột Hình ảnh -> CHỈ mở lightbox media Mục 1 (không mở chi tiết các bước)
   const rm=e.target.closest('.row-media');
   if(rm){ e.preventDefault(); e.stopPropagation(); const g=rowGal[rm.dataset.mg]||[]; if(g.length) openLB(g,0); return; }
+  // Cột Biên bản: nút tải lên / xem ảnh biên bản
+  const bbu=e.target.closest('.bb-up');
+  if(bbu){ e.preventDefault(); e.stopPropagation(); bbCode=bbu.dataset.code; $('bbFile').value=''; $('bbFile').click(); return; }
+  const bbt=e.target.closest('.bb-thumb');
+  if(bbt){ e.preventDefault(); e.stopPropagation(); openLB([{url:bbt.dataset.bb,type:'img'}],0); return; }
   const row=e.target.closest('[data-i]');
   if(row && !e.target.closest('.thumb') && !e.target.closest('a')){ moChiTiet(+row.dataset.i); return; }
   // Thumb trong modal -> lightbox carousel
@@ -1339,6 +1392,7 @@ $('hmTim').addEventListener('input',renderQuyDinh);
 $('btnGhiNhan').addEventListener('click',moGhiNhan);
 $('gmClose').addEventListener('click',dongGhiNhan);
 $('ghiModal').addEventListener('click',e=>{ if(e.target.id==='ghiModal') dongGhiNhan(); });
+$('bbFile').addEventListener('change',e=>{ taiBienBanLen(e.target.files); });
 
 // ---- Date picker wiring ----
 $('btnDate').addEventListener('click', e=>{ e.stopPropagation(); $('datePop').classList.contains('hidden')?openDatePop():closeDatePop(); });
@@ -1383,8 +1437,9 @@ $('btnFilter').addEventListener('click',()=>{
   // Link tới Google Sheet nguồn (tab 5S-TASKS)
   $('lnkSheet').href = "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/edit#gid=0";
   taiDuLieu();
+  taiBienBan();   // nạp danh sách biên bản đã tải (tab BIEN-BAN)
   // Tự làm mới ONLINE mỗi 5 phút + khi quay lại tab (không hiện skeleton lại -> không giật)
-  setInterval(()=>{ if(!dangCho) taiDuLieu(); }, 5*60*1000);
+  setInterval(()=>{ if(!dangCho){ taiDuLieu(); taiBienBan(); } }, 5*60*1000);
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && !dangCho && ROWS.length) taiDuLieu(); });
 })();
 </script>
