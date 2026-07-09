@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
-<title>Kiểm soát kho 5S — Dashboard</title>
+<title>Audit Hasaki | Kiểm soát kho</title>
 <style>
 /* ===== HỆ MÀU (CSS VARIABLES) — CÁC THEME ĐƯỢC ĐÁNH GIÁ CAO ===== */
 /* Tokyo Night (mặc định) */
@@ -113,7 +113,7 @@ button.primary:hover{background:var(--accent-hover); border-color:var(--accent-h
 select,input{background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:8px 10px;}
 select:focus,input:focus{outline:none; border-color:var(--accent);}
 label{display:flex; flex-direction:column; gap:4px;}
-label .lbl{font-size:11px; color:var(--muted);}
+.lbl{font-size:11px; color:var(--muted); line-height:1.3; min-height:15px;}
 
 /* ===== TAB SWITCHER ===== */
 .tabs{display:flex; gap:4px; border-bottom:1px solid var(--border); margin-bottom:16px;}
@@ -139,7 +139,7 @@ label .lbl{font-size:11px; color:var(--muted);}
 
 /* ===== BỘ LỌC ===== */
 .filters{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:16px;
-  display:grid; grid-template-columns:1.4fr 1fr 1fr 1.2fr; gap:10px; align-items:start;}
+  display:grid; grid-template-columns:1.4fr 1fr 1fr 1.2fr; gap:10px; align-items:end;}
 .filters label{min-width:0;}
 .filters input,.filters select{width:100%; min-width:0;}
 .btn-filter{display:none;}
@@ -159,8 +159,9 @@ tbody tr:hover{background:var(--hover);}
 /* (1) Ngày khai báo + Trạng thái: cùng cỡ chữ, không xuống dòng, canh giữa dòng, số canh đều */
 thead th.c-ngay, tbody td.c-ngay{white-space:nowrap; font-variant-numeric:tabular-nums; vertical-align:middle;}
 thead th.c-status, tbody td.c-status{white-space:nowrap; vertical-align:middle;}
-/* (2) Vị trí: vừa khít dãy "F0-A9-501-01-01-011111" (~22 ký tự), KHÔNG xuống dòng */
-thead th.c-vitri, tbody td.c-vitri{white-space:nowrap; width:22ch; min-width:22ch;}
+/* (2) Vị trí: bề rộng CỐ ĐỊNH vừa "F0-A1-515-05-02-02111111" (24 ký tự) — mọi dòng đồng bộ;
+   dài hơn thì XUỐNG DÒNG (không kéo giãn cột) */
+thead th.c-vitri, tbody td.c-vitri{white-space:normal; width:24ch; min-width:24ch; max-width:24ch; overflow-wrap:anywhere; line-height:1.35;}
 /* (3) Lỗi vi phạm: thu hẹp còn ~2/3, cắt bớt bằng "…", KHÔNG xuống dòng (hover xem đủ) */
 thead th.c-loi, tbody td.c-loi{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:320px; width:320px;}
 /* (4) NV vi phạm + QL trực tiếp: vừa "Hà trọng thúc bằng bằng bằng", KHÔNG xuống dòng */
@@ -316,7 +317,7 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
 <div class="wrap">
   <header>
     <div>
-      <h1>Kiểm soát kho 5S — Dashboard</h1>
+      <h1>Audit Hasaki | Kiểm soát kho</h1>
       <p id="meta">Đang tải dữ liệu…</p>
     </div>
     <div class="head-right">
