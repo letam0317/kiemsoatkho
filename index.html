@@ -65,8 +65,8 @@
 
 /* ===== MÀU THƯƠNG HIỆU CHO TIÊU ĐỀ — luôn tương phản tốt trên MỌI theme ===== */
 /* theme SÁNG: dùng xanh lá thương hiệu Hasaki #326e51; theme TỐI: dùng tông xanh sáng hơn cùng hệ để luôn nổi bật */
-:root,[data-theme="tokyo"],[data-theme="dracula"],[data-theme="nord"],[data-theme="mocha"]{--brand:#5fcf95;}
-[data-theme="hasaki"],[data-theme="latte"],[data-theme="solar"]{--brand:#326e51;}
+:root,[data-theme="tokyo"],[data-theme="dracula"],[data-theme="nord"],[data-theme="mocha"]{--brand:#5fcf95; --brand-on:#0e1116;}
+[data-theme="hasaki"],[data-theme="latte"],[data-theme="solar"]{--brand:#326e51; --brand-on:#ffffff;}
 
 /* ===== HASAKI: watermark logo bóng mờ + font Inter (CHỈ theme hasaki) ===== */
 #hskMark{position:fixed; inset:0; display:none; align-items:center; justify-content:center; pointer-events:none; z-index:0; overflow:hidden;}
@@ -102,16 +102,66 @@ a:hover{text-decoration:underline;}
 /* ===== HEADER ===== */
 header{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px;}
 header h1{font-size:20px; font-weight:700; margin:0; letter-spacing:-.2px;}
-/* Tiêu đề "AUDIT HASAKI| KIỂM SOÁT KHO": hiện đại, viết hoa, to/nổi bật nhưng không thô */
-header h1.brand-title{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; margin:0; line-height:1.02;}
-.bt-main,.bt-sub{color:var(--brand); text-transform:uppercase; white-space:nowrap; text-shadow:0 1px 1px rgba(0,0,0,.10);}
-/* "AUDIT HASAKI": gạch dưới (nét ngang) + thanh | dựng đứng (bt-pipe) giao nhau tại góc phải-dưới => chữ L nằm ngửa */
-.bt-main{position:relative; font-weight:800; font-size:clamp(19px,2.4vw,30px); letter-spacing:.6px;
-  border-bottom:3px solid var(--brand); padding:0 11px 4px 0;}
-.bt-pipe{position:absolute; right:0; bottom:0; width:3px; height:1.12em; background:var(--brand); border-radius:1px;}
-.bt-sub{font-weight:700; font-size:clamp(14px,1.7vw,21px); letter-spacing:.6px; opacity:.9;}
+/* ===== TIÊU ĐỀ THƯƠNG HIỆU — 8 kiểu chọn được (Cá nhân hoá) ===== */
+header h1.brand-title{margin:0; min-width:0;}
+.tt-wrap{--c:var(--brand); display:flex; align-items:center; gap:10px; color:var(--c); text-shadow:0 1px 1px rgba(0,0,0,.08);}
+.tt-wrap i{font-style:normal;}
+.tt-wrap svg{display:block;}
+/* 1 Xếp chồng */
+.tt1{flex-direction:column; align-items:flex-start; gap:0;}
+.tt1 b{font-size:clamp(20px,2.5vw,27px); font-weight:800; letter-spacing:-.01em; text-transform:uppercase;}
+.tt1 i{font-size:clamp(10px,1.2vw,11px); font-weight:600; letter-spacing:.32em; text-transform:uppercase; opacity:.72; margin-top:6px;}
+/* 2 Viên nhãn */
+.tt2 .chip{background:var(--c); color:var(--brand-on); font-weight:800; font-size:clamp(12px,1.5vw,14px); letter-spacing:.06em; padding:5px 10px; border-radius:8px;}
+.tt2 .tx{display:flex; flex-direction:column; line-height:1.05;}
+.tt2 .tx b{font-size:clamp(16px,2vw,19px); font-weight:800; text-transform:uppercase;}
+.tt2 .tx i{font-size:12px; opacity:.7; font-weight:500;}
+/* 3 Một hàng · vạch dọc */
+.tt3 b{font-size:clamp(18px,2.3vw,23px); font-weight:800; letter-spacing:-.01em; text-transform:uppercase;}
+.tt3 .bar{width:2px; height:1.05em; background:var(--c); opacity:.45; border-radius:2px; flex:0 0 auto;}
+.tt3 i{font-size:clamp(12px,1.5vw,15px); font-weight:400; opacity:.8;}
+/* 4 Hai độ đậm */
+.tt4{flex-direction:column; align-items:flex-start; gap:0;}
+.tt4 .r{font-size:clamp(19px,2.4vw,25px); text-transform:uppercase;}
+.tt4 .r .a{font-weight:300;} .tt4 .r .b{font-weight:800; letter-spacing:.01em;}
+.tt4 i{font-size:clamp(9px,1.1vw,10.5px); font-weight:600; letter-spacing:.28em; text-transform:uppercase; opacity:.7; margin-top:6px;}
+/* 5 Gạch chân accent */
+.tt5{align-items:flex-end;}
+.tt5 .h{font-size:clamp(18px,2.3vw,23px); font-weight:800; line-height:1.05; text-transform:uppercase;}
+.tt5 .h .u{display:inline-block; border-bottom:4px solid var(--c); padding-bottom:2px;}
+.tt5 i{font-size:clamp(10px,1.2vw,11px); opacity:.72; font-weight:600; text-transform:uppercase; letter-spacing:.12em; padding-bottom:4px;}
+/* 6 Ô monogram sao đỏ */
+.tt6 .tile{width:clamp(32px,4vw,40px); height:clamp(32px,4vw,40px); border-radius:10px; background:var(--c); display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+.tt6 .tile svg{width:60%; height:60%;}
+.tt6 .tx{display:flex; flex-direction:column; line-height:1.05;}
+.tt6 .tx b{font-size:clamp(16px,2vw,19px); font-weight:800; text-transform:uppercase;}
+.tt6 .tx i{font-size:12px; opacity:.7; font-weight:500;}
+/* 7 Chữ viền */
+.tt7{flex-direction:column; align-items:flex-start; gap:0;}
+.tt7 .r{font-size:clamp(18px,2.3vw,24px); letter-spacing:.02em; text-transform:uppercase;}
+.tt7 .r .o{font-weight:800; color:transparent; -webkit-text-stroke:1.4px var(--c);}
+.tt7 .r .f{font-weight:800;}
+.tt7 i{font-size:clamp(9px,1.1vw,10.5px); font-weight:600; letter-spacing:.28em; text-transform:uppercase; opacity:.7; margin-top:7px;}
+/* 8 Sao đỏ nội tuyến */
+.tt8 svg{width:clamp(16px,2vw,19px); height:clamp(16px,2vw,19px); flex:0 0 auto;}
+.tt8 b{font-size:clamp(17px,2.2vw,21px); font-weight:800; text-transform:uppercase;}
+.tt8 i{font-size:clamp(12px,1.5vw,13px); opacity:.72; font-weight:500; border-left:1.5px solid var(--c); padding-left:9px;}
 #meta{margin:5px 0 0; font-size:12px; color:var(--muted);}
 .head-right{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+
+/* ===== MENU CÀI ĐẶT (gộp: cá nhân hoá + dữ liệu) ===== */
+.settings{position:relative;}
+.settings-pop{position:absolute; top:calc(100% + 8px); right:0; z-index:46; width:288px; max-width:92vw;
+  background:var(--surface); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); padding:15px;
+  display:flex; flex-direction:column; gap:16px; transform-origin:top right; animation:popIn .16s cubic-bezier(.16,1,.3,1);}
+.set-sec{display:flex; flex-direction:column; gap:9px;}
+.set-h{font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);}
+.set-field{display:flex; flex-direction:column; gap:5px;}
+.set-field>span.lbl{font-size:12px; color:var(--muted); min-height:0;}
+.set-field select{width:100%;}
+.set-act{width:100%; text-align:left;}
+.set-link{display:block; padding:8px 14px; border:1px solid var(--border); border-radius:8px; color:var(--accent); font-weight:600; font-size:13px;}
+.set-link:hover{border-color:var(--accent); text-decoration:none; background:var(--hover);}
 
 /* ===== NÚT & INPUT ===== */
 button,select,input{font-family:inherit; font-size:13px; color:var(--text);}
@@ -352,11 +402,11 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
 @media (max-width:560px){
   .wrap{padding:12px 12px 30px;}
   header{gap:10px;}
-  header h1.brand-title{gap:7px;}
-  .bt-main{font-size:20px;} .bt-sub{font-size:15px;}
   .head-right{width:100%;}
-  .head-right #themeSel{flex:1 1 100%;}
-  .head-right button{flex:1 1 0;}
+  .settings{width:100%;}
+  #btnSettings{width:100%;}
+  /* menu cài đặt trải rộng, dễ chạm trên điện thoại */
+  .settings-pop{width:100%; max-width:none; left:0; right:0;}
   .cards{gap:8px;}
   .card{padding:11px; min-height:78px;}
   .card .num{font-size:20px;}
@@ -380,21 +430,45 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
 <div class="wrap">
   <header>
     <div>
-      <h1 class="brand-title"><span class="bt-main">AUDIT HASAKI<span class="bt-pipe"></span></span><span class="bt-sub">KIỂM SOÁT KHO</span></h1>
+      <h1 class="brand-title" id="brandTitle"></h1>
       <p id="meta">Đang tải dữ liệu…</p>
     </div>
     <div class="head-right">
-      <select id="themeSel" title="Đổi giao diện">
-        <option value="hasaki">Hasaki</option>
-        <option value="solar">Solarized Light</option>
-        <option value="tokyo">Tokyo Night</option>
-        <option value="dracula">Dracula</option>
-        <option value="nord">Nord</option>
-        <option value="mocha">Catppuccin Mocha</option>
-        <option value="latte">Catppuccin Latte</option>
-      </select>
-      <button id="btnReload" title="Đọc lại dữ liệu mới nhất từ Sheet">Tải lại</button>
-      <button id="btnSync" class="primary" title="Ép hệ thống kéo dữ liệu mới nhất (cần PIN)">Cập nhật ngay</button>
+      <div class="settings" id="settingsWrap">
+        <button id="btnSettings" title="Cài đặt hiển thị & dữ liệu">Cài đặt</button>
+        <div class="settings-pop hidden" id="settingsPop">
+          <div class="set-sec">
+            <div class="set-h">Cá nhân hoá</div>
+            <label class="set-field"><span class="lbl">Giao diện (theme)</span>
+              <select id="themeSel">
+                <option value="hasaki">Hasaki</option>
+                <option value="solar">Solarized Light</option>
+                <option value="tokyo">Tokyo Night</option>
+                <option value="dracula">Dracula</option>
+                <option value="nord">Nord</option>
+                <option value="mocha">Catppuccin Mocha</option>
+                <option value="latte">Catppuccin Latte</option>
+              </select></label>
+            <label class="set-field"><span class="lbl">Kiểu tiêu đề</span>
+              <select id="titleSel">
+                <option value="1">1 · Xếp chồng</option>
+                <option value="2">2 · Viên nhãn</option>
+                <option value="3">3 · Một hàng · vạch dọc</option>
+                <option value="4">4 · Hai độ đậm</option>
+                <option value="5">5 · Gạch chân accent</option>
+                <option value="6">6 · Ô monogram sao đỏ</option>
+                <option value="7">7 · Chữ viền</option>
+                <option value="8">8 · Sao đỏ nội tuyến</option>
+              </select></label>
+          </div>
+          <div class="set-sec">
+            <div class="set-h">Dữ liệu</div>
+            <button id="btnReload">Tải lại dữ liệu</button>
+            <button id="btnSync" class="primary">Cập nhật ngay (cần PIN)</button>
+            <a id="lnkSheet" class="set-link" href="#" target="_blank" rel="noopener">Mở Google Sheet nguồn ↗</a>
+          </div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -983,6 +1057,25 @@ function setTheme(t){
   document.querySelector('meta[name=theme-color]').setAttribute('content', tc);
 }
 
+/* ===== TIÊU ĐỀ (8 kiểu, cá nhân hoá + lưu) ===== */
+const STAR = `<svg viewBox="0 0 24 24"><polygon points="12,2 14.6,8.6 21.8,9 16.2,13.6 18.2,20.6 12,16.6 5.8,20.6 7.8,13.6 2.2,9 9.4,8.6" fill="#d81e05"/></svg>`;
+const TITLES = {
+  '1': `<span class="tt-wrap tt1"><b>AUDIT HASAKI</b><i>Kiểm soát kho</i></span>`,
+  '2': `<span class="tt-wrap tt2"><span class="chip">AUDIT</span><span class="tx"><b>HASAKI</b><i>Kiểm soát kho</i></span></span>`,
+  '3': `<span class="tt-wrap tt3"><b>AUDIT HASAKI</b><span class="bar"></span><i>Kiểm soát kho</i></span>`,
+  '4': `<span class="tt-wrap tt4"><span class="r"><span class="a">Audit </span><span class="b">HASAKI</span></span><i>Kiểm soát kho</i></span>`,
+  '5': `<span class="tt-wrap tt5"><span class="h"><span class="u">AUDIT</span> HASAKI</span><i>Kiểm soát kho</i></span>`,
+  '6': `<span class="tt-wrap tt6"><span class="tile">${STAR}</span><span class="tx"><b>AUDIT HASAKI</b><i>Kiểm soát kho</i></span></span>`,
+  '7': `<span class="tt-wrap tt7"><span class="r"><span class="o">AUDIT</span> <span class="f">HASAKI</span></span><i>Kiểm soát kho</i></span>`,
+  '8': `<span class="tt-wrap tt8">${STAR}<b>AUDIT HASAKI</b><i>Kiểm soát kho</i></span>`,
+};
+function setTitle(t){
+  if(!TITLES[t]) t='1';
+  $('brandTitle').innerHTML = TITLES[t];
+  $('titleSel').value = t;
+  try{ localStorage.setItem('dash5s-title', t); }catch(e){}
+}
+
 /* ===== TABS ===== */
 function setTab(name){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
@@ -1072,6 +1165,11 @@ document.addEventListener('click', e=>{ if(!$('datePop').classList.contains('hid
 $('btnReload').addEventListener('click',()=>{ if(!dangCho) taiDuLieu(); });
 $('btnSync').addEventListener('click',capNhatNgay);
 $('themeSel').addEventListener('change', e=>setTheme(e.target.value));
+$('titleSel').addEventListener('change', e=>setTitle(e.target.value));
+// ---- Menu Cài đặt (đóng/mở + click ra ngoài thì đóng) ----
+$('btnSettings').addEventListener('click', e=>{ e.stopPropagation(); $('settingsPop').classList.toggle('hidden'); });
+$('settingsPop').addEventListener('click', e=>e.stopPropagation());
+document.addEventListener('click', e=>{ if(!$('settingsPop').classList.contains('hidden') && !e.target.closest('#settingsWrap')) $('settingsPop').classList.add('hidden'); });
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
 $('btnFilter').addEventListener('click',()=>{
   const g=$('filterGrid'), dong=g.classList.toggle('collapsed');
@@ -1085,6 +1183,11 @@ $('btnFilter').addEventListener('click',()=>{
   const valid=['tokyo','dracula','nord','mocha','latte','solar','hasaki'];
   if(!valid.includes(t)) t='hasaki';
   setTheme(t);
+  // Kiểu tiêu đề đã lưu (mặc định 1 · Xếp chồng)
+  let tt='1'; try{ tt=localStorage.getItem('dash5s-title')||'1'; }catch(e){}
+  setTitle(tt);
+  // Link tới Google Sheet nguồn (tab 5S-TASKS)
+  $('lnkSheet').href = "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/edit#gid=0";
   taiDuLieu();
   // Tự làm mới ONLINE mỗi 5 phút + khi quay lại tab (không hiện skeleton lại -> không giật)
   setInterval(()=>{ if(!dangCho) taiDuLieu(); }, 5*60*1000);
