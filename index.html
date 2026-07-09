@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
-<title>AUDIT HASAKI | Kiểm soát kho</title>
+<title>AUDIT HASAKI</title>
 <style>
 /* ===== HỆ MÀU (CSS VARIABLES) — CÁC THEME ĐƯỢC ĐÁNH GIÁ CAO ===== */
 /* Tokyo Night (mặc định) */
@@ -105,7 +105,10 @@ header h1{font-size:20px; font-weight:700; margin:0; letter-spacing:-.2px;}
 /* Tiêu đề "AUDIT HASAKI| KIỂM SOÁT KHO": hiện đại, viết hoa, to/nổi bật nhưng không thô */
 header h1.brand-title{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; margin:0; line-height:1.02;}
 .bt-main,.bt-sub{color:var(--brand); text-transform:uppercase; white-space:nowrap; text-shadow:0 1px 1px rgba(0,0,0,.10);}
-.bt-main{font-weight:800; font-size:clamp(19px,2.4vw,30px); letter-spacing:.6px;}
+/* "AUDIT HASAKI": gạch dưới (nét ngang) + thanh | dựng đứng (bt-pipe) giao nhau tại góc phải-dưới => chữ L nằm ngửa */
+.bt-main{position:relative; font-weight:800; font-size:clamp(19px,2.4vw,30px); letter-spacing:.6px;
+  border-bottom:3px solid var(--brand); padding:0 11px 4px 0;}
+.bt-pipe{position:absolute; right:0; bottom:0; width:3px; height:1.12em; background:var(--brand); border-radius:1px;}
 .bt-sub{font-weight:700; font-size:clamp(14px,1.7vw,21px); letter-spacing:.6px; opacity:.9;}
 #meta{margin:5px 0 0; font-size:12px; color:var(--muted);}
 .head-right{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
@@ -195,6 +198,17 @@ thead th.c-nv, tbody td.c-nv, thead th.c-ql, tbody td.c-ql{white-space:nowrap; m
 thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var(--border);}
 .code-link{color:var(--accent); font-weight:700; text-decoration:none; white-space:nowrap;}
 .code-link:hover{text-decoration:underline;}
+/* ===== TRẠNG THÁI kiêm LINK sang work.hasaki — tinh tế: chữ thường (không đậm), gạch chấm mờ + mũi tên ↗ mảnh ===== */
+.status-link,.badge-link{cursor:pointer; text-decoration:none; transition:color .15s ease, border-color .15s ease;}
+.status-link{color:inherit; font-weight:400; border-bottom:1px dotted var(--muted);}
+.status-link:hover{color:var(--accent); border-bottom-color:var(--accent);}
+.badge-link{display:inline-flex; align-items:center; color:var(--muted);}
+.badge-link:hover{color:var(--accent); border-color:var(--accent);}
+.status-link::after,.badge-link::after{content:""; display:inline-block; width:.68em; height:.68em; margin-left:3px; vertical-align:-.02em;
+  background:currentColor; opacity:.5; transition:opacity .15s ease, transform .15s ease;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='7' y1='17' x2='16' y2='8'/%3E%3Cpolyline points='8 8 16 8 16 16'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='7' y1='17' x2='16' y2='8'/%3E%3Cpolyline points='8 8 16 8 16 16'/%3E%3C/svg%3E") center/contain no-repeat;}
+.status-link:hover::after,.badge-link:hover::after{opacity:1; transform:translate(1px,-1px);}
 
 /* ===== DANH SÁCH THẺ (MOBILE) ===== */
 .cardlist{display:none;}
@@ -366,7 +380,7 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
 <div class="wrap">
   <header>
     <div>
-      <h1 class="brand-title"><span class="bt-main">AUDIT HASAKI|</span><span class="bt-sub">KIỂM SOÁT KHO</span></h1>
+      <h1 class="brand-title"><span class="bt-main">AUDIT HASAKI<span class="bt-pipe"></span></span><span class="bt-sub">KIỂM SOÁT KHO</span></h1>
       <p id="meta">Đang tải dữ liệu…</p>
     </div>
     <div class="head-right">
@@ -430,10 +444,10 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
         <table>
           <thead><tr>
             <th class="c-ngay">Ngày khai báo</th><th class="c-vitri">Vị trí</th><th class="c-loi">Lỗi vi phạm</th><th class="c-nv">Nhân viên vi phạm</th>
-            <th class="c-ql">Quản lý trực tiếp</th><th>Hình ảnh</th><th class="c-status">Trạng thái</th><th>Mã</th><th class="c-flex"></th>
+            <th class="c-ql">Quản lý trực tiếp</th><th>Hình ảnh</th><th class="c-status">Trạng thái</th><th class="c-flex"></th>
           </tr></thead>
           <tbody id="tbody">
-            <tr><td colspan="9"><div class="sk sk-line" style="width:90%"></div><div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:80%"></div></td></tr>
+            <tr><td colspan="8"><div class="sk sk-line" style="width:90%"></div><div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:80%"></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -518,6 +532,20 @@ const dichNhan = s => DICH[String(s).trim().toLowerCase()] || s;
 const STT = {"none":"Chưa xử lý","new":"Mới","processing":"Đang xử lý","in progress":"Đang xử lý",
   "finished":"Hoàn thành","done":"Hoàn thành","completed":"Hoàn thành","cancelled":"Đã huỷ","canceled":"Đã huỷ","overdue":"Quá hạn"};
 const dichStatus = v => STT[String(v).trim().toLowerCase()] || v;
+// Ô "Trạng thái" gộp luôn LINK sang work.hasaki (thay cho cột Mã đã bỏ). Có link -> chữ thường + gạch chấm + mũi tên ↗.
+const statusCell = r => {
+  const txt = esc(dichStatus(r[iStatus]));
+  return r[iLink]
+    ? `<a class="status-link" href="${esc(r[iLink])}" target="_blank" rel="noopener" title="Mở task trên work.hasaki.vn">${txt}</a>`
+    : txt;
+};
+// Bản "badge" cho thẻ mobile
+const statusBadge = r => {
+  const txt = esc(dichStatus(r[iStatus]));
+  return r[iLink]
+    ? `<a class="badge badge-link" href="${esc(r[iLink])}" target="_blank" rel="noopener" title="Mở task trên work.hasaki.vn">${txt}</a>`
+    : `<span class="badge">${txt}</span>`;
+};
 
 function fmtNgay(v){
   const m = String(v).match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)$/);
@@ -672,11 +700,10 @@ function _render(){
   }).join('');
   $('dem').textContent=d.length+" task";
 
-  // Bảng (desktop) — Ngày khai báo / Vị trí / Lỗi / NV vi phạm / QL trực tiếp / Hình ảnh / Trạng thái / Mã(link)
+  // Bảng (desktop) — Ngày khai báo / Vị trí / Lỗi / NV vi phạm / QL trực tiếp / Hình ảnh / Trạng thái(kiêm link work)
   $('tbody').innerHTML = d.map(r=>{
     const gi=ROWS.indexOf(r);
     const anh=thumbCell(r,gi,'tb');
-    const ma=r[iLink]?`<a class="code-link" href="${esc(r[iLink])}" target="_blank" rel="noopener">${esc(r[iCode])}</a>`:esc(r[iCode]);
     return `<tr data-i="${gi}">
       <td class="c-ngay">${esc(fmtNgay(r[iNgayVP]))}</td>
       <td class="c-vitri">${esc(r[iViTri])}</td>
@@ -684,21 +711,19 @@ function _render(){
       <td class="c-nv">${esc(nameVP(r)||'—')}</td>
       <td class="c-ql">${iQLTT>=0?esc(r[iQLTT]||'—'):'—'}</td>
       <td>${anh}</td>
-      <td class="c-status">${esc(dichStatus(r[iStatus]))}</td>
-      <td>${ma}</td>
+      <td class="c-status">${statusCell(r)}</td>
       <td class="c-flex"></td></tr>`;
-  }).join('') || '<tr><td colspan="9"><div class="empty-row">Không có task khớp bộ lọc.</div></td></tr>';
+  }).join('') || '<tr><td colspan="8"><div class="empty-row">Không có task khớp bộ lọc.</div></td></tr>';
 
   // Danh sách thẻ (mobile)
   const kv=(l,v)=> v?`<div class="cl-kv">${l}: <b>${esc(v)}</b></div>`:'';
   $('cardList').innerHTML = d.map(r=>{
     const gi=ROWS.indexOf(r);
     const anh=thumbCell(r,gi,'cl');
-    const maM=r[iLink]?`<a class="code-link cl-code" href="${esc(r[iLink])}" target="_blank" rel="noopener">${esc(r[iCode])}</a>`:`<span class="cl-code">${esc(r[iCode])}</span>`;
     return `<div class="cl-item" data-i="${gi}">
       ${anh}
       <div class="cl-body">
-        <div class="cl-top">${maM}<span class="badge">${esc(dichStatus(r[iStatus]))}</span></div>
+        <div class="cl-top">${statusBadge(r)}</div>
         <div class="cl-loi">${esc(r[iLoi]||'')}</div>
         ${kv('Vị trí',r[iViTri])}${kv('Ngày khai báo',fmtNgay(r[iNgayVP]))}${kv('NV vi phạm',nameVP(r))}${kv('QL trực tiếp',iQLTT>=0?r[iQLTT]:'')}
       </div>
@@ -710,19 +735,17 @@ function _render(){
 function rowsTableHTML(rows){
   const tr = rows.map(r=>{
     const gi=ROWS.indexOf(r);
-    const ma=r[iLink]?`<a class="code-link" href="${esc(r[iLink])}" target="_blank" rel="noopener">${esc(r[iCode])}</a>`:esc(r[iCode]);
     return `<tr data-i="${gi}">
       <td class="c-ngay">${esc(fmtNgay(r[iNgayVP]))}</td>
       <td>${esc(r[iViTri]||'—')}</td>
       <td class="c-loi" title="${esc(r[iLoi])}">${esc(r[iLoi]||'—')}</td>
       <td>${esc(nameVP(r)||'—')}</td>
       <td>${iQLTT>=0?esc(r[iQLTT]||'—'):'—'}</td>
-      <td>${esc(dichStatus(r[iStatus]))}</td>
-      <td>${ma}</td></tr>`;
+      <td>${statusCell(r)}</td></tr>`;
   }).join('');
   return `<table><thead><tr>
     <th>Ngày khai báo</th><th>Vị trí</th><th>Lỗi vi phạm</th><th>NV vi phạm</th>
-    <th>QL trực tiếp</th><th>Trạng thái</th><th>Mã</th></tr></thead><tbody>${tr}</tbody></table>`;
+    <th>QL trực tiếp</th><th>Trạng thái</th></tr></thead><tbody>${tr}</tbody></table>`;
 }
 function moThongKe(key){
   const s=STATS[key]; if(!s) return;
