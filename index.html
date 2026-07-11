@@ -578,15 +578,16 @@ th.kpi-col-prev, td.kpi-col-prev{text-align:right; white-space:nowrap;}
 /* ===== MÀN HẸP: HỌ TÊN ĐẦY ĐỦ, KHÔNG xuống dòng — bảng gọn tối đa,
    rộng quá khung thì .kpi-wrap tự cuộn ngang (dữ liệu không tràn, không gãy dòng). ===== */
 @media (max-width:700px){
+  .kpi-wrap{margin:0 -6px;}                                /* nới bảng sát mép panel: thêm ~12px bề ngang */
   .kpi-wrap th, .kpi-wrap td{white-space:nowrap;}
-  .kpi-wrap tbody td{padding:9px 4px;}
-  .kpi-wrap thead th{padding:8px 4px; font-size:8.5px; letter-spacing:.02em;}
+  .kpi-wrap tbody td{padding:9px 3px;}
+  .kpi-wrap thead th{padding:8px 3px; font-size:8.5px; letter-spacing:.02em;}
   .th-full{display:none;} .th-short{display:inline;}
   th.kpi-id, td.kpi-id{display:none;}                      /* ẩn cột ID (đã có trong pop-up) */
-  .kpi-rank{width:18px; padding-left:2px; padding-right:2px;}
-  /* HỌ TÊN giữ đúng khổ 22ch (theo cỡ chữ 12px của mobile -> tự hẹp lại tương ứng),
+  .kpi-rank{width:16px; padding-left:2px; padding-right:2px;}
+  /* HỌ TÊN giữ đúng khổ 22ch (theo cỡ chữ mobile -> tự hẹp lại tương ứng),
      3 cột số co đúng nội dung -> bảng khít màn hình, không cuộn ngang */
-  .kpi-ten{font-size:12px;}
+  .kpi-ten{font-size:11.5px;}
   th.kpi-col-luot, td.kpi-col-luot, th.kpi-col-val, td.kpi-val, th.kpi-col-prev, td.kpi-col-prev{width:1%;}
   .kpi-pill{padding:0; border:0; background:none; font-size:10.5px;}
   .kpi-xm{display:none;}                                   /* chi tiết XM xem trong pop-up */
