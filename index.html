@@ -558,11 +558,10 @@ thead th.c-loi, tbody td.c-loi{max-width:270px;}
 .kpi-top{box-shadow:inset 3px 0 0 var(--bad);}          /* top 3: vạch đỏ trang trọng bên trái */
 .kpi-id{color:var(--muted); font-variant-numeric:tabular-nums; letter-spacing:.03em;}
 .kpi-ten{font-weight:700; font-size:15px;}
-/* Cột HỌ VÀ TÊN: rộng VỪA KHÍT mẫu "Hà Trọng Thúc Bằng" (18ch) — luôn 1 hàng thẳng.
-   max-width đặt trên SPAN trong ô (đặt trên td bị thuật toán table bỏ qua);
-   tên dài hơn khổ thì cắt "…" (tooltip có tên đầy đủ) */
+/* Cột HỌ VÀ TÊN: rộng TỰ TÍNH theo tên người dài nhất trong bảng (--tenW do renderKpi đặt,
+   đơn vị ch nên tự co giãn theo cỡ chữ desktop/mobile) — tên luôn 1 hàng trọn vẹn, KHÔNG "…" */
 td.kpi-ten{white-space:nowrap;}
-.kpi-ten .tn{display:block; max-width:18ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.kpi-ten .tn{display:block; width:var(--tenW,auto); max-width:none; white-space:nowrap; overflow:visible;}
 /* NV ĐÃ NGHỈ VIỆC — "bay màu" hiện đại, không icon: mờ mạnh + nghiêng + gạch ngang MẢNH,
    phân biệt tức thì trên cả nền sáng/tối mà bảng vẫn sạch */
 .user-resigned{opacity:.45; font-style:italic;
@@ -1586,12 +1585,19 @@ function renderKpi(){
     return base+' <span class="kpi-eq">＝</span>';
   };
   KPI_DATA={nv,ql,ym};
+  // Cột HỌ VÀ TÊN tự co giãn theo TÊN NGƯỜI DÀI NHẤT thật sự trong bảng tháng này
+  // (chỉ quét chuỗi tên ở cột họ tên NV + QL, không tính header/cột khác)
+  // -> tên luôn trọn vẹn 1 hàng, KHÔNG cắt "..." , không thừa khoảng trống
+  const tenDaiNhat=Math.max(0, ...nv.map(x=>String(x.ten||'').length), ...ql.map(x=>String(x.ten||'').length));
+  $('kpiWrap').style.setProperty('--tenW', (tenDaiNhat||18)+'ch');
+  // Tiêu đề cột so sánh đổi ĐỘNG theo tháng liền trước của bộ lọc (04 -> "Tháng 03"; 01 -> "Tháng 12")
+  const pmT=prevYm.split('-')[1];
   const fmt=v=>{const s=String(Math.round(v*100)/100).replace('.',',');return v>0?`<span class="kpi-neg">−${s}%</span>`:'<span class="kpi-zero">0%</span>';};
   const maxK=Math.max(...nv.map(x=>x.kpi),0.0001);
   let h='<table><thead><tr><th class="kpi-rank">#</th><th class="kpi-id">ID</th><th>Họ và tên</th>'
    +'<th class="kpi-col-luot"><span class="th-full">Lượt ghi nhận</span><span class="th-short">Lượt</span></th>'
    +'<th class="kpi-col-val"><span class="th-full">KPI trừ luỹ kế</span><span class="th-short">KPI trừ</span></th>'
-   +'<th class="kpi-col-prev"><span class="th-full">So với tháng trước</span><span class="th-short">So th.trước</span></th></tr></thead><tbody>';
+   +`<th class="kpi-col-prev"><span class="th-full">So với Tháng ${pmT}</span><span class="th-short">Tháng ${pmT}</span></th></tr></thead><tbody>`;
   h+=nv.map((x,i)=>`<tr data-kpi="nv:${i}" class="${i<3?'kpi-top':''}" title="Bấm xem các task trong tháng">
       <td class="kpi-rank">${i+1}</td>
       <td class="kpi-id">${esc(x.id)}</td>
@@ -2179,23 +2185,36 @@ $('pinEye').addEventListener('click',()=>{
   inp.type=hien?'text':'password'; $('pinEye').textContent=hien?'🙈':'👁'; inp.focus();
 });
 
+/* XÁC THỰC TRƯỚC — ĐÚNG PIN MỚI MỞ FORM. (Bản cũ mở form ngay rồi mới kiểm nền:
+   sai PIN vẫn lộ form do race với requestAnimationFrame của hienModal, và server
+   im lặng 12s thì giữ luôn form -> hổng bảo mật.) */
+function chanGhiNhan(){                                    // CHẶN ĐỨNG: ẩn hẳn + xoá trắng nội dung form
+  dongGhiNhan();
+  try{ const f=$('gmFrame'); f.src='about:blank'; f.removeAttribute('src'); }catch(e){}
+}
 function moGhiNhan(){
  hoiPin('Ghi nhận vi phạm 5S','Nhập PIN để mở form ghi nhận').then(pin=>{
   if(pin===null || !pin.trim()) return;
-  napFormTruoc();
-  hienModal('ghiModal');                                   // MỞ NGAY — không đợi mạng
   let daXacThuc=false; try{ daXacThuc=sessionStorage.getItem('ghi5s-ok')==='1'; }catch(e){}
-  if(daXacThuc && pin.trim().length>=4) return;            // phiên này đã xác thực đúng PIN -> khỏi chờ server
+  if(daXacThuc){ napFormTruoc(); hienModal('ghiModal'); return; }   // phiên đã xác thực đúng -> mở ngay
   const cb="cp_"+Date.now();
-  let s=null; const to=setTimeout(done,12000);             // server im lặng -> giữ form (trang vốn công khai)
-  function done(){ clearTimeout(to); delete window[cb]; if(s&&s.parentNode) s.remove(); }
-  window[cb]=resp=>{ done();
-    if(resp && resp.ok===true){ try{ sessionStorage.setItem('ghi5s-ok','1'); }catch(e){} }
-    else if(resp && resp.ok===false){ dongGhiNhan(); alert("Sai PIN."); }
-  };
+  let s=null, xong=false;
+  const to=setTimeout(()=>done(null),12000);               // server im lặng -> coi như KHÔNG xác thực được
+  function done(resp){
+    if(xong) return; xong=true;
+    clearTimeout(to); delete window[cb]; if(s&&s.parentNode) s.remove();
+    if(resp && resp.ok===true){
+      try{ sessionStorage.setItem('ghi5s-ok','1'); }catch(e){}
+      napFormTruoc(); hienModal('ghiModal');
+      return;
+    }
+    chanGhiNhan();                                         // sai PIN / lỗi mạng: KHÔNG mở, ẩn + xoá form
+    alert(resp && resp.ok===false ? "Sai PIN." : "Không xác thực được PIN (mạng/máy chủ). Vui lòng thử lại.");
+  }
+  window[cb]=done;
   s=document.createElement('script');
   s.src=APPSCRIPT_URL+"?action=checkPin&pin="+encodeURIComponent(pin)+"&callback="+cb;
-  s.onerror=done;
+  s.onerror=()=>done(null);
   document.body.appendChild(s);
  });
 }
