@@ -411,11 +411,12 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
   opacity:0; transition:opacity .22s ease; will-change:opacity;}
 #statModal.show{display:flex; opacity:1;}
 #statModal .modal-box{max-width:1400px;}
-/* Chế độ .fit (pop-up luỹ kế bảng dọc): khung CO GIÃN THEO SỐ LẦN VI PHẠM —
-   width:max-content ôm khít nội dung thật, bảng bên trong width:100% giãn lấp đầy khung
-   -> TRIỆT TIÊU khoảng trắng dư bên phải; chạm trần 95vw thì cuộn ngang BÊN TRONG pop-up */
-#statModal.fit .modal-box{width:max-content; min-width:min(360px,92vw); max-width:95vw;}
+/* Chế độ .fit (pop-up luỹ kế bảng dọc): width khung do JS đặt = ĐÚNG px theo số lần vi phạm
+   (1 lần thu gọn, nhiều lần nở ngang) -> triệt tiêu khoảng trắng dư; trần 95vw thì cuộn ngang trong pop-up.
+   (Không dùng width:max-content cho khung: max-content của bảng đo theo chữ KHÔNG ngắt dòng nên phình sai.) */
+#statModal.fit .modal-box{min-width:min(360px,92vw); max-width:95vw;}
 #statModal.fit .vdoc-wrap{width:100%;}
+#statModal.fit .modal-head h2{white-space:normal; overflow-wrap:anywhere;}  /* tiêu đề dài tự xuống dòng, không nong khung */
 .stat-sub{font-size:12px; color:var(--muted); font-weight:400; margin-left:8px;}
 #stBody{padding:0;}
 .stat-table-wrap{overflow-x:auto; max-height:74vh;}
@@ -1662,6 +1663,7 @@ function renderKpi(){
 function moLoiThang(){
   if(!KPI_DATA || !KPI_DATA.loi) return;
   $('statModal').classList.remove('fit');    // pop-up thường: khung rộng chuẩn
+  const b1=document.querySelector('#statModal .modal-box'); if(b1) b1.style.width='';
   const [nam,thang]=KPI_DATA.ym.split('-');
   $('stTitle').textContent='Hạng mục vi phạm · tháng '+thang+'/'+nam+' · '+KPI_DATA.loi.length+' hạng mục';
   $('stBody').innerHTML='<table class="loi-table"><thead><tr><th style="width:44px">#</th><th>Chi tiết hạng mục</th><th style="width:150px;text-align:right">Số lượt ghi nhận</th></tr></thead><tbody>'+
@@ -1690,6 +1692,10 @@ function moKpiChiTiet(loai,idx){
   $('stTitle').textContent=(loai==='nv'?(x.ten+' ('+x.id+')'):(x.ten+' — Quản lý nghiệp vụ'))+' · tháng '+thang+'/'+nam+' · '+rows.length+' task';
   $('stBody').innerHTML=rowsTableDocHTML(rows,kpiOf);
   $('statModal').classList.add('fit');       // khung modal ôm sát bảng dọc theo số lần vi phạm
+  // Đặt width khung = ĐÚNG bề rộng bảng theo số lần (kẹp trần 95vw) -> hết khoảng trắng phải
+  const wKhung=+(($('stBody').querySelector('.vdoc-wrap')||{}).dataset||{}).w||0;
+  const boxFit=document.querySelector('#statModal .modal-box');
+  if(boxFit) boxFit.style.width = wKhung ? Math.min(wKhung+2, Math.round(innerWidth*0.95))+'px' : '';
   hienModal('statModal');
 }
 
@@ -1788,13 +1794,14 @@ function rowsTableDocHTML(rows, kpiOf){
   const mob = window.matchMedia && matchMedia('(max-width:700px)').matches;
   const WF = mob ? 100 : 132, WL = mob ? 172 : 220;          // cột thông tin / mỗi cột Lần (px)
   const colgroup = `<colgroup><col style="width:${WF}px">${cols.map(()=>`<col style="width:${WL}px">`).join('')}</colgroup>`;
-  // min-width px theo số lần (khung .fit ôm sát) + width:100% -> bảng GIÃN LẤP ĐẦY khung,
-  // không chừa khoảng trắng bên phải khi khung rộng hơn bảng (vd tiêu đề dài, chỉ 1 lần vi phạm)
-  return `<div class="vdoc-wrap"><table class="vdoc" style="table-layout:fixed; width:100%; min-width:${WF + cols.length*WL}px">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  // data-w = bề rộng chuẩn theo số lần -> moKpiChiTiet đặt width khung modal ĐÚNG px này
+  // (ôm khít, không khoảng trắng phải); bảng width:100% giãn lấp đầy khung, thiếu chỗ thì cuộn ngang
+  return `<div class="vdoc-wrap" data-w="${WF + cols.length*WL}"><table class="vdoc" style="table-layout:fixed; width:100%; min-width:${WF + cols.length*WL}px">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 function moThongKe(key){
   const s=STATS[key]; if(!s) return;
   $('statModal').classList.remove('fit');    // pop-up thường: khung rộng chuẩn
+  const b2=document.querySelector('#statModal .modal-box'); if(b2) b2.style.width='';
   const rows=s.pick(curD).slice().sort(cmpNgayDesc);
   const num=s.count?s.count(rows):rows.length;
   let body;
