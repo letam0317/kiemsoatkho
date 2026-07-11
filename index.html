@@ -492,8 +492,10 @@ thead th.c-status, tbody td.c-status{width:150px;}
 #pinModal.show{display:flex; opacity:1;}
 .pin-box{background:var(--surface); border:1px solid var(--border); border-radius:18px; width:100%; max-width:350px;
   padding:26px 24px 20px; box-shadow:var(--shadow); text-align:center; animation:paneIn .35s var(--ez-apple) both;}
-.pin-ico{width:52px; height:52px; margin:0 auto 12px; border-radius:16px; display:flex; align-items:center; justify-content:center;
-  font-size:23px; background:var(--hover); border:1px solid var(--border);}
+.pin-ico{width:54px; height:54px; margin:0 auto 12px; border-radius:16px; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 50% 30%, rgba(232,69,46,.16), transparent 72%), var(--hover);
+  border:1px solid var(--border); box-shadow:inset 0 1px 0 rgba(255,255,255,.07);}
+.pin-ico svg{display:block; filter:drop-shadow(0 2px 5px rgba(184,26,4,.38));}
 .pin-box h3{margin:0 0 4px; font-size:16px; font-weight:800; color:var(--text);}
 .pin-desc{margin:0 0 16px; font-size:12.5px; color:var(--muted); line-height:1.45; min-height:16px;}
 .pin-field{position:relative; margin-bottom:6px;}
@@ -552,6 +554,8 @@ thead th.c-loi, tbody td.c-loi{max-width:270px;}
 .kpi-top{box-shadow:inset 3px 0 0 var(--bad);}          /* top 3: vạch đỏ trang trọng bên trái */
 .kpi-id{color:var(--muted); font-variant-numeric:tabular-nums; letter-spacing:.03em;}
 .kpi-ten{font-weight:700; font-size:15px;}
+/* NV ĐÃ NGHỈ VIỆC: tên xám trầm (kiểu tên thành viên bị chặn trên Facebook) */
+.nv-nghi{color:#8a8d91 !important; font-weight:600;}
 .kpi-pill{display:inline-block; padding:3px 11px; border:1px solid var(--border); border-radius:999px;
   font-weight:700; font-size:12.5px; background:var(--surface2);}
 th.kpi-col-val, td.kpi-val{text-align:right;}
@@ -576,10 +580,11 @@ th.kpi-col-prev, td.kpi-col-prev{text-align:right; white-space:nowrap;}
   .kpi-wrap thead th{padding:8px 4px; font-size:8.5px; letter-spacing:.02em;}
   .th-full{display:none;} .th-short{display:inline;}
   th.kpi-id, td.kpi-id{display:none;}                      /* ẩn cột ID (đã có trong pop-up) */
-  .kpi-rank{width:20px; padding-left:2px; padding-right:2px;}
+  .kpi-rank{width:18px; padding-left:2px; padding-right:2px;}
+  /* HỌ TÊN nhận TOÀN BỘ phần dư (width:99%), 1 dòng đầy đủ; 3 cột số co đúng nội dung (1%)
+     và ôm sát mép phải -> hết khoảng trống thừa, không phải cuộn ngang */
+  td.kpi-ten{width:99%;}
   .kpi-ten{font-size:12px;}                                /* họ tên ĐẦY ĐỦ, 1 dòng, không cắt */
-  /* 3 cột số CO THEO NỘI DUNG (width:1%) -> nhường hết bề ngang cho cột Họ tên,
-     cả bảng vừa khít màn di động, không phải cuộn ngang */
   th.kpi-col-luot, td.kpi-col-luot, th.kpi-col-val, td.kpi-val, th.kpi-col-prev, td.kpi-col-prev{width:1%;}
   .kpi-pill{padding:0; border:0; background:none; font-size:10.5px;}
   .kpi-xm{display:none;}                                   /* chi tiết XM xem trong pop-up */
@@ -599,17 +604,25 @@ table.vdoc{border-collapse:separate; border-spacing:0; min-width:max-content;}
   padding:11px 14px; min-width:112px; max-width:150px; white-space:normal; line-height:1.35; vertical-align:top;
   border-right:1px solid var(--border); box-shadow:6px 0 10px -6px rgba(0,0,0,.28);}
 .vdoc thead th{position:sticky; top:0; z-index:2; background:var(--surface2); padding:9px 14px; text-align:left; border-bottom:1px solid var(--border);}
+.vdoc thead th.vd-h{cursor:pointer;}
 .vdoc thead th.vd-corner{z-index:4;}
 .vd-lan{display:inline-block; padding:3px 11px; border-radius:999px; border:1px solid var(--border);
   background:var(--hover); font-weight:800; font-size:11px; letter-spacing:.05em; color:var(--text);}
-.vdoc tbody td{padding:11px 14px; min-width:180px; max-width:300px; white-space:normal; line-height:1.5;
+.vd-d{display:block; margin-top:4px; font-size:10.5px; font-weight:600; color:var(--muted); font-variant-numeric:tabular-nums;}
+.vdoc tbody td{padding:11px 14px; white-space:normal; line-height:1.5;
   vertical-align:top; border-top:1px solid var(--border); cursor:pointer;}
+/* NỘI DUNG GÓI TRONG Ô: chặn tràn sang cột lần khác (max-width trên td bị table bỏ qua,
+   nên ép qua div .vd-c bên trong ô) */
+.vdoc .vd-c{min-width:150px; max-width:280px; overflow-wrap:anywhere; word-break:break-word;}
 .vdoc tbody td+td, .vdoc thead th.vd-h+th.vd-h{border-left:1px solid var(--border);}  /* vách mảnh giữa các lượt */
-.vdoc tbody td:hover{background:var(--hover);}
+/* Rê chuột: tô SÁNG CẢ CỘT của lần đang trỏ (không tô theo hàng — mỗi CỘT mới là 1 task) */
+#statModal .vdoc tbody tr:hover{background:transparent;}
+#statModal .vdoc td.vd-hl, #statModal .vdoc th.vd-hl{background:var(--hover);}
 .vdoc tbody tr:first-child td{border-top:0;}
 @media (max-width:700px){
   .vdoc th.vd-f{min-width:86px; max-width:104px; padding:9px 9px; font-size:9.5px;}
-  .vdoc tbody td{min-width:150px; max-width:230px; padding:9px 10px; font-size:12px;}
+  .vdoc tbody td{padding:9px 10px; font-size:12px;}
+  .vdoc .vd-c{min-width:130px; max-width:210px;}
 }
 /* ===== POP-UP chi tiết (statModal): dữ liệu GỌN TRONG Ô, bảng CUỘN NGANG trong pop-up ===== */
 #stBody{overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;}
@@ -982,7 +995,18 @@ html{scroll-behavior:smooth;}
 <!-- ===== MODAL NHẬP PIN (thay prompt() thô của trình duyệt) ===== -->
 <div id="pinModal">
   <div class="pin-box">
-    <div class="pin-ico">🔒</div>
+    <!-- Ngôi sao đỏ kiểu quân hiệu: sao đỏ đặc + viền trắng mảnh + viền đỏ ngoài cùng -->
+    <div class="pin-ico"><svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true">
+      <defs><radialGradient id="pinStarG" cx="50%" cy="38%" r="78%">
+        <stop offset="0%" stop-color="#ff5a3c"/><stop offset="55%" stop-color="#e8452e"/><stop offset="100%" stop-color="#b81a04"/>
+      </radialGradient></defs>
+      <polygon points="12,2 14.6,8.6 21.8,9 16.2,13.6 18.2,20.6 12,16.6 5.8,20.6 7.8,13.6 2.2,9 9.4,8.6"
+        fill="none" stroke="#c21a04" stroke-width="2.6" stroke-linejoin="round"/>
+      <polygon points="12,2 14.6,8.6 21.8,9 16.2,13.6 18.2,20.6 12,16.6 5.8,20.6 7.8,13.6 2.2,9 9.4,8.6"
+        fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"/>
+      <polygon points="12,2 14.6,8.6 21.8,9 16.2,13.6 18.2,20.6 12,16.6 5.8,20.6 7.8,13.6 2.2,9 9.4,8.6"
+        fill="url(#pinStarG)"/>
+    </svg></div>
     <h3 id="pinTitle">Nhập PIN</h3>
     <p class="pin-desc" id="pinDesc"></p>
     <div class="pin-field">
@@ -1008,7 +1032,7 @@ const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1v
 
 let H = [], ROWS = [];
 let iCode, iLink, iName, iStatus, iCreatedAt, iAnh, iNgayVP, iLoi, iViTri, iNVVP, iQLTT, iVideo, iNVName, iBienBan;
-let iB2loi, iKP, iB11ND, iDieuHuong=-1, STATUS_COLS = [];
+let iB2loi, iKP, iB11ND, iDieuHuong=-1, STATUS_COLS = [], B3_COLS = [];
 let firstLoad = true, dangCho = false, galleries = {}, rowGal = {};
 
 /* Bảng tra Mã NV → Họ tên do người dùng khai báo tay (ưu tiên cao nhất).
@@ -1291,6 +1315,9 @@ const kpVP  = r => (iKP>=0 ? String(r[iKP]||"").trim() : "");
 // Task ĐÃ HUỶ (vô hiệu): Status tổng bị cancel HOẶC bước "Điều hướng" bị cancel (flow bị huỷ).
 // KHÔNG dùng "bất kỳ bước nào cancel" — các nhánh B3.x không dùng bị cancel là chuyện bình thường.
 const daHuy = r => /cancel/i.test(String(r[iStatus]||"")) || (iDieuHuong>=0 && /cancel/i.test(String(r[iDieuHuong]||"")));
+// Bước "B3.x Ghi nhận vi phạm" của task ĐÃ HOÀN THÀNH? (điều kiện để tính KPI trừ).
+// Dữ liệu cũ không có cột B3 -> coi như đạt để không mất số liệu.
+const b3Xong = r => !B3_COLS.length || B3_COLS.some(i => /finished/i.test(String(r[i]||"")));
 // Khoá thời gian để sắp xếp (mới nhất → cũ nhất)
 function tsOf(v){
   const m = String(v).match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)$/);
@@ -1340,6 +1367,9 @@ function taiDuLieu(){
       iB11ND=idxOf("B1.1 Nhân viên xác nhận lỗi vi phạm ▸ Người thực hiện");
       STATUS_COLS=H.map((h,i)=>i).filter(i=>H[i]==="Status"||nhanCuoi(H[i]).toLowerCase()==="status");
       iDieuHuong=idxOf("Điều hướng ▸ Status");   // cờ nhận biết task bị HUỶ (flow vô hiệu)
+      // Các cột Status của bước "B3.x Ghi nhận vi phạm ..." (B3.1 vệ sinh / B3.2 quy định / B3.3 đóng gói
+      // — mỗi task chỉ đi 1 nhánh): KPI chỉ trừ khi bước ghi nhận này HOÀN THÀNH (Finished)
+      B3_COLS=H.map((h,i)=>i).filter(i=>/^B3\./.test(H[i]) && /Ghi nhận vi phạm/i.test(H[i]) && /▸\s*Status$/.test(H[i]));
       // Dựng bảng Mã NV → Họ tên từ tên người tự xác nhận ở B1.1 (mỗi mã lấy tên đầu tiên gặp được)
       NAME_BY_CODE={};
       if(iB11ND>=0) ROWS.forEach(r=>{
@@ -1488,6 +1518,7 @@ function tinhThangKpi(ym){
   const grp={}, tenMa={};
   ROWS.forEach(r=>{
     if(ymOf(r)!==ym || daHuy(r)) return;          // bỏ task đã huỷ
+    if(!b3Xong(r)) return;                        // CHỈ trừ KPI khi bước B3.x Ghi nhận vi phạm HOÀN THÀNH
     const t=ngayMs(r[iNgayVP]);
     const names=iNVName>=0?String(r[iNVName]||'').split(',').map(s=>s.trim()):[];
     codeVP(r).split(',').map(s=>s.trim()).filter(Boolean).forEach((cd,ci)=>{
@@ -1498,7 +1529,9 @@ function tinhThangKpi(ym){
   const nv=Object.entries(grp).map(([cd,list])=>{
     list.sort((a,b)=>a.t-b.t);
     let kpi=0; list.forEach((e,i)=>{ const k=Number(kpiTheoLoi(e.r[iLoi],i+1)); if(!isNaN(k)) kpi+=k; });
-    return {id:cd, ten:NV_MAP[cd]||tenMa[cd]||NAME_BY_CODE[cd]||("Mã "+cd), luot:list.length, kpi, list:list.map(e=>e.r)};
+    // nghi = ĐÃ NGHỈ VIỆC: bộ đồng bộ tra danh bạ WMS không còn tên cho mã này
+    // (cột "Tên NV vi phạm" trống), chỉ còn tên khai tay NV_MAP / tự xác nhận B1.1
+    return {id:cd, ten:NV_MAP[cd]||tenMa[cd]||NAME_BY_CODE[cd]||("Mã "+cd), luot:list.length, kpi, list:list.map(e=>e.r), nghi:!tenMa[cd]};
   }).filter(x=>!laQL(x.ten))                              // bỏ các quản lý khỏi bảng NV
     .sort((a,b)=>b.kpi-a.kpi||b.luot-a.luot);
   // --- Quản lý nghiệp vụ ---
@@ -1506,6 +1539,7 @@ function tinhThangKpi(ym){
     let xm=0,kxm=0; const list=[];
     ROWS.forEach(r=>{
       if(ymOf(r)!==ym || daHuy(r)) return;        // bỏ task đã huỷ
+      if(!b3Xong(r)) return;                      // cùng luật B3.x hoàn thành như KPI NV
       if(chuanTen(iQLTT>=0?r[iQLTT]:'').indexOf(key)<0) return;
       if(chuanTen(nameVP(r)).indexOf(key)>=0) return;        // chính QL là NV vi phạm -> không tính
       if(codeVP(r)) xm++; else kxm++;
@@ -1544,7 +1578,7 @@ function renderKpi(){
   h+=nv.map((x,i)=>`<tr data-kpi="nv:${i}" class="${i<3?'kpi-top':''}" title="Bấm xem các task trong tháng">
       <td class="kpi-rank">${i+1}</td>
       <td class="kpi-id">${esc(x.id)}</td>
-      <td class="kpi-ten" title="${esc(x.ten)}">${esc(x.ten)}</td>
+      <td class="kpi-ten${x.nghi?' nv-nghi':''}" title="${esc(x.ten)}${x.nghi?' — đã nghỉ việc':''}">${esc(x.ten)}</td>
       <td class="kpi-col-luot"><span class="kpi-pill">${x.luot} lượt</span></td>
       <td class="kpi-val">${fmt(x.kpi)}<div class="kpi-bar" style="width:${Math.max(6,Math.round(x.kpi/maxK*100))}%"></div></td>
       <td class="kpi-col-prev">${soSanh(x.kpi,prevNv[x.id]!=null?prevNv[x.id]:null)}</td></tr>`).join('')
@@ -1678,10 +1712,12 @@ function rowsTableHTML(rows, kpiOf){
     <th>Ngày khai báo</th><th>Vị trí</th><th>Lỗi vi phạm</th><th>NV vi phạm</th>
     <th>QL trực tiếp</th><th>Trạng thái</th>${kpiOf?'<th>KPI trừ</th>':''}</tr></thead><tbody>${tr}</tbody></table>`;
 }
-/* Bảng DỌC cho pop-up luỹ kế: cột 1 = TÊN TRƯỜNG (đóng băng khi cuộn ngang),
-   mỗi cột sau = 1 lần vi phạm theo thứ tự thời gian (Lần 1 sớm nhất). Bấm 1 ô -> mở chi tiết task. */
+/* Bảng DỌC cho pop-up luỹ kế: cột 1 = TÊN TRƯỜNG (đóng băng khi cuộn ngang), mỗi cột sau = 1 LẦN vi phạm.
+   Số "Lần n" đánh theo thời gian (Lần 1 sớm nhất) nhưng HIỂN THỊ lần MỚI NHẤT sát cột thông tin.
+   Bấm bất kỳ Ô/TIÊU ĐỀ của 1 lần -> mở chi tiết task của lần đó (rê chuột tô CẢ CỘT). */
 function rowsTableDocHTML(rows, kpiOf){
   const asc = rows.slice().sort((a,b)=>(ngayMs(a[iNgayVP])||0)-(ngayMs(b[iNgayVP])||0));
+  const cols = asc.map((r,i)=>({r, lan:i+1})).reverse();     // mới nhất đứng trước
   const fields = [
     ['Ngày khai báo', r=>esc(fmtNgay(r[iNgayVP]))],
     ['Vị trí',        r=>esc(r[iViTri]||'—')],
@@ -1691,10 +1727,12 @@ function rowsTableDocHTML(rows, kpiOf){
     ['Trạng thái',    r=>statusCell(r)],
   ];
   if(kpiOf) fields.push(['KPI trừ', r=>kpiOf(r)]);
+  const p2=n=>String(n).padStart(2,'0');
+  const ngayNgan=r=>{const t=ngayMs(r[iNgayVP]); if(t==null) return ''; const d=new Date(t); return p2(d.getDate())+'/'+p2(d.getMonth()+1);};
   const head = '<tr><th class="vd-f vd-corner"></th>'
-    + asc.map((r,i)=>`<th class="vd-h"><span class="vd-lan">Lần ${i+1}</span></th>`).join('') + '</tr>';
+    + cols.map(c=>`<th class="vd-h" data-i="${ROWS.indexOf(c.r)}" title="Bấm xem chi tiết task"><span class="vd-lan">Lần ${c.lan}</span><span class="vd-d">${ngayNgan(c.r)}</span></th>`).join('') + '</tr>';
   const body = fields.map(([lbl,fn])=>
-    `<tr><th class="vd-f">${lbl}</th>${asc.map(r=>`<td data-i="${ROWS.indexOf(r)}" title="Bấm xem chi tiết task">${fn(r)}</td>`).join('')}</tr>`).join('');
+    `<tr><th class="vd-f">${lbl}</th>${cols.map(c=>`<td data-i="${ROWS.indexOf(c.r)}" title="Bấm xem chi tiết task"><div class="vd-c">${fn(c.r)}</div></td>`).join('')}</tr>`).join('');
   return `<div class="vdoc-wrap"><table class="vdoc"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 function moThongKe(key){
@@ -2080,7 +2118,7 @@ function hienGioDuLieu(ms,laServer){
   const d=new Date(ms), nay=new Date();
   const cungNgay=d.getFullYear()===nay.getFullYear()&&d.getMonth()===nay.getMonth()&&d.getDate()===nay.getDate();
   $('dfTxt').textContent=(cungNgay?'':p(d.getDate())+'/'+p(d.getMonth()+1)+' · ')+p(d.getHours())+':'+p(d.getMinutes());
-  el.title=(laServer?'Dữ liệu được đồng bộ vào Sheet lúc ':'Dữ liệu tải về trình duyệt lúc ')
+  el.title=(laServer?'Dữ liệu lấy từ API WMS lúc ':'Dữ liệu tải về trình duyệt lúc ')
     +p(d.getHours())+':'+p(d.getMinutes())+' ngày '+p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear();
   el.hidden=false;
 }
@@ -2240,6 +2278,16 @@ $('modal').addEventListener('click', e=>{ if(e.target.id==='modal') dongModal();
 // Thẻ thống kê -> pop-up chi tiết
 $('cards').addEventListener('click', e=>{ const c=e.target.closest('[data-stat]'); if(c) moThongKe(c.dataset.stat); });
 $('stClose').addEventListener('click', dongThongKe);
+// Bảng dọc pop-up luỹ kế: rê chuột -> tô SÁNG CẢ CỘT của lần đang trỏ (mỗi cột = 1 task)
+$('stBody').addEventListener('mouseover', e=>{
+  const tbl=e.target.closest('table.vdoc'); if(!tbl) return;
+  const o=e.target.closest('[data-i]');
+  tbl.querySelectorAll('.vd-hl').forEach(x=>x.classList.remove('vd-hl'));
+  if(o) tbl.querySelectorAll(`[data-i="${o.dataset.i}"]`).forEach(x=>x.classList.add('vd-hl'));
+});
+$('stBody').addEventListener('mouseleave', ()=>{
+  document.querySelectorAll('.vdoc .vd-hl').forEach(x=>x.classList.remove('vd-hl'));
+});
 $('statModal').addEventListener('click', e=>{ if(e.target.id==='statModal') dongThongKe(); });
 $('lbClose').addEventListener('click', dongLB);
 $('lbPrev').addEventListener('click', e=>{ e.stopPropagation(); lbMove(-1); });
