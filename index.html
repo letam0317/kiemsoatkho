@@ -479,6 +479,39 @@ thead th.c-status, tbody td.c-status{width:150px;}
 .hmm-foot{padding:0 16px 14px; font-size:11.5px; color:var(--muted);}
 @media (max-width:560px){ .hmm-grid{grid-template-columns:1fr;} #hmModal{padding:10px;} }
 
+/* ===== CHIP GIỜ CẬP NHẬT DỮ LIỆU — nhỏ, trầm, không thô ===== */
+.data-fresh{display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border:1px solid var(--border);
+  border-radius:999px; background:var(--surface2); color:var(--muted); font-size:11.5px; font-weight:600;
+  font-variant-numeric:tabular-nums; white-space:nowrap; cursor:default;}
+.df-dot{width:6px; height:6px; border-radius:50%; background:var(--good); animation:dfPulse 2.6s ease-out infinite;}
+@keyframes dfPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.45);} 70%{box-shadow:0 0 0 5px rgba(34,197,94,0);} 100%{box-shadow:0 0 0 0 rgba(34,197,94,0);}}
+.df-lbl{color:var(--muted);}
+@media (max-width:700px){ .data-fresh{padding:4px 8px; font-size:10.5px; gap:5px;} .df-lbl{display:none;} }
+/* ===== MODAL NHẬP PIN — thẻ gọn giữa màn, hiện đại (thay prompt thô) ===== */
+#pinModal{position:fixed; inset:0; background:var(--overlay); z-index:80; display:none; align-items:center; justify-content:center; padding:16px; opacity:0; transition:opacity .2s ease;}
+#pinModal.show{display:flex; opacity:1;}
+.pin-box{background:var(--surface); border:1px solid var(--border); border-radius:18px; width:100%; max-width:350px;
+  padding:26px 24px 20px; box-shadow:var(--shadow); text-align:center; animation:paneIn .35s var(--ez-apple) both;}
+.pin-ico{width:52px; height:52px; margin:0 auto 12px; border-radius:16px; display:flex; align-items:center; justify-content:center;
+  font-size:23px; background:var(--hover); border:1px solid var(--border);}
+.pin-box h3{margin:0 0 4px; font-size:16px; font-weight:800; color:var(--text);}
+.pin-desc{margin:0 0 16px; font-size:12.5px; color:var(--muted); line-height:1.45; min-height:16px;}
+.pin-field{position:relative; margin-bottom:6px;}
+#pinInput{width:100%; box-sizing:border-box; padding:13px 44px 13px 44px; border-radius:12px; border:1.5px solid var(--border);
+  background:var(--surface2); color:var(--text); font-size:18px; font-weight:700; letter-spacing:.3em; text-align:center;
+  outline:none; transition:border-color .15s ease, box-shadow .15s ease;}
+#pinInput::placeholder{letter-spacing:.3em; color:var(--muted); opacity:.6;}
+#pinInput:focus{border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);}
+#pinEye{position:absolute; right:6px; top:50%; transform:translateY(-50%); border:0; background:none; cursor:pointer;
+  font-size:16px; color:var(--muted); padding:8px; line-height:1;}
+#pinEye:hover{color:var(--text);}
+.pin-err{min-height:17px; font-size:12px; color:var(--bad); font-weight:700; margin:2px 0 10px;}
+.pin-acts{display:flex; gap:10px;}
+.pin-acts button{flex:1; padding:11px 0; border-radius:12px; font-weight:700; font-size:13.5px; cursor:pointer;
+  border:1px solid var(--border); background:var(--surface2); color:var(--text); transition:filter .15s ease;}
+.pin-acts button:hover{filter:brightness(1.08);}
+#pinOk{background:var(--accent); border-color:var(--accent); color:var(--accent-text);}
+#pinOk:hover{background:var(--accent-hover); border-color:var(--accent-hover); filter:none;}
 /* ===== MODAL FORM GHI NHẬN 5S (nhúng form-5s qua iframe) ===== */
 #ghiModal{position:fixed; inset:0; background:var(--overlay); z-index:70; display:none; align-items:center; justify-content:center; padding:12px; opacity:0; transition:opacity .2s ease;}
 #ghiModal.show{display:flex; opacity:1;}
@@ -539,18 +572,44 @@ th.kpi-col-prev, td.kpi-col-prev{text-align:right; white-space:nowrap;}
    rộng quá khung thì .kpi-wrap tự cuộn ngang (dữ liệu không tràn, không gãy dòng). ===== */
 @media (max-width:700px){
   .kpi-wrap th, .kpi-wrap td{white-space:nowrap;}
-  .kpi-wrap tbody td{padding:10px 6px;}
-  .kpi-wrap thead th{padding:9px 6px; font-size:9px; letter-spacing:.03em;}
+  .kpi-wrap tbody td{padding:9px 4px;}
+  .kpi-wrap thead th{padding:8px 4px; font-size:8.5px; letter-spacing:.02em;}
   .th-full{display:none;} .th-short{display:inline;}
   th.kpi-id, td.kpi-id{display:none;}                      /* ẩn cột ID (đã có trong pop-up) */
-  .kpi-rank{width:24px; padding-left:2px; padding-right:2px;}
-  .kpi-ten{font-size:12.5px;}                              /* họ tên ĐẦY ĐỦ, 1 dòng */
-  .kpi-pill{padding:0; border:0; background:none; font-size:11.5px;}
+  .kpi-rank{width:20px; padding-left:2px; padding-right:2px;}
+  .kpi-ten{font-size:12px;}                                /* họ tên ĐẦY ĐỦ, 1 dòng, không cắt */
+  /* 3 cột số CO THEO NỘI DUNG (width:1%) -> nhường hết bề ngang cho cột Họ tên,
+     cả bảng vừa khít màn di động, không phải cuộn ngang */
+  th.kpi-col-luot, td.kpi-col-luot, th.kpi-col-val, td.kpi-val, th.kpi-col-prev, td.kpi-col-prev{width:1%;}
+  .kpi-pill{padding:0; border:0; background:none; font-size:10.5px;}
   .kpi-xm{display:none;}                                   /* chi tiết XM xem trong pop-up */
-  .kpi-val{font-size:13px; min-width:0;}
+  .kpi-val{font-size:12px; min-width:0;}
   .kpi-bar{display:none;}
-  .kpi-prev,.kpi-up,.kpi-down,.kpi-prev-non{font-size:10px;}
+  .kpi-prev,.kpi-up,.kpi-down,.kpi-prev-non{font-size:9.5px;}
+  /* "So với tháng trước": xếp 2 tầng (tháng trước / chênh lệch) cho cột thật hẹp */
+  td.kpi-col-prev .kpi-up, td.kpi-col-prev .kpi-down, td.kpi-col-prev .kpi-eq{display:block; line-height:1.25;}
   .kb-lbl{font-size:9px;}
+}
+/* ===== POP-UP LUỸ KẾ: BẢNG DỌC — cột trường ĐÓNG BĂNG bên trái, mỗi LẦN vi phạm 1 cột,
+   nhiều lượt thì cuộn ngang. Ngăn cách bằng đường kẻ mảnh + pill "Lần n" — gọn, hiện đại. ===== */
+.vdoc-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%; border:1px solid var(--border); border-radius:14px;}
+table.vdoc{border-collapse:separate; border-spacing:0; min-width:max-content;}
+.vdoc th.vd-f{position:sticky; left:0; z-index:3; background:var(--surface2); text-align:left;
+  font-size:10.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted);
+  padding:11px 14px; min-width:112px; max-width:150px; white-space:normal; line-height:1.35; vertical-align:top;
+  border-right:1px solid var(--border); box-shadow:6px 0 10px -6px rgba(0,0,0,.28);}
+.vdoc thead th{position:sticky; top:0; z-index:2; background:var(--surface2); padding:9px 14px; text-align:left; border-bottom:1px solid var(--border);}
+.vdoc thead th.vd-corner{z-index:4;}
+.vd-lan{display:inline-block; padding:3px 11px; border-radius:999px; border:1px solid var(--border);
+  background:var(--hover); font-weight:800; font-size:11px; letter-spacing:.05em; color:var(--text);}
+.vdoc tbody td{padding:11px 14px; min-width:180px; max-width:300px; white-space:normal; line-height:1.5;
+  vertical-align:top; border-top:1px solid var(--border); cursor:pointer;}
+.vdoc tbody td+td, .vdoc thead th.vd-h+th.vd-h{border-left:1px solid var(--border);}  /* vách mảnh giữa các lượt */
+.vdoc tbody td:hover{background:var(--hover);}
+.vdoc tbody tr:first-child td{border-top:0;}
+@media (max-width:700px){
+  .vdoc th.vd-f{min-width:86px; max-width:104px; padding:9px 9px; font-size:9.5px;}
+  .vdoc tbody td{min-width:150px; max-width:230px; padding:9px 10px; font-size:12px;}
 }
 /* ===== POP-UP chi tiết (statModal): dữ liệu GỌN TRONG Ô, bảng CUỘN NGANG trong pop-up ===== */
 #stBody{overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;}
@@ -632,7 +691,7 @@ th.kpi-col-prev, td.kpi-col-prev{text-align:right; white-space:nowrap;}
 @keyframes paneIn{from{opacity:0; transform:translate3d(0,14px,0) scale(.994);} to{opacity:1; transform:none;}}
 /* overlay kính mờ */
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)){
-  #modal,#statModal,#hmModal,#ghiModal,#lightbox{backdrop-filter:blur(9px); -webkit-backdrop-filter:blur(9px);}
+  #modal,#statModal,#hmModal,#ghiModal,#pinModal,#lightbox{backdrop-filter:blur(9px); -webkit-backdrop-filter:blur(9px);}
 }
 /* sheet: rơi vào + nảy nhẹ rồi đậu (spring settle) */
 @keyframes sheetIn{0%{opacity:0; transform:translate3d(0,24px,0) scale(.965);}
@@ -685,6 +744,7 @@ html{scroll-behavior:smooth;}
       <h1 class="brand-title" id="brandTitle"></h1>
     </div>
     <div class="head-right">
+      <span id="dataFresh" class="data-fresh" hidden><span class="df-dot"></span><span class="df-lbl">Dữ liệu</span><span id="dfTxt"></span></span>
       <button id="btnGhiNhan" title="Ghi nhận vi phạm 5S (cần PIN)">+ Ghi nhận 5S</button>
       <div class="settings" id="settingsWrap">
         <button id="btnSettings" title="Cài đặt hiển thị & dữ liệu" aria-label="Mở cài đặt"><span class="bars"></span></button>
@@ -919,6 +979,23 @@ html{scroll-behavior:smooth;}
     <iframe id="gmFrame" title="Form ghi nhận 5S" allow="camera;microphone"></iframe>
   </div>
 </div>
+<!-- ===== MODAL NHẬP PIN (thay prompt() thô của trình duyệt) ===== -->
+<div id="pinModal">
+  <div class="pin-box">
+    <div class="pin-ico">🔒</div>
+    <h3 id="pinTitle">Nhập PIN</h3>
+    <p class="pin-desc" id="pinDesc"></p>
+    <div class="pin-field">
+      <input id="pinInput" type="password" autocomplete="off" inputmode="text" placeholder="••••••" aria-label="Mã PIN">
+      <button id="pinEye" type="button" title="Hiện/ẩn PIN" aria-label="Hiện hoặc ẩn PIN">👁</button>
+    </div>
+    <div class="pin-err" id="pinErr"></div>
+    <div class="pin-acts">
+      <button id="pinCancel" type="button">Huỷ</button>
+      <button id="pinOk" type="button">Xác nhận</button>
+    </div>
+  </div>
+</div>
 <input type="file" id="bbFile" accept="image/*" multiple style="display:none">
 
 
@@ -938,71 +1015,200 @@ let firstLoad = true, dangCho = false, galleries = {}, rowGal = {};
    Thêm dòng "mã":"Họ tên" vào đây nếu muốn ép hiển thị tên cụ thể. */
 const NV_MAP = {
   "17131": "Lưu Học Danh",
+  "20334": "Võ Văn Đức",
+  "20352": "Lâm Xuân Hầm",
+  "20552": "Phạm Lê Bảo Như",
+  "21233": "Phan Đình Lâm",
+  "21253": "Phạm Như Thiên",
   "23751": "Phùng Lê Cao Minh",
   "38125": "Mai Lê Hoàng Phi",
+  "220830": "Nguyễn Nguyệt Quỳnh",
+  "220842": "Huỳnh Nguyễn Như",
+  "221292": "Bùi Thị Lan Hương",
+  "221478": "Diệp Quốc Hải",
   "221628": "Mai Thành Ý",
+  "221640": "Trần Phước Thịnh",
+  "221737": "Thái Lý Thạch",
+  "221740": "Võ Văn Huy",
+  "221763": "Trần Tuyết Xuân Hương",
+  "221910": "Nguyễn Bảo Duy",
+  "221921": "Nguyễn Thị Thảo Nguyên",
+  "221959": "Lâm Thanh Tú",
   "221986": "Nguyễn Thị Kim Ngân",
+  "222081": "Lê Minh Toàn",
+  "230017": "Phan Trọng Hiếu",
+  "230204": "Lê Ngọc Sang",
+  "230375": "Tăng Hiến Long",
   "230442": "Hà Trọng Thúc Bằng",
+  "230918": "Trần Thế Nhật",
+  "231902": "Nguyễn Đình Nghi",
   "231911": "Trần Quang Lực",
+  "231980": "Nguyễn Thị Tuyết Trinh",
   "232086": "Thạch Nghĩa",
   "232178": "Nguyễn Thị Yến Nhi",
+  "232219": "Nguyễn Huỳnh Như",
+  "232535": "Phạm Trần Gia Hân",
   "232563": "Lê Ngân Bảo Khánh",
+  "232564": "Nguyễn Tăng Hậu",
+  "232852": "Lê Hồng Sơn",
+  "232896": "Nguyễn Thị Thúy Phượng",
   "232969": "Nguyễn Đức Luyện",
+  "232971": "Phùng Tấn Phong",
   "233038": "Nguyễn Chí Hữu",
+  "233134": "Nguyễn Thành Long",
   "233135": "Lê Chí Tâm",
+  "233154": "Nguyễn Văn Quý",
+  "240024": "Nguyễn Ngọc Thành",
+  "240290": "Phan Thị Ngọc Hân",
+  "240304": "Nguyễn Thị Mỹ Châu",
   "240349": "Lê Thị Ngọc Hương",
   "240354": "Nguyễn Thị Tuyết Trâm",
+  "240500": "Trần Yến Nhi",
   "240519": "Lu Ngọc Phượng",
+  "240534": "Nguyễn Thị Trang Anh",
+  "240646": "Trần Thị Thùy Linh",
+  "240831": "Nguyễn Thị Mai Quỳnh",
+  "240905": "Nguyễn Thị Thanh Trúc",
+  "241030": "Nguyễn Anh Tài",
+  "241102": "Cao Lương Bảo Cường",
+  "241147": "Lâm Gia Mẫn",
+  "241249": "Lê Thị Phương Nhung",
+  "241337": "Đoàn Thị Thanh Trang",
   "241418": "Châu Ngọc Bảo Thy",
   "241492": "Nguyễn Thị Tuyết Nga",
+  "241591": "Nguyễn Thị Hoa",
   "241615": "Đinh Ngọc Kiều Oanh",
   "241616": "Nguyễn Ngọc Thanh Ngân",
   "241744": "Huỳnh Ngọc Tuyền",
+  "241825": "Trần Khánh Nha",
   "241940": "Lê Hồng Đào",
+  "242023": "Nguyễn Minh Phúc",
   "242024": "Võ Nguyễn Tấn Lộc",
+  "242030": "Phạm Hùng Thịnh",
+  "242080": "Lê Thị Ngọc Huyền",
+  "242216": "Nguyễn Thị Hồng Ngọc",
+  "242228": "Dương Ngọc Duy",
+  "242369": "Trần Thị Bảo Ngọc",
   "242484": "Võ Minh Hùng",
   "242485": "Phùng Lê Cao Minh",
+  "242925": "Nguyễn Thành Nhân",
+  "242926": "Hoàng Thị Ánh Tuyết",
+  "243159": "Hồ Ngọc Tú Uyên",
+  "243448": "Nguyễn Tường Vy",
+  "243540": "Phạm Thị Thu Hương",
   "243582": "Nguyễn Ngọc Thùy Vân",
+  "243599": "Văn Tiểu Linh",
   "243600": "Phạm Thị Yến Nhi",
+  "243601": "Nguyễn Thảo Như Ngọc",
+  "243921": "Nguyễn Thị Xuân Hồng",
   "243980": "Nguyễn Thị Phương Anh",
+  "244123": "Dư Minh Thư",
   "250083": "Nguyễn Thị Thanh Tuyến",
+  "250455": "Lê Đạt",
   "250462": "Mạc Kiết My",
   "250608": "Lê Bá Thành",
+  "250690": "Nguyễn Thị Ngọc Huyền",
   "250751": "Hoàng Thị Cẩm Ly",
   "250753": "Nguyễn Ngọc Thạch",
+  "250760": "Bùi Thị Ngọc Huyền",
+  "250882": "Phan Thị Đông Anh",
   "250884": "Nguyễn Kiệm",
+  "250964": "Nguyễn Tuấn Thanh",
   "250965": "Nguyễn Huyền Trang",
+  "251019": "Nguyễn Hoàng Phúc Vy",
+  "251135": "Nguyễn Đăng Ngọc Hải",
   "251215": "Bùi Văn Non",
+  "251261": "Phạm Thái Ngân",
   "251308": "Trương Thanh Bình",
+  "251383": "Đỗ Huỳnh Anh Tuấn",
+  "251480": "Nguyễn Thị Thùy Trang",
+  "251482": "Huỳnh Thị Mỹ Trinh",
+  "251596": "Nguyễn Thị Thuỷ Tiên",
   "251599": "Dương Thị Út Nghĩa",
+  "251725": "Bùi Thị Xuân Uyên",
   "251726": "Huỳnh Thị Mỹ Trinh",
+  "251760": "Nguyễn Thị Phương Trang",
+  "251790": "Phạm Minh Qưới",
+  "251791": "Trần Thị Hoài Thảo",
+  "251792": "Phùng Phú Hào",
+  "251793": "Lưu Minh Kim Hiếu",
+  "251926": "Lê Tất Huy",
   "251962": "Trần Nguyên Phúc",
+  "252037": "Huỳnh Thị Tuyết Nhung",
   "252039": "Nguyễn Hoài Sang",
+  "252133": "Nguyễn Thị Ngọc Cẩm",
   "252134": "Trần Thị Phương",
   "252177": "Ngô Phương Vy",
+  "252178": "Nguyễn Thị Thu Hà",
+  "252179": "Lưu Thị Ngọc Ánh",
+  "252273": "Nguyễn Thị Huyền Trinh",
+  "252274": "Lê Thị Thảo",
+  "252323": "Trần Thùy Linh",
   "252324": "Đoàn Lại Khánh Nguyên",
+  "252326": "Phạm Văn Hoàng",
+  "252399": "Nguyễn Ngọc Hân",
+  "252440": "Võ Thị Hà Vi",
   "252481": "Trần Ngọc Hương Trà",
+  "252483": "Nguyễn Thị Phương Anh",
+  "252528": "Võ Hoàng Việt Quốc",
+  "252529": "Nguyễn Ngọc Thúy Nga",
+  "252548": "Dương Tiến Hào",
+  "252570": "Trương Quang Tồn",
+  "252585": "Lê Lưu Thương Thương",
+  "252586": "Trần Mỹ Tuyền",
+  "252637": "Bùi Thị Kim Ngân",
+  "252696": "Nguyễn Ngọc Đan Vy",
+  "252698": "Nguyễn Tuấn Lập",
+  "252699": "Lê Kim Ngân",
   "252813": "Trần Thị Phương Thảo",
+  "253058": "Lý Nguyễn Phi Hiếu",
   "253225": "Nguyễn Thanh Trúc",
+  "253281": "Trần Khánh Hiền",
+  "253326": "Nguyễn Nguyên Phúc Hưng",
   "253327": "Võ Thị Kim Quyên",
   "253397": "Đỗ Minh Hoan",
+  "253434": "Nguyễn Phước Thắng",
+  "253564": "Hồ Thị Thiên Thiên",
+  "253601": "Huỳnh Thanh Trúc",
   "253604": "Nguyễn Thị Phương Hoài Tâm",
+  "253606": "Bùi Thụy Ngọc Huyền",
   "253627": "Nguyễn Thị Quế Chi",
+  "253640": "Nguyễn Thị Phương Hoài Tâm",
+  "253762": "Trần Duy Khang",
+  "253763": "Châu Phi Bảo",
+  "253879": "Lương Hoàng Luân",
+  "253936": "Nguyễn Yến Nhi",
   "254007": "Phạm Trần Hữu Đức",
+  "254008": "Đào Minh Trí",
+  "254051": "Phạm Nguyễn Hạ Đoan",
   "254064": "Trần Thị Ngọc Anh",
+  "254066": "Nguyễn Thụy Ngọc Trúc",
+  "254151": "Nguyễn Thị Thanh Thảo",
+  "254292": "Nguyễn Hoàng Yến",
   "254301": "Hà Thanh Trúc",
   "254384": "Nguyễn Hoàng Tú Uyên",
   "254393": "Ma Nguyễn Thanh Vân",
+  "254456": "Lưu Quỳnh Ngọc Trâm",
+  "254555": "Đỗ Văn Quý",
+  "254717": "Nguyễn Thị Hồng Thắm",
   "254719": "Nguyễn Thị Mỹ Duyên",
   "254987": "Phan Thanh Hiền",
   "260077": "Nguyễn Hoàng Minh Thám",
+  "260081": "Phạm Nguyễn Gia Bảo",
   "260189": "Mai Lê Hoàng Phi",
   "260190": "Dương Thanh Phong",
   "260394": "Nguyễn Thị Kim Yến",
   "260535": "Phạm Thị Kim Loan",
   "260612": "Nguyễn Thị Thu Thủy",
+  "260613": "Huỳnh Đức Tài",
+  "260671": "Đặng Trung Hậu",
+  "260765": "Phạm Thị Phương Lan",
   "260970": "Lương Thùy Dương",
   "260997": "Đỗ Tấn Kiên",
+  "261001": "Nguyễn Đức Huy Hoàng",
+  "261076": "Danh Hiếu",
+  "261205": "Phạm Thị Huyền Trân",
+  "261206": "Huỳnh Thị Quỳnh Như",
   "261209": "Lê Tứ Quý",
   "261362": "Vũ Minh Thư",
   "261365": "Nguyễn Ngọc Bảo Hân",
@@ -1143,6 +1349,7 @@ function taiDuLieu(){
       DL_COLS=H.map((h,i)=>i).filter(i=>/deadline/i.test(nhanCuoi(H[i])));   // mốc khoá biên bản 96h
       tinhTanSuat();                                                          // bộ đếm tần suất vi phạm/tháng
       napLoc(); render(); napKpiThang();                                      // bảng luỹ kế KPI (tab Tổng quan)
+      capNhatGioDuLieu();                                                     // chip "Dữ liệu · HH:MM" trên header
       if(firstLoad){ $('pane-tong').style.animation='none'; requestAnimationFrame(()=>{ $('pane-tong').style.animation=''; }); firstLoad=false; }
     }catch(e){ console.error("Lỗi đọc dữ liệu:", e); }
     delete window[cb];
@@ -1398,7 +1605,7 @@ function moKpiChiTiet(loai,idx){
                       :'<span class="kpi-neg">−1%</span> <span class="muted" style="font-size:11.5px">(không XM)</span>';
   }
   $('stTitle').textContent=(loai==='nv'?(x.ten+' ('+x.id+')'):(x.ten+' — Quản lý nghiệp vụ'))+' · tháng '+thang+'/'+nam+' · '+rows.length+' task';
-  $('stBody').innerHTML=rowsTableHTML(rows,kpiOf);
+  $('stBody').innerHTML=rowsTableDocHTML(rows,kpiOf);
   hienModal('statModal');
 }
 
@@ -1470,6 +1677,25 @@ function rowsTableHTML(rows, kpiOf){
   return `<table><thead><tr>
     <th>Ngày khai báo</th><th>Vị trí</th><th>Lỗi vi phạm</th><th>NV vi phạm</th>
     <th>QL trực tiếp</th><th>Trạng thái</th>${kpiOf?'<th>KPI trừ</th>':''}</tr></thead><tbody>${tr}</tbody></table>`;
+}
+/* Bảng DỌC cho pop-up luỹ kế: cột 1 = TÊN TRƯỜNG (đóng băng khi cuộn ngang),
+   mỗi cột sau = 1 lần vi phạm theo thứ tự thời gian (Lần 1 sớm nhất). Bấm 1 ô -> mở chi tiết task. */
+function rowsTableDocHTML(rows, kpiOf){
+  const asc = rows.slice().sort((a,b)=>(ngayMs(a[iNgayVP])||0)-(ngayMs(b[iNgayVP])||0));
+  const fields = [
+    ['Ngày khai báo', r=>esc(fmtNgay(r[iNgayVP]))],
+    ['Vị trí',        r=>esc(r[iViTri]||'—')],
+    ['Lỗi vi phạm',   r=>esc(r[iLoi]||'—')],
+    ['NV vi phạm',    r=>lines(nameVP(r))],
+    ['QL trực tiếp',  r=>iQLTT>=0?lines(r[iQLTT]):'—'],
+    ['Trạng thái',    r=>statusCell(r)],
+  ];
+  if(kpiOf) fields.push(['KPI trừ', r=>kpiOf(r)]);
+  const head = '<tr><th class="vd-f vd-corner"></th>'
+    + asc.map((r,i)=>`<th class="vd-h"><span class="vd-lan">Lần ${i+1}</span></th>`).join('') + '</tr>';
+  const body = fields.map(([lbl,fn])=>
+    `<tr><th class="vd-f">${lbl}</th>${asc.map(r=>`<td data-i="${ROWS.indexOf(r)}" title="Bấm xem chi tiết task">${fn(r)}</td>`).join('')}</tr>`).join('');
+  return `<div class="vdoc-wrap"><table class="vdoc"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 function moThongKe(key){
   const s=STATS[key]; if(!s) return;
@@ -1834,8 +2060,63 @@ const FORM_URL="form.html";   // bản form ghi nhận nằm ngay trong repo kie
 //         (2) mở modal NGAY sau khi nhập PIN (form vốn là trang công khai), xác thực chạy NỀN —
 //             sai PIN thì tự đóng + báo; đúng thì ghi nhớ trong phiên để các lần sau khỏi chờ.
 function napFormTruoc(){ if(!$('gmFrame').getAttribute('src')) $('gmFrame').setAttribute('src',FORM_URL); }
+
+/* ===== GIỜ CẬP NHẬT DỮ LIỆU: hỏi máy chủ lần GHI 5S-TASKS gần nhất (action=lastSync);
+   máy chủ chưa hỗ trợ / lỗi mạng -> hiển thị giờ TẢI VỀ trình duyệt. ===== */
+function capNhatGioDuLieu(){
+  const taiLuc=Date.now();
+  const cb="ls_"+Date.now();
+  let s=null; const to=setTimeout(done,8000);
+  function done(){ clearTimeout(to); delete window[cb]; if(s&&s.parentNode) s.remove(); }
+  window[cb]=resp=>{ const ts=resp&&resp.status==='success'?Number(resp.ts||0):0; done(); hienGioDuLieu(ts>0?ts:taiLuc, ts>0); };
+  s=document.createElement('script');
+  s.src=APPSCRIPT_URL+"?action=lastSync&callback="+cb;
+  s.onerror=()=>{ done(); hienGioDuLieu(taiLuc,false); };
+  document.body.appendChild(s);
+}
+function hienGioDuLieu(ms,laServer){
+  const el=$('dataFresh'); if(!el) return;
+  const p=n=>String(n).padStart(2,'0');
+  const d=new Date(ms), nay=new Date();
+  const cungNgay=d.getFullYear()===nay.getFullYear()&&d.getMonth()===nay.getMonth()&&d.getDate()===nay.getDate();
+  $('dfTxt').textContent=(cungNgay?'':p(d.getDate())+'/'+p(d.getMonth()+1)+' · ')+p(d.getHours())+':'+p(d.getMinutes());
+  el.title=(laServer?'Dữ liệu được đồng bộ vào Sheet lúc ':'Dữ liệu tải về trình duyệt lúc ')
+    +p(d.getHours())+':'+p(d.getMinutes())+' ngày '+p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear();
+  el.hidden=false;
+}
+
+/* ===== HỎI PIN qua modal (thay prompt) — trả Promise<string|null> ===== */
+let _pinResolve=null;
+function hoiPin(tieuDe, moTa){
+  return new Promise(res=>{
+    _pinResolve=res;
+    $('pinTitle').textContent=tieuDe||'Nhập PIN';
+    $('pinDesc').textContent=moTa||'';
+    $('pinErr').textContent='';
+    const inp=$('pinInput'); inp.value=''; inp.type='password'; $('pinEye').textContent='👁';
+    hienModal('pinModal');
+    setTimeout(()=>inp.focus(),80);
+  });
+}
+function _dongPin(v){ $('pinModal').classList.remove('show'); const r=_pinResolve; _pinResolve=null; if(r) r(v); }
+$('pinOk').addEventListener('click',()=>{
+  const v=$('pinInput').value.trim();
+  if(!v){ $('pinErr').textContent='Vui lòng nhập PIN.'; $('pinInput').focus(); return; }
+  _dongPin(v);
+});
+$('pinCancel').addEventListener('click',()=>_dongPin(null));
+$('pinModal').addEventListener('click',e=>{ if(e.target.id==='pinModal') _dongPin(null); });
+$('pinInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ e.preventDefault(); $('pinOk').click(); }
+  else if(e.key==='Escape'){ e.preventDefault(); _dongPin(null); }
+});
+$('pinEye').addEventListener('click',()=>{
+  const inp=$('pinInput'); const hien=inp.type==='password';
+  inp.type=hien?'text':'password'; $('pinEye').textContent=hien?'🙈':'👁'; inp.focus();
+});
+
 function moGhiNhan(){
-  const pin=prompt("Nhập PIN để ghi nhận vi phạm 5S:");
+ hoiPin('Ghi nhận vi phạm 5S','Nhập PIN để mở form ghi nhận').then(pin=>{
   if(pin===null || !pin.trim()) return;
   napFormTruoc();
   hienModal('ghiModal');                                   // MỞ NGAY — không đợi mạng
@@ -1852,6 +2133,7 @@ function moGhiNhan(){
   s.src=APPSCRIPT_URL+"?action=checkPin&pin="+encodeURIComponent(pin)+"&callback="+cb;
   s.onerror=done;
   document.body.appendChild(s);
+ });
 }
 function dongGhiNhan(){ $('ghiModal').classList.remove('show'); }
 
@@ -1894,7 +2176,7 @@ async function taiBienBanLen(files){
 /* ===== ÉP CẬP NHẬT (cần PIN) ===== */
 function capNhatNgay(){
   if(dangCho){ alert("Đang chờ hệ thống cập nhật, vui lòng đợi..."); return; }
-  const pin=prompt("Nhập PIN để ép cập nhật dữ liệu ngay:");
+ hoiPin('Cập nhật dữ liệu ngay','Nhập PIN tải dữ liệu để ép hệ thống kéo dữ liệu 5S mới nhất').then(pin=>{
   if(!pin) return;
   const cb="sync_"+Date.now();
   window[cb]=resp=>{
@@ -1909,11 +2191,12 @@ function capNhatNgay(){
   s.src=APPSCRIPT_URL+"?action=requestSync&pin="+encodeURIComponent(pin)+"&callback="+cb;
   s.onerror=()=>{ alert("Không kết nối được máy chủ."); delete window[cb]; };
   document.body.appendChild(s);
+ });
 }
 
 /* ===== ÉP CẬP NHẬT CHẤM CÔNG (cần PIN) — kéo hr.hasaki.vn → tab CHAM-CONG ===== */
 function capNhatChamCong(){
-  const pin=prompt("Nhập PIN để cập nhật CHẤM CÔNG ngay:");
+ hoiPin('Cập nhật chấm công','Nhập PIN để kéo chấm công hr.hasaki.vn mới nhất').then(pin=>{
   if(!pin) return;
   const cb="ts_"+Date.now();
   window[cb]=resp=>{ delete window[cb];
@@ -1923,6 +2206,7 @@ function capNhatChamCong(){
   s.src=APPSCRIPT_URL+"?action=requestTimesheet&pin="+encodeURIComponent(pin)+"&callback="+cb;
   s.onerror=()=>{ alert("Không kết nối được máy chủ."); delete window[cb]; };
   document.body.appendChild(s);
+ });
 }
 
 /* ===== SỰ KIỆN ===== */
