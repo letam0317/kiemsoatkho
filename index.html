@@ -223,6 +223,23 @@ label{display:flex; flex-direction:column; gap:4px;}
 .tab.active{opacity:1; font-weight:700; border-bottom-color:var(--accent);}
 .head-right{order:3;}
 @media (max-width:940px){ .tabs{order:4; flex-basis:100%; justify-content:flex-start; padding-bottom:2px;} }
+/* ===== HEADER DI ĐỘNG: 1 hàng gọn "tiêu đề — chip giờ — nút — menu", tab xuống hàng riêng =====
+   Sửa lỗi vỡ bố cục: tiêu đề bị ép xếp chồng dọc đè lên nút, nút bị bóp méo */
+@media (max-width:768px){
+  header{gap:6px 8px; padding:8px 0 4px;}
+  header>div:first-child{flex:1 1 auto; min-width:0; overflow:hidden;}
+  .head-right{flex:0 0 auto; gap:6px;}                      /* nhóm nút KHÔNG co, không biến dạng */
+  .head-right>*{flex-shrink:0;}
+  #btnGhiNhan{padding:8px 10px; font-size:12px; white-space:nowrap;}
+  #btnSettings{padding:8px 9px;}
+  /* Tiêu đề thương hiệu: thu nhỏ, mỗi dòng dàn NGANG trọn vẹn — hết cảnh rơi từng chữ theo chiều dọc */
+  .tt-wrap{gap:6px;}
+  .tt-wrap b{font-size:16px !important; letter-spacing:0 !important; white-space:nowrap;}
+  .tt-wrap i{font-size:8.5px !important; letter-spacing:.16em !important; margin-top:2px !important; white-space:nowrap;}
+  .tt-wrap .chip{font-size:11px !important; padding:4px 8px !important;}
+  .tabs{order:4; flex:0 0 100%; width:100%;}
+  .tab{padding:8px 11px; font-size:12.5px;}
+}
 
 /* ===== PANE (fade-in, hardware accelerated) ===== */
 .pane{animation:fadeUp .32s ease both; will-change:opacity, transform;}
@@ -1983,7 +2000,7 @@ function setTitle(t){
 
 /* Mở modal MƯỢT: ép trình duyệt layout+paint nội dung TRƯỚC (offsetHeight), sang frame kế mới
    chạy animation -> frame đầu không bị việc dựng DOM đè lên, hết khựng. */
-function hienModal(id){ const el=$(id); void el.offsetHeight; requestAnimationFrame(()=>el.classList.add("show")); }
+function hienModal(id){ const el=$(id); el.style.display=''; void el.offsetHeight; requestAnimationFrame(()=>el.classList.add("show")); }
 
 /* ===== TABS ===== */
 function setTab(name){
@@ -2223,6 +2240,7 @@ $('pinEye').addEventListener('click',()=>{
    im lặng 12s thì giữ luôn form -> hổng bảo mật.) */
 function chanGhiNhan(){                                    // CHẶN ĐỨNG: ẩn hẳn + xoá trắng nội dung form
   dongGhiNhan();
+  $('ghiModal').style.display='none';                      // ÉP display:none inline — không còn đường nào hiện
   try{ const f=$('gmFrame'); f.src='about:blank'; f.removeAttribute('src'); }catch(e){}
 }
 function moGhiNhan(){
@@ -2242,7 +2260,10 @@ function moGhiNhan(){
       return;
     }
     chanGhiNhan();                                         // sai PIN / lỗi mạng: KHÔNG mở, ẩn + xoá form
-    alert(resp && resp.ok===false ? "Sai PIN." : "Không xác thực được PIN (mạng/máy chủ). Vui lòng thử lại.");
+    alert(resp && resp.ok===false
+      ? "Sai mật khẩu. Vui lòng liên hệ tamlc@hasaki.vn để được hỗ trợ."
+      : "Không xác thực được (mạng/máy chủ). Vui lòng thử lại hoặc liên hệ tamlc@hasaki.vn.");
+    return;                                                // CHẶN ĐỨNG mọi xử lý phía sau
   }
   window[cb]=done;
   s=document.createElement('script');
