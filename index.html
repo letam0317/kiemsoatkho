@@ -400,6 +400,10 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
   opacity:0; transition:opacity .22s ease; will-change:opacity;}
 #statModal.show{display:flex; opacity:1;}
 #statModal .modal-box{max-width:1400px;}
+/* Chế độ .fit (pop-up luỹ kế bảng dọc): khung CO GIÃN THEO SỐ LẦN VI PHẠM —
+   1 lần thì thu gọn vừa vặn, nhiều lần tự nở ngang; chạm trần 95vw thì cuộn ngang
+   BÊN TRONG pop-up (vdoc-wrap overflow-x:auto), không vỡ layout tổng */
+#statModal.fit .modal-box{width:fit-content; min-width:min(360px,92vw); max-width:95vw;}
 .stat-sub{font-size:12px; color:var(--muted); font-weight:400; margin-left:8px;}
 #stBody{padding:0;}
 .stat-table-wrap{overflow-x:auto; max-height:74vh;}
@@ -554,11 +558,15 @@ thead th.c-loi, tbody td.c-loi{max-width:270px;}
 .kpi-top{box-shadow:inset 3px 0 0 var(--bad);}          /* top 3: vạch đỏ trang trọng bên trái */
 .kpi-id{color:var(--muted); font-variant-numeric:tabular-nums; letter-spacing:.03em;}
 .kpi-ten{font-weight:700; font-size:15px;}
-/* Cột HỌ VÀ TÊN: rộng VỪA KHÍT mẫu "Hà Trọng Thúc Bằng abf" (22ch) — luôn 1 hàng thẳng,
-   không lãng phí bề ngang; tên dài hơn mẫu thì cắt bằng "…" (đã có tooltip tên đầy đủ) */
-td.kpi-ten{width:22ch; min-width:22ch; max-width:22ch; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-/* NV ĐÃ NGHỈ VIỆC: tên xám trầm (kiểu tên thành viên bị chặn trên Facebook) */
-.nv-nghi{color:#8a8d91 !important; font-weight:600;}
+/* Cột HỌ VÀ TÊN: rộng VỪA KHÍT mẫu "Hà Trọng Thúc Bằng" (18ch) — luôn 1 hàng thẳng.
+   max-width đặt trên SPAN trong ô (đặt trên td bị thuật toán table bỏ qua);
+   tên dài hơn khổ thì cắt "…" (tooltip có tên đầy đủ) */
+td.kpi-ten{white-space:nowrap;}
+.kpi-ten .tn{display:block; max-width:18ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+/* NV ĐÃ NGHỈ VIỆC — "bay màu" hiện đại, không icon: mờ mạnh + nghiêng + gạch ngang MẢNH,
+   phân biệt tức thì trên cả nền sáng/tối mà bảng vẫn sạch */
+.user-resigned{opacity:.45; font-style:italic;
+  text-decoration:line-through; text-decoration-thickness:1px; text-decoration-color:rgba(140,143,148,.75);}
 .kpi-pill{display:inline-block; padding:3px 11px; border:1px solid var(--border); border-radius:999px;
   font-weight:700; font-size:12.5px; background:var(--surface2);}
 th.kpi-col-val, td.kpi-val{text-align:right;}
@@ -578,16 +586,19 @@ th.kpi-col-prev, td.kpi-col-prev{text-align:right; white-space:nowrap;}
 /* ===== MÀN HẸP: HỌ TÊN ĐẦY ĐỦ, KHÔNG xuống dòng — bảng gọn tối đa,
    rộng quá khung thì .kpi-wrap tự cuộn ngang (dữ liệu không tràn, không gãy dòng). ===== */
 @media (max-width:700px){
-  .kpi-wrap{margin:0 -6px;}                                /* nới bảng sát mép panel: thêm ~12px bề ngang */
+  /* KHÔNG dùng margin âm (từng làm cột "#" và "SO TH.TRƯỚC" bị viền panel cắt mất chữ);
+     .kpi-wrap sẵn overflow-x:auto + cuộn mượt cảm ứng làm lưới an toàn khi thiếu chỗ */
   .kpi-wrap th, .kpi-wrap td{white-space:nowrap;}
   .kpi-wrap tbody td{padding:9px 3px;}
   .kpi-wrap thead th{padding:8px 3px; font-size:8.5px; letter-spacing:.02em;}
+  /* 2 cột NGOÀI CÙNG luôn có đệm an toàn 10px, chữ không dính viền bo của khung */
+  .kpi-wrap thead th:first-child, .kpi-wrap tbody td:first-child{padding-left:10px;}
+  .kpi-wrap thead th:last-child, .kpi-wrap tbody td:last-child{padding-right:10px;}
   .th-full{display:none;} .th-short{display:inline;}
   th.kpi-id, td.kpi-id{display:none;}                      /* ẩn cột ID (đã có trong pop-up) */
   .kpi-rank{width:16px; padding-left:2px; padding-right:2px;}
-  /* HỌ TÊN giữ đúng khổ 22ch (theo cỡ chữ mobile -> tự hẹp lại tương ứng),
-     3 cột số co đúng nội dung -> bảng khít màn hình, không cuộn ngang */
-  .kpi-ten{font-size:11.5px;}
+  /* HỌ TÊN khổ 18ch (theo cỡ chữ mobile -> tự hẹp tương ứng), 3 cột số co đúng nội dung */
+  .kpi-ten{font-size:12px;}
   th.kpi-col-luot, td.kpi-col-luot, th.kpi-col-val, td.kpi-val, th.kpi-col-prev, td.kpi-col-prev{width:1%;}
   .kpi-pill{padding:0; border:0; background:none; font-size:10.5px;}
   .kpi-xm{display:none;}                                   /* chi tiết XM xem trong pop-up */
@@ -1584,7 +1595,7 @@ function renderKpi(){
   h+=nv.map((x,i)=>`<tr data-kpi="nv:${i}" class="${i<3?'kpi-top':''}" title="Bấm xem các task trong tháng">
       <td class="kpi-rank">${i+1}</td>
       <td class="kpi-id">${esc(x.id)}</td>
-      <td class="kpi-ten${x.nghi?' nv-nghi':''}" title="${esc(x.ten)}${x.nghi?' — đã nghỉ việc':''}">${esc(x.ten)}</td>
+      <td class="kpi-ten" title="${esc(x.ten)}${x.nghi?' — đã nghỉ việc':''}"><span class="tn${x.nghi?' user-resigned':''}">${esc(x.ten)}</span></td>
       <td class="kpi-col-luot"><span class="kpi-pill">${x.luot} lượt</span></td>
       <td class="kpi-val">${fmt(x.kpi)}<div class="kpi-bar" style="width:${Math.max(6,Math.round(x.kpi/maxK*100))}%"></div></td>
       <td class="kpi-col-prev">${soSanh(x.kpi,prevNv[x.id]!=null?prevNv[x.id]:null)}</td></tr>`).join('')
@@ -1595,7 +1606,7 @@ function renderKpi(){
     h+=ql.map((x,i)=>`<tr data-kpi="ql:${i}" title="Bấm xem các task trong tháng">
       <td class="kpi-rank">QL</td>
       <td class="kpi-id">—</td>
-      <td class="kpi-ten" title="${esc(x.ten)}">${esc(x.ten)}</td>
+      <td class="kpi-ten" title="${esc(x.ten)}"><span class="tn">${esc(x.ten)}</span></td>
       <td class="kpi-col-luot"><span class="kpi-pill">${x.xm+x.kxm} lượt</span> <span class="muted kpi-xm" style="font-size:12px">${x.xm} XM · ${x.kxm} không XM</span></td>
       <td class="kpi-val">${fmt(x.kpi)}<div class="kpi-bar" style="width:${Math.max(6,Math.round(x.kpi/maxQ*100))}%"></div></td>
       <td class="kpi-col-prev">${soSanh(x.kpi,prevQl[x.ten]!=null?prevQl[x.ten]:null)}</td></tr>`).join('');
@@ -1619,6 +1630,7 @@ function renderKpi(){
 // Pop-up: TOÀN BỘ hạng mục vi phạm của tháng — 2 cột: Chi tiết hạng mục · Số lượt ghi nhận
 function moLoiThang(){
   if(!KPI_DATA || !KPI_DATA.loi) return;
+  $('statModal').classList.remove('fit');    // pop-up thường: khung rộng chuẩn
   const [nam,thang]=KPI_DATA.ym.split('-');
   $('stTitle').textContent='Hạng mục vi phạm · tháng '+thang+'/'+nam+' · '+KPI_DATA.loi.length+' hạng mục';
   $('stBody').innerHTML='<table class="loi-table"><thead><tr><th style="width:44px">#</th><th>Chi tiết hạng mục</th><th style="width:150px;text-align:right">Số lượt ghi nhận</th></tr></thead><tbody>'+
@@ -1646,6 +1658,7 @@ function moKpiChiTiet(loai,idx){
   }
   $('stTitle').textContent=(loai==='nv'?(x.ten+' ('+x.id+')'):(x.ten+' — Quản lý nghiệp vụ'))+' · tháng '+thang+'/'+nam+' · '+rows.length+' task';
   $('stBody').innerHTML=rowsTableDocHTML(rows,kpiOf);
+  $('statModal').classList.add('fit');       // khung modal ôm sát bảng dọc theo số lần vi phạm
   hienModal('statModal');
 }
 
@@ -1744,10 +1757,12 @@ function rowsTableDocHTML(rows, kpiOf){
   const mob = window.matchMedia && matchMedia('(max-width:700px)').matches;
   const WF = mob ? 100 : 132, WL = mob ? 172 : 220;          // cột thông tin / mỗi cột Lần (px)
   const colgroup = `<colgroup><col style="width:${WF}px">${cols.map(()=>`<col style="width:${WL}px">`).join('')}</colgroup>`;
-  return `<div class="vdoc-wrap"><table class="vdoc" style="table-layout:fixed; width:max(100%, ${WF + cols.length*WL}px)">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  // width px CHÍNH XÁC theo số lần -> khung modal .fit ôm sát bảng (1 lần gọn, nhiều lần nở ngang)
+  return `<div class="vdoc-wrap"><table class="vdoc" style="table-layout:fixed; width:${WF + cols.length*WL}px">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 function moThongKe(key){
   const s=STATS[key]; if(!s) return;
+  $('statModal').classList.remove('fit');    // pop-up thường: khung rộng chuẩn
   const rows=s.pick(curD).slice().sort(cmpNgayDesc);
   const num=s.count?s.count(rows):rows.length;
   let body;
