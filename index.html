@@ -720,7 +720,8 @@ table.vdoc{border-collapse:separate; border-spacing:0;}
 /* ===== ĐIỆN THOẠI NHỎ — tối ưu gọn, dễ chạm, 1 cột ===== */
 @media (max-width:560px){
   .wrap{padding:12px 12px 30px;}
-  header{gap:10px; flex-wrap:nowrap;}
+  /* header PHẢI wrap để hàng tab xuống dòng riêng (nowrap cũ bóp tiêu đề về 0 + tràn ngang) */
+  header{gap:6px 8px;}
   /* nút 3 gạch nhỏ gọn, luôn ở góc phải; menu xổ xuống rộng vừa phải, sát mép phải */
   .settings-pop{width:min(300px,92vw); right:0; left:auto;}
   .cards{gap:8px;}
