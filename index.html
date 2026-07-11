@@ -595,6 +595,10 @@ th.kpi-col-prev, td.kpi-col-prev{text-align:right; white-space:nowrap;}
   .kpi-prev,.kpi-up,.kpi-down,.kpi-prev-non{font-size:9.5px;}
   /* "So với tháng trước": xếp 2 tầng (tháng trước / chênh lệch) cho cột thật hẹp */
   td.kpi-col-prev .kpi-up, td.kpi-col-prev .kpi-down, td.kpi-col-prev .kpi-eq{display:block; line-height:1.25;}
+  /* Dòng phân cách "QUẢN LÝ NGHIỆP VỤ...": PHẢI cho xuống dòng — nếu dính nowrap chung
+     của khối mobile, cả câu dài ~740px sẽ kéo TOÀN BẢNG rộng theo (gây cuộn ngang) */
+  .kpi-sep td{white-space:normal !important; font-size:10px; padding:9px 10px;}
+  .kpi-sep-note{display:none;}                             /* ghi chú dài xem trên desktop */
   .kb-lbl{font-size:9px;}
 }
 /* ===== POP-UP LUỸ KẾ: BẢNG DỌC — cột trường ĐÓNG BĂNG bên trái, mỗi LẦN vi phạm 1 cột,
