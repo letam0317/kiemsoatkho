@@ -296,6 +296,12 @@ thead th.c-ngay, tbody td.c-ngay{white-space:nowrap; font-variant-numeric:tabula
 /* Ô THỜI GIAN 2 tầng: "Tạo ..." là dòng chính ĐẬM, "Ghi nhận ..." là dòng phụ xám bên dưới */
 .tg-tao{display:block; font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums;}
 .tg-gn{display:block; font-size:10.5px; color:var(--muted); margin-top:2px; white-space:nowrap; font-variant-numeric:tabular-nums;}
+/* ===== BÌNH LUẬN trong pop-up chi tiết ===== */
+.cmt{padding:9px 0; border-top:1px solid var(--border);}
+.cmt:first-child{border-top:0; padding-top:2px;}
+.cmt-h{display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; font-size:12.5px;}
+.cmt-luc{color:var(--muted); font-size:11px; margin-left:auto; font-variant-numeric:tabular-nums;}
+.cmt-nd{font-size:13px; line-height:1.5; margin-top:3px; overflow-wrap:anywhere;}
 /* ===== TỔNG KẾT NHANH — LƯỚI THẺ BẤM ĐƯỢC (3 cột desktop, xếp chồng trên di động) ===== */
 .tkq-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; padding:12px 14px 14px;}
 .tkq-card{display:flex; flex-direction:column; align-items:flex-start; gap:3px; text-align:left;
@@ -1127,6 +1133,7 @@ let iCode, iLink, iName, iStatus, iCreatedAt, iAnh, iNgayVP, iLoi, iViTri, iNVVP
 let iB2loi, iKP, iB11ND, iDieuHuong=-1, STATUS_COLS = [], B3_COLS = [];
 let firstLoad = true, dangCho = false, galleries = {}, rowGal = {};
 let ANH_KHONG = null;   // danh sách 'Đạt khống' do pipeline quét ảnh cấp qua data-summary.json
+let BINH_LUAN = null;   // bình luận task (API /api/v2/task/comment) do pipeline cấp qua data-summary.json
 
 /* Bảng tra Mã NV → Họ tên do người dùng khai báo tay (ưu tiên cao nhất).
    Thêm dòng "mã":"Họ tên" vào đây nếu muốn ép hiển thị tên cụ thể. */
@@ -1502,6 +1509,7 @@ async function taiTuTinh(){
     const j = await r.json();
     if(!j || !j.header || !j.rows || !j.rows.length) return false;
     if(Array.isArray(j.anhKhong)) ANH_KHONG = j.anhKhong;   // kết quả quét ảnh "Đạt khống" (pipeline tính sẵn)
+    if(j.binhLuan) BINH_LUAN = j.binhLuan;                   // bình luận task lấy trực tiếp từ API WMS
     napDuLieu(j.header, j.rows);
     if(j.apiAt) hienGioDuLieu(Number(j.apiAt), true);   // chip giờ có sẵn trong file, khỏi gọi thêm
     return true;
@@ -2071,14 +2079,26 @@ function moChiTiet(i){
     </div>`;
   }).join('');
 
-  // ---- BÌNH LUẬN: tự dò các cột có chữ "bình luận"/"comment" trong dữ liệu để render;
-  //      dữ liệu export hiện CHƯA có trường bình luận -> hiển thị "Chưa có bình luận nào".
-  const cmtVals=H.map((h,c)=>/bình luận|comment/i.test(h)?String(r[c]||'').trim():'').filter(Boolean);
-  const cmtBody=cmtVals.length
-    ? cmtVals.map(v=>`<div class="fld"><span class="fld-v">${esc(v)}</span></div>`).join('')
-    : '<div class="muted">Chưa có bình luận nào</div>';
-  const cmtStep=`<div class="step ${cmtVals.length?'done':'empty'}">
-    <div class="step-head"><div class="step-num">B</div><div class="step-title">Bình luận</div></div>
+  // ---- BÌNH LUẬN: lấy TRỰC TIẾP từ API WMS (/api/v2/task/comment, pipeline gom sẵn vào
+  //      data-summary.json) — hiển thị người, mã NV, thời gian, nội dung, ảnh đính kèm.
+  const cmtL=(BINH_LUAN&&BINH_LUAN[String(r[iCode])])||[];
+  let cmtBody;
+  if(cmtL.length){
+    const MB='https://hr-media.hasaki.vn/production/hr/';
+    cmtBody=cmtL.map(c=>`<div class="cmt">
+      <div class="cmt-h"><b>${esc(c.ten)}</b>${c.ma?` <span class="muted">(${esc(c.ma)})</span>`:''}<span class="cmt-luc">${esc(fmtNgay(c.luc))}</span></div>
+      ${String(c.nd||'').trim()?`<div class="cmt-nd">${esc(c.nd)}</div>`:''}
+      ${(c.files&&c.files.length)?`<div class="thumbs">${c.files.map(f=>`<img class="bb-thumb" loading="lazy" src="${MB}${esc(f)}" data-bb="${MB}${esc(f)}" title="Xem ảnh đính kèm">`).join('')}</div>`:''}
+    </div>`).join('');
+  } else {
+    // dự phòng: cột "bình luận/comment" trong dữ liệu export (nếu sau này có)
+    const cmtVals=H.map((h,c)=>/bình luận|comment/i.test(h)?String(r[c]||'').trim():'').filter(Boolean);
+    cmtBody=cmtVals.length
+      ? cmtVals.map(v=>`<div class="fld"><span class="fld-v">${esc(v)}</span></div>`).join('')
+      : '<div class="muted">Chưa có bình luận nào</div>';
+  }
+  const cmtStep=`<div class="step ${cmtL.length?'done':'empty'}">
+    <div class="step-head"><div class="step-num">B</div><div class="step-title">Bình luận${cmtL.length?' ('+cmtL.length+')':''}</div></div>
     <div class="step-body">${cmtBody}</div></div>`;
   $('mBody').innerHTML = `<div class="steps-track">${html}${cmtStep}</div>`;
   hienModal('modal');
