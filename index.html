@@ -594,6 +594,7 @@ thead th.c-loi, tbody td.c-loi{max-width:270px;}
    đơn vị ch nên tự co giãn theo cỡ chữ desktop/mobile) — tên luôn 1 hàng trọn vẹn, KHÔNG "…" */
 td.kpi-ten{white-space:nowrap;}
 .kpi-ten .tn{display:block; width:var(--tenW,auto); max-width:none; white-space:nowrap; overflow:visible;}
+.tn-ma{color:var(--muted); font-weight:600; font-size:.82em; letter-spacing:.02em;}  /* mã NV sau tên — phân biệt người trùng họ tên */
 /* NV ĐÃ NGHỈ VIỆC — "bay màu" hiện đại, không icon: mờ mạnh + nghiêng + gạch ngang MẢNH,
    phân biệt tức thì trên cả nền sáng/tối mà bảng vẫn sạch */
 .user-resigned{opacity:.45; font-style:italic;
@@ -1080,7 +1081,7 @@ const TAB = "5S-TASKS";
 const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec";
 
 let H = [], ROWS = [];
-let iCode, iLink, iName, iStatus, iCreatedAt, iAnh, iNgayVP, iLoi, iViTri, iNVVP, iQLTT, iVideo, iNVName, iBienBan;
+let iCode, iLink, iName, iStatus, iCreatedAt, iAnh, iNgayVP, iLoi, iViTri, iNVVP, iQLTT, iVideo, iNVName, iBienBan, iNVChuan=-1;
 let iB2loi, iKP, iB11ND, iDieuHuong=-1, STATUS_COLS = [], B3_COLS = [];
 let firstLoad = true, dangCho = false, galleries = {}, rowGal = {};
 
@@ -1343,6 +1344,9 @@ function ngayISO(v){
 }
 // Mã NV vi phạm gốc ở bước B1 (chỉ có số hoặc rỗng)
 const codeVP = r => (iNVVP>=0 ? String(r[iNVVP]||"").trim() : "");
+// Mã NV CHUẨN: ưu tiên cột "Mã NV chuẩn" (đã quy staff_id nội bộ -> mã NV, cùng người không tách dòng);
+// dữ liệu cũ chưa có cột này thì dùng mã thô.
+const codeChuanVP = r => { const v = iNVChuan>=0 ? String(r[iNVChuan]||"").trim() : ""; return v || codeVP(r); };
 // Tên hiển thị NV vi phạm: NV_MAP (tay) → NAME_BY_CODE (suy ra) → mã
 const nameVP = r => {
   const c = codeVP(r);
@@ -1356,7 +1360,7 @@ const nameVP = r => {
   return codes.length ? "Chưa rõ tên" : "";
 };
 // Khoá gộp NV (không trùng): dùng mã làm khoá, hiển thị theo nameVP
-const keyVP = r => codeVP(r);
+const keyVP = r => codeChuanVP(r);
 // Hiển thị danh sách tên: MỖI NGƯỜI 1 DÒNG (đầy đủ họ tên, không gãy giữa tên)
 const lines = v => { const p=String(v||'').split(',').map(s=>s.trim()).filter(Boolean); return p.length?p.map(esc).join('<br>'):'—'; };
 // Dòng phụ "Tạo dd/mm/yyyy hh:mm" (Created At) dưới Ngày ghi nhận — task khai lùi ngày không bị lẫn
@@ -1420,6 +1424,7 @@ function taiDuLieu(){
       iNgayVP=idxOf("Ngày vi phạm"); iLoi=idxOf("Lỗi vi phạm"); iViTri=idxOf("Vị trí ghi nhận");
       iNVVP=H.findIndex(h=>nhanCuoi(h).toLowerCase()==="nhân viên vi phạm");
       iNVName=idxOf("Tên NV vi phạm"); iBienBan=idxOf("Biên bản");
+      iNVChuan=idxOf("Mã NV chuẩn");   // mã đã quy staff_id nội bộ -> mã NV (bộ đồng bộ ghi)
       iQLTT=H.findIndex(h=>/quản lý trực tiếp/i.test(nhanCuoi(h)));
       iB2loi=idxOf("B2. QLTT xác nhận và giải trình ▸ Xác nhận lỗi");
       iKP=idxOf("B4.1 Audit kiểm tra khắc phục ▸ Xác nhận khắc phục");
@@ -1514,7 +1519,7 @@ function tinhTanSuat(){
     if(daHuy(r)) return;                          // task ĐÃ HUỶ -> không đếm tần suất / không trừ KPI
     const t=ngayMs(r[iNgayVP]); if(t==null) return;
     const d=new Date(t), ym=d.getFullYear()+'-'+(d.getMonth()+1);
-    codeVP(r).split(',').map(s=>s.trim()).filter(Boolean).forEach(cd=>{
+    codeChuanVP(r).split(',').map(s=>s.trim()).filter(Boolean).forEach(cd=>{
       (seq[cd+'|'+ym]=seq[cd+'|'+ym]||[]).push({gi,t});
     });
   });
@@ -1586,7 +1591,7 @@ function tinhThangKpi(ym){
     if(!b3Xong(r)) return;                        // CHỈ trừ KPI khi bước B3.x Ghi nhận vi phạm HOÀN THÀNH
     const t=ngayMs(r[iNgayVP]);
     const names=iNVName>=0?String(r[iNVName]||'').split(',').map(s=>s.trim()):[];
-    codeVP(r).split(',').map(s=>s.trim()).filter(Boolean).forEach((cd,ci)=>{
+    codeChuanVP(r).split(',').map(s=>s.trim()).filter(Boolean).forEach((cd,ci)=>{
       (grp[cd]=grp[cd]||[]).push({t,r});
       if(names[ci]&&/\p{L}/u.test(names[ci])) tenMa[cd]=names[ci];
     });
@@ -1637,7 +1642,7 @@ function renderKpi(){
   // Cột HỌ VÀ TÊN tự co giãn theo TÊN NGƯỜI DÀI NHẤT thật sự trong bảng tháng này
   // (chỉ quét chuỗi tên ở cột họ tên NV + QL, không tính header/cột khác)
   // -> tên luôn trọn vẹn 1 hàng, KHÔNG cắt "..." , không thừa khoảng trống
-  const tenDaiNhat=Math.max(0, ...nv.map(x=>String(x.ten||'').length), ...ql.map(x=>String(x.ten||'').length));
+  const tenDaiNhat=Math.max(0, ...nv.map(x=>String(x.ten||'').length+String(x.id||'').length+3), ...ql.map(x=>String(x.ten||'').length));
   $('kpiWrap').style.setProperty('--tenW', (tenDaiNhat||18)+'ch');
   // Tiêu đề cột so sánh đổi ĐỘNG theo tháng liền trước của bộ lọc (04 -> "Tháng 03"; 01 -> "Tháng 12")
   const pmT=prevYm.split('-')[1];
@@ -1650,7 +1655,7 @@ function renderKpi(){
   h+=nv.map((x,i)=>`<tr data-kpi="nv:${i}" class="${i<3?'kpi-top':''}" title="Bấm xem các task trong tháng">
       <td class="kpi-rank">${i+1}</td>
       <td class="kpi-id">${esc(x.id)}</td>
-      <td class="kpi-ten" title="${esc(x.ten)}${x.nghi?' — đã nghỉ việc':''}"><span class="tn${x.nghi?' user-resigned':''}">${esc(x.ten)}</span></td>
+      <td class="kpi-ten" title="${esc(x.ten)} (${esc(x.id)})${x.nghi?' — đã nghỉ việc':''}"><span class="tn${x.nghi?' user-resigned':''}">${esc(x.ten)} <span class="tn-ma">(${esc(x.id)})</span></span></td>
       <td class="kpi-col-luot"><span class="kpi-pill">${x.luot} lượt</span></td>
       <td class="kpi-val">${fmt(x.kpi)}<div class="kpi-bar" style="width:${Math.max(6,Math.round(x.kpi/maxK*100))}%"></div></td>
       <td class="kpi-col-prev">${soSanh(x.kpi,prevNv[x.id]!=null?prevNv[x.id]:null)}</td></tr>`).join('')
