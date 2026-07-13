@@ -307,6 +307,16 @@ thead th.c-ngay, tbody td.c-ngay{white-space:nowrap; font-variant-numeric:tabula
 .cmt-luc{color:var(--muted); font-size:11px; margin-left:auto; font-variant-numeric:tabular-nums;}
 .cmt-nd{font-size:13px; line-height:1.5; margin-top:3px; overflow-wrap:anywhere;}
 /* ===== TỔNG KẾT NHANH — LƯỚI THẺ BẤM ĐƯỢC (3 cột desktop, xếp chồng trên di động) ===== */
+/* Tổng kết nhanh: thu gọn bằng <details>, mặc định ĐÓNG; mũi tên xổ mượt */
+.tkn-details{overflow:hidden;}
+.tkn-summary{list-style:none; cursor:pointer; user-select:none; padding:13px 16px; font-size:14px; font-weight:800;
+  letter-spacing:.02em; color:var(--text); display:flex; align-items:center; gap:9px;}
+.tkn-summary::-webkit-details-marker{display:none;}
+.tkn-summary::before{content:"›"; display:inline-block; font-size:18px; line-height:1; color:var(--muted);
+  transition:transform .25s var(--ez-apple); transform:rotate(0deg);}
+.tkn-details[open] > .tkn-summary::before{transform:rotate(90deg);}
+.tkn-summary:hover{color:var(--accent);}
+.tkn-details[open] > .tkn-summary{border-bottom:1px solid var(--border);}
 .tkq-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; padding:12px 14px 14px;}
 .tkq-card{display:flex; flex-direction:column; align-items:flex-start; gap:3px; text-align:left;
   background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:12px 14px;
@@ -932,14 +942,14 @@ html{scroll-behavior:smooth;}
     <p class="foot" style="margin:0 0 14px">Tính từ <b>Ngày ghi nhận</b> của task trong tháng được chọn · KPI trừ theo hạng mục QUY-DINH và lần vi phạm luỹ tiến · <b>bấm 1 dòng</b> để xem các task chi tiết. Quản lý nghiệp vụ: −0.2%/lượt <b>xác minh được</b> NV, −1%/lượt <b>không xác minh được</b>; không tính lượt mà chính quản lý là NV vi phạm.</p>
 
     <!-- TỔNG KẾT NHANH — LƯỚI THẺ BẤM ĐƯỢC (bấm 1 thẻ -> pop-up danh sách task chi tiết) -->
-    <div class="panel" id="tk7Panel" style="margin-bottom:14px">
-      <div class="panel-head"><span>Tổng kết nhanh</span></div>
+    <details class="panel tkn-details" id="tk7Panel" style="margin-bottom:14px">
+      <summary class="tkn-summary">Tổng kết nhanh (Nhấn để mở rộng)</summary>
       <div class="tkq-grid" id="tkqGrid">
         <div class="tkq-card"><div class="sk sk-line" style="width:70%"></div></div>
         <div class="tkq-card"><div class="sk sk-line" style="width:70%"></div></div>
         <div class="tkq-card"><div class="sk sk-line" style="width:70%"></div></div>
       </div>
-    </div>
+    </details>
 
 
     <p class="foot">Tổng kết nhanh tính trên <b>toàn bộ</b> task (không theo bộ lọc). Bấm 1 thẻ để mở danh sách task chi tiết; bấm 1 dòng trong danh sách để xem đầy đủ các bước.</p>
