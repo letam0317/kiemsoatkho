@@ -655,11 +655,14 @@ table.vdoc{border-collapse:separate; border-spacing:0;}
   padding:11px 14px; white-space:normal; line-height:1.35; vertical-align:top;
   border-right:1px solid var(--border); box-shadow:6px 0 10px -6px rgba(0,0,0,.28);}
 .vdoc thead th{position:sticky; top:0; z-index:2; background:var(--surface2); padding:9px 14px; text-align:left; border-bottom:1px solid var(--border);}
-.vdoc thead th.vd-h{cursor:pointer;}
+.vdoc thead th.vd-h{cursor:pointer; text-align:center;}
+/* Cụm "Lần X + ngày" CĂN GIỮA TUYỆT ĐỐI theo bề rộng cột (flex trên khung trong th,
+   không đặt flex thẳng lên th để giữ hành vi table-cell) */
+.vd-hbox{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:4px; width:100%;}
 .vdoc thead th.vd-corner{z-index:4;}
 .vd-lan{display:inline-block; padding:3px 11px; border-radius:999px; border:1px solid var(--border);
   background:var(--hover); font-weight:800; font-size:11px; letter-spacing:.05em; color:var(--text);}
-.vd-d{display:block; margin-top:4px; font-size:10.5px; font-weight:600; color:var(--muted); font-variant-numeric:tabular-nums;}
+.vd-d{display:block; font-size:10.5px; font-weight:600; color:var(--muted); font-variant-numeric:tabular-nums;}  /* cách badge bằng gap của .vd-hbox */
 /* Ô dữ liệu: BẮT BUỘC xuống dòng trong ô (chặn tràn/đè cột Lần kế bên) */
 .vdoc tbody td{padding:11px 14px; white-space:normal !important; overflow-wrap:anywhere; word-break:break-word;
   line-height:1.5; vertical-align:top; border-top:1px solid var(--border); cursor:pointer; overflow:hidden;}
@@ -1815,7 +1818,7 @@ function rowsTableDocHTML(rows, kpiOf){
   const p2=n=>String(n).padStart(2,'0');
   const ngayNgan=r=>{const t=ngayMs(r[iNgayVP]); if(t==null) return ''; const d=new Date(t); return p2(d.getDate())+'/'+p2(d.getMonth()+1);};
   const head = '<tr><th class="vd-f vd-corner"></th>'
-    + cols.map(c=>`<th class="vd-h" data-i="${ROWS.indexOf(c.r)}" title="Bấm xem chi tiết task"><span class="vd-lan">Lần ${c.lan}</span><span class="vd-d">${ngayNgan(c.r)}</span></th>`).join('') + '</tr>';
+    + cols.map(c=>`<th class="vd-h" data-i="${ROWS.indexOf(c.r)}" title="Bấm xem chi tiết task"><div class="vd-hbox"><span class="vd-lan">Lần ${c.lan}</span><span class="vd-d">${ngayNgan(c.r)}</span></div></th>`).join('') + '</tr>';
   const body = fields.map(([lbl,fn])=>
     `<tr><th class="vd-f">${lbl}</th>${cols.map(c=>`<td data-i="${ROWS.indexOf(c.r)}" title="Bấm xem chi tiết task"><div class="vd-c">${fn(c.r)}</div></td>`).join('')}</tr>`).join('');
   // TABLE-LAYOUT:FIXED + colgroup chia cột CỨNG: ô không thể phình/tràn — chữ dài BẮT BUỘC
