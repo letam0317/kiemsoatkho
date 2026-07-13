@@ -296,7 +296,11 @@ thead th.c-ngay, tbody td.c-ngay{white-space:nowrap; font-variant-numeric:tabula
 /* Ô THỜI GIAN 2 tầng: "Tạo ..." là dòng chính ĐẬM, "Ghi nhận ..." là dòng phụ xám bên dưới */
 .tg-tao{display:block; font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums;}
 .tg-gn{display:block; font-size:10.5px; color:var(--muted); margin-top:2px; white-space:nowrap; font-variant-numeric:tabular-nums;}
-/* ===== BÌNH LUẬN trong pop-up chi tiết ===== */
+/* ===== BÌNH LUẬN trong pop-up chi tiết — khối riêng DƯỚI các bước workflow ===== */
+.cmt-sec{margin:12px 16px 16px; border:1px solid var(--border); border-radius:12px; background:var(--surface2); overflow:hidden;}
+.cmt-sec-h{padding:10px 14px; border-bottom:1px solid var(--border); font-weight:800; font-size:11.5px;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--muted);}
+.cmt-sec-b{padding:6px 14px 10px;}
 .cmt{padding:9px 0; border-top:1px solid var(--border);}
 .cmt:first-child{border-top:0; padding-top:2px;}
 .cmt-h{display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; font-size:12.5px;}
@@ -2097,10 +2101,11 @@ function moChiTiet(i){
       ? cmtVals.map(v=>`<div class="fld"><span class="fld-v">${esc(v)}</span></div>`).join('')
       : '<div class="muted">Chưa có bình luận nào</div>';
   }
-  const cmtStep=`<div class="step ${cmtL.length?'done':'empty'}">
-    <div class="step-head"><div class="step-num">B</div><div class="step-title">Bình luận${cmtL.length?' ('+cmtL.length+')':''}</div></div>
-    <div class="step-body">${cmtBody}</div></div>`;
-  $('mBody').innerHTML = `<div class="steps-track">${html}${cmtStep}</div>`;
+  // Khối bình luận nằm RIÊNG BÊN DƯỚI dải bước workflow (không phải 1 bước trong stepper ngang)
+  const cmtStep=`<div class="cmt-sec">
+    <div class="cmt-sec-h">Bình luận${cmtL.length?' ('+cmtL.length+')':''}</div>
+    <div class="cmt-sec-b">${cmtBody}</div></div>`;
+  $('mBody').innerHTML = `<div class="steps-track">${html}</div>${cmtStep}`;
   hienModal('modal');
 }
 function dongModal(){ $('modal').classList.remove('show'); }
