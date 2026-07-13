@@ -290,6 +290,8 @@ tbody tr:hover{background:var(--hover);}
 .rm-play::before{content:""; position:absolute; top:50%; left:54%; transform:translate(-50%,-50%); border-style:solid; border-width:5px 0 5px 8px; border-color:transparent transparent transparent #fff;}
 /* (1) Ngày khai báo + Trạng thái: cùng cỡ chữ, không xuống dòng, canh giữa dòng, số canh đều */
 thead th.c-ngay, tbody td.c-ngay{white-space:nowrap; font-variant-numeric:tabular-nums; vertical-align:middle;}
+/* dòng phụ NGÀY TẠO TASK — nhỏ, trầm, nằm dưới Ngày khai báo */
+.ngay-tao{display:block; font-size:10.5px; color:var(--muted); margin-top:2px; font-variant-numeric:tabular-nums; white-space:nowrap;}
 thead th.c-status, tbody td.c-status{white-space:nowrap; vertical-align:middle;}
 /* (2) Vị trí: bề rộng CỐ ĐỊNH vừa "F0-A1-515-05-02-02111111" (24 ký tự) — mọi dòng đồng bộ;
    dài hơn thì XUỐNG DÒNG (không kéo giãn cột) */
@@ -1357,6 +1359,9 @@ const nameVP = r => {
 const keyVP = r => codeVP(r);
 // Hiển thị danh sách tên: MỖI NGƯỜI 1 DÒNG (đầy đủ họ tên, không gãy giữa tên)
 const lines = v => { const p=String(v||'').split(',').map(s=>s.trim()).filter(Boolean); return p.length?p.map(esc).join('<br>'):'—'; };
+// Dòng phụ "Tạo dd/mm/yyyy hh:mm" (Created At) dưới Ngày khai báo — task khai lùi ngày không bị lẫn
+const ngayTaoHTML = r => { if(iCreatedAt<0) return ''; const v=r[iCreatedAt]; if(v==null||v==='') return '';
+  return `<span class="ngay-tao">Tạo ${esc(fmtNgay(v))}</span>`; };
 const b2Loi = r => (iB2loi>=0 ? String(r[iB2loi]||"").trim() : "");
 const kpVP  = r => (iKP>=0 ? String(r[iKP]||"").trim() : "");
 // Task ĐÃ HUỶ (vô hiệu): Status tổng bị cancel HOẶC bước "Điều hướng" bị cancel (flow bị huỷ).
@@ -1739,7 +1744,7 @@ function _render(){
     const gi=ROWS.indexOf(r);
     const anh=thumbCell(r,gi,'tb');
     return `<tr data-i="${gi}">
-      <td class="c-ngay">${esc(fmtNgay(r[iNgayVP]))}</td>
+      <td class="c-ngay">${esc(fmtNgay(r[iNgayVP]))}${ngayTaoHTML(r)}</td>
       <td class="c-vitri">${esc(r[iViTri])}</td>
       <td class="c-loi" title="${esc(r[iLoi])}">${esc(r[iLoi])}</td>
       <td class="c-nv">${lines(nameVP(r))}</td>
@@ -1761,7 +1766,7 @@ function _render(){
       <div class="cl-body">
         <div class="cl-top">${statusBadge(r)}</div>
         <div class="cl-loi">${esc(r[iLoi]||'')}</div>
-        ${kv('Vị trí',r[iViTri])}${kv('Ngày khai báo',fmtNgay(r[iNgayVP]))}${nameVP(r)?`<div class="cl-kv">NV vi phạm: <b>${lines(nameVP(r))}</b></div>`:''}${iQLTT>=0&&r[iQLTT]?`<div class="cl-kv">QL trực tiếp: <b>${lines(r[iQLTT])}</b></div>`:''}
+        ${kv('Vị trí',r[iViTri])}${kv('Ngày khai báo',fmtNgay(r[iNgayVP]))}${iCreatedAt>=0&&r[iCreatedAt]?kv('Ngày tạo task',fmtNgay(r[iCreatedAt])):''}${nameVP(r)?`<div class="cl-kv">NV vi phạm: <b>${lines(nameVP(r))}</b></div>`:''}${iQLTT>=0&&r[iQLTT]?`<div class="cl-kv">QL trực tiếp: <b>${lines(r[iQLTT])}</b></div>`:''}
         <div class="cl-kv">Tần suất: ${freqCell(gi,r)}</div>
         <div class="cl-kv" style="margin-top:6px">Biên bản: ${bbCell(r)}</div>
       </div>
@@ -1775,7 +1780,7 @@ function rowsTableHTML(rows, kpiOf){
   const tr = rows.map(r=>{
     const gi=ROWS.indexOf(r);
     return `<tr data-i="${gi}">
-      <td class="c-ngay">${esc(fmtNgay(r[iNgayVP]))}</td>
+      <td class="c-ngay">${esc(fmtNgay(r[iNgayVP]))}${ngayTaoHTML(r)}</td>
       <td>${esc(r[iViTri]||'—')}</td>
       <td class="c-loi" title="${esc(r[iLoi])}">${esc(r[iLoi]||'—')}</td>
       <td>${lines(nameVP(r))}</td>
@@ -1794,6 +1799,7 @@ function rowsTableDocHTML(rows, kpiOf){
   const cols = asc.map((r,i)=>({r, lan:i+1})).reverse();     // mới nhất đứng trước
   const fields = [
     ['Ngày khai báo', r=>esc(fmtNgay(r[iNgayVP]))],
+    ['Ngày tạo task', r=>iCreatedAt>=0&&r[iCreatedAt]?esc(fmtNgay(r[iCreatedAt])):'—'],
     ['Vị trí',        r=>esc(r[iViTri]||'—')],
     ['Lỗi vi phạm',   r=>esc(r[iLoi]||'—')],
     ['NV vi phạm',    r=>lines(nameVP(r))],
