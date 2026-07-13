@@ -1352,7 +1352,10 @@ const statusBadge = r => {
 };
 
 function fmtNgay(v){
-  const m = String(v).match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)$/);
+  const sV=String(v);
+  const iso=sV.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);   // dữ liệu file tĩnh dạng ISO
+  if(iso) return iso[3]+"/"+iso[2]+"/"+iso[1]+(iso[4]?" "+iso[4]+":"+iso[5]:"");
+  const m = sV.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)$/);
   if(!m) return v;
   const p = n => String(n).padStart(2,"0");
   const gio = m[4]!=null ? " "+p(m[4])+":"+p(m[5]) : "";
@@ -1438,13 +1441,9 @@ function thumbCell(r, gi, cls){
 }
 
 /* ===== TẢI DỮ LIỆU (gviz JSONP) ===== */
-function taiDuLieu(){
-  const cb = "gviz_" + (Date.now()) + "_" + Math.floor(performance.now());
-  window[cb] = resp => {
-    try{
-      const t = resp.table;
-      H = (t.cols||[]).map(c => c.label || "");
-      ROWS = (t.rows||[]).map(r => (r.c||[]).map(c => c ? (c.v==null?"":c.v) : ""));
+/* NẠP DỮ LIỆU vào state + render — dùng chung cho file tĩnh (nhanh) và gviz (refresh nền) */
+function napDuLieu(Hn, Rn){
+      H = Hn; ROWS = Rn;
       iCode=idxOf("Task Code"); iLink=idxOf("Link Task"); iName=idxOf("Task Name");
       iStatus=H.findIndex(h=>h==="Status"); iCreatedAt=idxOf("Created At");
       iAnh=idxOf("Hình ảnh vi phạm"); iVideo=idxOf("Video vi phạm");
@@ -1470,8 +1469,33 @@ function taiDuLieu(){
       DL_COLS=H.map((h,i)=>i).filter(i=>/deadline/i.test(nhanCuoi(H[i])));   // mốc khoá biên bản 96h
       tinhTanSuat();                                                          // bộ đếm tần suất vi phạm/tháng
       napLoc(); render(); napKpiThang();                                      // bảng luỹ kế KPI (tab Tổng quan)
-      capNhatGioDuLieu();                                                     // chip "Dữ liệu · HH:MM" trên header
       if(firstLoad){ const p=document.querySelector('.pane:not(.hidden)'); if(p){ p.style.animation='none'; requestAnimationFrame(()=>{ p.style.animation=''; }); } firstLoad=false; }
+}
+
+/* TĂNG TỐC TẢI TRANG: nạp data-summary.json TĨNH trên Pages CDN (máy đồng bộ tính sẵn
+   tên NV/mã chuẩn/biên bản rồi đẩy lên). 1 request nén gzip ~70KB, phục vụ <1s ổn định —
+   thay cho gviz vốn bắt Google sinh trang mỗi lượt (no-cache, có lúc >20s trên mobile). */
+async function taiTuTinh(){
+  try{
+    const r = await fetch('data-summary.json');
+    if(!r.ok) return false;
+    const j = await r.json();
+    if(!j || !j.header || !j.rows || !j.rows.length) return false;
+    napDuLieu(j.header, j.rows);
+    if(j.apiAt) hienGioDuLieu(Number(j.apiAt), true);   // chip giờ có sẵn trong file, khỏi gọi thêm
+    return true;
+  }catch(e){ return false; }
+}
+
+/* gviz: giữ vai trò REFRESH NỀN (dữ liệu trực tuyến mới nhất) + fallback khi chưa có file tĩnh */
+function taiDuLieu(){
+  const cb = "gviz_" + (Date.now()) + "_" + Math.floor(performance.now());
+  window[cb] = resp => {
+    try{
+      const t = resp.table;
+      napDuLieu((t.cols||[]).map(c => c.label || ""),
+                (t.rows||[]).map(r => (r.c||[]).map(c => c ? (c.v==null?"":c.v) : "")));
+      capNhatGioDuLieu();                                                     // chip "Dữ liệu · HH:MM" trên header
     }catch(e){ console.error("Lỗi đọc dữ liệu:", e); }
     delete window[cb];
   };
@@ -2566,10 +2590,13 @@ $('btnFilter').addEventListener('click',()=>{
   setTitle(tt);
   // Link tới Google Sheet nguồn (tab 5S-TASKS)
   $('lnkSheet').href = "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/edit#gid=0";
-  taiDuLieu();   // biên bản nằm trong cột "Biên bản" của 5S-TASKS -> tải cùng dữ liệu
+  // TĂNG TỐC: hiện trang NGAY từ file tĩnh CDN; gviz chạy NỀN sau 4s để bắt dữ liệu mới nhất
+  taiTuTinh().then(ok=>{ if(ok) setTimeout(()=>{ if(!dangCho) taiDuLieu(); }, 4000); else taiDuLieu(); });
   taiQuyDinh();  // nạp QUY-DINH ngay từ đầu -> cột "Tần suất vi phạm" tra được %KPI theo hạng mục
-  // NẠP TRƯỚC form Ghi nhận 5S lúc trình duyệt rảnh -> bấm "+ Ghi nhận 5S" là mở tức thì
-  ('requestIdleCallback' in window) ? requestIdleCallback(napFormTruoc,{timeout:6000}) : setTimeout(napFormTruoc,3000);
+  // NẠP TRƯỚC form Ghi nhận 5S lúc rảnh — nhưng BỎ QUA trên mạng chậm/tiết kiệm dữ liệu
+  // (iframe form kéo ~800KB CDN, không được tranh băng thông với dữ liệu chính trên mobile)
+  const mangCham = navigator.connection && (navigator.connection.saveData || /(^|-)2g|3g/.test(navigator.connection.effectiveType||''));
+  if(!mangCham) (('requestIdleCallback' in window) ? requestIdleCallback(napFormTruoc,{timeout:8000}) : setTimeout(napFormTruoc,5000));
   // Tự làm mới ONLINE mỗi 5 phút + khi quay lại tab (không hiện skeleton lại -> không giật)
   setInterval(()=>{ if(!dangCho) taiDuLieu(); }, 5*60*1000);
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && !dangCho && ROWS.length) taiDuLieu(); });
