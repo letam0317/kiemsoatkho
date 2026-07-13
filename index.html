@@ -288,9 +288,9 @@ tbody tr:hover{background:var(--hover);}
 /* tam giác play khi item đầu là clip */
 .rm-play{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:20px; height:20px; border-radius:50%; background:rgba(0,0,0,.5); pointer-events:none;}
 .rm-play::before{content:""; position:absolute; top:50%; left:54%; transform:translate(-50%,-50%); border-style:solid; border-width:5px 0 5px 8px; border-color:transparent transparent transparent #fff;}
-/* (1) Ngày khai báo + Trạng thái: cùng cỡ chữ, không xuống dòng, canh giữa dòng, số canh đều */
+/* (1) Ngày ghi nhận + Trạng thái: cùng cỡ chữ, không xuống dòng, canh giữa dòng, số canh đều */
 thead th.c-ngay, tbody td.c-ngay{white-space:nowrap; font-variant-numeric:tabular-nums; vertical-align:middle;}
-/* dòng phụ NGÀY TẠO TASK — nhỏ, trầm, nằm dưới Ngày khai báo */
+/* dòng phụ NGÀY TẠO TASK — nhỏ, trầm, nằm dưới Ngày ghi nhận */
 .ngay-tao{display:block; font-size:10.5px; color:var(--muted); margin-top:2px; font-variant-numeric:tabular-nums; white-space:nowrap;}
 thead th.c-status, tbody td.c-status{white-space:nowrap; vertical-align:middle;}
 /* (2) Vị trí: bề rộng CỐ ĐỊNH vừa "F0-A1-515-05-02-02111111" (24 ký tự) — mọi dòng đồng bộ;
@@ -869,7 +869,7 @@ html{scroll-behavior:smooth;}
       <div class="kb-tile"><div class="sk sk-line" style="width:60%"></div></div>
       <div class="kb-tile"><div class="sk sk-line" style="width:60%"></div></div>
     </div>
-    <p class="foot" style="margin:0 0 14px">Tính từ <b>Ngày khai báo</b> của task trong tháng được chọn · KPI trừ theo hạng mục QUY-DINH và lần vi phạm luỹ tiến · <b>bấm 1 dòng</b> để xem các task chi tiết. Quản lý nghiệp vụ: −0.2%/lượt <b>xác minh được</b> NV, −1%/lượt <b>không xác minh được</b>; không tính lượt mà chính quản lý là NV vi phạm.</p>
+    <p class="foot" style="margin:0 0 14px">Tính từ <b>Ngày ghi nhận</b> của task trong tháng được chọn · KPI trừ theo hạng mục QUY-DINH và lần vi phạm luỹ tiến · <b>bấm 1 dòng</b> để xem các task chi tiết. Quản lý nghiệp vụ: −0.2%/lượt <b>xác minh được</b> NV, −1%/lượt <b>không xác minh được</b>; không tính lượt mà chính quản lý là NV vi phạm.</p>
 
     <button class="btn-cards" id="btnCards">Tổng kết nhanh (7 mục) — chạm để mở</button>
     <div class="cards collapsed" id="cards">
@@ -889,7 +889,7 @@ html{scroll-behavior:smooth;}
     <button class="btn-filter" id="btnFilter">Bộ lọc — chạm để mở</button>
     <div class="filters collapsed" id="filterGrid">
       <div class="date-filter" id="dateFilter">
-        <span class="lbl">Ngày khai báo</span>
+        <span class="lbl">Ngày ghi nhận</span>
         <button type="button" class="date-btn" id="btnDate">Tất cả</button>
         <div class="date-pop hidden" id="datePop">
           <div class="dp-presets">
@@ -914,7 +914,7 @@ html{scroll-behavior:smooth;}
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th class="c-ngay">Ngày khai báo</th><th class="c-vitri">Vị trí</th><th class="c-loi">Lỗi vi phạm</th><th class="c-nv">Nhân viên vi phạm</th>
+            <th class="c-ngay">Ngày ghi nhận</th><th class="c-vitri">Vị trí</th><th class="c-loi">Lỗi vi phạm</th><th class="c-nv">Nhân viên vi phạm</th>
             <th class="c-ql">Quản lý trực tiếp</th><th class="c-anh">Hình ảnh</th><th class="c-freq">Tần suất vi phạm</th><th class="c-flex"></th><th class="c-status">Trạng thái</th><th class="c-bb">Biên bản</th>
           </tr></thead>
           <tbody id="tbody">
@@ -1359,7 +1359,7 @@ const nameVP = r => {
 const keyVP = r => codeVP(r);
 // Hiển thị danh sách tên: MỖI NGƯỜI 1 DÒNG (đầy đủ họ tên, không gãy giữa tên)
 const lines = v => { const p=String(v||'').split(',').map(s=>s.trim()).filter(Boolean); return p.length?p.map(esc).join('<br>'):'—'; };
-// Dòng phụ "Tạo dd/mm/yyyy hh:mm" (Created At) dưới Ngày khai báo — task khai lùi ngày không bị lẫn
+// Dòng phụ "Tạo dd/mm/yyyy hh:mm" (Created At) dưới Ngày ghi nhận — task khai lùi ngày không bị lẫn
 const ngayTaoHTML = r => { if(iCreatedAt<0) return ''; const v=r[iCreatedAt]; if(v==null||v==='') return '';
   return `<span class="ngay-tao">Tạo ${esc(fmtNgay(v))}</span>`; };
 const b2Loi = r => (iB2loi>=0 ? String(r[iB2loi]||"").trim() : "");
@@ -1493,7 +1493,7 @@ const STATS = {
   huy:   {cap:"Đã huỷ ở tất cả các bước", color:"var(--muted)",
           pick:d=>d.filter(daHuy)},
 };
-/* ===== TẦN SUẤT VI PHẠM: đếm số lần vi phạm CỦA TỪNG NV trong THÁNG (theo Ngày khai báo),
+/* ===== TẦN SUẤT VI PHẠM: đếm số lần vi phạm CỦA TỪNG NV trong THÁNG (theo Ngày ghi nhận),
    luỹ tiến từ sớm -> muộn; KPI trừ tra theo hạng mục (QUY-DINH) + lần tương ứng. ===== */
 let FREQ={};   // chỉ số dòng (trong ROWS) -> {lan}
 const _nmCache = new Map();          // memoize như tsOf: mỗi giá trị ngày chỉ parse 1 lần
@@ -1557,7 +1557,7 @@ function bbKhoa(r){
 }
 
 /* ===== LUỸ KẾ KPI TRỪ TRONG THÁNG (tab Tổng quan) =====
-   - NV vi phạm: mỗi lượt trong tháng (theo Ngày khai báo, luỹ tiến) trừ %KPI của hạng mục theo lần.
+   - NV vi phạm: mỗi lượt trong tháng (theo Ngày ghi nhận, luỹ tiến) trừ %KPI của hạng mục theo lần.
    - Quản lý nghiệp vụ: −0.2%/lượt XÁC MINH ĐƯỢC (task có mã NV), −1%/lượt KHÔNG xác minh được;
      KHÔNG tính lượt mà chính quản lý nằm trong "Nhân viên vi phạm". */
 const QL_NGHIEP_VU=[["võ văn đức","Võ Văn Đức"],["hà trọng thúc bằng","Hà Trọng Thúc Bằng"],
@@ -1739,7 +1739,7 @@ function _render(){
   }).join('');
   $('dem').textContent=dTable.length+" task";
 
-  // Bảng (desktop) — Ngày khai báo / Vị trí / Lỗi / NV vi phạm / QL trực tiếp / Hình ảnh / Trạng thái(kiêm link work)
+  // Bảng (desktop) — Ngày ghi nhận / Vị trí / Lỗi / NV vi phạm / QL trực tiếp / Hình ảnh / Trạng thái(kiêm link work)
   $('tbody').innerHTML = dTable.map(r=>{
     const gi=ROWS.indexOf(r);
     const anh=thumbCell(r,gi,'tb');
@@ -1766,7 +1766,7 @@ function _render(){
       <div class="cl-body">
         <div class="cl-top">${statusBadge(r)}</div>
         <div class="cl-loi">${esc(r[iLoi]||'')}</div>
-        ${kv('Vị trí',r[iViTri])}${kv('Ngày khai báo',fmtNgay(r[iNgayVP]))}${iCreatedAt>=0&&r[iCreatedAt]?kv('Ngày tạo task',fmtNgay(r[iCreatedAt])):''}${nameVP(r)?`<div class="cl-kv">NV vi phạm: <b>${lines(nameVP(r))}</b></div>`:''}${iQLTT>=0&&r[iQLTT]?`<div class="cl-kv">QL trực tiếp: <b>${lines(r[iQLTT])}</b></div>`:''}
+        ${kv('Vị trí',r[iViTri])}${kv('Ngày ghi nhận',fmtNgay(r[iNgayVP]))}${iCreatedAt>=0&&r[iCreatedAt]?kv('Ngày tạo task',fmtNgay(r[iCreatedAt])):''}${nameVP(r)?`<div class="cl-kv">NV vi phạm: <b>${lines(nameVP(r))}</b></div>`:''}${iQLTT>=0&&r[iQLTT]?`<div class="cl-kv">QL trực tiếp: <b>${lines(r[iQLTT])}</b></div>`:''}
         <div class="cl-kv">Tần suất: ${freqCell(gi,r)}</div>
         <div class="cl-kv" style="margin-top:6px">Biên bản: ${bbCell(r)}</div>
       </div>
@@ -1788,7 +1788,7 @@ function rowsTableHTML(rows, kpiOf){
       <td>${statusCell(r)}</td>${kpiOf?`<td>${kpiOf(r)}</td>`:''}</tr>`;
   }).join('');
   return `<table><thead><tr>
-    <th>Ngày khai báo</th><th>Vị trí</th><th>Lỗi vi phạm</th><th>NV vi phạm</th>
+    <th>Ngày ghi nhận</th><th>Vị trí</th><th>Lỗi vi phạm</th><th>NV vi phạm</th>
     <th>QL trực tiếp</th><th>Trạng thái</th>${kpiOf?'<th>KPI trừ</th>':''}</tr></thead><tbody>${tr}</tbody></table>`;
 }
 /* Bảng DỌC cho pop-up luỹ kế: cột 1 = TÊN TRƯỜNG (đóng băng khi cuộn ngang), mỗi cột sau = 1 LẦN vi phạm.
@@ -1798,7 +1798,7 @@ function rowsTableDocHTML(rows, kpiOf){
   const asc = rows.slice().sort((a,b)=>(ngayMs(a[iNgayVP])||0)-(ngayMs(b[iNgayVP])||0));
   const cols = asc.map((r,i)=>({r, lan:i+1})).reverse();     // mới nhất đứng trước
   const fields = [
-    ['Ngày khai báo', r=>esc(fmtNgay(r[iNgayVP]))],
+    ['Ngày ghi nhận', r=>esc(fmtNgay(r[iNgayVP]))],
     ['Ngày tạo task', r=>iCreatedAt>=0&&r[iCreatedAt]?esc(fmtNgay(r[iCreatedAt])):'—'],
     ['Vị trí',        r=>esc(r[iViTri]||'—')],
     ['Lỗi vi phạm',   r=>esc(r[iLoi]||'—')],
