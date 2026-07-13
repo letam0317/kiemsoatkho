@@ -221,7 +221,7 @@
                   </template>
                   <template x-if="f.loai === 'video'">
                     <span class="block w-full h-full bg-slate-800 relative">
-                      <video :src="f.preview" class="absolute inset-0 w-full h-full object-cover opacity-70" muted preload="metadata"></video>
+                      <video :src="f.preview" playsinline webkit-playsinline class="absolute inset-0 w-full h-full object-cover opacity-70" muted preload="metadata"></video>
                       <span class="absolute inset-0 flex items-center justify-center">
                         <svg class="w-8 h-8 text-white drop-shadow" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                       </span>
@@ -257,7 +257,8 @@
 
         <!-- Khung camera CO GIÃN: luôn chừa chỗ cho nút bên dưới, không tràn màn hình -->
         <div class="flex-1 min-h-0 flex items-center justify-center overflow-hidden my-1">
-          <video x-ref="video" autoplay playsinline muted class="max-w-full max-h-full rounded-2xl bg-black object-contain"></video>
+          <!-- playsinline + webkit-playsinline + muted: khoá iOS không cho nhảy Fullscreen Player đè mất nút Chụp/Xong -->
+          <video x-ref="video" playsinline webkit-playsinline autoplay muted class="max-w-full max-h-full rounded-2xl bg-black object-contain"></video>
           <canvas x-ref="canvas" class="hidden"></canvas>
         </div>
 
@@ -315,7 +316,7 @@
           <img :src="xemMedia && xemMedia.preview" @click.stop class="max-w-full max-h-full rounded-xl object-contain" />
         </template>
         <template x-if="xemMedia && xemMedia.loai === 'video'">
-          <video :src="xemMedia && xemMedia.preview" @click.stop controls autoplay playsinline
+          <video :src="xemMedia && xemMedia.preview" @click.stop controls autoplay playsinline webkit-playsinline
             class="max-w-full max-h-full rounded-xl bg-black"></video>
         </template>
       </div>
@@ -535,8 +536,14 @@
           }
           this._cameraStream = stream;
           const v = this.$refs.video;
-          v.srcObject = stream;
+          // Khoá chạy INLINE trên iOS (đặt cả property lẫn attribute NGAY TRƯỚC play():
+          // thiếu là Safari ép nhảy Fullscreen Player native, đè mất nút Chụp/Xong)
           v.muted = true;
+          v.playsInline = true;
+          v.setAttribute('muted', '');
+          v.setAttribute('playsinline', '');
+          v.setAttribute('webkit-playsinline', '');
+          v.srcObject = stream;
           await v.play().catch(() => {});
         },
         async doiCamera() {
