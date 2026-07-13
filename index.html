@@ -6,6 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="Kiem soat kho 5S" />
 <meta name="theme-color" content="#eef3f0" />
+<!-- TĂNG TỐC: tải dữ liệu tính sẵn SONG SONG với việc dựng trang (tiết kiệm 1 vòng mạng) -->
+<link rel="preload" href="data-summary.json" as="fetch" />
+<link rel="preconnect" href="https://docs.google.com" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpolygon points='32,3 39.8,23.9 62,24.5 44.3,38.3 50.6,60 32,47.2 13.4,60 19.7,38.3 2,24.5 24.2,23.9' fill='%23d81e05'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
