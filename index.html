@@ -290,8 +290,23 @@ tbody tr:hover{background:var(--hover);}
 .rm-play::before{content:""; position:absolute; top:50%; left:54%; transform:translate(-50%,-50%); border-style:solid; border-width:5px 0 5px 8px; border-color:transparent transparent transparent #fff;}
 /* (1) Ngày ghi nhận + Trạng thái: cùng cỡ chữ, không xuống dòng, canh giữa dòng, số canh đều */
 thead th.c-ngay, tbody td.c-ngay{white-space:nowrap; font-variant-numeric:tabular-nums; vertical-align:middle;}
-/* dòng phụ NGÀY TẠO TASK — nhỏ, trầm, nằm dưới Ngày ghi nhận */
-.ngay-tao{display:block; font-size:10.5px; color:var(--muted); margin-top:2px; font-variant-numeric:tabular-nums; white-space:nowrap;}
+/* Ô THỜI GIAN 2 tầng: "Tạo ..." là dòng chính ĐẬM, "Ghi nhận ..." là dòng phụ xám bên dưới */
+.tg-tao{display:block; font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums;}
+.tg-gn{display:block; font-size:10.5px; color:var(--muted); margin-top:2px; white-space:nowrap; font-variant-numeric:tabular-nums;}
+/* ===== TỔNG KẾT NHANH · KIỂM SOÁT 7 NGÀY ===== */
+.tk7{padding:4px 16px 12px;}
+.tk7-row{display:flex; gap:12px; align-items:baseline; padding:9px 0; border-top:1px solid var(--border); font-size:13px; flex-wrap:wrap;}
+.tk7-row:first-child{border-top:0;}
+.tk7-l{flex:0 0 auto; min-width:235px; color:var(--muted); font-weight:700; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase;}
+.tk7-v{flex:1 1 auto; color:var(--text); line-height:1.55; min-width:0;}
+.tk7-v b{font-weight:800;}
+.tk7-good{color:var(--good);} .tk7-bad{color:var(--bad);}
+.tk7-warn .tk7-v b{color:var(--bad);}
+@media (max-width:700px){ .tk7-l{min-width:0; flex-basis:100%;} .tk7-row{gap:2px; padding:8px 0;} .tk7-v{font-size:12.5px;} }
+/* ===== LÝ DO THẤT BẠI/HUỶ trong pop-up chi tiết bước ===== */
+.step-fail{margin-top:9px; padding:9px 11px; border-radius:9px; font-size:12.5px; line-height:1.5;
+  color:var(--bad); background:rgba(239,68,68,.09); border:1px solid rgba(239,68,68,.35); overflow-wrap:anywhere;}
+.step-fail b{font-weight:800;}
 thead th.c-status, tbody td.c-status{white-space:nowrap; vertical-align:middle;}
 /* (2) Vị trí: bề rộng CỐ ĐỊNH vừa "F0-A1-515-05-02-02111111" (24 ký tự) — mọi dòng đồng bộ;
    dài hơn thì XUỐNG DÒNG (không kéo giãn cột) */
@@ -860,6 +875,11 @@ html{scroll-behavior:smooth;}
 
   <!-- ===== TAB TỔNG HỢP (thống kê) ===== -->
   <section id="pane-tong" class="pane hidden">
+    <!-- Tổng kết nhanh: kiểm soát mục tiêu 7 ngày (tạo WF -> hoàn tất ghi nhận KPI) -->
+    <div class="panel" id="tk7Panel" style="margin-bottom:14px">
+      <div class="panel-head"><span>Tổng kết nhanh · Kiểm soát 7 ngày</span></div>
+      <div class="tk7" id="tk7Body"><div class="muted" style="padding:10px 0">Đang tính...</div></div>
+    </div>
     <!-- Luỹ kế KPI trừ trong tháng -->
     <div class="panel" id="kpiPanel" style="margin-bottom:0">
       <div class="panel-head"><span>Luỹ kế KPI trừ trong tháng</span>
@@ -918,7 +938,7 @@ html{scroll-behavior:smooth;}
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th class="c-ngay">Ngày ghi nhận</th><th class="c-vitri">Vị trí</th><th class="c-loi">Lỗi vi phạm</th><th class="c-nv">Nhân viên vi phạm</th>
+            <th class="c-ngay">Thời gian</th><th class="c-vitri">Vị trí</th><th class="c-loi">Lỗi vi phạm</th><th class="c-nv">Nhân viên vi phạm</th>
             <th class="c-ql">Quản lý trực tiếp</th><th class="c-anh">Hình ảnh</th><th class="c-freq">Tần suất vi phạm</th><th class="c-flex"></th><th class="c-status">Trạng thái</th><th class="c-bb">Biên bản</th>
           </tr></thead>
           <tbody id="tbody">
@@ -1366,9 +1386,13 @@ const nameVP = r => {
 const keyVP = r => codeChuanVP(r);
 // Hiển thị danh sách tên: MỖI NGƯỜI 1 DÒNG (đầy đủ họ tên, không gãy giữa tên)
 const lines = v => { const p=String(v||'').split(',').map(s=>s.trim()).filter(Boolean); return p.length?p.map(esc).join('<br>'):'—'; };
-// Dòng phụ "Tạo dd/mm/yyyy hh:mm" (Created At) dưới Ngày ghi nhận — task khai lùi ngày không bị lẫn
-const ngayTaoHTML = r => { if(iCreatedAt<0) return ''; const v=r[iCreatedAt]; if(v==null||v==='') return '';
-  return `<span class="ngay-tao">Tạo ${esc(fmtNgay(v))}</span>`; };
+// Ô THỜI GIAN: dòng CHÍNH (đậm) = "Tạo <ngày tạo WF>", dòng PHỤ (xám) = "Ghi nhận <ngày>"
+const thoiGianCell = r => {
+  const tao = iCreatedAt>=0 && r[iCreatedAt]!=null && r[iCreatedAt]!=='' ? fmtNgay(r[iCreatedAt]) : '';
+  const gn = fmtNgay(r[iNgayVP]);
+  if(!tao) return `<span class="tg-tao">${esc(gn)}</span>`;
+  return `<span class="tg-tao">Tạo ${esc(tao)}</span><span class="tg-gn">Ghi nhận ${esc(gn)}</span>`;
+};
 const b2Loi = r => (iB2loi>=0 ? String(r[iB2loi]||"").trim() : "");
 const kpVP  = r => (iKP>=0 ? String(r[iKP]||"").trim() : "");
 // Task ĐÃ HUỶ (vô hiệu): Status tổng bị cancel HOẶC bước "Điều hướng" bị cancel (flow bị huỷ).
@@ -1732,6 +1756,48 @@ function moKpiChiTiet(loai,idx){
 
 const STAT_ORDER=["nv","chuaXM","loiCN","koCN","kpDat","kpChua","huy"];
 
+/* ===== TỔNG KẾT NHANH — KIỂM SOÁT 7 NGÀY (tạo WF -> hoàn tất ghi nhận KPI) =====
+   Export WMS KHÔNG có mốc giờ hoàn thành từng bước, nên:
+   - task ĐÃ ĐÓNG (Finished/Failed): mốc kết thúc XẤP XỈ = Deadline muộn nhất từng được đặt;
+   - task ĐANG MỞ: tính đến hiện tại (tuổi thật của quy trình);
+   - điểm nghẽn: bước đang GIỮ task mở (Processing, hoặc đã mở mà chưa xong), đo tuổi trung bình. */
+function renderTk7(rows){
+  const el=$('tk7Body'); if(!el||!H.length) return;
+  const NGAY=86400000, now=Date.now();
+  const stepCols=H.map((h,i)=>i).filter(i=>/▸\s*Status$/.test(H[i]) && !/^Điều hướng/.test(H[i]));
+  let dungHan=0,quaHan=0,hoanThanh=0,huy=0;
+  const ngam={};
+  rows.forEach(r=>{
+    if(daHuy(r)){ huy++; return; }
+    const stT=String(r[iStatus]||'');
+    if(/finished/i.test(stT)) hoanThanh++;
+    const t0=ngayMs(r[iCreatedAt]); if(t0==null) return;
+    const dong=/finished|failed/i.test(stT);
+    let t1=now;
+    if(dong){ let mx=0; DL_COLS.forEach(i2=>{ const v=ngayMs(r[i2]); if(v&&v>mx) mx=v; }); t1=mx||t0; }
+    if((t1-t0)/NGAY>7) quaHan++; else dungHan++;
+    if(!dong){
+      let cur=-1;
+      for(const i2 of stepCols){
+        const st=String(r[i2]||'').trim();
+        if(/processing/i.test(st)){ cur=i2; break; }
+        if((st===''||/^none$/i.test(st)) && String(r[i2-1]||'').trim()!==''){ cur=i2; break; }  // Deadline (cột liền trước) đã đặt = bước đã mở
+      }
+      if(cur>=0){ const k=H[cur].split('▸')[0].trim(); ngam[k]=ngam[k]||{n:0,tong:0}; ngam[k].n++; ngam[k].tong+=(now-t0)/NGAY; }
+    }
+  });
+  const tongXet=dungHan+quaHan, pct=tongXet?Math.round(dungHan/tongXet*100):100;
+  let nghen=null;
+  Object.entries(ngam).forEach(([k,v])=>{ const tb=v.tong/v.n; if(!nghen||tb>nghen.tb) nghen={k,tb,n:v.n}; });
+  const f1=n=>String(Math.round(n*10)/10).replace('.',',');
+  el.innerHTML=
+    `<div class="tk7-row"><span class="tk7-l">Tỷ lệ hoàn tất đúng hạn (&lt;7 ngày)</span><span class="tk7-v"><b class="${pct>=80?'tk7-good':'tk7-bad'}">${pct}%</b> · ${dungHan} task đúng hạn / ${quaHan} task quá hạn quy trình</span></div>`+
+    `<div class="tk7-row"><span class="tk7-l">Kết quả Workflow</span><span class="tk7-v">Hoàn thành <b>${hoanThanh}</b> task · Huỷ <b>${huy}</b> task</span></div>`+
+    (nghen
+      ? `<div class="tk7-row tk7-warn"><span class="tk7-l">Cảnh báo điểm nghẽn</span><span class="tk7-v">Bước <b>${esc(nghen.k)}</b> đang ngâm xử lý lâu nhất — trung bình <b>${f1(nghen.tb)} ngày</b> (${nghen.n} task đang chờ), cần tối ưu để không ảnh hưởng thời hạn ghi nhận KPI ≤ 7 ngày.</span></div>`
+      : `<div class="tk7-row"><span class="tk7-l">Điểm nghẽn</span><span class="tk7-v">Không có task nào đang chờ xử lý.</span></div>`);
+}
+
 /* ===== RENDER (debounce bằng requestAnimationFrame — mượt, không lag) ===== */
 let rafId=null, curD=[];
 function render(){ if(rafId) cancelAnimationFrame(rafId); rafId=requestAnimationFrame(_render); }
@@ -1746,13 +1812,14 @@ function _render(){
     return the(s.cap,num,s.color,k);
   }).join('');
   $('dem').textContent=dTable.length+" task";
+  renderTk7(dAll);                               // Tổng kết nhanh · kiểm soát 7 ngày (tab Tổng quan)
 
   // Bảng (desktop) — Ngày ghi nhận / Vị trí / Lỗi / NV vi phạm / QL trực tiếp / Hình ảnh / Trạng thái(kiêm link work)
   $('tbody').innerHTML = dTable.map(r=>{
     const gi=ROWS.indexOf(r);
     const anh=thumbCell(r,gi,'tb');
     return `<tr data-i="${gi}">
-      <td class="c-ngay">${esc(fmtNgay(r[iNgayVP]))}${ngayTaoHTML(r)}</td>
+      <td class="c-ngay">${thoiGianCell(r)}</td>
       <td class="c-vitri">${esc(r[iViTri])}</td>
       <td class="c-loi" title="${esc(r[iLoi])}">${esc(r[iLoi])}</td>
       <td class="c-nv">${lines(nameVP(r))}</td>
@@ -1774,7 +1841,7 @@ function _render(){
       <div class="cl-body">
         <div class="cl-top">${statusBadge(r)}</div>
         <div class="cl-loi">${esc(r[iLoi]||'')}</div>
-        ${kv('Vị trí',r[iViTri])}${kv('Ngày ghi nhận',fmtNgay(r[iNgayVP]))}${iCreatedAt>=0&&r[iCreatedAt]?kv('Ngày tạo task',fmtNgay(r[iCreatedAt])):''}${nameVP(r)?`<div class="cl-kv">NV vi phạm: <b>${lines(nameVP(r))}</b></div>`:''}${iQLTT>=0&&r[iQLTT]?`<div class="cl-kv">QL trực tiếp: <b>${lines(r[iQLTT])}</b></div>`:''}
+        ${kv('Vị trí',r[iViTri])}${iCreatedAt>=0&&r[iCreatedAt]?kv('Ngày tạo WF',fmtNgay(r[iCreatedAt])):''}${kv('Ngày ghi nhận',fmtNgay(r[iNgayVP]))}${nameVP(r)?`<div class="cl-kv">NV vi phạm: <b>${lines(nameVP(r))}</b></div>`:''}${iQLTT>=0&&r[iQLTT]?`<div class="cl-kv">QL trực tiếp: <b>${lines(r[iQLTT])}</b></div>`:''}
         <div class="cl-kv">Tần suất: ${freqCell(gi,r)}</div>
         <div class="cl-kv" style="margin-top:6px">Biên bản: ${bbCell(r)}</div>
       </div>
@@ -1788,7 +1855,7 @@ function rowsTableHTML(rows, kpiOf){
   const tr = rows.map(r=>{
     const gi=ROWS.indexOf(r);
     return `<tr data-i="${gi}">
-      <td class="c-ngay">${esc(fmtNgay(r[iNgayVP]))}${ngayTaoHTML(r)}</td>
+      <td class="c-ngay">${thoiGianCell(r)}</td>
       <td>${esc(r[iViTri]||'—')}</td>
       <td class="c-loi" title="${esc(r[iLoi])}">${esc(r[iLoi]||'—')}</td>
       <td>${lines(nameVP(r))}</td>
@@ -1796,7 +1863,7 @@ function rowsTableHTML(rows, kpiOf){
       <td>${statusCell(r)}</td>${kpiOf?`<td>${kpiOf(r)}</td>`:''}</tr>`;
   }).join('');
   return `<table><thead><tr>
-    <th>Ngày ghi nhận</th><th>Vị trí</th><th>Lỗi vi phạm</th><th>NV vi phạm</th>
+    <th>Thời gian</th><th>Vị trí</th><th>Lỗi vi phạm</th><th>NV vi phạm</th>
     <th>QL trực tiếp</th><th>Trạng thái</th>${kpiOf?'<th>KPI trừ</th>':''}</tr></thead><tbody>${tr}</tbody></table>`;
 }
 /* Bảng DỌC cho pop-up luỹ kế: cột 1 = TÊN TRƯỜNG (đóng băng khi cuộn ngang), mỗi cột sau = 1 LẦN vi phạm.
@@ -1806,8 +1873,8 @@ function rowsTableDocHTML(rows, kpiOf){
   const asc = rows.slice().sort((a,b)=>(ngayMs(a[iNgayVP])||0)-(ngayMs(b[iNgayVP])||0));
   const cols = asc.map((r,i)=>({r, lan:i+1})).reverse();     // mới nhất đứng trước
   const fields = [
+    ['Ngày tạo WF',   r=>iCreatedAt>=0&&r[iCreatedAt]?esc(fmtNgay(r[iCreatedAt])):'—'],
     ['Ngày ghi nhận', r=>esc(fmtNgay(r[iNgayVP]))],
-    ['Ngày tạo task', r=>iCreatedAt>=0&&r[iCreatedAt]?esc(fmtNgay(r[iCreatedAt])):'—'],
     ['Vị trí',        r=>esc(r[iViTri]||'—')],
     ['Lỗi vi phạm',   r=>esc(r[iLoi]||'—')],
     ['NV vi phạm',    r=>lines(nameVP(r))],
@@ -1894,6 +1961,15 @@ function moChiTiet(i){
       }
       fhtml += `<div class="fld"><span class="fld-l">${esc(f.label)}</span><span class="fld-v">${esc(disp)}</span></div>`;
     });
+    // LÝ DO THẤT BẠI/HUỶ: bước có Status Fail/Cancel -> box cảnh báo đỏ, nhìn là nhận ra ngay.
+    // (Cột "Reason" của WMS chỉ chứa MÃ SỐ nên lấy lý do dạng CHỮ từ Giải trình/Ghi chú/Kết quả.)
+    const stB=fields.find(f=>/trạng thái|status/i.test(String(f.label)));
+    const stRaw=stB?String(stB.val||''):'';
+    if(/fail|cancel/i.test(stRaw)){
+      const laText=v=>{const t=String(v||'').trim(); return t && !/^https?:/i.test(t) && !/^[\d\s.,:-]+$/.test(t) && !isMedia(v);};
+      const ly=fields.filter(f=>/reason|lý do|giải trình|ghi chú|kết quả/i.test(String(f.label)) && laText(f.val)).map(f=>String(f.val).trim());
+      fhtml+=`<div class="step-fail"><b>Lý do ${/cancel/i.test(stRaw)?'huỷ':'thất bại'}:</b> ${ly.length?esc(ly.join(' · ')):'Hệ thống không ghi nhận lý do cụ thể ở bước này.'}</div>`;
+    }
     // Khối hình ảnh/clip
     const mhtml = media.map((m,mi)=> m.type==='vid'
       ? `<video class="thumb" src="${esc(m.url)}" preload="metadata" data-g="${si}" data-i="${mi}"></video>`
