@@ -596,7 +596,7 @@ thead th.c-status, tbody td.c-status{width:150px;}
   padding:26px 24px 20px; box-shadow:var(--shadow); text-align:center; animation:paneIn .35s var(--ez-apple) both;}
 /* Ngôi sao WATERMARK chìm CHÍNH GIỮA pop-up — không chắn chữ/nút, không bắt click */
 .pin-star-wm{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-  width:200px; height:200px; opacity:.05; pointer-events:none; z-index:0;}
+  width:min(58%,230px); height:auto; aspect-ratio:1; opacity:.12; pointer-events:none; z-index:0;}
 /* Mọi nội dung nổi TRÊN watermark */
 .pin-box h3, .pin-desc, .pin-field, .pin-error-text, .pin-acts{position:relative; z-index:1;}
 .pin-box h3{margin:0 0 4px; font-size:16px; font-weight:800; color:var(--text);}
