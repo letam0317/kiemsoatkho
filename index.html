@@ -668,7 +668,6 @@ thead th.c-loi, tbody td.c-loi{max-width:270px;}
    đơn vị ch nên tự co giãn theo cỡ chữ desktop/mobile) — tên luôn 1 hàng trọn vẹn, KHÔNG "…" */
 td.kpi-ten{white-space:nowrap;}
 .kpi-ten .tn{display:block; width:var(--tenW,auto); max-width:none; white-space:nowrap; overflow:visible;}
-.tn-ma{color:var(--muted); font-weight:600; font-size:.82em; letter-spacing:.02em;}  /* mã NV sau tên — phân biệt người trùng họ tên */
 /* NV ĐÃ NGHỈ VIỆC — "bay màu" hiện đại, không icon: mờ mạnh + nghiêng + gạch ngang MẢNH,
    phân biệt tức thì trên cả nền sáng/tối mà bảng vẫn sạch */
 .user-resigned{opacity:.45; font-style:italic;
@@ -1808,7 +1807,7 @@ function renderKpi(){
   // Cột HỌ VÀ TÊN tự co giãn theo TÊN NGƯỜI DÀI NHẤT thật sự trong bảng tháng này
   // (chỉ quét chuỗi tên ở cột họ tên NV + QL, không tính header/cột khác)
   // -> tên luôn trọn vẹn 1 hàng, KHÔNG cắt "..." , không thừa khoảng trống
-  const tenDaiNhat=Math.max(0, ...nv.map(x=>String(x.ten||'').length+String(x.id||'').length+3), ...ql.map(x=>String(x.ten||'').length));
+  const tenDaiNhat=Math.max(0, ...nv.map(x=>String(x.ten||'').length), ...ql.map(x=>String(x.ten||'').length));   // cột chỉ in TÊN (ID đã có cột riêng)
   $('kpiWrap').style.setProperty('--tenW', (tenDaiNhat||18)+'ch');
   // Tiêu đề cột so sánh đổi ĐỘNG theo tháng liền trước của bộ lọc (04 -> "Tháng 03"; 01 -> "Tháng 12")
   const pmT=prevYm.split('-')[1];
@@ -1821,7 +1820,7 @@ function renderKpi(){
   h+=nv.map((x,i)=>`<tr data-kpi="nv:${i}" class="${i<3?'kpi-top':''}" title="Bấm xem các task trong tháng">
       <td class="kpi-rank">${i+1}</td>
       <td class="kpi-id">${esc(x.id)}</td>
-      <td class="kpi-ten" title="${esc(x.ten)} (${esc(x.id)})${x.nghi?' — đã nghỉ việc':''}"><span class="tn${x.nghi?' user-resigned':''}">${esc(x.ten)} <span class="tn-ma">(${esc(x.id)})</span></span></td>
+      <td class="kpi-ten" title="${esc(x.ten)}${x.nghi?' — đã nghỉ việc':''}"><span class="tn${x.nghi?' user-resigned':''}">${esc(x.ten)}</span></td>
       <td class="kpi-col-luot"><span class="kpi-pill">${x.luot} lượt</span></td>
       <td class="kpi-val">${fmt(x.kpi)}<div class="kpi-bar" style="width:${Math.max(6,Math.round(x.kpi/maxK*100))}%"></div></td>
       <td class="kpi-col-prev">${soSanh(x.kpi,prevNv[x.id]!=null?prevNv[x.id]:null)}</td></tr>`).join('')
