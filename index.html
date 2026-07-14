@@ -214,10 +214,20 @@ label{display:flex; flex-direction:column; gap:4px;}
 /* ===== CUSTOM DROPDOWN mượt (thay <select> native — animate opacity/transform, click-outside) ===== */
 .cs{position:relative; width:100%;}
 .cs-native{position:absolute!important; width:1px; height:1px; opacity:0; pointer-events:none; margin:0; padding:0;}
-.cs-trigger{width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px;
-  background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:8px 10px;
-  font-size:14px; font-weight:600; color:var(--text); cursor:pointer; text-align:left; transition:border-color .18s ease;}
-.cs-trigger:hover, .cs.show .cs-trigger{border-color:var(--accent);}
+/* CHUẨN CHUNG cho MỌI ô lọc (nút lịch + trigger dropdown + input tìm): đồng bộ font/padding/viền,
+   viền 1px luôn hiện (focus chỉ ĐỔI MÀU, không đổi kích thước -> KHÔNG giật chữ). box-sizing:border-box (global). */
+.date-btn, .cs-trigger, .filters input{
+  font-size:14px; font-weight:500; color:var(--text); padding:8px 10px;
+  border:1px solid var(--border); border-radius:8px; background:var(--surface);
+  transition:border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+.cs-trigger{width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; text-align:left;}
+/* FOCUS RING (chuẩn Apple/Bootstrap): viền accent + quầng mờ toả, mượt qua transition */
+.date-btn:hover, .cs-trigger:hover, .filters input:hover{border-color:var(--accent);}
+.date-btn:focus, .cs-trigger:focus, .cs.show .cs-trigger, .filters input:focus{
+  outline:none; border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
 .cs-lab{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .cs-caret{flex:0 0 auto; width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent;
   border-top:6px solid var(--muted); transition:transform .25s cubic-bezier(.4,0,.2,1);}
@@ -483,8 +493,7 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
 
 /* ===== DATE FILTER (gộp 1 ô "Ngày", chọn đơn hoặc khoảng bằng kéo) ===== */
 .date-filter{display:flex; flex-direction:column; gap:4px; min-width:0; position:relative;}
-.date-btn{width:100%; text-align:left; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:8px 10px; cursor:pointer; font-weight:500; color:var(--text);}
-.date-btn:hover{border-color:var(--accent);}
+.date-btn{width:100%; text-align:left; cursor:pointer;}   /* font/viền/focus-ring dùng chuẩn chung ở khối .date-btn,.cs-trigger,.filters input */
 .date-pop{position:absolute; top:calc(100% + 6px); left:0; z-index:45; background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); padding:12px; width:max-content; max-width:94vw;
   transform-origin:top left; animation:popIn .16s cubic-bezier(.16,1,.3,1); will-change:opacity,transform;}
 @keyframes popIn{from{opacity:0; transform:translate3d(0,-6px,0) scale(.98);} to{opacity:1; transform:none;}}
