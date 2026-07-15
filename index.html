@@ -15,6 +15,15 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
 <title>AUDIT</title>
 <style>
+/* ===== CHỈ THỊ 1: DESIGN TOKENS DÙNG CHUNG (cả Hasaki lẫn Factory tham chiếu 1 nguồn) ===== */
+:root{
+  --primary-color:#2f7a55;      /* Xanh Hasaki */
+  --primary-hover:#245c40;
+  --border-color:#d9d9d9;
+  --border-radius:4px;
+  --input-height:36px;          /* chiều cao chuẩn form control (mobile giãn ≥44px) */
+  --transition-speed:.2s ease-in-out;
+}
 /* ===== HỆ MÀU (CSS VARIABLES) — CÁC THEME ĐƯỢC ĐÁNH GIÁ CAO ===== */
 /* Tokyo Night (mặc định) */
 :root, [data-theme="tokyo"]{
@@ -891,6 +900,51 @@ button:active{transform:scale(.97);}
 .kpi-band .kb-tile:nth-child(4){animation-delay:.18s;}
 .cards:not(.collapsed){animation:paneIn .4s var(--ez-apple);}
 html{scroll-behavior:smooth;}
+
+/* ===== MULTI-TENANT: bộ chuyển công ty (Hasaki / Factory) ===== */
+.cty-switch{display:inline-flex; gap:2px; background:var(--panel,#fff); border:1.5px solid var(--line,#d0d7de);
+  border-radius:999px; padding:3px; flex:none;}
+.cty-opt{border:0; background:transparent; padding:5px 14px; border-radius:999px; font-weight:750; font-size:12.5px;
+  letter-spacing:.2px; cursor:pointer; color:var(--muted,#6b7280);
+  transition:background-color .28s var(--ez-apple), color .2s ease, transform .16s var(--ez-apple);}
+.cty-opt:hover{color:var(--text,#1f2937);}
+.cty-opt.active{background:var(--brand); color:var(--brand-on); box-shadow:0 2px 8px rgba(0,0,0,.14);}
+/* chấm màu thương hiệu trong nút chọn công ty (nhận diện nhanh) */
+.cty-opt .dot{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:7px; vertical-align:1px;}
+.cty-opt[data-cty="hasaki"] .dot{background:#2f9e6e;} .cty-opt[data-cty="factory"] .dot{background:#f08a24;}
+.cty-opt.active .dot{background:currentColor; opacity:.85;}
+/* Mobile: hitbox tối thiểu 44px, chạm thoải mái */
+@media(max-width:640px){ .cty-opt{min-height:44px; padding:10px 16px; font-size:13px;} .cty-switch{padding:3px 4px;} }
+/* ===== NÚT DROPDOWN "DỮ LIỆU" — VERTICAL STACK 2 TẦNG, kích thước ĐỒNG BỘ (Chỉ thị 2+3) =====
+   Dòng 1 (.act): hành động, đậm, nowrap tuyệt đối không rớt dòng.
+   Dòng 2 (.timestamp-hint): "Mới nhất: HH:MM DD/MM" nhỏ, xám mờ.
+   min-height 56px CHỐT CỨNG cho MỌI nút (kể cả nút không có timestamp như "Mở Google Sheet")
+   + justify-content:center tự căn giữa trục dọc -> danh sách ô vuông vức, chuyên nghiệp. */
+/* Selector .settings-pop .dropdown-action-btn (0-2-0) để THẮNG rule nền .set-sec>button (0-1-1)
+   — nếu chỉ dùng .dropdown-action-btn thì display:block của rule nền đè mất display:flex. */
+.settings-pop .dropdown-action-btn{
+  display:flex; flex-direction:column; align-items:flex-start; justify-content:center;
+  width:100%; padding:10px 14px; min-height:56px; box-sizing:border-box; gap:2px;
+}
+.settings-pop .dropdown-action-btn .act{font-weight:600; color:var(--text); white-space:nowrap; font-size:13px; line-height:1.35;}
+.settings-pop .dropdown-action-btn .timestamp-hint{font-size:12px; font-weight:500; color:var(--muted,#888); white-space:nowrap; line-height:1.3;}
+.settings-pop .dropdown-action-btn:hover .act{color:var(--accent);}
+.settings-pop a.dropdown-action-btn{text-decoration:none;}
+
+/* Badge DEV (hiện khi ?dev=1 — nhắc đang ở bản nháp, sync production bị chặn) */
+.dev-badge{background:#b45309; color:#fff; border-radius:6px; padding:3px 8px; font-size:10.5px; font-weight:800; letter-spacing:.6px;}
+/* NHẬN DIỆN CÔNG TY: Factory đổi màu chủ đạo sang CAM (mọi theme) — biết ngay đang ở dashboard nào */
+[data-company="factory"]{--brand:#c95d0c; --brand-on:#ffffff;}
+[data-company="factory"][data-theme="tokyo"],[data-company="factory"][data-theme="dracula"],
+[data-company="factory"][data-theme="nord"],[data-company="factory"][data-theme="mocha"]{--brand:#f0a45a; --brand-on:#0e1116;}
+[data-company="factory"] #hskMark{display:none !important;}   /* watermark Hasaki không hiện ở Factory */
+/* Các nút nghiệp vụ nối vào backend Hasaki — ẨN khi đang xem Factory (chưa có backend riêng) */
+[data-company="factory"] #btnGhiNhan,[data-company="factory"] #btnSync,[data-company="factory"] #btnSyncTS{display:none;}
+/* Skeleton toàn trang khi chuyển công ty + trạng thái "chưa có dữ liệu" */
+#ctySkl,#ctyEmpty{display:none;}
+body.cty-loading .pane{display:none !important;} body.cty-loading #ctySkl{display:block;}
+body.cty-trong .pane{display:none !important;}  body.cty-trong #ctyEmpty{display:block;}
+
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none !important; transition:none !important;} html{scroll-behavior:auto;}}
 </style>
 </head>
@@ -913,7 +967,11 @@ html{scroll-behavior:smooth;}
       <h1 class="brand-title" id="brandTitle"></h1>
     </div>
     <div class="head-right">
-      <span id="dataFresh" class="data-fresh" hidden><span class="df-dot"></span><span class="df-lbl">Dữ liệu</span><span id="dfTxt"></span></span>
+      <div class="cty-switch" id="ctySwitch" role="tablist" aria-label="Chọn công ty">
+        <button class="cty-opt" data-cty="hasaki" role="tab"><span class="dot"></span>Hasaki</button>
+        <button class="cty-opt" data-cty="factory" role="tab"><span class="dot"></span>Factory</button>
+      </div>
+      <!-- (đã bỏ pill "Dữ liệu HH:MM": trùng lặp với timestamp trong menu Dữ liệu — Chỉ thị 1) -->
       <button id="btnGhiNhan" title="Ghi nhận vi phạm 5S (cần PIN)">+ Ghi nhận 5S</button>
       <div class="settings" id="settingsWrap">
         <button id="btnSettings" title="Cài đặt hiển thị & dữ liệu" aria-label="Mở cài đặt"><span class="bars"></span></button>
@@ -944,22 +1002,50 @@ html{scroll-behavior:smooth;}
           </div>
           <div class="set-sec">
             <div class="set-h">Dữ liệu</div>
-            <button id="btnReload">Tải lại dữ liệu</button>
-            <button id="btnSync">Cập nhật ngay (cần PIN)</button>
-            <button id="btnSyncTS">Cập nhật chấm công (cần PIN)</button>
-            <a id="lnkSheet" class="set-link" href="#" target="_blank" rel="noopener">Mở Google Sheet nguồn ↗</a>
+            <!-- Nút hành động 2 TẦNG DỌC (vertical stack, học ô "Thời gian" bảng vi phạm):
+                 dòng 1 = hành động (đậm, nowrap không rớt dòng), dòng 2 = timestamp xám mờ.
+                 Tất cả dùng chung .dropdown-action-btn, min-height 56px -> danh sách vuông vức đồng bộ -->
+            <button id="btnReload" class="dropdown-action-btn"><span class="act">Tải lại dữ liệu</span><small class="timestamp-hint" id="tsReload"></small></button>
+            <button id="btnSync" class="dropdown-action-btn"><span class="act">Cập nhật ngay (cần PIN)</span><small class="timestamp-hint" id="tsSync"></small></button>
+            <button id="btnSyncTS" class="dropdown-action-btn"><span class="act">Cập nhật chấm công (cần PIN)</span><small class="timestamp-hint" id="tsSyncTS"></small></button>
+            <a id="lnkSheet" class="set-link dropdown-action-btn" href="#" target="_blank" rel="noopener"><span class="act">Mở Google Sheet nguồn ↗</span></a>
           </div>
         </div>
       </div>
     </div>
     <!-- 4 tab điều hướng: nằm NGAY TRONG header sticky, cạnh tiêu đề — text thuần, không icon -->
-    <nav class="tabs">
-      <button class="tab" data-tab="tong">Tổng quan</button>
-      <button class="tab active" data-tab="task">Task vi phạm</button>
-      <button class="tab" data-tab="hangmuc">Hạng mục 5S</button>
-      <button class="tab" data-tab="kk">Kiểm kê</button>
-    </nav>
+    <!-- Cấp 2 — Dynamic Contextual Tabs: renderTabs() dựng lại theo CTY[CTY_ID].tabs -->
+    <nav class="tabs" id="tabsNav" role="tablist"></nav>
   </header>
+
+  <!-- ===== MULTI-TENANT: skeleton khi chuyển công ty + trạng thái chưa có nguồn dữ liệu ===== -->
+  <div id="ctySkl" aria-hidden="true">
+    <div class="kpi-band">
+      <div class="kb-tile"><div class="sk sk-line" style="width:62%"></div></div>
+      <div class="kb-tile"><div class="sk sk-line" style="width:55%"></div></div>
+      <div class="kb-tile"><div class="sk sk-line" style="width:68%"></div></div>
+      <div class="kb-tile"><div class="sk sk-line" style="width:50%"></div></div>
+    </div>
+    <div class="panel" style="margin-top:14px"><div style="padding:18px 16px">
+      <div class="sk sk-line" style="width:88%"></div><div class="sk sk-line" style="width:72%"></div>
+      <div class="sk sk-line" style="width:80%"></div><div class="sk sk-line" style="width:64%"></div>
+      <div class="sk sk-line" style="width:76%"></div><div class="sk sk-line" style="width:58%"></div>
+    </div></div>
+  </div>
+  <div id="ctyEmpty">
+    <div class="panel" style="margin-top:14px; padding:30px 22px; text-align:center">
+      <h3 style="margin:0 0 8px; font-size:17px">Chưa có dữ liệu cho <span id="ctyEmptyTen"></span></h3>
+      <p style="margin:0; color:var(--muted,#6b7280); font-size:13.5px; line-height:1.65">
+        Nguồn dữ liệu riêng của công ty này (thư mục <code>summary-factory/</code> hoặc Google Sheet) chưa được cấu hình/đẩy lên.<br>
+        Khi pipeline đồng bộ của công ty này chạy lần đầu, dashboard sẽ tự hiển thị — không cần sửa giao diện.
+      </p>
+    </div>
+  </div>
+
+  <!-- ===== TAB TRẠNG THÁI LƯU TRỮ (Factory) — nội dung do factory-stock.js dựng, LAZY ===== -->
+  <section id="pane-fstock" class="pane hidden"></section>
+  <!-- ===== TAB KIỂM KÊ (Factory) — factory-kiemke.js, LAZY; data tab riêng kiemke-material ===== -->
+  <section id="pane-fkiemke" class="pane hidden"></section>
 
   <!-- ===== TAB TỔNG HỢP (thống kê) ===== -->
   <section id="pane-tong" class="pane hidden">
@@ -1176,8 +1262,39 @@ html{scroll-behavior:smooth;}
 <script>
 "use strict";
 /* ===== CẤU HÌNH — GIỮ NGUYÊN LOGIC DỮ LIỆU NỀN TẢNG ===== */
-const SHEET_ID = "1FWffWi75aATbokfqIcqjByEPzkJLQBngTXp5aPOIbLM";
+/* MULTI-TENANT: mỗi công ty 1 NGUỒN DỮ LIỆU RIÊNG (thư mục summary tĩnh + Google Sheet fallback).
+   TUYỆT ĐỐI không gộp data 2 công ty vào 1 file — tách luồng ngay từ nguồn.
+   Bổ sung công ty mới = thêm 1 entry ở đây (ten, thư mục summary, sheetId) — không sửa logic. */
+const CTY = {
+  hasaki:  { ten: "HASAKI",  summary: "summary",         sheetId: "1FWffWi75aATbokfqIcqjByEPzkJLQBngTXp5aPOIbLM", tabs: ["tong","task","hangmuc","kk"] },
+  factory: { ten: "FACTORY", summary: "summary-factory", sheetId: "", tabs: ["fstock","fkiemke"] },   // 5S Factory chưa có nguồn; 2 tab chạy module riêng
+};
+/* Danh bạ TAB (Cấp 2 — Dynamic Contextual Tabs): khung tab render lại theo công ty đang chọn.
+   fstock = module cô lập factory-stock.js, LAZY: chỉ nạp khi người dùng thật sự mở tab. */
+const TAB_DEFS = {
+  tong:   { ten: "Tổng quan" },
+  task:   { ten: "Task vi phạm" },
+  hangmuc:{ ten: "Hạng mục 5S" },
+  kk:     { ten: "Kiểm kê" },
+  fstock: { ten: "Trạng thái lưu trữ", module: true },   // module:true = tab TỰ LO dữ liệu (JSONP riêng),
+  fkiemke:{ ten: "Kiểm kê",            module: true },   // KHÔNG đi qua pipeline 5S (summary/gviz 5S-TASKS) của host
+};
+const DEV_MODE = /[?&]dev=1/.test(location.search);   // ?dev=1: bản nháp local — CHỈ chặn sync ghi production, KHÔNG chặn init/read
+/* Công ty có dùng dữ liệu 5S không = có ít nhất 1 tab KHÔNG phải tab module.
+   (Fix lỗi "Chưa có dữ liệu cho FACTORY": bản trước so sánh cứng !=='fstock' nên khi thêm fkiemke,
+   Factory bị coi là "có 5S" -> host chạy pipeline 5S -> fail -> overlay trống đè lên cả 2 tab module.) */
+const co5S = () => CTY[CTY_ID].tabs.some(t => !TAB_DEFS[t].module);
+const tabMacDinh = () => CTY[CTY_ID].tabs.includes("task") ? "task" : CTY[CTY_ID].tabs[0];
+/* Ưu tiên đọc: ?company= trên URL (link chia sẻ được) -> localStorage -> mặc định hasaki */
+function docCtyBanDau(){
+  try{ const u = new URLSearchParams(location.search).get("company"); if(u && CTY[u]) return u; }catch(e){}
+  try{ const s = localStorage.getItem("currentCompany"); if(s && CTY[s]) return s; }catch(e){}
+  return "hasaki";
+}
+let CTY_ID = docCtyBanDau();
+let SHEET_ID = CTY[CTY_ID].sheetId;                      // let: switchCompany() cập nhật động, KHÔNG reload trang
 const TAB = "5S-TASKS";
+const thuMucSummary = () => CTY[CTY_ID].summary;         // mọi fetch file tĩnh đi qua đây -> tự trỏ đúng công ty
 const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec";
 
 let H = [], ROWS = [];
@@ -1561,7 +1678,7 @@ async function taiChunk(th){
   try{
     // buster theo apiAt: URL đổi khi có sync mới -> luôn tươi; giữa 2 sync -> URL giống nhau -> CDN vẫn cache
     const bust = (SUMMARY_INDEX && SUMMARY_INDEX.apiAt) ? SUMMARY_INDEX.apiAt : Date.now();
-    const r = await fetch('summary/'+th+'.json?v='+bust);
+    const r = await fetch(thuMucSummary()+'/'+th+'.json?v='+bust);
     if(!r.ok) return false;
     const j = await r.json();
     CHUNK.set(th, { rows:j.rows||[], anhKhong:j.anhKhong||[], binhLuan:j.binhLuan||{} });
@@ -1579,7 +1696,7 @@ function gopChunkVaNap(){
 }
 async function taiTuTinh(){
   try{
-    const r = await fetch('summary/index.json?v='+Date.now());   // index nhẹ (~5KB) -> luôn tươi ngay lần load đầu
+    const r = await fetch(thuMucSummary()+'/index.json?v='+Date.now());   // index nhẹ (~5KB) -> luôn tươi ngay lần load đầu
     if(!r.ok) return false;
     const j = await r.json();
     if(!j || !j.header || !Array.isArray(j.thang) || !j.thang.length) return false;
@@ -1613,12 +1730,12 @@ async function chonThang(th){
 async function lamMoiNen(){
   if(!SUMMARY_INDEX){ taiDuLieu(); return; }
   try{
-    const r=await fetch('summary/index.json?v='+Date.now()); if(!r.ok) return;
+    const r=await fetch(thuMucSummary()+'/index.json?v='+Date.now()); if(!r.ok) return;
     const j=await r.json(); if(!j||!Array.isArray(j.thang)||!j.thang.length) return;
     SUMMARY_INDEX=j; napChonThang(j.thang);
     const loaded=[...CHUNK.keys()]; CHUNK.clear();
     const canTai=loaded.length?loaded:[j.thang[0]];
-    for(const th of canTai){ const rr=await fetch('summary/'+th+'.json?v='+(j.apiAt||Date.now()));
+    for(const th of canTai){ const rr=await fetch(thuMucSummary()+'/'+th+'.json?v='+(j.apiAt||Date.now()));
       if(rr.ok){ const c=await rr.json(); CHUNK.set(th,{rows:c.rows||[],anhKhong:c.anhKhong||[],binhLuan:c.binhLuan||{}}); } }
     if(!$('kpiThang').value && j.thang[0]) $('kpiThang').value=j.thang[0];
     gopChunkVaNap();
@@ -1628,6 +1745,7 @@ async function lamMoiNen(){
 
 /* gviz: FALLBACK khi chưa có file tĩnh (tải toàn bộ 1 lần) */
 function taiDuLieu(){
+  if(!SHEET_ID){ hienCtyTrong(); return; }   // công ty chưa cấu hình nguồn -> trạng thái trống, không gọi gviz
   const cb = "gviz_" + (Date.now()) + "_" + Math.floor(performance.now());
   window[cb] = resp => {
     try{
@@ -2318,29 +2436,120 @@ const TITLES = {
 };
 function setTitle(t){
   if(!TITLES[t]) t='1';
-  $('brandTitle').innerHTML = TITLES[t];
+  // Tiêu đề theo CÔNG TY đang chọn: mẫu gốc viết "HASAKI" -> thay bằng tên công ty hiện hành
+  $('brandTitle').innerHTML = TITLES[t].split('HASAKI').join(CTY[CTY_ID].ten);
   $('titleSel').value = t;
   try{ localStorage.setItem('dash5s-title', t); }catch(e){}
+}
+
+/* ===== MULTI-TENANT: chuyển công ty KHÔNG reload trang ===== */
+function batCtyLoading(on){
+  document.body.classList.toggle('cty-loading', !!on);
+  if(on) document.body.classList.remove('cty-trong');
+}
+function hienCtyTrong(){
+  document.body.classList.remove('cty-loading');
+  document.body.classList.add('cty-trong');
+  $('ctyEmptyTen').textContent = CTY[CTY_ID].ten;
+}
+/* Đồng bộ mọi thứ phụ thuộc công ty: data-company (đổi màu nhận diện), nút switch, tiêu đề, link Sheet */
+function capNhatCtyUI(){
+  document.documentElement.setAttribute('data-company', CTY_ID);
+  document.querySelectorAll('#ctySwitch .cty-opt').forEach(b=>b.classList.toggle('active', b.dataset.cty===CTY_ID));
+  let tt='1'; try{ tt=localStorage.getItem('dash5s-title')||'1'; }catch(e){}
+  setTitle(tt);
+  $('lnkSheet').href = SHEET_ID ? ("https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/edit#gid=0") : '#';
+}
+/* HÀM TRUNG TÂM: skeleton -> render lại khung tab -> đổi nguồn dữ liệu -> nạp lại, tất cả không F5 */
+async function switchCompany(id){
+  if(!CTY[id]) return;
+  if(id===CTY_ID){ capNhatCtyUI(); return; }
+  CTY_ID = id; SHEET_ID = CTY[id].sheetId;
+  try{ localStorage.setItem('currentCompany', id); }catch(e){}                 // F5 vẫn nhớ công ty đang xem
+  capNhatCtyUI();
+  renderTabs();                                                                // Cấp 2: khung tab đổi theo công ty
+  document.body.classList.remove('cty-trong');
+  // Xoá trắng state 5S cũ (không để dữ liệu 2 công ty lẫn nhau)
+  SUMMARY_INDEX=null; CHUNK.clear(); H=[]; ROWS=[]; ANH_KHONG=null; BINH_LUAN=null; firstLoad=true;
+  // Mở lại đúng tab người dùng xem lần trước Ở CÔNG TY NÀY (setTab tự validate + ghi URL ?company&tab)
+  let tab=null; try{ tab=localStorage.getItem('currentTab:'+id); }catch(e){}
+  setTab(tab || tabMacDinh());
+  if(co5S()){                                                                  // chỉ công ty có tab 5S mới kéo dữ liệu 5S
+    batCtyLoading(true);
+    taiQuyDinh();
+    const ok = await taiTuTinh();
+    if(ok) batCtyLoading(false);
+    else if(SHEET_ID){ batCtyLoading(false); taiDuLieu(); }
+    else hienCtyTrong();
+  } else batCtyLoading(false);                                                 // Factory: tab fstock tự lo dữ liệu (lazy)
 }
 
 /* Mở modal MƯỢT: ép trình duyệt layout+paint nội dung TRƯỚC (offsetHeight), sang frame kế mới
    chạy animation -> frame đầu không bị việc dựng DOM đè lên, hết khựng. */
 function hienModal(id){ const el=$(id); el.style.display=''; void el.offsetHeight; requestAnimationFrame(()=>el.classList.add("show")); }
 
-/* ===== TABS ===== */
+/* ===== TABS (Dynamic Contextual Tabs — khung tab đổi theo công ty) ===== */
+function renderTabs(){
+  $('tabsNav').innerHTML = CTY[CTY_ID].tabs
+    .map(t=>`<button class="tab" data-tab="${t}" role="tab">${TAB_DEFS[t].ten}</button>`).join('');
+}
 function setTab(name){
+  if(!CTY[CTY_ID].tabs.includes(name)) name = tabMacDinh();   // tab không thuộc công ty -> về mặc định
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
-  ['tong','task','hangmuc','kk'].forEach(n=>{
+  Object.keys(TAB_DEFS).forEach(n=>{
     const el=$('pane-'+n); if(!el) return;
     if(n===name){ el.classList.remove('hidden'); el.style.animation='none'; requestAnimationFrame(()=>el.style.animation=''); }
     else el.classList.add('hidden');
   });
   if(name==='hangmuc'){ taiQuyDinh(); }   // đọc lại QUY-DINH mỗi lần mở tab (đồng bộ mới nhất)
+  if(name==='fstock'){ moFactoryStock(); }   // LAZY: chỉ lúc này mới nạp module + fetch data Tồn kho
+  if(name==='fkiemke'){ moFactoryKiemke(); } // LAZY: module Kiểm kê (tab kiemke-material riêng biệt)
+  // STATE: nhớ tab THEO TỪNG CÔNG TY + deep-link ?company=&tab= (F5/chia sẻ không mất dấu)
+  try{ localStorage.setItem('currentTab:'+CTY_ID, name); }catch(e){}
+  try{ const u=new URL(location.href); u.searchParams.set('company',CTY_ID); u.searchParams.set('tab',name);
+       history.replaceState(null,'',u); }catch(e){}
+}
+/* LAZY EXECUTION: factory-stock.js chỉ được inject khi người dùng THẬT SỰ đứng ở
+   Factory ▸ Trạng thái lưu trữ — xem Hasaki thì 0 byte, 0 request cho luồng Factory. */
+let _fsNap=null;
+function moFactoryStock(){
+  const pane=$('pane-fstock');
+  if(!_fsNap){
+    pane.innerHTML='<div class="panel" style="margin-top:14px;padding:18px 16px">'+
+      '<div class="sk sk-line" style="width:72%"></div><div class="sk sk-line" style="width:56%"></div>'+
+      '<div class="sk sk-line" style="width:64%"></div><div class="sk sk-line" style="width:48%"></div></div>';
+    _fsNap=new Promise((res,rej)=>{
+      const s=document.createElement('script'); s.src='factory-stock.js?v=20260715b';
+      s.onload=res; s.onerror=()=>rej(new Error('Không tải được module factory-stock.js'));
+      document.body.appendChild(s);
+    });
+  }
+  _fsNap.then(()=>window.FSTOCK && window.FSTOCK.init(pane))
+    .catch(e=>{ _fsNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
+}
+let _fkNap=null;
+function moFactoryKiemke(){
+  const pane=$('pane-fkiemke');
+  if(!_fkNap){
+    pane.innerHTML='<div class="panel" style="margin-top:14px;padding:18px 16px">'+
+      '<div class="sk sk-line" style="width:66%"></div><div class="sk sk-line" style="width:52%"></div>'+
+      '<div class="sk sk-line" style="width:60%"></div></div>';
+    _fkNap=new Promise((res,rej)=>{
+      const s=document.createElement('script'); s.src='factory-kiemke.js?v=20260715b';
+      s.onload=res; s.onerror=()=>rej(new Error('Không tải được module factory-kiemke.js'));
+      document.body.appendChild(s);
+    });
+  }
+  _fkNap.then(()=>window.FKIEMKE && window.FKIEMKE.init(pane))
+    .catch(e=>{ _fkNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
 }
 
 /* ===== TAB HẠNG MỤC 5S — đọc tab QUY-DINH trực tiếp (gviz), đồng bộ thời gian thực ===== */
 const TAB_QD="QUY-DINH"; let QD=[];
 function taiQuyDinh(){
+  if(!SHEET_ID){ QD=[]; $('hmDem').textContent='0 hạng mục';
+    $('hmWrap').innerHTML='<div class="empty-row">Chưa cấu hình Google Sheet QUY-DINH cho '+CTY[CTY_ID].ten+'.</div>';
+    $('hmCards').innerHTML=''; return; }
   const cb="qd_"+Date.now()+"_"+Math.floor(performance.now());
   window[cb]=resp=>{ try{
     const rows=((resp.table&&resp.table.rows)||[]).map(r=>(r.c||[]).map(c=>c?(c.v==null?"":c.v):""));
@@ -2519,15 +2728,16 @@ function capNhatGioDuLieu(){
   s.onerror=()=>{ done(); hienGioDuLieu(taiLuc,false); };
   document.body.appendChild(s);
 }
+/* Mốc dữ liệu 5S -> đổ vào DÒNG 2 (timestamp-hint) của các nút menu "Dữ liệu".
+   (Pill "Dữ liệu HH:MM" ở header đã bỏ — thông tin này giờ chỉ nằm 1 nơi, hết trùng lặp.) */
 function hienGioDuLieu(ms,laServer){
-  const el=$('dataFresh'); if(!el) return;
   const p=n=>String(n).padStart(2,'0');
-  const d=new Date(ms), nay=new Date();
-  const cungNgay=d.getFullYear()===nay.getFullYear()&&d.getMonth()===nay.getMonth()&&d.getDate()===nay.getDate();
-  $('dfTxt').textContent=(cungNgay?'':p(d.getDate())+'/'+p(d.getMonth()+1)+' · ')+p(d.getHours())+':'+p(d.getMinutes());
-  el.title=(laServer?'Dữ liệu lấy từ API WMS lúc ':'Dữ liệu tải về trình duyệt lúc ')
+  const d=new Date(ms);
+  const hint='Mới nhất: '+p(d.getHours())+':'+p(d.getMinutes())+' '+p(d.getDate())+'/'+p(d.getMonth()+1);
+  const chiTiet=(laServer?'Dữ liệu lấy từ API WMS lúc ':'Dữ liệu tải về trình duyệt lúc ')
     +p(d.getHours())+':'+p(d.getMinutes())+' ngày '+p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear();
-  el.hidden=false;
+  ['tsReload','tsSync'].forEach(id=>{ const e2=$(id); if(e2) e2.textContent=hint; });
+  ['btnReload','btnSync'].forEach(id=>{ const b=$(id); if(b) b.title=chiTiet; });   // accessibility: tooltip chi tiết
 }
 
 /* ===== TOAST không chặn (thay alert) + loading nút Cập nhật ===== */
@@ -2812,6 +3022,9 @@ $('dpMonths').addEventListener('click', e=>{
 // đóng popover khi click ra ngoài
 document.addEventListener('click', e=>{ if(!$('datePop').classList.contains('hidden') && !e.target.closest('#dateFilter')) closeDatePop(); });
 $('btnReload').addEventListener('click',()=>{ if(!dangCho) lamMoiNen(); });
+$('ctySwitch').addEventListener('click', e=>{
+  const b=e.target.closest('.cty-opt'); if(b && !dangCho) switchCompany(b.dataset.cty);
+});
 $('btnSync').addEventListener('click',capNhatNgay);
 $('btnSyncTS').addEventListener('click',capNhatChamCong);
 $('themeSel').addEventListener('change', e=>setTheme(e.target.value));
@@ -2821,7 +3034,8 @@ function dongCaiDat(){ $('settingsPop').classList.add('hidden'); $('btnSettings'
 $('btnSettings').addEventListener('click', e=>{ e.stopPropagation(); const hid=$('settingsPop').classList.toggle('hidden'); $('btnSettings').classList.toggle('open', !hid); });
 $('settingsPop').addEventListener('click', e=>e.stopPropagation());
 document.addEventListener('click', e=>{ if(!$('settingsPop').classList.contains('hidden') && !e.target.closest('#settingsWrap')) dongCaiDat(); });
-document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+// Tabs render động theo công ty -> dùng UỶ QUYỀN trên nav (không phải bind lại sau mỗi renderTabs)
+$('tabsNav').addEventListener('click',e=>{ const b=e.target.closest('.tab'); if(b) setTab(b.dataset.tab); });
 $('btnFilter').addEventListener('click',()=>{
   const g=$('filterGrid'), dong=g.classList.toggle('collapsed');
   $('btnFilter').textContent = dong ? 'Bộ lọc — chạm để mở' : 'Bộ lọc — chạm để đóng';
@@ -2863,20 +3077,30 @@ document.addEventListener('click', ()=>csDongHet(null));
   // Kiểu tiêu đề đã lưu (mặc định 1 · Xếp chồng)
   let tt='1'; try{ tt=localStorage.getItem('dash5s-title')||'1'; }catch(e){}
   setTitle(tt);
-  // Link tới Google Sheet nguồn (tab 5S-TASKS)
-  $('lnkSheet').href = "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/edit#gid=0";
+  // MULTI-TENANT: áp trạng thái công ty (URL ?company= > localStorage > hasaki) lên toàn UI
+  capNhatCtyUI();
+  renderTabs();
+  // Badge DEV: nhắc đang ở bản nháp (?dev=1) — mọi sync production bị module chặn
+  if(DEV_MODE){ const b=document.createElement('span'); b.className='dev-badge'; b.textContent='DEV';
+    b.title='Bản nháp (?dev=1) — nút sync production bị chặn'; $('ctySwitch').parentNode.insertBefore(b, $('ctySwitch')); }
+  // DEEP LINK tab: ?tab= (hợp lệ với công ty) > tab đã lưu của công ty > mặc định
+  let tb=null; try{ tb=new URLSearchParams(location.search).get('tab'); }catch(e){}
+  if(!tb || !CTY[CTY_ID].tabs.includes(tb)){ try{ tb=localStorage.getItem('currentTab:'+CTY_ID); }catch(e){} }
+  setTab(tb || tabMacDinh());
   // Nâng cấp các <select> thành dropdown tuỳ biến animate được (sau khi theme/title đã set giá trị)
   ['themeSel','titleSel','kpiThang','fStatus','fLoi'].forEach(id=>{ const el=$(id); if(el) enhanceSelect(el); });
-  // TĂNG TỐC: hiện trang NGAY từ file tĩnh CDN; gviz chạy NỀN sau 4s để bắt dữ liệu mới nhất
-  taiTuTinh().then(ok=>{ if(!ok) taiDuLieu(); });   // chunk xong: KHÔNG kéo gviz toàn bộ (giữ tốc độ); lỗi -> gviz
-  taiQuyDinh();  // nạp QUY-DINH ngay từ đầu -> cột "Tần suất vi phạm" tra được %KPI theo hạng mục
-  // NẠP TRƯỚC form Ghi nhận 5S lúc rảnh — nhưng BỎ QUA trên mạng chậm/tiết kiệm dữ liệu
-  // (iframe form kéo ~800KB CDN, không được tranh băng thông với dữ liệu chính trên mobile)
-  const mangCham = navigator.connection && (navigator.connection.saveData || /(^|-)2g|3g/.test(navigator.connection.effectiveType||''));
-  if(!mangCham) (('requestIdleCallback' in window) ? requestIdleCallback(napFormTruoc,{timeout:8000}) : setTimeout(napFormTruoc,5000));
-  // Tự làm mới ONLINE mỗi 5 phút + khi quay lại tab (không hiện skeleton lại -> không giật)
-  setInterval(()=>{ if(!dangCho) lamMoiNen(); }, 5*60*1000);
-  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && !dangCho && ROWS.length) lamMoiNen(); });
+  // LAZY THEO CÔNG TY: chỉ công ty có tab 5S mới kéo dữ liệu 5S; Factory để module fstock tự lo
+  if(co5S()){
+    // TĂNG TỐC: hiện trang NGAY từ file tĩnh CDN; lỗi -> gviz; chưa có nguồn -> trống
+    taiTuTinh().then(ok=>{ if(ok) return; if(SHEET_ID) taiDuLieu(); else hienCtyTrong(); });
+    taiQuyDinh();  // nạp QUY-DINH ngay từ đầu -> cột "Tần suất vi phạm" tra được %KPI theo hạng mục
+    // NẠP TRƯỚC form Ghi nhận 5S lúc rảnh — nhưng BỎ QUA trên mạng chậm/tiết kiệm dữ liệu
+    const mangCham = navigator.connection && (navigator.connection.saveData || /(^|-)2g|3g/.test(navigator.connection.effectiveType||''));
+    if(!mangCham) (('requestIdleCallback' in window) ? requestIdleCallback(napFormTruoc,{timeout:8000}) : setTimeout(napFormTruoc,5000));
+  }
+  // Tự làm mới ONLINE mỗi 5 phút + khi quay lại tab (chỉ luồng 5S; module fstock tự làm mới khi mở lại)
+  setInterval(()=>{ if(!dangCho && co5S()) lamMoiNen(); }, 5*60*1000);
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && !dangCho && co5S() && ROWS.length) lamMoiNen(); });
 })();
 </script>
 </body>
