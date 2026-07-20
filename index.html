@@ -1070,6 +1070,8 @@ body.cty-trong .pane{display:none !important;}  body.cty-trong #ctyEmpty{display
   <section id="pane-fstock" class="pane hidden"></section>
   <!-- ===== TAB KIỂM KÊ (Factory) — factory-kiemke.js, LAZY; data tab riêng kiemke-material ===== -->
   <section id="pane-fkiemke" class="pane hidden"></section>
+  <!-- ===== TAB TỒN KHO BẤT THƯỜNG (Hasaki) — hasaki-tonbatthuong.js, LAZY; data tab stock-inventory-hasaki ===== -->
+  <section id="pane-htonbat" class="pane hidden"></section>
 
   <!-- ===== TAB TỔNG HỢP (thống kê) ===== -->
   <section id="pane-tong" class="pane hidden">
@@ -1290,7 +1292,7 @@ body.cty-trong .pane{display:none !important;}  body.cty-trong #ctyEmpty{display
    TUYỆT ĐỐI không gộp data 2 công ty vào 1 file — tách luồng ngay từ nguồn.
    Bổ sung công ty mới = thêm 1 entry ở đây (ten, thư mục summary, sheetId) — không sửa logic. */
 const CTY = {
-  hasaki:  { ten: "HASAKI",  summary: "summary",         sheetId: "1FWffWi75aATbokfqIcqjByEPzkJLQBngTXp5aPOIbLM", tabs: ["tong","task","hangmuc","kk"] },
+  hasaki:  { ten: "HASAKI",  summary: "summary",         sheetId: "1FWffWi75aATbokfqIcqjByEPzkJLQBngTXp5aPOIbLM", tabs: ["tong","task","hangmuc","kk","htonbat"] },
   factory: { ten: "FACTORY", summary: "summary-factory", sheetId: "", tabs: ["fstock","fkiemke"] },   // 5S Factory chưa có nguồn; 2 tab chạy module riêng
 };
 /* Danh bạ TAB (Cấp 2 — Dynamic Contextual Tabs): khung tab render lại theo công ty đang chọn.
@@ -1302,6 +1304,7 @@ const TAB_DEFS = {
   kk:     { ten: "Kiểm kê" },
   fstock: { ten: "Trạng thái lưu trữ", module: true },   // module:true = tab TỰ LO dữ liệu (JSONP riêng),
   fkiemke:{ ten: "Kiểm kê",            module: true },   // KHÔNG đi qua pipeline 5S (summary/gviz 5S-TASKS) của host
+  htonbat:{ ten: "Tồn kho bất thường", module: true },   // HASAKI · module hasaki-tonbatthuong.js (tab stock-inventory-hasaki)
 };
 const DEV_MODE = /[?&]dev=1/.test(location.search);   // ?dev=1: bản nháp local — CHỈ chặn sync ghi production, KHÔNG chặn init/read
 /* Công ty có dùng dữ liệu 5S không = có ít nhất 1 tab KHÔNG phải tab module.
@@ -2555,6 +2558,7 @@ function setTab(name){
   if(name==='hangmuc'){ taiQuyDinh(); }   // đọc lại QUY-DINH mỗi lần mở tab (đồng bộ mới nhất)
   if(name==='fstock'){ moFactoryStock(); }   // LAZY: chỉ lúc này mới nạp module + fetch data Tồn kho
   if(name==='fkiemke'){ moFactoryKiemke(); } // LAZY: module Kiểm kê (tab kiemke-material riêng biệt)
+  if(name==='htonbat'){ moHasakiTonbat(); }  // LAZY: module Tồn kho bất thường HASAKI (tab stock-inventory-hasaki)
   // STATE: nhớ tab THEO TỪNG CÔNG TY + deep-link ?company=&tab= (F5/chia sẻ không mất dấu)
   try{ localStorage.setItem('currentTab:'+CTY_ID, name); }catch(e){}
   try{ const u=new URL(location.href); u.searchParams.set('company',CTY_ID); u.searchParams.set('tab',name);
@@ -2593,6 +2597,22 @@ function moFactoryKiemke(){
   }
   _fkNap.then(()=>window.FKIEMKE && window.FKIEMKE.init(pane))
     .catch(e=>{ _fkNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
+}
+let _htNap=null;
+function moHasakiTonbat(){
+  const pane=$('pane-htonbat');
+  if(!_htNap){
+    pane.innerHTML='<div class="panel" style="margin-top:14px;padding:18px 16px">'+
+      '<div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:54%"></div>'+
+      '<div class="sk sk-line" style="width:62%"></div></div>';
+    _htNap=new Promise((res,rej)=>{
+      const s=document.createElement('script'); s.src='hasaki-tonbatthuong.js?v=20260720a';
+      s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-tonbatthuong.js'));
+      document.body.appendChild(s);
+    });
+  }
+  _htNap.then(()=>window.HTONBAT && window.HTONBAT.init(pane))
+    .catch(e=>{ _htNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
 }
 
 /* ===== TAB HẠNG MỤC 5S — đọc tab QUY-DINH trực tiếp (gviz), đồng bộ thời gian thực ===== */
