@@ -1201,14 +1201,9 @@ body.cty-trong .pane{display:none !important;}  body.cty-trong #ctyEmpty{display
     <p class="foot">Bảng hạng mục 5S đọc trực tiếp từ Google Sheet (tab <b>QUY-DINH</b>) · tự làm mới mỗi 5 phút — chỉnh trên Sheet là dashboard &amp; form ghi nhận cập nhật theo. <b>Bấm 1 hạng mục</b> để xem ảnh minh hoạ THỰC HIỆN SAI / THỰC HIỆN ĐÚNG.</p>
   </section>
 
-  <!-- ===== TAB KIỂM KÊ (placeholder) ===== -->
-  <section id="pane-kk" class="pane hidden">
-    <div class="placeholder">
-      <div class="ph-badge">Sắp ra mắt</div>
-      <div class="ph-title">Kiểm kê quầy kệ</div>
-      <div class="ph-sub">Tính năng đang được phát triển — chưa có dữ liệu kiểm kê để hiển thị.<br>Các tab <b>Tổng quan</b>, <b>Task vi phạm</b>, <b>Hạng mục 5S</b> vẫn hoạt động bình thường.</div>
-    </div>
-  </section>
+  <!-- ===== TAB KIỂM KÊ (Hasaki) — hasaki-kiemke.js, LAZY; nhân bản tab Kiểm kê Audit Factory,
+       data tab kiemke-sku-hasaki / kiemke-location-hasaki (push-pc-to-sheet.mjs, cụm 8h40) ===== -->
+  <section id="pane-kk" class="pane hidden"></section>
 </div>
 
 <!-- ===== MODAL CHI TIẾT (HORIZONTAL STEPPER) ===== -->
@@ -1301,7 +1296,7 @@ const TAB_DEFS = {
   tong:   { ten: "Tổng quan" },
   task:   { ten: "Task vi phạm" },
   hangmuc:{ ten: "Hạng mục 5S" },
-  kk:     { ten: "Kiểm kê" },
+  kk:     { ten: "Kiểm kê",            module: true },   // HASAKI · module hasaki-kiemke.js (tab kiemke-sku-hasaki / kiemke-location-hasaki) — nhân bản tab Kiểm kê Audit Factory
   fstock: { ten: "Trạng thái lưu trữ", module: true },   // module:true = tab TỰ LO dữ liệu (JSONP riêng),
   fkiemke:{ ten: "Kiểm kê",            module: true },   // KHÔNG đi qua pipeline 5S (summary/gviz 5S-TASKS) của host
   htonbat:{ ten: "Tồn kho bất thường", module: true },   // HASAKI · module hasaki-tonbatthuong.js (tab stock-inventory-hasaki)
@@ -2559,6 +2554,7 @@ function setTab(name){
   if(name==='fstock'){ moFactoryStock(); }   // LAZY: chỉ lúc này mới nạp module + fetch data Tồn kho
   if(name==='fkiemke'){ moFactoryKiemke(); } // LAZY: module Kiểm kê (tab kiemke-material riêng biệt)
   if(name==='htonbat'){ moHasakiTonbat(); }  // LAZY: module Tồn kho bất thường HASAKI (tab stock-inventory-hasaki)
+  if(name==='kk'){ moHasakiKiemke(); }       // LAZY: module Kiểm kê HASAKI (tab kiemke-sku-hasaki / kiemke-location-hasaki)
   // STATE: nhớ tab THEO TỪNG CÔNG TY + deep-link ?company=&tab= (F5/chia sẻ không mất dấu)
   try{ localStorage.setItem('currentTab:'+CTY_ID, name); }catch(e){}
   try{ const u=new URL(location.href); u.searchParams.set('company',CTY_ID); u.searchParams.set('tab',name);
@@ -2613,6 +2609,22 @@ function moHasakiTonbat(){
   }
   _htNap.then(()=>window.HTONBAT && window.HTONBAT.init(pane))
     .catch(e=>{ _htNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
+}
+let _hkNap=null;
+function moHasakiKiemke(){
+  const pane=$('pane-kk');
+  if(!_hkNap){
+    pane.innerHTML='<div class="panel" style="margin-top:14px;padding:18px 16px">'+
+      '<div class="sk sk-line" style="width:68%"></div><div class="sk sk-line" style="width:52%"></div>'+
+      '<div class="sk sk-line" style="width:60%"></div></div>';
+    _hkNap=new Promise((res,rej)=>{
+      const s=document.createElement('script'); s.src='hasaki-kiemke.js?v=20260722a';
+      s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-kiemke.js'));
+      document.body.appendChild(s);
+    });
+  }
+  _hkNap.then(()=>window.HKIEMKE && window.HKIEMKE.init(pane))
+    .catch(e=>{ _hkNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
 }
 
 /* ===== TAB HẠNG MỤC 5S — đọc tab QUY-DINH trực tiếp (gviz), đồng bộ thời gian thực ===== */
