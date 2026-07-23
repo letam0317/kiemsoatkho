@@ -46,7 +46,7 @@ var COLS = {
   sku: ["sku", "mã sku", "ma sku"],
   pn: ["product_name", "productname", "product name", "tên sản phẩm", "ten san pham", "sản phẩm"],
   brand: ["brand_name", "brandname", "brand", "thương hiệu", "thuong hieu"],
-  cat: ["category_name", "categoryname", "category", "ngành hàng", "nganh hang", "danh mục", "nhóm hàng"],
+  cat: ["category_name", "categoryname", "category name", "category", "ngành hàng", "nganh hang", "danh mục", "nhóm hàng"],
   wh: ["warehouse_name", "warehousename", "warehouse", "warehouse name", "kho"],
   ptype: ["product_type", "producttype", "product type", "loại sản phẩm", "loai san pham", "phân loại", "classifyname", "classify name"],
   in_stock: ["in_stock", "instock", "in stock", "tồn kho", "tồn", "ton"],
@@ -185,7 +185,7 @@ var MODAL_HTML =
 '    <div class="ht-mfilters" id="htMFilters"></div>' +
 '    <div class="ht-msum" id="htMSum"></div>' +
 '    <div class="ht-modalbody"><table class="ht-mtbl"><thead><tr>' +
-'      <th>Kho</th><th>SKU</th><th class="pn">Tên sản phẩm</th><th>Brand</th><th>Category</th>' +
+'      <th>Kho</th><th>SKU</th><th class="pn">Tên sản phẩm</th><th>Category</th>' +
 '      <th class="num">In Stock</th><th class="num">Available</th>' +
 TYPES.map(function(t){ return '<th class="num">' + t.lb + '</th>'; }).join('') +
 '    </tr></thead><tbody id="htMBody"></tbody></table></div>' +
@@ -222,7 +222,7 @@ function onData(resp){
       var c = r.c || [];
       function gv(i){ return (i >= 0 && c[i] && c[i].v != null) ? c[i].v : ""; }
       var sku = String(gv(idx.sku)).trim(); if (!sku) return;
-      var o = { sku: sku, pn: String(gv(idx.pn)), brand: String(gv(idx.brand)),
+      var o = { sku: sku, pn: String(gv(idx.pn)),
         cat: String(gv(idx.cat) || "").trim(), wh: String(gv(idx.wh)),   // rỗng = "" (không ép "(trống)"): pop-up hiện "—", combo lọc bỏ qua
         ptype: String(gv(idx.ptype)).trim(),
         in_stock: num(gv(idx.in_stock)), available: num(gv(idx.available)) };
@@ -396,7 +396,7 @@ function rowsWith(excludeK, state, q){
       if (f.exact){ if (vs.indexOf(f.raw) < 0) return false; }
       else if (!vs.some(function(v){ return v.toLowerCase().indexOf(f.v) >= 0; })) return false;
     }
-    if (q && ((r.sku + " " + r.pn + " " + r.brand + " " + r.cat).toLowerCase().indexOf(q) < 0)) return false;
+    if (q && ((r.sku + " " + r.pn + " " + r.cat).toLowerCase().indexOf(q) < 0)) return false;
     return true;
   });
 }
@@ -426,14 +426,14 @@ function mRender(){
   var rows = rowsWith(null, state, q);
   var tk = null; state.forEach(function(f){ if (f.k === "type" && f.exact && f.raw){ var ty = typeByLb(f.raw); if (ty) tk = ty.k; } });
   rows = rows.slice().sort(function(a, b){ return tk ? (b[tk] - a[tk]) : (b._abn - a._abn); });
-  var NCOL = 7 + TYPES.length, out = [];
+  var NCOL = 6 + TYPES.length, out = [];
   var sums = { in_stock: 0, available: 0 }; TYPES.forEach(function(t){ sums[t.k] = 0; });
   for (var i = 0; i < rows.length; i++){ var r = rows[i];
     sums.in_stock += r.in_stock; sums.available += r.available; TYPES.forEach(function(t){ sums[t.k] += r[t.k]; });
     if (out.length < CAP){
       var tds = TYPES.map(function(t){ var v = r[t.k]; return v > 0 ? ('<td class="num" style="color:' + t.c + ';font-weight:700">' + nf(v) + '</td>') : '<td class="num cell0">0</td>'; }).join("");
       out.push('<tr><td><span class="ht-dot" style="background:' + whColor(r.wh) + '"></span> ' + esc(r.wh) + '</td>' +
-        '<td>' + esc(r.sku) + '</td><td class="pn">' + esc(r.pn) + '</td><td>' + esc(r.brand) + '</td><td>' + (r.cat ? esc(r.cat) : "—") + '</td>' +
+        '<td>' + esc(r.sku) + '</td><td class="pn">' + esc(r.pn) + '</td><td>' + (r.cat ? esc(r.cat) : "—") + '</td>' +
         '<td class="num">' + nf(r.in_stock) + '</td><td class="num">' + nf(r.available) + '</td>' + tds + '</tr>');
     }
   }
