@@ -223,7 +223,7 @@ function onData(resp){
       function gv(i){ return (i >= 0 && c[i] && c[i].v != null) ? c[i].v : ""; }
       var sku = String(gv(idx.sku)).trim(); if (!sku) return;
       var o = { sku: sku, pn: String(gv(idx.pn)), brand: String(gv(idx.brand)),
-        cat: String(gv(idx.cat)) || "(trống)", wh: String(gv(idx.wh)),
+        cat: String(gv(idx.cat) || "").trim(), wh: String(gv(idx.wh)),   // rỗng = "" (không ép "(trống)"): pop-up hiện "—", combo lọc bỏ qua
         ptype: String(gv(idx.ptype)).trim(),
         in_stock: num(gv(idx.in_stock)), available: num(gv(idx.available)) };
       var s = 0; TYPES.forEach(function(t){ o[t.k] = num(gv(idx[t.k])); s += o[t.k]; });
@@ -433,7 +433,7 @@ function mRender(){
     if (out.length < CAP){
       var tds = TYPES.map(function(t){ var v = r[t.k]; return v > 0 ? ('<td class="num" style="color:' + t.c + ';font-weight:700">' + nf(v) + '</td>') : '<td class="num cell0">0</td>'; }).join("");
       out.push('<tr><td><span class="ht-dot" style="background:' + whColor(r.wh) + '"></span> ' + esc(r.wh) + '</td>' +
-        '<td>' + esc(r.sku) + '</td><td class="pn">' + esc(r.pn) + '</td><td>' + esc(r.brand) + '</td><td>' + esc(r.cat) + '</td>' +
+        '<td>' + esc(r.sku) + '</td><td class="pn">' + esc(r.pn) + '</td><td>' + esc(r.brand) + '</td><td>' + (r.cat ? esc(r.cat) : "—") + '</td>' +
         '<td class="num">' + nf(r.in_stock) + '</td><td class="num">' + nf(r.available) + '</td>' + tds + '</tr>');
     }
   }
