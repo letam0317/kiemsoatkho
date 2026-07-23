@@ -96,13 +96,7 @@ html[data-embed="1"] .wrap{padding-top:14px;}
 /* ===== HASAKI: watermark logo bóng mờ + font Inter (CHỈ theme hasaki) ===== */
 #hskMark{position:fixed; inset:0; display:none; align-items:center; justify-content:center; pointer-events:none; z-index:0; overflow:hidden;}
 [data-theme="hasaki"] #hskMark{display:flex;}
-/* ===== LATTE: watermark NGÔI SAO kiểu VietinBank — TONE-ON-TONE "dập chìm" =====
-   Phân tích app VietinBank: logo nền là LINE-ART cùng tông màu nền (chỉ đậm hơn chút),
-   KHÔNG dùng màu thương hiệu rực; kích thước RẤT LỚN; cảm giác khắc chìm sang trọng.
-   Áp dụng: sao viền mảnh màu mực latte + thân chìm + viền sáng lệch nhẹ (hiệu ứng emboss). */
-#latteMark{position:fixed; inset:0; display:none; align-items:center; justify-content:center; pointer-events:none; z-index:0; overflow:hidden; transform:translateZ(0);}
-[data-theme="latte"] #latteMark{display:flex;}
-#latteMark svg{width:min(100vmin,980px); height:auto; user-select:none;}
+/* LATTE: đã BỎ watermark nền sao đỏ (yêu cầu 23/07) — theme Latte không còn nền sao. */
 #hskMark img{
   width:min(46vw,520px); height:auto; opacity:.045;   /* HOẠ TIẾT CHÌM rất nhẹ — không choán khi tab ít nội dung */
   user-select:none;                                    /* NGAY THẲNG — không nghiêng, giữa trung tâm */
@@ -649,9 +643,8 @@ thead th.c-status, tbody td.c-status{width:150px;}
 #pinModal.show{display:flex; opacity:1;}
 .pin-box{position:relative; overflow:hidden; background:var(--surface); border:1px solid var(--border); border-radius:18px; width:100%; max-width:350px;
   padding:26px 24px 20px; box-shadow:var(--shadow); text-align:center; animation:paneIn .35s var(--ez-apple) both;}
-/* Ngôi sao WATERMARK chìm CHÍNH GIỮA pop-up — không chắn chữ/nút, không bắt click */
-.pin-star-wm{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-  width:min(58%,230px); height:auto; aspect-ratio:1; opacity:.12; pointer-events:none; z-index:0;}
+/* Ngôi sao đỏ ở ĐẦU pop-up (yêu cầu 23/07): icon tiêu đề căn giữa trên cùng — KHÔNG còn watermark nền */
+.pin-star-wm{display:block; margin:0 auto 12px; width:46px; height:46px; position:relative; z-index:1; pointer-events:none;}
 /* Mọi nội dung nổi TRÊN watermark */
 .pin-box h3, .pin-desc, .pin-field, .pin-error-text, .pin-acts{position:relative; z-index:1;}
 .pin-box h3{margin:0 0 4px; font-size:16px; font-weight:800; color:var(--text);}
@@ -974,17 +967,7 @@ body.cty-trong .pane{display:none !important;}  body.cty-trong #ctyEmpty{display
 </head>
 <body>
 <div id="hskMark" aria-hidden="true"><img src="hasaki-logo.png" alt="" /></div>
-<div id="latteMark" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true">
-  <defs><radialGradient id="lmR" cx="50%" cy="42%" r="72%">
-    <stop offset="0%" stop-color="#e8452e"/><stop offset="100%" stop-color="#c21a04"/>
-  </radialGradient></defs>
-  <!-- thân sao đỏ rất nhạt — CÓ MÀU nhưng không thô -->
-  <polygon points="12,2 14.6,8.6 21.8,9 16.2,13.6 18.2,20.6 12,16.6 5.8,20.6 7.8,13.6 2.2,9 9.4,8.6" fill="url(#lmR)" opacity=".055"/>
-  <!-- viền sáng lệch nhẹ lên-trái: hiệu ứng khắc chìm (emboss) -->
-  <polygon points="12,2 14.6,8.6 21.8,9 16.2,13.6 18.2,20.6 12,16.6 5.8,20.6 7.8,13.6 2.2,9 9.4,8.6" fill="none" stroke="#ffffff" stroke-width=".26" opacity=".6" transform="translate(-0.09,-0.11)"/>
-  <!-- viền line-art ĐỎ TRẦM, mảnh (kiểu logo chìm ngân hàng — có màu, không rực) -->
-  <polygon points="12,2 14.6,8.6 21.8,9 16.2,13.6 18.2,20.6 12,16.6 5.8,20.6 7.8,13.6 2.2,9 9.4,8.6" fill="none" stroke="#c21a04" stroke-width=".26" opacity=".17"/>
-</svg></div>
+<!-- latteMark (nền sao đỏ theme Latte) đã bỏ theo yêu cầu 23/07 -->
 <div class="wrap">
   <header>
     <div>
@@ -1260,7 +1243,7 @@ body.cty-trong .pane{display:none !important;}  body.cty-trong #ctyEmpty{display
 <!-- ===== MODAL NHẬP PIN (thay prompt() thô của trình duyệt) ===== -->
 <div id="pinModal">
   <div class="pin-box">
-    <!-- Ngôi sao đỏ WATERMARK chìm giữa pop-up (không chắn thao tác) -->
+    <!-- Ngôi sao đỏ ĐẦU pop-up: phần tử đầu tiên, icon tiêu đề căn giữa trên cùng -->
     <svg class="pin-star-wm" viewBox="0 0 24 24" aria-hidden="true">
       <polygon points="12,2 14.6,8.6 21.8,9 16.2,13.6 18.2,20.6 12,16.6 5.8,20.6 7.8,13.6 2.2,9 9.4,8.6" fill="#c21a04"/>
     </svg>
