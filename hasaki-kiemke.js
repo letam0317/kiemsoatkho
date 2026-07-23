@@ -599,7 +599,7 @@ function renderDaily(kind){
     });
     var segs = parts.map(function(pt, j){ return '<div class="hk-hseg' + (j === 0 ? " top" : "") + '" style="height:' + pt.h + "px;background:" + pt.c + '"></div>'; }).join("");
     var tip = "Ngày " + d.slice(8, 10) + "/" + d.slice(5, 7) + "/" + d.slice(0, 4) + " | " + khos.map(function(w){ return w + ": " + nf(v.kho[w] || 0); }).join(" | ") + " | Tổng: " + nf(v.tot) + " " + U + (delta == null ? "" : " | " + (delta >= 0 ? "+" : "") + nf(delta) + " so với ngày trước");
-    var lab = (ds.length <= 20 || i === ds.length - 1 || v.tot === max) ? nf(v.tot) : "";
+    var lab = nf(v.tot);   // luôn hiện số lượng của TỪNG ngày trên cột (trước chỉ hiện ≤20 ngày/cột cao nhất/cột cuối)
     var dHtml = '<div class="hk-hdelta" style="color:' + (delta > 0 ? "#10b981" : delta < 0 ? "#ef4444" : "var(--muted,#9ca3af)") + '">' + (delta == null ? "&nbsp;" : (delta > 0 ? "+" : "") + nf(delta)) + "</div>";
     return '<div class="hk-hcol" title="' + esc(tip) + '"><div class="hk-hval">' + lab + '</div><div class="hk-hbars">' + segs + '</div><div class="hk-hdate">' + d.slice(8, 10) + "/" + d.slice(5, 7) + "</div>" + dHtml + "</div>";
   }).join("");
