@@ -79,6 +79,8 @@ function typeOrder(lb){ for (var i = 0; i < TYPES.length; i++) if (TYPES[i].lb =
 function idxOf(H, aliases){ for (var i = 0; i < aliases.length; i++){ var j = H.indexOf(aliases[i]); if (j >= 0) return j; } return -1; }
 function num(v){ if (v == null || v === "") return 0; var n = Number(String(v).replace(/,/g, "")); return isNaN(n) ? 0 : n; }
 function whTot(o){ var s = 0; TYPES.forEach(function(t){ s += (o[t.k] || 0); }); return s; }
+/* Lý do chọn (ghi vào giỏ HPC lúc tick) — liệt kê loại bất thường >0 của SKU */
+function abnReasonStr(r){ var a = []; TYPES.forEach(function(t){ if (r[t.k] > 0) a.push(t.lb + " " + nf(r[t.k])); }); return a.length ? ("Bất thường: " + a.join(" · ")) : "Bất thường"; }
 
 /* ===== CSS — bơm 1 lần, neo #pane-htonbat / .ht-modal, token màu theo theme host ===== */
 var CSS = [
@@ -185,7 +187,7 @@ var MODAL_HTML =
 '    <div class="ht-mfilters" id="htMFilters"></div>' +
 '    <div class="ht-msum" id="htMSum"></div>' +
 '    <div class="ht-modalbody"><table class="ht-mtbl"><thead><tr>' +
-'      <th>Kho</th><th>SKU</th><th class="pn">Tên sản phẩm</th><th>Category</th>' +
+'      <th class="hpc-cc"><input type="checkbox" class="hpc-all" title="Chọn/bỏ tất cả dòng đang lọc (kể cả ngoài số dòng hiển thị)"></th><th>Kho</th><th>SKU</th><th class="pn">Tên sản phẩm</th><th>Category</th>' +
 '      <th class="num">In Stock</th><th class="num">Available</th>' +
 TYPES.map(function(t){ return '<th class="num">' + t.lb + '</th>'; }).join('') +
 '    </tr></thead><tbody id="htMBody"></tbody></table></div>' +
@@ -426,19 +428,21 @@ function mRender(){
   var rows = rowsWith(null, state, q);
   var tk = null; state.forEach(function(f){ if (f.k === "type" && f.exact && f.raw){ var ty = typeByLb(f.raw); if (ty) tk = ty.k; } });
   rows = rows.slice().sort(function(a, b){ return tk ? (b[tk] - a[tk]) : (b._abn - a._abn); });
-  var NCOL = 6 + TYPES.length, out = [];
+  var NCOL = 7 + TYPES.length, out = [];   // +1 cột checkbox chọn tạo lệnh (HPC)
   var sums = { in_stock: 0, available: 0 }; TYPES.forEach(function(t){ sums[t.k] = 0; });
   for (var i = 0; i < rows.length; i++){ var r = rows[i];
     sums.in_stock += r.in_stock; sums.available += r.available; TYPES.forEach(function(t){ sums[t.k] += r[t.k]; });
     if (out.length < CAP){
       var tds = TYPES.map(function(t){ var v = r[t.k]; return v > 0 ? ('<td class="num" style="color:' + t.c + ';font-weight:700">' + nf(v) + '</td>') : '<td class="num cell0">0</td>'; }).join("");
-      out.push('<tr><td><span class="ht-dot" style="background:' + whColor(r.wh) + '"></span> ' + esc(r.wh) + '</td>' +
+      out.push('<tr>' + (window.HPC ? HPC.cell(r.wh, r.sku, r.pn, 1, abnReasonStr(r)) : "") +
+        '<td><span class="ht-dot" style="background:' + whColor(r.wh) + '"></span> ' + esc(r.wh) + '</td>' +
         '<td>' + esc(r.sku) + '</td><td class="pn">' + esc(r.pn) + '</td><td>' + (r.cat ? esc(r.cat) : "—") + '</td>' +
         '<td class="num">' + nf(r.in_stock) + '</td><td class="num">' + nf(r.available) + '</td>' + tds + '</tr>');
     }
   }
   if (rows.length > CAP) out.push('<tr><td colspan="' + NCOL + '" class="empty">Hiển thị ' + nf(CAP) + ' / ' + nf(rows.length) + ' dòng — dùng bộ lọc để thu hẹp.</td></tr>');
   $id("htMBody").innerHTML = out.length ? out.join("") : '<tr><td colspan="' + NCOL + '" class="empty">Không có dòng phù hợp</td></tr>';
+  if (window.HPC) HPC.syncAll($id("htModal"), rows);
   var nAct = state.filter(function(f){ return f.v; }).length + (q ? 1 : 0);
   var parts = TYPES.map(function(t){ return t.lb + ": " + nf(sums[t.k]); });
   $id("htMSum").textContent = nf(rows.length) + " / " + nf(MODAL.base.length) + " dòng" + (nAct ? (" · " + nAct + " bộ lọc đang áp dụng") : "") + " · Tồn " + nf(sums.in_stock) + " · " + parts.join(" · ");
@@ -464,6 +468,8 @@ function init(pane){
       closeCombos(); applyF();
     });
     document.addEventListener("click", function(e){ if (!e.target.closest("#htMFilters .ht-combo")) closeCombos(); });
+    // Giỏ chọn tạo lệnh kiểm kê (module HPC dùng chung) — chọn-tất-cả theo tập ĐANG LỌC
+    if (window.HPC) HPC.wire($id("htModal"), function(){ return rowsWith(null, fstate(), qval()).map(function(r){ return { wh: r.wh, sku: r.sku, pn: r.pn, t: 1, src: abnReasonStr(r) }; }); });
     pane.innerHTML = KHUNG;
     loadData();
     return;

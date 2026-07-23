@@ -2594,6 +2594,19 @@ function moFactoryKiemke(){
   _fkNap.then(()=>window.FKIEMKE && window.FKIEMKE.init(pane))
     .catch(e=>{ _fkNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
 }
+/* Module DÙNG CHUNG "tạo lệnh kiểm kê" (giỏ chọn SKU) — nạp 1 lần, cho cả tab Kiểm kê & Tồn bất thường.
+   Never-reject: HPC lỗi thì tab vẫn chạy (checkbox tự ẩn qua guard window.HPC). */
+let _hpcNap=null;
+function napHasakiPC(){
+  if(!_hpcNap){
+    _hpcNap=new Promise((res,rej)=>{
+      const s=document.createElement('script'); s.src='hasaki-pc.js?v=20260723a';
+      s.onload=res; s.onerror=()=>rej(new Error('hasaki-pc.js'));
+      document.body.appendChild(s);
+    }).then(()=>{ if(window.HPC) window.HPC.init(); }).catch(()=>{});
+  }
+  return _hpcNap;
+}
 let _htNap=null;
 function moHasakiTonbat(){
   const pane=$('pane-htonbat');
@@ -2602,12 +2615,12 @@ function moHasakiTonbat(){
       '<div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:54%"></div>'+
       '<div class="sk sk-line" style="width:62%"></div></div>';
     _htNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-tonbatthuong.js?v=20260723a';
+      const s=document.createElement('script'); s.src='hasaki-tonbatthuong.js?v=20260723c';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-tonbatthuong.js'));
       document.body.appendChild(s);
     });
   }
-  _htNap.then(()=>window.HTONBAT && window.HTONBAT.init(pane))
+  Promise.all([napHasakiPC(),_htNap]).then(()=>window.HTONBAT && window.HTONBAT.init(pane))
     .catch(e=>{ _htNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
 }
 let _hkNap=null;
@@ -2618,12 +2631,12 @@ function moHasakiKiemke(){
       '<div class="sk sk-line" style="width:68%"></div><div class="sk sk-line" style="width:52%"></div>'+
       '<div class="sk sk-line" style="width:60%"></div></div>';
     _hkNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-kiemke.js?v=20260723b';
+      const s=document.createElement('script'); s.src='hasaki-kiemke.js?v=20260723c';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-kiemke.js'));
       document.body.appendChild(s);
     });
   }
-  _hkNap.then(()=>window.HKIEMKE && window.HKIEMKE.init(pane))
+  Promise.all([napHasakiPC(),_hkNap]).then(()=>window.HKIEMKE && window.HKIEMKE.init(pane))
     .catch(e=>{ _hkNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
 }
 

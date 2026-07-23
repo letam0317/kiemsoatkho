@@ -964,14 +964,18 @@ function metricRows(kind, metric){
   return out;
 }
 /* Bảng PHIẾU kiểm kê (metric counted/negative/positive/st:*) */
+/* HPC: loại SKU (SKU=1 / SKU_FACTORY=2, mặc định 1) + lý do chọn ghi vào giỏ tạo lệnh */
+function pcType(t){ var k = String(t || "").toUpperCase().replace(/[^A-Z]+/g, "_").replace(/^_+|_+$/g, ""); return k === "SKU_FACTORY" ? 2 : 1; }
+function reasonKk(r){ var m = MODAL.metric || ""; if (m === "notcount") return "Còn lại chưa kiểm"; if (m === "total") return r.chk ? "Có phiếu · đã kiểm" : "Chưa kiểm"; if (m.indexOf("st:") === 0) return "Trạng thái " + m.slice(3); return "Kiểm kê: " + (METRIC_LABEL[m] || m); }
+var _hpc = function(){ return window.HPC; };   // gọn: HPC nếu đã nạp
 function tablePhieu(kind, rs){
   var out = [];
   if (kind === "sku"){
     for (var i = 0; i < rs.length && out.length < CAP; i++){ var r = rs[i], e = evalDiff(r.inv, r.cnt);
-      out.push("<tr><td>" + idLink(r.id, "sku") + "</td><td><b>" + esc(r.sku) + '</b><div class="pn2">' + esc(r.pn) + "</div></td><td>" + dash(r.cat) + "</td>" +
+      out.push("<tr>" + (_hpc() ? HPC.cell(r.wh, r.sku, r.pn, pcType(r.type), reasonKk(r)) : "") + "<td>" + idLink(r.id, "sku") + "</td><td><b>" + esc(r.sku) + '</b><div class="pn2">' + esc(r.pn) + "</div></td><td>" + dash(r.cat) + "</td>" +
         dcell(r.cnt == null ? 0 : e.d) + '<td class="num">' + nf(r.inv) + '</td><td class="num">' + (r.cnt == null ? "—" : nf(r.cnt)) + "</td><td>" + dash(r.type) + "</td><td>" + dash(r.req) + "</td><td>" + dash(r.by) + "</td><td>" + fmtD(parseDate(r.cdate)) + "</td><td>" + fmtD(parseDate(r.plan), true) + '</td><td><span class="hk-badge ' + badgeCls(r.st) + '">' + (r.st ? esc(r.st) : "—") + "</span></td></tr>");
     }
-    return '<div class="hk-wrap"><table><thead><tr><th>ID</th><th>SKU</th><th>Category</th><th class="num">Diff</th><th class="num">Inventory</th><th class="num">Qty count</th><th>Type</th><th>Request</th><th>Counted by</th><th>Counted date</th><th>Plan date</th><th>Status</th></tr></thead><tbody>' + (out.join("") || emptyRow(12)) + "</tbody></table></div>" +
+    return '<div class="hk-wrap"><table><thead><tr>' + (_hpc() ? HPC.headCell() : "") + '<th>ID</th><th>SKU</th><th>Category</th><th class="num">Diff</th><th class="num">Inventory</th><th class="num">Qty count</th><th>Type</th><th>Request</th><th>Counted by</th><th>Counted date</th><th>Plan date</th><th>Status</th></tr></thead><tbody>' + (out.join("") || emptyRow(_hpc() ? 13 : 12)) + "</tbody></table></div>" +
       '<div class="hk-note">' + (rs.length > CAP ? ("Hiển thị " + nf(CAP) + " / " + nf(rs.length) + " dòng — lọc để thu hẹp.") : (nf(rs.length) + " dòng.")) + "</div>";
   }
   for (var j = 0; j < rs.length && out.length < CAP; j++){ var l = rs[j];
@@ -984,15 +988,16 @@ function tablePhieu(kind, rs){
 function tableRemain(kind, rs, coKiem){
   var out = [];
   var cot = function(m){ return coKiem ? ('<td><span class="hk-badge ' + (m.chk ? "ok" : "pend") + '">' + (m.chk ? "ĐÃ KIỂM" : "CHƯA KIỂM") + "</span></td>") : ""; };
+  var ckSku = (kind === "sku" && _hpc());   // chỉ khối SKU có ô tick tạo lệnh
   for (var i = 0; i < rs.length && out.length < CAP_REMAIN; i++){ var m = rs[i];
     out.push(kind === "sku"
-      ? "<tr><td><b>" + esc(m.sku) + '</b></td><td class="pn2">' + esc(m.pn) + "</td><td>" + dash(m.cat) + "</td><td>" + esc(m.wh) + '</td><td class="num">' + nf(m.qty) + "</td>" + cot(m) + "</tr>"
+      ? "<tr>" + (ckSku ? HPC.cell(m.wh, m.sku, m.pn, pcType(m.type), reasonKk(m)) : "") + "<td><b>" + esc(m.sku) + '</b></td><td class="pn2">' + esc(m.pn) + "</td><td>" + dash(m.cat) + "</td><td>" + esc(m.wh) + '</td><td class="num">' + nf(m.qty) + "</td>" + cot(m) + "</tr>"
       : "<tr><td><b>" + esc(m.loc) + "</b></td><td>" + esc(m.wh) + "</td><td>" + dash(m.type) + "</td>" + cot(m) + "</tr>");
   }
-  var head = (kind === "sku"
+  var head = (ckSku ? HPC.headCell() : "") + (kind === "sku"
     ? '<th>SKU</th><th>Tên sản phẩm</th><th>Category</th><th>Kho</th><th class="num">Tồn (theo phiếu)</th>'
     : "<th>Mã vị trí</th><th>Kho</th><th>Type</th>") + (coKiem ? "<th>Kiểm kê</th>" : "");
-  var nCol = (kind === "sku" ? 5 : 3) + (coKiem ? 1 : 0);
+  var nCol = (kind === "sku" ? 5 : 3) + (coKiem ? 1 : 0) + (ckSku ? 1 : 0);
   return '<div class="hk-wrap"><table><thead><tr>' + head + "</tr></thead><tbody>" + (out.join("") || emptyRow(nCol)) + "</tbody></table></div>" +
     '<div class="hk-note">' + (rs.length > CAP_REMAIN ? ("Hiển thị " + nf(CAP_REMAIN) + " / " + nf(rs.length) + " dòng — lọc để thu hẹp.") : (nf(rs.length) + (coKiem ? " dòng — distinct (kho|mã) từ phiếu WMS." : " dòng chưa kiểm."))) + "</div>";
 }
@@ -1092,6 +1097,7 @@ function mRender(){
     : (MODAL.metric === "total") ? tableRemain(MODAL.kind, rs, true)
     : tablePhieu(MODAL.kind, rs);
   swap(body);
+  if (window.HPC && MODAL.kind === "sku") HPC.syncAll($id("hkKkModal"), rs);
 }
 function closeModal(){
   var m = $id("hkKkModal"); m.classList.remove("show");
@@ -1118,6 +1124,8 @@ function init(pane){
       if (inp.value) inp.setAttribute("data-exact", "1"); else inp.removeAttribute("data-exact");
       closeCombos(); applyF();
     });
+    // Giỏ chọn tạo lệnh kiểm kê (HPC dùng chung) — chỉ khối SKU; chọn-tất-cả theo tập ĐANG LỌC
+    if (window.HPC) HPC.wire($id("hkKkModal"), function(){ if (MODAL.kind !== "sku") return []; return rowsWith(null, fstate(), qval()).filter(function(r){ return r.sku; }).map(function(r){ return { wh: r.wh, sku: r.sku, pn: r.pn, t: pcType(r.type), src: reasonKk(r) }; }); });
     /* Delegation pop-up dự báo: bộ chọn khoảng ngày + combo (mọi nhánh preventDefault — control trong <label>) */
     $id("hkFcBody").addEventListener("click", function(e){
       if (e.target.closest("#hkFcDateBtn")){ e.preventDefault();
@@ -1159,6 +1167,7 @@ window.HKIEMKE = {
   init: init, reload: loadData, setWh: setWh,
   open: openModal, closeModal: closeModal,
   comboInput: comboInput, comboMenu: comboMenu, quick: quick,
-  fcOpen: fcOpen, closeFc: closeFc, fcToggle: fcToggle, fcSim: fcSim
+  fcOpen: fcOpen, closeFc: closeFc, fcToggle: fcToggle, fcSim: fcSim,
+  _data: function(){ return S.data; }   // HPC đọc email "Counted by" cho ô Executed By
 };
 })();
