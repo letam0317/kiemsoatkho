@@ -101,10 +101,12 @@ var CSS = [
 ".hpc-combo.open .hpc-combo-menu{opacity:1;visibility:visible;transform:none;}",
 ".hpc-sum{padding:8px 20px;font-size:12px;color:var(--muted,#6b7280);border-bottom:1px solid var(--line,#e8ecf1);font-variant-numeric:tabular-nums;}",
 ".hpc-body{overflow:auto;padding:0 20px;}",
-".hpc-tbl{width:100%;border-collapse:collapse;font-size:12px;}",
+".hpc-tbl{border-collapse:collapse;font-size:12px;min-width:900px;}",   /* bỏ width:100% -> cột theo nội dung, .hpc-body cuộn ngang, hết cảnh chữ đè lên nhau */
 ".hpc-tbl thead th{position:sticky;top:0;background:var(--accent,#1f2937);color:#fff;padding:8px 10px;text-align:left;font-size:10.5px;font-weight:600;white-space:nowrap;z-index:1;}",
-".hpc-tbl td{padding:7px 10px;border-bottom:1px solid var(--line,#f1f4f8);vertical-align:top;}",
-".hpc-tbl .num{text-align:right;font-variant-numeric:tabular-nums;} .hpc-tbl .pn{color:var(--muted,#6b7280);max-width:230px;}",
+".hpc-tbl td{padding:7px 10px;border-bottom:1px solid var(--line,#f1f4f8);vertical-align:top;white-space:nowrap;}",   /* mặc định nowrap; 2 cột dài override bên dưới */
+".hpc-tbl .num{text-align:right;font-variant-numeric:tabular-nums;}",
+".hpc-tbl .pn{color:var(--muted,#6b7280);white-space:normal;word-break:break-word;max-width:240px;min-width:150px;}",
+".hpc-tbl .rsn{color:var(--muted,#6b7280);white-space:normal;word-break:break-word;max-width:230px;min-width:150px;font-size:11px;line-height:1.4;}",
 ".hpc-tbl .whn{color:var(--accent,#1e40af);font-weight:650;} .hpc-tbl .codebad{color:#ef4444;font-weight:650;}",
 ".hpc-tbl .empty{text-align:center;color:var(--muted,#9ca3af);padding:26px;}",
 ".hpc-tbl .pcx{border:0;background:color-mix(in srgb,#ef4444 12%,transparent);color:#ef4444;border-radius:7px;width:24px;height:24px;font-size:16px;cursor:pointer;}",
@@ -340,7 +342,7 @@ function render(){
     inc++;
     var code = codeByName(r.wh) || manual, ty = String(r.t || 1);
     if (!code) miss++; else whs[code] = 1;
-    out.push("<tr><td class=\"" + (code ? "whn" : "codebad") + "\">" + (code ? esc(code) : "✗ chưa có mã") + '</td><td class="num">' + esc(ty) + "</td><td><b>" + esc(r.sku) + '</b></td><td class="pn">' + esc(r.pn) + "</td><td>" + esc(r.wh) + '</td><td>' + esc(r.src || "—") + "</td><td>" + esc(plan || "—") + "</td><td>" + (by ? esc(by) : '<span style="color:var(--muted,#9ca3af)">(trống)</span>') + '</td><td><button class="pcx" data-w="' + esc(r.wh) + '" data-s="' + esc(r.sku) + '" title="Bỏ SKU">&times;</button></td></tr>');
+    out.push("<tr><td class=\"" + (code ? "whn" : "codebad") + "\">" + (code ? esc(code) : "✗ chưa có mã") + '</td><td class="num">' + esc(ty) + "</td><td><b>" + esc(r.sku) + '</b></td><td class="pn">' + esc(r.pn) + "</td><td>" + esc(r.wh) + '</td><td class="rsn">' + esc(r.src || "—") + "</td><td>" + esc(plan || "—") + "</td><td>" + (by ? esc(by) : '<span style="color:var(--muted,#9ca3af)">(trống)</span>') + '</td><td><button class="pcx" data-w="' + esc(r.wh) + '" data-s="' + esc(r.sku) + '" title="Bỏ SKU">&times;</button></td></tr>');
   });
   $id("hpcTBody").innerHTML = out.join("") || '<tr><td colspan="9" class="empty">' + (rs.length ? ("Giỏ không có SKU nào phát sinh tại kho “" + esc(pick) + "”.") : "Giỏ trống — tick chọn SKU từ pop-up Kiểm kê / Tồn kho bất thường.") + "</td></tr>";
   $id("hpcSub").textContent = nf(rs.length) + " SKU đã chọn · lệnh tạo theo KHO NGUỒN · mỗi SKU 1 dòng";
