@@ -685,8 +685,11 @@ function forecastInfo(kind, conLai){
   if (secAll){
     var remain = remainRows(kind), nhom = {};
     remain.forEach(function(m){ var g = (kind === "sku") ? nhomCat(m.cat) : "ALL"; nhom[g] = (nhom[g] || 0) + 1; });
+    var nhomTong = {};   // tổng mã theo nhóm (kể cả đã kiểm) — cho mô phỏng "Toàn bộ / kiểm lại từ đầu"
+    totalRows(kind).forEach(function(m){ var g = (kind === "sku") ? nhomCat(m.cat) : "ALL"; nhomTong[g] = (nhomTong[g] || 0) + 1; });
     var effort = 0, secG = {};
-    for (var g1 in nhom){ var sg = median(tm.rate[g1]) || secAll; secG[g1] = sg; effort += nhom[g1] * sg; }
+    for (var gT in nhomTong) secG[gT] = median(tm.rate[gT]) || secAll;   // giây/mã cho MỌI nhóm (tránh NaN khi tính toàn bộ)
+    for (var g1 in nhom) effort += nhom[g1] * secG[g1];   // ① effort vẫn tính theo CÒN LẠI
     var dayStaff = {}; Object.keys(tm.persEff).forEach(function(k){ var p = k.split("|"); dayStaff[p[1]] = (dayStaff[p[1]] || 0) + 1; });
     var cap = 0, nWin = 0, sSum = 0;
     for (var i = 1; nWin < 7 && i <= 21; i++){ var dm = todayMs - i * 86400000;
@@ -705,7 +708,7 @@ function forecastInfo(kind, conLai){
     var capNgay = nWin ? cap / nWin : 0;
     if (capNgay > 0){
       var soLam = Math.ceil(effort / capNgay);
-      var out = { mode: "effort", ngay: soLam, secG: secG, nhom: nhom, capNgay: capNgay, effort: effort };
+      var out = { mode: "effort", ngay: soLam, secG: secG, nhom: nhom, nhomTong: nhomTong, capNgay: capNgay, effort: effort };
       out.nguoiTB = nWin ? sSum / nWin : 0;
       out.phutNguoi = out.nguoiTB > 0 ? (capNgay / 60) / out.nguoiTB : capNgay / 60;
       if (soLam > 150){ out.slow = true; return out; }
@@ -768,12 +771,14 @@ function fcOpen(kind){
     var hItems = [{ v: hDo, t: "Như thực đo · ≈" + Math.round(fc.phutNguoi) + " phút/người/ngày" },
       { v: 7200, t: "2 giờ / người / ngày" }, { v: 14400, t: "4 giờ / người / ngày" }, { v: 21600, t: "6 giờ / người / ngày" }, { v: 28800, t: "8 giờ / người / ngày" }];
     var homNay = (function(){ var t = new Date(todayMsVN()); return t.getUTCFullYear() + "-" + p2(t.getUTCMonth() + 1) + "-" + p2(t.getUTCDate()); })();
-    var gChips = ""; for (var g2 in fc.nhom){ if (fc.nhom[g2]) gChips += '<button class="hk-fcg on" data-g="' + g2 + '" onclick="this.classList.toggle(\'on\');HKIEMKE.fcSim()">' + NHOM_TEN[g2] + " · " + nf(fc.nhom[g2]) + "</button>"; }
+    var gChips = ""; for (var g2 in fc.nhomTong){ if (fc.nhomTong[g2]) gChips += '<button class="hk-fcg on" data-g="' + g2 + '" onclick="this.classList.toggle(\'on\');HKIEMKE.fcSim()">' + NHOM_TEN[g2] + " · " + nf(fc.nhom[g2] || 0) + "</button>"; }
+    var baseItems = [{ v: "conlai", t: "Còn lại chưa kiểm" }, { v: "tong", t: "Toàn bộ — kiểm lại từ đầu" }];
     htmlB = '<div class="hk-fcsec"><h3>② Người chọn — mô phỏng phương án nhân sự</h3>' +
       '<div class="hk-fcctl">' +
       "<label>Số nhân sự kiểm" + fcComboHtml("fcN", nItems, nMac) + "</label>" +
       "<label>Thời lượng kiểm / người / ngày" + fcComboHtml("fcH", hItems, hDo) + "</label>" +
       "</div>" +
+      '<div class="hk-fcctl" style="grid-template-columns:1fr"><label>Tính trên (phạm vi mô phỏng)' + fcComboHtml("fcBase", baseItems, "conlai") + "</label></div>" +
       '<div class="hk-fcctl" style="grid-template-columns:1fr"><label>Thời gian đợt kiểm — bắt đầu → hạn chót (bấm ngày 1 = bắt đầu, ngày 2 = hạn)' +
       '<span class="hk-fcdate" id="hkFcDateWrap">' +
         '<button type="button" class="date-btn" id="hkFcDateBtn">' + homNay + "</button>" +
@@ -815,19 +820,22 @@ function fcToggle(combo){
   if (!dang){ m.classList.add("show"); combo.classList.add("open"); }
 }
 function fcComboV(id){ var inp = document.querySelector('#hkFcBody .hk-fccombo[data-id="' + id + '"] input'); return inp ? Number(inp.getAttribute("data-v")) : NaN; }
+function fcBaseVal(){ var inp = document.querySelector('#hkFcBody .hk-fccombo[data-id="fcBase"] input'); return (inp && inp.getAttribute("data-v")) || "conlai"; }
 function fcSim(){
   var fc = FC.fc; if (!fc || fc.mode !== "effort") return;
   var out = $id("hkFcSimOut"), need = $id("hkFcNeed");
   if (!out) return;
+  var base = fcBaseVal(), cnt = (base === "tong") ? (fc.nhomTong || {}) : (fc.nhom || {});   // ② mô phỏng trên CÒN LẠI hoặc TOÀN BỘ
+  document.querySelectorAll("#hkFcG .hk-fcg").forEach(function(x){ var g = x.getAttribute("data-g"); x.textContent = NHOM_TEN[g] + " · " + nf(cnt[g] || 0); });   // đổi phạm vi -> cập nhật số mã trên chip
   var N = fcComboV("fcN") || 1;
   var secNguoi = fcComboV("fcH") || Math.max(60, fc.phutNguoi * 60);
   var load = 0, nMa = 0;
-  document.querySelectorAll("#hkFcG .hk-fcg.on").forEach(function(x){ var g = x.getAttribute("data-g"); load += (fc.nhom[g] || 0) * (fc.secG[g] || 0); nMa += fc.nhom[g] || 0; });
+  document.querySelectorAll("#hkFcG .hk-fcg.on").forEach(function(x){ var g = x.getAttribute("data-g"); load += (cnt[g] || 0) * (fc.secG[g] || 0); nMa += cnt[g] || 0; });
   if (!nMa){ out.innerHTML = '<span class="n">Chọn ít nhất 1 nhóm hàng để mô phỏng.</span>'; need.textContent = ""; return; }
   var startMs = FC_DP.start ? Date.parse(FC_DP.start + "T00:00:00Z") : todayMsVN(); if (isNaN(startMs)) startMs = todayMsVN();
   var soLam = Math.ceil(load / (N * secNguoi));
   var endMs = etaFrom(startMs, soLam);
-  out.innerHTML = '<span class="d">' + fcFmt(endMs) + '</span><span class="n">kết thúc dự kiến · bắt đầu ' + fcFmt(startMs) + " → ≈" + nf(soLam) + " ngày làm việc (né CN) · " + nf(nMa) + " mã ≈" + (load / 3600).toFixed(1) + " giờ công · " + N + " người × " + Math.round(secNguoi / 60) + " phút/ngày</span>";
+  out.innerHTML = '<span class="d">' + fcFmt(endMs) + '</span><span class="n">kết thúc dự kiến · bắt đầu ' + fcFmt(startMs) + " → ≈" + nf(soLam) + " ngày làm việc (né CN) · " + nf(nMa) + " mã ≈" + (load / 3600).toFixed(1) + " giờ công · " + N + " người × " + Math.round(secNguoi / 60) + " phút/ngày · phạm vi: " + (base === "tong" ? "TOÀN BỘ (kiểm lại từ đầu)" : "còn lại chưa kiểm") + "</span>";
   var txt = "";
   if (FC_DP.end){
     var tms = Date.parse(FC_DP.end + "T00:00:00Z"), wd = 0;
