@@ -130,6 +130,10 @@ function swap(el){ if (!el) return; el.classList.remove("hk-swap"); void el.offs
 /* ===== CSS — bơm 1 lần, neo #pane-kk / .hk-modal, token màu theo theme host ===== */
 var CSS = [
 "#pane-kk .hk-srcbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 10px;font-size:12.5px;}",
+/* nguồn/mô tả/Làm mới ĐƯA XUỐNG CHÂN tab — đồng bộ footer với các tab native */
+"#pane-kk .hk-srcfoot{margin-top:22px;padding-top:14px;border-top:1px solid var(--border,#e8ecf1);text-align:center;}",
+"#pane-kk .hk-srcfoot .hk-srcbar{margin:0 0 6px;justify-content:center;font-size:12px;}",
+"#pane-kk .hk-srcfoot .hk-hint{display:inline;}",
 "#pane-kk .hk-chip{background:color-mix(in srgb, var(--accent,#2563eb) 14%, transparent);color:var(--accent,#1e40af);border-radius:999px;padding:4px 13px;font-weight:650;font-size:12px;}",
 "#pane-kk .hk-srcbar a{color:var(--accent,#2563eb);text-decoration:none;font-weight:600;} #pane-kk .hk-srcbar a:hover{text-decoration:underline;}",
 "#pane-kk .hk-hint,.hk-modal .hk-hint{color:var(--muted,#9ca3af);font-size:11.5px;font-weight:400;letter-spacing:0;text-transform:none;}",
@@ -302,13 +306,6 @@ var CSS = [
 
 /* ===== KHUNG HTML ===== */
 var KHUNG =
-'<div class="hk-srcbar">' +
-'  <span class="hk-chip">Kiểm kê (Physical Count) — Hasaki Vietnam · SHOP + WH 170 QL1A</span>' +
-'  <a href="' + SHEET_URL + '" target="_blank" rel="noopener">Mở Google Sheet</a>' +
-'  <span id="hkLoadinfo" class="hk-hint"></span>' +
-'  <button id="hkReload" onclick="HKIEMKE.reload()" title="Đọc lại dữ liệu mới nhất từ Google Sheet">Làm mới</button>' +
-'</div>' +
-'<p class="hk-hint" style="margin:0 0 10px">Dữ liệu phiếu <b>physical-count</b> WMS (type SKU + type Location) — cụm đồng bộ 8h40 ghi tab <code>' + TAB_SKU + '</code> / <code>' + TAB_LOC + '</code>. "Tổng" = distinct (kho|mã) trong phiếu · "Còn lại" = mã chưa có phiếu đã kiểm · bấm số để xem danh sách chi tiết.</p>' +
 '<div class="hk-whbar" id="hkWhBar"></div>' +
 '<div class="hk-grid2" id="hkGrid" style="display:none">' +
 '  <section class="hk-panel">' +
@@ -327,7 +324,16 @@ var KHUNG =
 '  </section>' +
 '  <section class="hk-panel hk-span2"><h2>Tiến độ theo kho <span class="hk-hint">(SKU + mã vị trí · bấm thẻ kho để lọc toàn tab theo kho đó)</span></h2><div class="hk-whlist" id="hkWhList"></div></section>' +
 '</div>' +
-'<div id="hkState" class="hk-state"><div class="hk-spin"></div>Đang tải dữ liệu kiểm kê…</div>';
+'<div id="hkState" class="hk-state"><div class="hk-spin"></div>Đang tải dữ liệu kiểm kê…</div>' +
+'<div class="hk-srcfoot">' +
+'  <div class="hk-srcbar">' +
+'    <span class="hk-chip">Kiểm kê (Physical Count) — Hasaki Vietnam · SHOP + WH 170 QL1A</span>' +
+'    <a href="' + SHEET_URL + '" target="_blank" rel="noopener">Mở Google Sheet</a>' +
+'    <span id="hkLoadinfo" class="hk-hint"></span>' +
+'    <button id="hkReload" onclick="HKIEMKE.reload()" title="Đọc lại dữ liệu mới nhất từ Google Sheet">Làm mới</button>' +
+'  </div>' +
+'  <p class="hk-hint" style="margin:0">Dữ liệu phiếu <b>physical-count</b> WMS (type SKU + type Location) — cụm đồng bộ 8h40 ghi tab <code>' + TAB_SKU + '</code> / <code>' + TAB_LOC + '</code>. "Tổng" = distinct (kho|mã) trong phiếu · "Còn lại" = mã chưa có phiếu đã kiểm · bấm số để xem danh sách chi tiết.</p>' +
+'</div>';
 
 var MODAL_HTML =
 /* Pop-up chi tiết (drill-down): bảng CHỈ dựng DOM lúc bấm — lazy như factory */
