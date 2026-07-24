@@ -52,6 +52,9 @@ function fmtTime(ms){ var d = new Date(ms); function p(n){ return (n < 10 ? "0" 
 /* ===== CSS — bơm 1 lần, neo dưới #pane-fstock / .fs-modal, màu theo theme host ===== */
 var CSS = [
 "#pane-fstock .fs-srcbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 6px;font-size:12.5px;}",
+/* nguồn/Tải lại ĐƯA XUỐNG CHÂN tab — đồng bộ footer với các tab native */
+"#pane-fstock .fs-srcfoot{margin-top:22px;padding-top:14px;border-top:1px solid var(--border,#e8ecf1);text-align:center;}",
+"#pane-fstock .fs-srcfoot .fs-srcbar{margin:0;justify-content:center;font-size:12px;}",
 "#pane-fstock .fs-chip{background:color-mix(in srgb, var(--accent,#2563eb) 14%, transparent);color:var(--accent,#1e40af);border-radius:999px;padding:4px 13px;font-weight:650;font-size:12px;}",
 "#pane-fstock .fs-srcbar a{color:var(--accent,#2563eb);text-decoration:none;font-weight:600;} #pane-fstock .fs-srcbar a:hover{text-decoration:underline;}",
 "#pane-fstock .fs-hint{color:var(--muted,#9ca3af);font-size:11.5px;font-weight:400;}",
@@ -172,14 +175,16 @@ var CSS = [
 
 /* ===== KHUNG HTML của tab (bơm vào pane) ===== */
 var KHUNG =
-'<div class="fs-srcbar">' +
-'  <span class="fs-chip">Tồn mã vị trí — WMS Factory</span>' +
-'  <a href="' + SHEET_URL + '" target="_blank" rel="noopener">Mở Google Sheet</a>' +
-'  <span id="fsLoadinfo" class="fs-hint"></span>' +
-'  <button id="fsReload" onclick="FSTOCK.syncWms()" title="Kéo dữ liệu mới trực tiếp từ WMS">Tải lại dữ liệu</button>' +
-'</div>' +
 '<div id="fsContent"></div>' +
-'<div id="fsState" class="fs-state"><div class="fs-spin"></div>Đang tải dữ liệu trực tiếp từ Google Sheet…</div>';
+'<div id="fsState" class="fs-state"><div class="fs-spin"></div>Đang tải dữ liệu trực tiếp từ Google Sheet…</div>' +
+'<div class="fs-srcfoot">' +
+'  <div class="fs-srcbar">' +
+'    <span class="fs-chip">Tồn mã vị trí — WMS Factory</span>' +
+'    <a href="' + SHEET_URL + '" target="_blank" rel="noopener">Mở Google Sheet</a>' +
+'    <span id="fsLoadinfo" class="fs-hint"></span>' +
+'    <button id="fsReload" onclick="FSTOCK.syncWms()" title="Kéo dữ liệu mới trực tiếp từ WMS">Tải lại dữ liệu</button>' +
+'  </div>' +
+'</div>';
 
 var MODAL =
 '<div id="fsModal" class="fs-modal">' +
