@@ -97,6 +97,10 @@ function pct(a, b){ return b ? Math.round(a / b * 100) : 0; }
 /* ===== CSS — bơm 1 lần, neo #pane-planogram / .hp-modal (khuôn ht-*) ===== */
 var CSS = [
 "#pane-planogram .hp-srcbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 10px;font-size:12.5px;}",
+/* nguồn/mô tả/Làm mới ĐƯA XUỐNG CHÂN tab — đồng bộ với footer .foot của các tab native (ghi chú ở dưới) */
+"#pane-planogram .hp-srcfoot{margin-top:22px;padding-top:14px;border-top:1px solid var(--border,#e8ecf1);text-align:center;}",
+"#pane-planogram .hp-srcfoot .hp-srcbar{margin:0 0 6px;justify-content:center;font-size:12px;}",
+"#pane-planogram .hp-srcfoot .hp-hint{display:inline;}",
 "#pane-planogram .hp-chip{background:color-mix(in srgb, var(--accent,#2563eb) 14%, transparent);color:var(--accent,#1e40af);border-radius:999px;padding:4px 13px;font-weight:650;font-size:12px;}",
 "#pane-planogram .hp-srcbar a{color:var(--accent,#2563eb);text-decoration:none;font-weight:600;} #pane-planogram .hp-srcbar a:hover{text-decoration:underline;}",
 "#pane-planogram .hp-hint{color:var(--muted,#9ca3af);font-size:11.5px;font-weight:400;}",
@@ -188,17 +192,19 @@ var CSS = [
 
 /* ===== KHUNG HTML ===== */
 var KHUNG =
-'<div class="hp-srcbar">' +
-'  <span class="hp-chip">Phụ trách vệ sinh — SHOP - 170 QUOC LO 1A · khu vực F0-A1 &amp; F0-A8</span>' +
-'  <a href="' + SHEET_URL + '" target="_blank" rel="noopener">Mở Google Sheet</a>' +
-'  <span id="hpLoadinfo" class="hp-hint"></span>' +
-'  <button id="hpReload" onclick="HPLANOGRAM.reload()" title="Đọc lại dữ liệu mới nhất từ Google Sheet">Làm mới</button>' +
-'</div>' +
-'<p class="hp-hint" style="margin:0 0 10px">Nguồn: <b>planogram</b> (request-of-declaration). Khi nhân viên báo hoàn tất vệ sinh (trạng thái New → Chờ duyệt), hệ thống lấy <b>người báo cáo gần nhất</b> làm phụ trách vị trí — bộ đồng bộ <code>sync-vesinh-all.js</code> (cụm 8h40) ghi vào tab <code>' + TAB + '</code>.</p>' +
 '<div class="hp-whbar" id="hpWhBar"></div>' +
 '<div id="hpContent"></div>' +
 '<div id="hpCC" class="hp-cc"></div>' +
-'<div id="hpState" class="hp-state"><div class="hp-spin"></div>Đang tải dữ liệu phụ trách vệ sinh…</div>';
+'<div id="hpState" class="hp-state"><div class="hp-spin"></div>Đang tải dữ liệu phụ trách vệ sinh…</div>' +
+'<div class="hp-srcfoot">' +
+'  <div class="hp-srcbar">' +
+'    <span class="hp-chip">Phụ trách vệ sinh — SHOP - 170 QUOC LO 1A · khu vực F0-A1 &amp; F0-A8</span>' +
+'    <a href="' + SHEET_URL + '" target="_blank" rel="noopener">Mở Google Sheet</a>' +
+'    <span id="hpLoadinfo" class="hp-hint"></span>' +
+'    <button id="hpReload" onclick="HPLANOGRAM.reload()" title="Đọc lại dữ liệu mới nhất từ Google Sheet">Làm mới</button>' +
+'  </div>' +
+'  <p class="hp-hint" style="margin:0">Nguồn: <b>planogram</b> (request-of-declaration). Khi nhân viên báo hoàn tất vệ sinh (trạng thái New → Chờ duyệt), hệ thống lấy <b>người báo cáo gần nhất</b> làm phụ trách vị trí — bộ đồng bộ <code>sync-vesinh-all.js</code> (cụm 8h40) ghi vào tab <code>' + TAB + '</code>.</p>' +
+'</div>';
 
 var MODAL_HTML =
 '<div id="hpModal" class="hp-modal">' +
