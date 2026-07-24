@@ -4,7 +4,7 @@
  * ============================================================================
  *  Theo dõi PHỤ TRÁCH vệ sinh của kho SHOP - 170 QUOC LO 1A theo nguồn planogram
  *  (request-of-declaration). Đọc tab "PHU-TRACH-QUAY-KE" trên Google Sheet 5S
- *  (bộ sync-phutrach-quayke.js ghi, cụm 8h40) — mỗi vị trí F0-A1 (vệ sinh tủ quầy
+ *  (bộ sync-vesinh-all.js ghi, cụm 8h40) — mỗi vị trí F0-A1 (vệ sinh tủ quầy
  *  kệ) + F0-A8 (vệ sinh không gian làm việc) kèm người phụ trách gần nhất.
  *
  *  Bê NGUYÊN thiết kế/độ mượt/pop-up/bộ lọc của tab "Tồn kho bất thường"
@@ -26,7 +26,7 @@ if (window.HPLANOGRAM) return;
 var SHEET_ID = "1FWffWi75aATbokfqIcqjByEPzkJLQBngTXp5aPOIbLM";   // Sheet 5S (kiemsoatkho)
 var SHEET_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/edit";
 var TAB = "PHU-TRACH-QUAY-KE";
-var TAB_CC = "CHAMCONG-VESINH";     // đối chiếu chấm công × vệ sinh hôm nay (bộ sync-chamcong-vesinh.js)
+var TAB_CC = "CHAMCONG-VESINH";     // đối chiếu chấm công × vệ sinh hôm nay (bộ sync-vesinh-all.js)
 var APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec";
 var STALE_MS = 5 * 60 * 1000;
 var CAP = 500;
@@ -194,7 +194,7 @@ var KHUNG =
 '  <span id="hpLoadinfo" class="hp-hint"></span>' +
 '  <button id="hpReload" onclick="HPLANOGRAM.reload()" title="Đọc lại dữ liệu mới nhất từ Google Sheet">Làm mới</button>' +
 '</div>' +
-'<p class="hp-hint" style="margin:0 0 10px">Nguồn: <b>planogram</b> (request-of-declaration). Khi nhân viên báo hoàn tất vệ sinh (trạng thái New → Chờ duyệt), hệ thống lấy <b>người báo cáo gần nhất</b> làm phụ trách vị trí — bộ đồng bộ <code>sync-phutrach-quayke.js</code> (cụm 8h40) ghi vào tab <code>' + TAB + '</code>.</p>' +
+'<p class="hp-hint" style="margin:0 0 10px">Nguồn: <b>planogram</b> (request-of-declaration). Khi nhân viên báo hoàn tất vệ sinh (trạng thái New → Chờ duyệt), hệ thống lấy <b>người báo cáo gần nhất</b> làm phụ trách vị trí — bộ đồng bộ <code>sync-vesinh-all.js</code> (cụm 8h40) ghi vào tab <code>' + TAB + '</code>.</p>' +
 '<div class="hp-whbar" id="hpWhBar"></div>' +
 '<div id="hpContent"></div>' +
 '<div id="hpCC" class="hp-cc"></div>' +
@@ -213,7 +213,15 @@ var MODAL_HTML =
 '  </div>' +
 '</div>';
 
-/* ===== TẢI DỮ LIỆU (gviz JSONP — callback tiền tố hpgv_) ===== */
+/* ===== TẢI DỮ LIỆU — ưu tiên GAS readTab (SHEET PRIVATE bí mật), fallback gviz (sheet public cũ) ===== */
+function injectJSONP(url, id, onerr){
+  var old = $id(id); if (old) old.remove();
+  var sc = document.createElement("script"); sc.id = id; sc.src = url;
+  sc.onerror = function(){ onerr && onerr(); };
+  document.body.appendChild(sc);
+}
+function gvizHeader(resp){ return ((resp.table && resp.table.cols) || []).map(function(c){ return (c && c.label) || ""; }); }
+function gvizRows(resp){ return ((resp.table && resp.table.rows) || []).map(function(r){ return (r.c || []).map(function(c){ return (c && c.v != null) ? c.v : ""; }); }); }
 function loadData(){
   var st = $id("hpState"); if (!st) return;
   var btn = $id("hpReload"); if (btn) btn.disabled = true;
@@ -221,54 +229,58 @@ function loadData(){
   st.innerHTML = '<div class="hp-spin"></div>Đang tải dữ liệu phụ trách vệ sinh…';
   $id("hpContent").innerHTML = ""; $id("hpWhBar").innerHTML = "";
   S.lastAt = Date.now();
-  window.hpgv_data = function(resp){ onData(resp); };
-  var url = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:json;responseHandler:hpgv_data" +
-    "&sheet=" + encodeURIComponent(TAB) + "&headers=1";
-  var old = $id("hp_sc_data"); if (old) old.remove();
-  var sc = document.createElement("script"); sc.id = "hp_sc_data"; sc.src = url;
-  sc.onerror = function(){ S.ok = false; render(); };
-  document.body.appendChild(sc);
+  window.hpgv_pt = function(j){
+    if (j && j.status === "success" && j.header && j.header.length){
+      if (Number(j.ts) > 0) S.tsData = Number(j.ts);
+      buildMain(j.header, j.rows || []); capNhatInfo(); loadCC();
+    } else { loadDataGviz(); }
+  };
+  injectJSONP(APPSCRIPT_URL + "?action=readTab&tab=" + encodeURIComponent(TAB) + "&callback=hpgv_pt&_=" + Date.now(), "hp_sc_pt", loadDataGviz);
+}
+function loadDataGviz(){
+  window.hpgv_data = function(resp){
+    if (!resp || resp.status === "error"){ S.ok = false; render(); }
+    else buildMain(gvizHeader(resp), gvizRows(resp));
+  };
+  var url = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:json;responseHandler:hpgv_data&sheet=" + encodeURIComponent(TAB) + "&headers=1";
+  injectJSONP(url, "hp_sc_data", function(){ S.ok = false; render(); });
   loadMeta();
   loadCC();
 }
-/* ===== ĐỐI CHIẾU CHẤM CÔNG (tab CHAMCONG-VESINH — gviz JSONP) ===== */
+/* ===== ĐỐI CHIẾU CHẤM CÔNG — ưu tiên GAS readTab (private), fallback gviz ===== */
 function loadCC(){
-  window.hpgv_cc = function(resp){ onCC(resp); };
-  var url = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:json;responseHandler:hpgv_cc" +
-    "&sheet=" + encodeURIComponent(TAB_CC) + "&headers=1";
-  var old = $id("hp_sc_cc"); if (old) old.remove();
-  var sc = document.createElement("script"); sc.id = "hp_sc_cc"; sc.src = url;
-  sc.onerror = function(){ S.cc.ok = false; renderCC(); };
-  document.body.appendChild(sc);
-  // mốc thời gian ghi tab CC (chip "cập nhật …")
-  window.hpgv_ccmeta = function(j){ try{ if (j && j.status === "success" && Number(j.ts) > 0){ S.cc.ts = Number(j.ts); renderCC(); } }catch(e){} };
-  var oldm = $id("hp_sc_ccmeta"); if (oldm) oldm.remove();
-  var scm = document.createElement("script"); scm.id = "hp_sc_ccmeta";
-  scm.src = APPSCRIPT_URL + "?action=lastSync&tab=" + encodeURIComponent(TAB_CC) + "&callback=hpgv_ccmeta";
-  scm.onerror = function(){};
-  document.body.appendChild(scm);
+  window.hpgv_cc2 = function(j){
+    if (j && j.status === "success" && j.header && j.header.length){
+      if (Number(j.ts) > 0) S.cc.ts = Number(j.ts);
+      buildCC(j.header, j.rows || []);
+    } else { loadCCGviz(); }
+  };
+  injectJSONP(APPSCRIPT_URL + "?action=readTab&tab=" + encodeURIComponent(TAB_CC) + "&callback=hpgv_cc2&_=" + Date.now(), "hp_sc_cc", loadCCGviz);
 }
-function onCC(resp){
-  var out = { ok: false, rows: [] };
-  try{
-    if (!resp || resp.status === "error") throw 0;
-    var H = ((resp.table && resp.table.cols) || []).map(function(c){ return String((c && c.label) || "").replace(/\s+/g, " ").trim().toLowerCase(); });
-    var idx = {}; Object.keys(COLS_CC).forEach(function(k){ idx[k] = idxOf(H, COLS_CC[k]); });
-    if (idx.name < 0 || idx.tt < 0) throw 0;
-    var rows = (resp.table && resp.table.rows) || [], arr = [];
-    rows.forEach(function(r){
-      var c = r.c || [];
-      function gv(i){ return (i >= 0 && c[i] && c[i].v != null) ? c[i].v : ""; }
-      var name = String(gv(idx.name)).trim(); if (!name) return;
-      var tt = String(gv(idx.tt)).trim();
-      arr.push({ code: String(gv(idx.code) || "").trim(), name: name, email: String(gv(idx.email) || "").trim(),
-        major: String(gv(idx.major) || "").trim(), ci: fmtHM(gv(idx.ci)), co: fmtHM(gv(idx.co)),
-        vs: Number(gv(idx.vs)) || 0, loc: String(gv(idx.loc) || "").trim(), tt: tt, bk: ccBucket(tt) });
-    });
-    out = { ok: true, rows: arr };
-  }catch(e){ out = { ok: false, rows: [] }; }
-  S.cc.ok = out.ok; S.cc.rows = out.rows;
-  renderCC();
+function loadCCGviz(){
+  window.hpgv_cc = function(resp){
+    if (!resp || resp.status === "error"){ S.cc.ok = false; renderCC(); }
+    else buildCC(gvizHeader(resp), gvizRows(resp));
+  };
+  var url = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:json;responseHandler:hpgv_cc&sheet=" + encodeURIComponent(TAB_CC) + "&headers=1";
+  injectJSONP(url, "hp_sc_ccg", function(){ S.cc.ok = false; renderCC(); });
+  window.hpgv_ccmeta = function(j){ try{ if (j && j.status === "success" && Number(j.ts) > 0){ S.cc.ts = Number(j.ts); renderCC(); } }catch(e){} };
+  injectJSONP(APPSCRIPT_URL + "?action=lastSync&tab=" + encodeURIComponent(TAB_CC) + "&callback=hpgv_ccmeta", "hp_sc_ccmeta");
+}
+function buildCC(H, rows2d){
+  var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
+  var idx = {}; Object.keys(COLS_CC).forEach(function(k){ idx[k] = idxOf(hl, COLS_CC[k]); });
+  if (idx.name < 0 || idx.tt < 0){ S.cc.ok = false; S.cc.rows = []; renderCC(); return; }
+  var arr = [];
+  rows2d.forEach(function(row){
+    function gv(i){ return (i >= 0 && row[i] != null) ? row[i] : ""; }
+    var name = String(gv(idx.name)).trim(); if (!name) return;
+    var tt = String(gv(idx.tt)).trim();
+    arr.push({ code: String(gv(idx.code) || "").trim(), name: name, email: String(gv(idx.email) || "").trim(),
+      major: String(gv(idx.major) || "").trim(), ci: fmtHM(gv(idx.ci)), co: fmtHM(gv(idx.co)),
+      vs: Number(gv(idx.vs)) || 0, loc: String(gv(idx.loc) || "").trim(), tt: tt, bk: ccBucket(tt) });
+  });
+  S.cc.ok = true; S.cc.rows = arr; renderCC();
 }
 function ccSetStatus(k){ if (S.ccStatus === k) k = ""; S.ccStatus = k; renderCC(); }
 function ccSearch(v){ S.ccQ = v; clearTimeout(_ccDeb); _ccDeb = setTimeout(renderCC, 130); }
@@ -326,28 +338,21 @@ function renderCC(){
     '<p class="hp-hint" style="margin:10px 0 0">Đang hiển thị ' + nf(rows.length) + ' / ' + nf(nTot) + ' nhân viên' + (S.cc.ts ? ' · cập nhật ' + fmtTime(S.cc.ts) : '') + '. Nguồn chấm công: timesheet HR (location 398 · Đóng gói) — chỉ đội vệ sinh SHOP-170.</p>' +
     '</section>';
 }
-function onData(resp){
-  var out = { ok: false, rows: [] };
-  try{
-    if (!resp || resp.status === "error") throw 0;
-    var H = ((resp.table && resp.table.cols) || []).map(function(c){ return String((c && c.label) || "").replace(/\s+/g, " ").trim().toLowerCase(); });
-    var idx = {}; Object.keys(COLS).forEach(function(k){ idx[k] = idxOf(H, COLS[k]); });
-    if (idx.loc < 0) throw 0;   // tab chưa có/không đúng nguồn
-    var rows = (resp.table && resp.table.rows) || [], arr = [];
-    rows.forEach(function(r){
-      var c = r.c || [];
-      function gv(i){ return (i >= 0 && c[i] && c[i].v != null) ? c[i].v : ""; }
-      var loc = String(gv(idx.loc)).trim(); if (!loc) return;
-      var a = areaOf(loc); if (!a) return;    // chỉ giữ F0-A1 / F0-A8
-      var email = String(gv(idx.email) || "").trim();
-      arr.push({ loc: loc, area: a.k, email: email,
-        code: String(gv(idx.code) || "").trim(), name: String(gv(idx.name) || "").trim(),
-        done: !!email });
-    });
-    out = { ok: true, rows: arr };
-  }catch(e){ out = { ok: false, rows: [] }; }
-  S.ok = out.ok; S.all = out.rows;
-  render();
+function buildMain(H, rows2d){
+  var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
+  var idx = {}; Object.keys(COLS).forEach(function(k){ idx[k] = idxOf(hl, COLS[k]); });
+  if (idx.loc < 0){ S.ok = false; S.all = []; render(); return; }   // tab chưa có/không đúng nguồn
+  var arr = [];
+  rows2d.forEach(function(row){
+    function gv(i){ return (i >= 0 && row[i] != null) ? row[i] : ""; }
+    var loc = String(gv(idx.loc)).trim(); if (!loc) return;
+    var a = areaOf(loc); if (!a) return;    // chỉ giữ F0-A1 / F0-A8
+    var email = String(gv(idx.email) || "").trim();
+    arr.push({ loc: loc, area: a.k, email: email,
+      code: String(gv(idx.code) || "").trim(), name: String(gv(idx.name) || "").trim(),
+      done: !!email });
+  });
+  S.ok = true; S.all = arr; render();
 }
 /* Chip giờ dữ liệu: hỏi GAS lastSync (mốc apiAt lúc bộ sync ghi) — JSONP */
 function loadMeta(){
@@ -388,7 +393,7 @@ function render(){
     st.style.display = "block";
     st.innerHTML = '<div style="max-width:720px;margin:0 auto;text-align:left;line-height:1.75;color:var(--muted,#6b7280)">' +
       '<b style="color:var(--text,#1f2937)">Chưa có dữ liệu phụ trách vệ sinh trong Google Sheet.</b><br>' +
-      'Tab này đọc từ sheet <code>' + esc(TAB) + '</code> — bộ đồng bộ <code>sync-phutrach-quayke.js</code> (cụm 8h40) sẽ ghi người phụ trách vệ sinh ' +
+      'Tab này đọc từ sheet <code>' + esc(TAB) + '</code> — bộ đồng bộ <code>sync-vesinh-all.js</code> (cụm 8h40) sẽ ghi người phụ trách vệ sinh ' +
       'khu vực F0-A1 &amp; F0-A8 (kho SHOP - 170 QUOC LO 1A, nguồn planogram) vào đó.</div>';
     capNhatInfo();
     return;
