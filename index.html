@@ -1055,6 +1055,8 @@ body.cty-trong .pane{display:none !important;}  body.cty-trong #ctyEmpty{display
   <section id="pane-fkiemke" class="pane hidden"></section>
   <!-- ===== TAB TỒN KHO BẤT THƯỜNG (Hasaki) — hasaki-tonbatthuong.js, LAZY; data tab stock-inventory-hasaki ===== -->
   <section id="pane-htonbat" class="pane hidden"></section>
+  <!-- ===== TAB PLANOGRAM (Hasaki) — hasaki-planogram.js, LAZY; data tab PHU-TRACH-QUAY-KE (phụ trách vệ sinh SHOP-170) ===== -->
+  <section id="pane-planogram" class="pane hidden"></section>
 
   <!-- ===== TAB TỔNG HỢP (thống kê) ===== -->
   <section id="pane-tong" class="pane hidden">
@@ -1270,7 +1272,7 @@ body.cty-trong .pane{display:none !important;}  body.cty-trong #ctyEmpty{display
    TUYỆT ĐỐI không gộp data 2 công ty vào 1 file — tách luồng ngay từ nguồn.
    Bổ sung công ty mới = thêm 1 entry ở đây (ten, thư mục summary, sheetId) — không sửa logic. */
 const CTY = {
-  hasaki:  { ten: "HASAKI",  summary: "summary",         sheetId: "1FWffWi75aATbokfqIcqjByEPzkJLQBngTXp5aPOIbLM", tabs: ["tong","task","hangmuc","kk","htonbat"] },
+  hasaki:  { ten: "HASAKI",  summary: "summary",         sheetId: "1FWffWi75aATbokfqIcqjByEPzkJLQBngTXp5aPOIbLM", tabs: ["tong","task","planogram","hangmuc","kk","htonbat"] },
   factory: { ten: "FACTORY", summary: "summary-factory", sheetId: "", tabs: ["fstock","fkiemke"] },   // 5S Factory chưa có nguồn; 2 tab chạy module riêng
 };
 /* Danh bạ TAB (Cấp 2 — Dynamic Contextual Tabs): khung tab render lại theo công ty đang chọn.
@@ -1278,6 +1280,7 @@ const CTY = {
 const TAB_DEFS = {
   tong:   { ten: "Tổng quan" },
   task:   { ten: "Task vi phạm" },
+  planogram:{ ten: "Planogram", module: true },   // HASAKI · module hasaki-planogram.js (tab PHU-TRACH-QUAY-KE) — phụ trách vệ sinh quầy kệ + không gian làm việc SHOP-170
   hangmuc:{ ten: "Hạng mục 5S" },
   kk:     { ten: "Kiểm kê",            module: true },   // HASAKI · module hasaki-kiemke.js (tab kiemke-sku-hasaki / kiemke-location-hasaki) — nhân bản tab Kiểm kê Audit Factory
   fstock: { ten: "Trạng thái lưu trữ", module: true },   // module:true = tab TỰ LO dữ liệu (JSONP riêng),
@@ -2537,6 +2540,7 @@ function setTab(name){
   if(name==='fstock'){ moFactoryStock(); }   // LAZY: chỉ lúc này mới nạp module + fetch data Tồn kho
   if(name==='fkiemke'){ moFactoryKiemke(); } // LAZY: module Kiểm kê (tab kiemke-material riêng biệt)
   if(name==='htonbat'){ moHasakiTonbat(); }  // LAZY: module Tồn kho bất thường HASAKI (tab stock-inventory-hasaki)
+  if(name==='planogram'){ moHasakiPlanogram(); } // LAZY: module Planogram HASAKI (tab PHU-TRACH-QUAY-KE)
   if(name==='kk'){ moHasakiKiemke(); }       // LAZY: module Kiểm kê HASAKI (tab kiemke-sku-hasaki / kiemke-location-hasaki)
   // STATE: nhớ tab THEO TỪNG CÔNG TY + deep-link ?company=&tab= (F5/chia sẻ không mất dấu)
   try{ localStorage.setItem('currentTab:'+CTY_ID, name); }catch(e){}
@@ -2605,6 +2609,22 @@ function moHasakiTonbat(){
   }
   Promise.all([napHasakiPC(),_htNap]).then(()=>window.HTONBAT && window.HTONBAT.init(pane))
     .catch(e=>{ _htNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
+}
+let _hpNap=null;
+function moHasakiPlanogram(){
+  const pane=$('pane-planogram');
+  if(!_hpNap){
+    pane.innerHTML='<div class="panel" style="margin-top:14px;padding:18px 16px">'+
+      '<div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:54%"></div>'+
+      '<div class="sk sk-line" style="width:62%"></div></div>';
+    _hpNap=new Promise((res,rej)=>{
+      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20260724c';
+      s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-planogram.js'));
+      document.body.appendChild(s);
+    });
+  }
+  _hpNap.then(()=>window.HPLANOGRAM && window.HPLANOGRAM.init(pane))
+    .catch(e=>{ _hpNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
 }
 let _hkNap=null;
 function moHasakiKiemke(){
