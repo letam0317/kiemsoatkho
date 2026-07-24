@@ -85,6 +85,10 @@ function abnReasonStr(r){ var a = []; TYPES.forEach(function(t){ if (r[t.k] > 0)
 /* ===== CSS — bơm 1 lần, neo #pane-htonbat / .ht-modal, token màu theo theme host ===== */
 var CSS = [
 "#pane-htonbat .ht-srcbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 10px;font-size:12.5px;}",
+/* nguồn/mô tả/Làm mới ĐƯA XUỐNG CHÂN tab — đồng bộ footer với các tab native */
+"#pane-htonbat .ht-srcfoot{margin-top:22px;padding-top:14px;border-top:1px solid var(--border,#e8ecf1);text-align:center;}",
+"#pane-htonbat .ht-srcfoot .ht-srcbar{margin:0 0 6px;justify-content:center;font-size:12px;}",
+"#pane-htonbat .ht-srcfoot .ht-hint{display:inline;}",
 "#pane-htonbat .ht-chip{background:color-mix(in srgb, var(--accent,#2563eb) 14%, transparent);color:var(--accent,#1e40af);border-radius:999px;padding:4px 13px;font-weight:650;font-size:12px;}",
 "#pane-htonbat .ht-srcbar a{color:var(--accent,#2563eb);text-decoration:none;font-weight:600;} #pane-htonbat .ht-srcbar a:hover{text-decoration:underline;}",
 "#pane-htonbat .ht-hint{color:var(--muted,#9ca3af);font-size:11.5px;font-weight:400;}",
@@ -168,16 +172,18 @@ var CSS = [
 
 /* ===== KHUNG HTML ===== */
 var KHUNG =
-'<div class="ht-srcbar">' +
-'  <span class="ht-chip">Tồn kho bất thường — Hasaki Vietnam · SHOP + WH 170 QL1A</span>' +
-'  <a href="' + SHEET_URL + '" target="_blank" rel="noopener">Mở Google Sheet</a>' +
-'  <span id="htLoadinfo" class="ht-hint"></span>' +
-'  <button id="htReload" onclick="HTONBAT.reload()" title="Đọc lại dữ liệu mới nhất từ Google Sheet">Làm mới</button>' +
-'</div>' +
-'<p class="ht-hint" style="margin:0 0 10px">Chỉ số "bất thường" đọc từ báo cáo <b>stock-inventory</b> WMS (cụm đồng bộ 7h) — chỉ SKU có <b>Product Type = Normal</b> và có ít nhất 1 loại &gt; 0: Conflict · UID Temp · Not Found · Unsuitable product · Committed · Committed Outbound.</p>' +
 '<div class="ht-whbar" id="htWhBar"></div>' +
 '<div id="htContent"></div>' +
-'<div id="htState" class="ht-state"><div class="ht-spin"></div>Đang tải dữ liệu tồn kho bất thường…</div>';
+'<div id="htState" class="ht-state"><div class="ht-spin"></div>Đang tải dữ liệu tồn kho bất thường…</div>' +
+'<div class="ht-srcfoot">' +
+'  <div class="ht-srcbar">' +
+'    <span class="ht-chip">Tồn kho bất thường — Hasaki Vietnam · SHOP + WH 170 QL1A</span>' +
+'    <a href="' + SHEET_URL + '" target="_blank" rel="noopener">Mở Google Sheet</a>' +
+'    <span id="htLoadinfo" class="ht-hint"></span>' +
+'    <button id="htReload" onclick="HTONBAT.reload()" title="Đọc lại dữ liệu mới nhất từ Google Sheet">Làm mới</button>' +
+'  </div>' +
+'  <p class="ht-hint" style="margin:0">Chỉ số "bất thường" đọc từ báo cáo <b>stock-inventory</b> WMS (cụm đồng bộ 7h) — chỉ SKU có <b>Product Type = Normal</b> và có ít nhất 1 loại &gt; 0: Conflict · UID Temp · Not Found · Unsuitable product · Committed · Committed Outbound.</p>' +
+'</div>';
 
 var MODAL_HTML =
 '<div id="htModal" class="ht-modal">' +
