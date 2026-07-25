@@ -964,8 +964,51 @@ body.cty-trong .pane{display:none !important;}  body.cty-trong #ctyEmpty{display
 
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none !important; transition:none !important;} html{scroll-behavior:auto;}}
 </style>
+<style id="qc-side-css">
+/* ============ QC · SIDEBAR (phương án C) — DRAWER trượt (web + mobile), CHỈ đổi lớp điều hướng ============
+   Ẩn mặc định · nút ›(mở)/‹(thu) mép trái · nền mờ · bấm nút HOẶC nền đều đóng · nội dung full-width, KHÔNG đổi. */
+#sideNav{position:fixed;top:0;left:0;bottom:0;width:186px;background:var(--surface2);border-right:1px solid var(--border);z-index:60;overflow-y:auto;display:flex;flex-direction:column;gap:1px;padding:52px 8px 18px;
+  transform:translateX(-100%);transition:transform .3s cubic-bezier(.32,.72,0,1);box-shadow:0 14px 46px rgba(0,0,0,.2);}
+body.side-open #sideNav{transform:none;}
+#sideNav .s-brand{display:flex;align-items:center;gap:9px;padding:2px 6px 11px;margin-bottom:3px;border-bottom:1px solid var(--border);color:var(--brand);font-weight:800;font-size:14.5px;letter-spacing:-.2px;}
+#sideNav .s-brand .lg{width:24px;height:24px;border-radius:6px;background:var(--brand);color:var(--brand-on,#fff);display:grid;place-items:center;font-size:13px;font-weight:800;flex:none;}
+#sideNav .s-brand small{display:block;font-size:8px;font-weight:700;letter-spacing:.13em;color:var(--muted);margin-top:1px;}
+/* NHÓM = tiêu đề (ô màu accent đánh dấu) — nhìn phát biết là "tab lớn" chứa sub-tab */
+#sideNav .s-grp{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:800;letter-spacing:.01em;color:var(--text);opacity:.95;padding:12px 7px 6px;}
+#sideNav .s-grp::before{content:"";width:12px;height:12px;border-radius:3.5px;background:var(--accent);opacity:.9;flex:none;}
+/* Sub-tab: thụt vào + đường dẫn dọc */
+#sideNav .s-sub{display:flex;flex-direction:column;gap:1px;margin:1px 0 3px 13px;padding-left:8px;border-left:1.5px solid var(--border);}
+#sideNav .s-item{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--text);opacity:.72;cursor:pointer;border-left:3px solid transparent;margin-left:-2px;transition:background .16s ease,opacity .16s ease,color .16s ease;}
+#sideNav .s-item:hover{background:var(--hover);opacity:1;}
+#sideNav .s-item.on{background:var(--surface);opacity:1;color:var(--accent);font-weight:700;border-left-color:var(--accent);box-shadow:0 1px 3px rgba(20,50,36,.07);}
+#sideNav .s-item .di{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.4;flex:none;}
+#sideNav .s-item.on .di{opacity:1;}
+#tabsNav{display:none !important;}
+/* Nút mũi tên ›/‹ — NHỎ, góc trên trái NGANG HÀNG tiêu đề */
+.wrap>header{padding-left:38px;}
+#sideToggle{display:flex;align-items:center;justify-content:center;position:fixed;top:15px;left:7px;z-index:61;width:28px;height:28px;
+  background:var(--accent);color:var(--accent-text,#fff);border:0;border-radius:8px;font-size:15px;font-weight:700;line-height:1;cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.14);transition:left .3s cubic-bezier(.32,.72,0,1),background .16s ease;}
+#sideToggle:hover{background:var(--accent-hover,var(--accent));}
+body.side-open #sideToggle{left:193px;}
+#sideBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:58;opacity:0;visibility:hidden;transition:opacity .26s ease,visibility .26s ease;}
+/* ===== WEB (≥769px): mở ra thì GHIM CỐ ĐỊNH — đẩy nội dung sang phải, KHÔNG nền mờ ===== */
+@media(min-width:769px){
+  .wrap{transition:padding-left .3s cubic-bezier(.32,.72,0,1);}
+  body.side-open .wrap{padding-left:186px;}
+}
+/* ===== MOBILE (≤768px): phủ lên nội dung + nền mờ (không đủ chỗ để đẩy) ===== */
+@media(max-width:768px){
+  #sideNav{width:80vw;max-width:300px;}
+  body.side-open #sideToggle{left:calc(80vw + 7px);}
+  body.side-open #sideBackdrop{opacity:1;visibility:visible;}
+}
+</style>
 </head>
 <body>
+<aside id="sideNav" aria-label="Điều hướng hạng mục"></aside>
+<button id="sideToggle" aria-label="Mở/thu thanh bên" title="Mở/thu thanh bên">›</button>
+<div id="sideBackdrop" aria-hidden="true"></div>
 <div id="hskMark" aria-hidden="true"><img src="hasaki-logo.png" alt="" /></div>
 <!-- latteMark (nền sao đỏ theme Latte) đã bỏ theo yêu cầu 23/07 -->
 <div class="wrap">
@@ -3221,6 +3264,48 @@ document.addEventListener('click', ()=>csDongHet(null));
   // Tự làm mới ONLINE mỗi 5 phút + khi quay lại tab (chỉ luồng 5S; module fstock tự làm mới khi mở lại)
   setInterval(()=>{ if(!dangCho && co5S()) lamMoiNen(); }, 5*60*1000);
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && !dangCho && co5S() && ROWS.length) lamMoiNen(); });
+})();
+</script>
+<script>
+/* ============ QC · SIDEBAR — chỉ dựng lớp điều hướng bên trái, tái dùng setTab() gốc ============
+ * Gom 2 hạng mục theo yêu cầu; "Hạng mục 5S" (tab hangmuc) đổi NHÃN hiển thị thành "Quy định".
+ * KHÔNG chạm setTab/pane/module → nội dung mỗi tab hiển thị y hệt bản gốc. */
+(function(){
+  var HM = [
+    { g: "Hạng mục 5S",   items: [["tong","Tổng quan"],["task","Task vi phạm"],["hangmuc","Quy định"],["planogram","Planogram"]] },
+    { g: "Hạng mục Tồn kho", items: [["kk","Kiểm kê"],["htonbat","Tồn kho bất thường"]] }
+  ];
+  var nav = document.getElementById("sideNav"), tg = document.getElementById("sideToggle"), bd = document.getElementById("sideBackdrop");
+  function tabActive(){ var el = document.querySelector(".tab.active"); return el ? el.getAttribute("data-tab") : null; }
+  function sync(){ var cur = tabActive(); nav.querySelectorAll(".s-item").forEach(function(el){ el.classList.toggle("on", el.getAttribute("data-tab") === cur); }); }
+  function build(){
+    var tabs = [];
+    try{ if (typeof CTY !== "undefined" && typeof CTY_ID !== "undefined" && CTY[CTY_ID]) tabs = CTY[CTY_ID].tabs || []; }catch(e){}
+    if (!tabs.length) tabs = ["tong","task","planogram","hangmuc","kk","htonbat"];   // dự phòng
+    var html = "";   /* KHÔNG lặp brand — header đã có tiêu đề AUDIT HASAKI */
+    HM.forEach(function(grp){
+      var its = grp.items.filter(function(x){ return tabs.indexOf(x[0]) >= 0; });
+      if (!its.length) return;
+      html += '<div class="s-grp">' + grp.g + '</div><div class="s-sub">' +
+        its.map(function(x){ return '<div class="s-item" data-tab="' + x[0] + '"><span class="di"></span>' + x[1] + '</div>'; }).join("") +
+        '</div>';
+    });
+    nav.innerHTML = html;
+    nav.querySelectorAll(".s-item").forEach(function(el){
+      /* Chọn tab KHÔNG tự đóng sidebar — sidebar ghim cố định tới khi bấm ‹ hoặc nền mờ (mobile) */
+      el.addEventListener("click", function(){ setTab(el.getAttribute("data-tab")); });
+    });
+    sync();
+  }
+  function mo(){ document.body.classList.add("side-open"); tg.textContent = "‹"; }
+  function dong(){ document.body.classList.remove("side-open"); tg.textContent = "›"; }
+  tg.addEventListener("click", function(){ document.body.classList.contains("side-open") ? dong() : mo(); });
+  bd.addEventListener("click", dong);
+  /* Bọc setTab gốc để đồng bộ trạng thái active của sidebar (kể cả khi gọi từ deep-link) */
+  if (typeof window.setTab === "function"){ var _st = window.setTab; window.setTab = function(n){ _st(n); sync(); }; }
+  build();
+  /* renderTabs() (đổi công ty) làm mới #tabsNav → dựng lại sidebar cho khớp */
+  try{ new MutationObserver(build).observe(document.getElementById("tabsNav"), { childList: true }); }catch(e){}
 })();
 </script>
 </body>
