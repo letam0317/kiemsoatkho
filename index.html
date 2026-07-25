@@ -656,7 +656,7 @@ thead th.c-status, tbody td.c-status{width:150px;}
 #pinInput::placeholder{letter-spacing:.3em; color:var(--muted); opacity:.6;}
 #pinInput:focus{border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);}
 #pinEye{position:absolute; right:6px; top:50%; transform:translateY(-50%); border:0; background:none; cursor:pointer;
-  font-size:16px; color:var(--muted); padding:8px; line-height:1;}
+  font-size:11.5px; font-weight:800; letter-spacing:0; color:var(--muted); padding:8px 6px; line-height:1;}
 #pinEye:hover{color:var(--text);}
 /* Báo lỗi PIN NGAY TRONG pop-up: chừa sẵn min-height để không giật layout khi hiện lỗi */
 .pin-error-text{min-height:34px; margin:2px 0 10px; display:flex; flex-direction:column; justify-content:center; gap:1px;}
@@ -1253,7 +1253,7 @@ body.cty-trong .pane{display:none !important;}  body.cty-trong #ctyEmpty{display
     <p class="pin-desc" id="pinDesc"></p>
     <div class="pin-field">
       <input id="pinInput" type="password" autocomplete="off" inputmode="text" placeholder="••••••" aria-label="Mã PIN">
-      <button id="pinEye" type="button" title="Hiện/ẩn PIN" aria-label="Hiện hoặc ẩn PIN">👁</button>
+      <button id="pinEye" type="button" title="Hiện/ẩn PIN" aria-label="Hiện hoặc ẩn PIN">Hiện</button>
     </div>
     <div class="pin-error-text" id="pinError"></div>
     <div class="pin-acts">
@@ -2867,7 +2867,7 @@ function hoiPin(tieuDe, moTa, xacThuc){
     $('pinTitle').textContent=tieuDe||'Nhập PIN';
     $('pinDesc').textContent=moTa||'';
     xoaLoiPin(); _pinLoading(false);
-    const inp=$('pinInput'); inp.value=''; inp.type='password'; $('pinEye').textContent='👁';
+    const inp=$('pinInput'); inp.value=''; inp.type='password'; $('pinEye').textContent='Hiện';
     hienModal('pinModal');
     setTimeout(()=>inp.focus(),80);
   });
@@ -2894,7 +2894,7 @@ $('pinInput').addEventListener('keydown',e=>{
 $('pinInput').addEventListener('input',xoaLoiPin);
 $('pinEye').addEventListener('click',()=>{
   const inp=$('pinInput'); const hien=inp.type==='password';
-  inp.type=hien?'text':'password'; $('pinEye').textContent=hien?'🙈':'👁'; inp.focus();
+  inp.type=hien?'text':'password'; $('pinEye').textContent=hien?'Ẩn':'Hiện'; inp.focus();
 });
 
 /* XÁC THỰC TRƯỚC — ĐÚNG PIN MỚI MỞ FORM. (Bản cũ mở form ngay rồi mới kiểm nền:
