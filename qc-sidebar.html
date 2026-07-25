@@ -965,31 +965,34 @@ body.cty-trong .pane{display:none !important;}  body.cty-trong #ctyEmpty{display
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none !important; transition:none !important;} html{scroll-behavior:auto;}}
 </style>
 <style id="qc-side-css">
-/* ============ QC · SIDEBAR (phương án C) — CHỈ đổi lớp điều hướng, KHÔNG đổi nội dung tab ============ */
-#sideNav{position:fixed;top:0;left:0;bottom:0;width:214px;background:var(--surface2);border-right:1px solid var(--border);z-index:60;overflow-y:auto;display:flex;flex-direction:column;gap:2px;padding:15px 11px;transition:transform .28s cubic-bezier(.32,.72,0,1);}
-#sideNav .s-brand{display:flex;align-items:center;gap:10px;padding:2px 8px 13px;color:var(--brand);font-weight:800;font-size:16.5px;letter-spacing:-.2px;text-shadow:0 1px 1px rgba(0,0,0,.06);}
-#sideNav .s-brand .lg{width:26px;height:26px;border-radius:7px;background:var(--brand);color:var(--brand-on,#fff);display:grid;place-items:center;font-size:14px;font-weight:800;flex:none;}
+/* ============ QC · SIDEBAR (phương án C) — DRAWER trượt (web + mobile), CHỈ đổi lớp điều hướng ============
+   Ẩn mặc định · nút ›(mở)/‹(thu) mép trái · nền mờ · bấm nút HOẶC nền đều đóng · nội dung full-width, KHÔNG đổi. */
+#sideNav{position:fixed;top:0;left:0;bottom:0;width:252px;background:var(--surface2);border-right:1px solid var(--border);z-index:60;overflow-y:auto;display:flex;flex-direction:column;gap:1px;padding:16px 12px 22px;
+  transform:translateX(-100%);transition:transform .3s cubic-bezier(.32,.72,0,1);box-shadow:0 14px 46px rgba(0,0,0,.22);}
+body.side-open #sideNav{transform:none;}
+#sideNav .s-brand{display:flex;align-items:center;gap:10px;padding:2px 6px 14px;margin-bottom:4px;border-bottom:1px solid var(--border);color:var(--brand);font-weight:800;font-size:16.5px;letter-spacing:-.2px;}
+#sideNav .s-brand .lg{width:27px;height:27px;border-radius:7px;background:var(--brand);color:var(--brand-on,#fff);display:grid;place-items:center;font-size:14px;font-weight:800;flex:none;}
 #sideNav .s-brand small{display:block;font-size:8.5px;font-weight:700;letter-spacing:.15em;color:var(--muted);margin-top:1px;}
-#sideNav .s-grp{font-size:10px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:13px 12px 5px;}
-#sideNav .s-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);opacity:.78;cursor:pointer;border-left:3px solid transparent;transition:background .16s ease,opacity .16s ease,color .16s ease;}
+/* NHÓM = tiêu đề nổi bật (có ô màu accent đánh dấu) — nhìn phát biết là "tab lớn" chứa sub-tab */
+#sideNav .s-grp{display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:800;letter-spacing:.01em;color:var(--text);opacity:.95;padding:15px 8px 8px;}
+#sideNav .s-grp::before{content:"";width:14px;height:14px;border-radius:4px;background:var(--accent);opacity:.9;flex:none;}
+/* Danh sách sub-tab: THỤT VÀO + đường dẫn dọc để thấy rõ "nằm trong nhóm" */
+#sideNav .s-sub{display:flex;flex-direction:column;gap:2px;margin:1px 0 4px 15px;padding-left:9px;border-left:1.5px solid var(--border);}
+#sideNav .s-item{display:flex;align-items:center;gap:9px;padding:7px 11px;border-radius:8px;font-size:13px;font-weight:600;color:var(--text);opacity:.72;cursor:pointer;border-left:3px solid transparent;margin-left:-2px;transition:background .16s ease,opacity .16s ease,color .16s ease;}
 #sideNav .s-item:hover{background:var(--hover);opacity:1;}
-#sideNav .s-item.on{background:var(--surface);opacity:1;color:var(--accent);border-left-color:var(--accent);box-shadow:0 1px 3px rgba(20,50,36,.06);}
-#sideNav .s-item .di{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.45;flex:none;}
+#sideNav .s-item.on{background:var(--surface);opacity:1;color:var(--accent);font-weight:700;border-left-color:var(--accent);box-shadow:0 1px 3px rgba(20,50,36,.07);}
+#sideNav .s-item .di{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.4;flex:none;}
 #sideNav .s-item.on .di{opacity:1;}
-.wrap{padding-left:214px;transition:padding-left .28s cubic-bezier(.32,.72,0,1);}
 #tabsNav{display:none !important;}
-#brandTitle{display:none !important;}
-#sideToggle,#sideBackdrop{display:none;}
-/* ===== DI ĐỘNG: sidebar KHÔNG cố định — trượt ra/thu vào bằng nút mũi tên ›/‹ ===== */
-@media(max-width:940px){
-  #sideNav{transform:translateX(-100%);width:246px;box-shadow:0 14px 46px rgba(0,0,0,.28);}
-  body.side-open #sideNav{transform:none;}
-  .wrap{padding-left:0;}
-  #sideToggle{display:flex;align-items:center;justify-content:center;position:fixed;top:calc(50% - 26px);left:0;z-index:59;width:24px;height:52px;background:var(--accent);color:var(--accent-text,#fff);border:0;border-radius:0 13px 13px 0;font-size:18px;font-weight:700;cursor:pointer;box-shadow:2px 0 10px rgba(0,0,0,.18);transition:left .28s cubic-bezier(.32,.72,0,1);}
-  body.side-open #sideToggle{left:246px;}
-  #sideBackdrop{display:block;position:fixed;inset:0;background:rgba(0,0,0,.36);z-index:58;opacity:0;visibility:hidden;transition:opacity .24s ease,visibility .24s ease;}
-  body.side-open #sideBackdrop{opacity:1;visibility:visible;}
-}
+/* Nút mũi tên ›/‹ — mép trái, cả web lẫn mobile */
+#sideToggle{display:flex;align-items:center;justify-content:center;position:fixed;top:calc(50% - 27px);left:0;z-index:59;width:26px;height:54px;
+  background:var(--accent);color:var(--accent-text,#fff);border:0;border-radius:0 14px 14px 0;font-size:19px;font-weight:700;line-height:1;cursor:pointer;
+  box-shadow:2px 0 10px rgba(0,0,0,.16);transition:left .3s cubic-bezier(.32,.72,0,1),background .16s ease;}
+#sideToggle:hover{background:var(--accent-hover,var(--accent));}
+body.side-open #sideToggle{left:252px;}
+#sideBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.34);z-index:58;opacity:0;visibility:hidden;transition:opacity .26s ease,visibility .26s ease;}
+body.side-open #sideBackdrop{opacity:1;visibility:visible;}
+@media(max-width:520px){ #sideNav{width:82vw;} body.side-open #sideToggle{left:82vw;} }
 </style>
 </head>
 <body>
@@ -3273,8 +3276,9 @@ document.addEventListener('click', ()=>csDongHet(null));
     HM.forEach(function(grp){
       var its = grp.items.filter(function(x){ return tabs.indexOf(x[0]) >= 0; });
       if (!its.length) return;
-      html += '<div class="s-grp">' + grp.g + '</div>';
-      its.forEach(function(x){ html += '<div class="s-item" data-tab="' + x[0] + '"><span class="di"></span>' + x[1] + '</div>'; });
+      html += '<div class="s-grp">' + grp.g + '</div><div class="s-sub">' +
+        its.map(function(x){ return '<div class="s-item" data-tab="' + x[0] + '"><span class="di"></span>' + x[1] + '</div>'; }).join("") +
+        '</div>';
     });
     nav.innerHTML = html;
     nav.querySelectorAll(".s-item").forEach(function(el){
