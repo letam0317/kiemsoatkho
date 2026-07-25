@@ -279,7 +279,7 @@ var PANE = null, _nmColor = {}, _nmCi = 0, _deb = null, _debT = null, _ccDeb = n
 var _emNm = {};   // email(lower) -> { code, name } (gom từ PT + NK để hiện tên người thực hiện)
 
 var $id = function(s){ return document.getElementById(s); };
-function nf(x){ return (x || 0).toLocaleString("en-US"); }
+function nf(x){ return (x || 0).toLocaleString("vi-VN"); }
 function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 function fmtTime(ms){ var d = new Date(ms); function p(n){ return (n < 10 ? "0" : "") + n; }
   return p(d.getHours()) + ":" + p(d.getMinutes()) + " " + p(d.getDate()) + "/" + p(d.getMonth() + 1) + "/" + d.getFullYear(); }
@@ -400,7 +400,7 @@ var CSS = [
 "#pane-planogram .hp-cctbl .mut{color:var(--muted,#9ca3af);}",
 "#pane-planogram .hp-cctbl .empty{text-align:center;color:var(--muted,#9ca3af);padding:26px;}",
 "#pane-planogram .hp-cctbl td.wrap{white-space:normal;min-width:280px;max-width:520px;line-height:1.5;}",
-"#pane-planogram .hp-badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:650;white-space:nowrap;}",
+"#pane-planogram .hp-badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:650;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;}",
 "#pane-planogram .hp-state{padding:56px 20px;text-align:center;color:var(--muted,#6b7280);}",
 "#pane-planogram .hp-spin{width:32px;height:32px;border:3px solid var(--border,#d5dbe4);border-top-color:var(--accent,#2563eb);border-radius:50%;margin:0 auto 16px;animation:hp-sp .8s linear infinite;}",
 "@keyframes hp-sp{to{transform:rotate(360deg)}}",
@@ -505,7 +505,7 @@ var KHUNG =
 '    <span id="hpLoadinfo" class="hp-hint"></span>' +
 '    <button id="hpReload" onclick="HPLANOGRAM.reload()" title="Đọc lại dữ liệu mới nhất từ Google Sheet">Làm mới</button>' +
 '  </div>' +
-'  <p class="hp-hint" style="margin:0">Nguồn: <b>planogram</b> (request-of-declaration). Bộ đồng bộ <code>sync-vesinh-all.js</code> (cụm 8h40 / nút Cập nhật ngay) ghi 4 tab: <code>' + TAB_YC + '</code> (yêu cầu hôm nay + ảnh báo cáo), <code>' + TAB_NK + '</code> (nhật ký NV theo ngày), <code>' + TAB + '</code>, <code>' + TAB_CC + '</code>. Ảnh trong pop-up là ảnh nhân viên chụp khi báo cáo — bấm để phóng to.</p>' +
+'  <p class="hp-hint" style="margin:0" title="Bộ sync-vesinh-all.js (cụm 8h40 / nút Cập nhật ngay) ghi 4 tab: ' + TAB_YC + ', ' + TAB_NK + ', ' + TAB + ', ' + TAB_CC + '. Ảnh trong pop-up là ảnh nhân viên chụp khi báo cáo.">Nguồn: <b>planogram</b> · cập nhật lúc 8h40 &amp; khi bấm “Cập nhật ngay”. Bấm ảnh để phóng to.</p>' +
 '</div>';
 
 var MODAL_HTML =
@@ -540,7 +540,7 @@ var MODAL_HTML =
 '</div>';
 
 var THEAD_LOC = '<tr><th>Location</th><th>Executed By</th><th>Code</th><th class="nm">Name</th><th>Khu vực</th><th>Trạng thái</th></tr>';
-var THEAD_REQ = '<tr><th>Vị trí</th><th>Trạng thái</th><th>AI xét duyệt</th><th class="nm">Người thực hiện</th><th>Lúc</th><th class="nm">Phụ trách (dự kiến)</th><th>Ảnh</th><th>Planogram</th></tr>';
+var THEAD_REQ = '<tr><th>Vị trí</th><th>Trạng thái duyệt</th><th>AI xét duyệt</th><th class="nm">Người thực hiện</th><th>Lúc</th><th class="nm">Phụ trách (dự kiến)</th><th>Ảnh</th><th>Planogram</th></tr>';
 
 /* ===== TẢI DỮ LIỆU — ưu tiên GAS readTab (SHEET PRIVATE bí mật), fallback gviz (sheet public) ===== */
 function injectJSONP(url, id, onerr){
@@ -766,7 +766,7 @@ function htmlAiXetDuyet(){
     '<div class="hp-ccwrap" style="max-height:440px"><table class="hp-cctbl" style="min-width:980px"><thead><tr>' +
     '<th>Ngày</th><th>Vị trí</th><th>Kết luận</th><th>Lý do AI đưa ra</th><th>Người thực hiện</th><th>Ảnh</th><th>Model</th><th>Planogram</th>' +
     '</tr></thead><tbody>' + body + capNote + '</tbody></table></div>' +
-    '<p class="hp-hint" style="margin:10px 0 0">Đang hiển thị ' + nf(Math.min(rows.length, CAPAI)) + ' / ' + nf(all.length) + ' kết quả' + (S.ai.ts ? ' · AI chấm gần nhất ' + fmtTime(S.ai.ts) : '') + ' · model đã dùng: ' + esc(Object.keys(models).join(", ") || "—") + '. Chốt cứng (ảnh trùng/thiếu ảnh) chấm tại máy — đúng 100%; kết luận mơ hồ AI tự xếp "Cần xem" để người duyệt quyết.</p>';
+    '<p class="hp-hint" style="margin:10px 0 0" title="Ảnh trùng/thiếu được chốt cứng tại máy (đúng 100%); kết luận mơ hồ AI tự xếp “Cần xem” để người duyệt quyết.">Đang hiển thị ' + nf(Math.min(rows.length, CAPAI)) + ' / ' + nf(all.length) + ' kết quả' + (S.ai.ts ? ' · AI chấm lúc ' + fmtTime(S.ai.ts) : '') + (Object.keys(models).length ? ' · ' + esc(Object.keys(models).join(", ")) : '') + '.</p>';
 }
 function capNhatInfo(){
   var el = $id("hpLoadinfo"); if (!el) return;
@@ -836,6 +836,14 @@ function renderToday(){
   rows.forEach(function(r){ cnt[bkNgay(r)]++; if (r.bk === "da" && r.email) nvDa[r.email.toLowerCase()] = 1; });
   var nNvDa = Object.keys(nvDa).length;
   var chipNgay = '<span class="hp-chip" title="Khoảng ngày đang xem — đổi ở ô Ngày phía trên">' + esc(nhanKhoang()) + '</span>';
+
+  /* Không có yêu cầu trong khoảng → empty-state gọn thay vì 4 thẻ số 0 */
+  if (!nTot){
+    box.innerHTML = '<section class="hp-panel hp-fade hp-hero" style="margin-bottom:12px"><h2>Vệ sinh ' + chipNgay +
+      (S.area ? ' <span class="hp-hint">' + esc(areaMeta(S.area).short) + '</span>' : '') + '</h2>' +
+      '<div class="hp-empty">Không có yêu cầu vệ sinh trong khoảng này' + (S.area ? ' ở ' + esc(areaMeta(S.area).short) : '') + '. Chọn khoảng ngày khác ở ô Ngày phía trên.</div></section>';
+    renderMap(); return;
+  }
 
   /* Hôm nay: chia 3 nhóm hành động; ngày quá khứ: chỉ Đã/Chưa (chấm công quá khứ không lưu) */
   var nhom = homNay ? YCST : [ycMeta("da"), META_CHUA];
@@ -1185,7 +1193,7 @@ function showModal(base, title, preset, mode){
   else pg.style.display = "none";
   buildFilters();
   $id("hpMSum").textContent = "";
-  $id("hpMBody").innerHTML = '<tr><td colspan="7" class="empty">Đang hiển thị…</td></tr>';
+  $id("hpMBody").innerHTML = '<tr><td colspan="' + (MODAL.mode === "req" ? 8 : 6) + '" class="empty">Đang hiển thị…</td></tr>';
   var m = $id("hpModal"); m.style.display = "flex";
   requestAnimationFrame(function(){ m.classList.add("show"); setTimeout(mRender, 60); });
 }
@@ -1422,6 +1430,14 @@ function init(pane){
     while (wrap.firstChild) document.body.appendChild(wrap.firstChild);
     $id("hpModal").addEventListener("click", function(e){ if (e.target === this) closeModal(); });
     $id("hpNkModal").addEventListener("click", function(e){ if (e.target === this) closeNk(); });
+    /* ESC đóng pop-up (đồng bộ hành vi với modal native của host); nhường lightbox host xử lý trước */
+    document.addEventListener("keydown", function(e){
+      if (e.key !== "Escape") return;
+      var lb = $id("lightbox"); if (lb && lb.classList.contains("show")) return;
+      if ($id("hpVtModal") && $id("hpVtModal").classList.contains("show")) closeVt();
+      else if ($id("hpNkModal") && $id("hpNkModal").classList.contains("show")) closeNk();
+      else if ($id("hpModal") && $id("hpModal").classList.contains("show")) closeModal();
+    });
     $id("hpVtModal").addEventListener("click", function(e){ if (e.target === this) closeVt(); });
     $id("hpMFilters").addEventListener("click", function(e){
       var it = e.target.closest(".hp-combo-item"); if (!it) return;
