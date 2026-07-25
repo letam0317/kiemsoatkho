@@ -55,7 +55,7 @@ function toast(msg){ try { console.log("[HPC] " + msg); } catch (e) {} }   // po
 /* ===== CSS ===== */
 var CSS = [
 /* giỏ nổi */
-"#hpcbar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:1250;display:flex;align-items:center;gap:8px;background:#1f2937;color:#fff;border-radius:999px;padding:8px 10px 8px 16px;box-shadow:0 12px 34px rgba(16,24,40,.34);font-size:13px;}",   /* pill nổi: nền tối CỐ ĐỊNH mọi theme (không theo surface) */
+"#hpcbar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:1250;display:flex;align-items:center;gap:8px;background:#1f2937;color:#fff;border-radius:999px;padding:8px 10px 8px 16px;box-shadow:0 12px 34px rgba(16,24,40,.34);font-size:13px;animation:hpc-in .22s cubic-bezier(.34,1.56,.64,1);}",   /* pill nổi: nền tối CỐ ĐỊNH mọi theme (không theo surface) */
 "#hpcbar.hidden{display:none;}",
 "#hpcbar b{color:#fbbf24;font-variant-numeric:tabular-nums;}",
 "#hpcbar button{border:0;border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:650;cursor:pointer;font-family:inherit;min-height:34px;}",
@@ -63,7 +63,7 @@ var CSS = [
 "#hpcbar .rm{background:rgba(255,255,255,.14);color:#fff;} #hpcbar .rm:hover{background:rgba(255,255,255,.26);}",
 "body.hpcm-open #hpcbar{display:none;}",
 /* preview giỏ */
-"#hpcprev{position:fixed;left:50%;bottom:62px;transform:translateX(-50%);z-index:1251;width:min(760px,94vw);max-height:60vh;display:flex;flex-direction:column;background:var(--surface,#fff);color:var(--text,#1f2937);border:1px solid var(--border,#e8ecf1);border-radius:14px;box-shadow:0 24px 60px rgba(16,24,40,.32);overflow:hidden;}",
+"#hpcprev{position:fixed;left:50%;bottom:62px;transform:translateX(-50%);z-index:1251;width:min(760px,94vw);max-height:60vh;display:flex;flex-direction:column;background:var(--surface,#fff);color:var(--text,#1f2937);border:1px solid var(--border,#e8ecf1);border-radius:14px;box-shadow:0 24px 60px rgba(16,24,40,.32);overflow:hidden;animation:hpc-in .2s cubic-bezier(.34,1.56,.64,1);}",
 "#hpcprev.hidden{display:none;}",
 "#hpcprev .ph{display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:1px solid var(--border,#e8ecf1);font-size:13px;font-weight:650;}",
 "#hpcprev .ph b{color:var(--accent,#2563eb);} #hpcprev .ph .sp{flex:1;}",
@@ -123,6 +123,7 @@ var CSS = [
 ".hpc-chip{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:4px 11px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;background:color-mix(in srgb,var(--muted,#9ca3af) 18%,transparent);color:var(--text,#374151);}",
 ".hpc-chip.on{background:var(--accent,#2563eb);color:var(--accent-text,#fff);}",
 ".hpc-spin{width:26px;height:26px;border:3px solid var(--border,#d5dbe4);border-top-color:var(--accent,#2563eb);border-radius:50%;margin:8px auto;animation:hpc-sp .8s linear infinite;}",
+"@keyframes hpc-in{from{opacity:0;transform:translate3d(-50%,8px,0) scale(.98)}to{opacity:1;transform:translate3d(-50%,0,0)}}",   /* giữ phép định tâm -50% trong keyframes — tránh lỗi lệch phải rồi nhảy vào giữa */
 "@keyframes hpc-sp{to{transform:rotate(360deg)}}",
 "@media(max-width:768px){.hpc-modal{padding:0;}.hpc-box{width:100vw!important;height:100vh;max-height:100vh!important;border-radius:0;}#hpcbar{width:calc(100vw - 24px);justify-content:center;}#hpcprev{width:calc(100vw - 16px);}}"
 ].join("\n");
