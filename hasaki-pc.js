@@ -3,8 +3,8 @@
  *  hasaki-pc.js — MODULE DÙNG CHUNG "TẠO LỆNH KIỂM KÊ" cho portal Hasaki
  * ============================================================================
  *  Port từ hệ PC của Audit Factory: tick chọn SKU ở pop-up (Kiểm kê + Tồn kho
- *  bất thường) -> giỏ nổi gom xuyên tab -> modal tạo lệnh (CHỈ ⬇ tải .xlsx, KHÔNG
- *  ghi thẳng WMS) + nút 📋 "Kế hoạch chờ push (WMS)" đọc LIVE (chỉ ĐỌC).
+ *  bất thường) -> giỏ nổi gom xuyên tab -> modal tạo lệnh (CHỈ tải .xlsx, KHÔNG
+ *  ghi thẳng WMS) + nút "Kế hoạch chờ push (WMS)" đọc LIVE (chỉ ĐỌC).
  *
  *  KIẾN TRÚC (theo đúng khuôn factory, xem factory-wms-architecture):
  *   - File .xlsx do GAS action `pc_import` dựng (Google OAuth của script — KHÔNG
@@ -151,8 +151,8 @@ var HTML =
 '    <div class="hpc-body"><table class="hpc-tbl"><thead><tr><th>Warehouse Code</th><th class="num">Type</th><th>Sku</th><th class="pn">Tên sản phẩm</th><th>Kho nguồn</th><th>Lý do chọn</th><th>Plan Date</th><th>Executed By</th><th class="hpc-x"></th></tr></thead><tbody id="hpcTBody"></tbody></table></div>' +
 '    <div class="hpc-steps" id="hpcSteps"><b>Cách tạo lệnh (ghi đúng tên bạn):</b> ① Bấm <b>Tải file .xlsx</b> → ② vào <a href="https://wms.inshasaki.com/physical-count/request/import/sku" target="_blank" rel="noopener">trang Import SKU của WMS ↗</a> (đang đăng nhập bằng tài khoản của bạn) → ③ thả file vừa tải vào. Lệnh sẽ mang tên <b>chính bạn</b>.</div>' +
 '    <div class="hpc-foot"><span class="hint" id="hpcStatus"></span><span class="sp"></span>' +
-'      <button class="hpc-chip" onclick="HPC.planOpen()">📋 Kế hoạch chờ push (WMS)</button>' +
-'      <button class="hpc-btn primary" id="hpcBtnFile" onclick="HPC.submit()" title="Dựng file template chuẩn để bạn tự import trong WMS">⬇ Tải file .xlsx</button></div>' +
+'      <button class="hpc-chip" onclick="HPC.planOpen()" title="Lệnh kiểm kê tạo từ dashboard nằm ở \'sổ kế hoạch\' WMS trước khi thành phiếu — Pending = chờ push · Processing = đã push · đọc trực tiếp từ WMS">Kế hoạch chờ push (WMS)</button>' +
+'      <button class="hpc-btn primary" id="hpcBtnFile" onclick="HPC.submit()" title="Dựng file template chuẩn để bạn tự import trong WMS">Tải file .xlsx</button></div>' +
 '  </div>' +
 '</div>' +
 /* modal kế hoạch chờ push */
