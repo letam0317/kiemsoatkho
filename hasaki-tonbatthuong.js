@@ -68,7 +68,7 @@ var MODAL = { base: [], preset: null };
 var PANE = null, _whColor = {}, _whCi = 0, _deb = null, _debT = null;
 
 var $id = function(s){ return document.getElementById(s); };
-function nf(x){ return (x || 0).toLocaleString("en-US"); }
+function nf(x){ return (x || 0).toLocaleString("vi-VN"); }
 function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 function fmtTime(ms){ var d = new Date(ms); function p(n){ return (n < 10 ? "0" : "") + n; }
   return p(d.getHours()) + ":" + p(d.getMinutes()) + " " + p(d.getDate()) + "/" + p(d.getMonth() + 1) + "/" + d.getFullYear(); }
@@ -465,6 +465,11 @@ function init(pane){
     var wrap = document.createElement("div"); wrap.innerHTML = MODAL_HTML;
     while (wrap.firstChild) document.body.appendChild(wrap.firstChild);
     $id("htModal").addEventListener("click", function(e){ if (e.target === this) closeModal(); });
+    document.addEventListener("keydown", function(e){
+      if (e.key !== "Escape") return;
+      var lb = document.getElementById("lightbox"); if (lb && lb.classList.contains("show")) return;
+      if ($id("htModal") && $id("htModal").classList.contains("show")) closeModal();
+    });
     // Delegation 1 lần: chọn mục trong combo (innerHTML rebuild không mất listener)
     $id("htMFilters").addEventListener("click", function(e){
       var it = e.target.closest(".ht-combo-item"); if (!it) return;
