@@ -248,10 +248,10 @@
           <div class="flex gap-1 mb-2 bg-white/10 rounded-full p-1" :class="dangQuay ? 'opacity-40 pointer-events-none' : ''">
             <button type="button" @click="datCheDo(false)"
               :class="!cheDoVideo ? 'bg-white text-slate-800' : 'text-white'"
-              class="rounded-full px-4 py-1.5 text-sm font-medium transition">📷 Ảnh</button>
+              class="rounded-full px-4 py-1.5 text-sm font-medium transition">Ảnh</button>
             <button type="button" @click="datCheDo(true)"
               :class="cheDoVideo ? 'bg-white text-slate-800' : 'text-white'"
-              class="rounded-full px-4 py-1.5 text-sm font-medium transition">🎥 Video</button>
+              class="rounded-full px-4 py-1.5 text-sm font-medium transition">Video</button>
           </div>
         </div>
 
@@ -350,7 +350,7 @@
        PHẦN LOGIC (Alpine.js)
        =========================================================== -->
   <script>
-    // 👉 BƯỚC QUAN TRỌNG: Dán đường link Google Web App của bạn vào đây
+    // BƯỚC QUAN TRỌNG: Dán đường link Google Web App của bạn vào đây
     const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec';
 
     // Nguồn hạng mục 5S: ĐỌC TRỰC TIẾP tab QUY-DINH (cột "QUY ĐỊNH CHI TIẾT") của Google Sheet
