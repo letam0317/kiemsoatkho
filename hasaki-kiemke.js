@@ -68,7 +68,7 @@ var PANE = null, _whColor = {}, _whCi = 0, _deb = null, _debT = null, _fcDpBound
 
 /* ===== HELPERS ===== */
 var $id = function(s){ return document.getElementById(s); };
-function nf(x){ return (x || 0).toLocaleString("en-US"); }
+function nf(x){ return (x || 0).toLocaleString("vi-VN"); }
 function pct(v){ return Number((v || 0).toFixed(2)) + "%"; }
 function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 function p2(n){ return (n < 10 ? "0" : "") + n; }
@@ -591,7 +591,7 @@ function renderDaily(kind){
   var ds = Object.keys(days).sort().slice(-60);
   var khos = Object.keys(khoAll).sort();
   var lg = $id("hkLegend-" + kind);
-  if (lg) lg.innerHTML = khos.map(function(w){ return '<span><span class="sw" style="background:' + whColor(w) + '"></span>' + esc(w) + "</span>"; }).join("&nbsp;&nbsp;");
+  if (lg) lg.innerHTML = khos.map(function(w){ return '<span><span class="sw" style="background:' + whColor(w) + '"></span>' + esc(w) + "</span>"; }).join("");
   if (!ds.length){ el.innerHTML = '<div class="hk-histempty">Chưa có dòng nào được kiểm (theo bộ lọc hiện tại).</div>'; return; }
   var max = 1; ds.forEach(function(d){ if (days[d].tot > max) max = days[d].tot; });
   var H = 150;   // khớp .hk-hbars trong CSS
@@ -1130,6 +1130,12 @@ function init(pane){
     while (wrap.firstChild) document.body.appendChild(wrap.firstChild);
     $id("hkKkModal").addEventListener("click", function(e){ if (e.target === this) closeModal(); });
     $id("hkFcModal").addEventListener("click", function(e){ if (e.target === this) closeFc(); });
+    document.addEventListener("keydown", function(e){
+      if (e.key !== "Escape") return;
+      var lb = document.getElementById("lightbox"); if (lb && lb.classList.contains("show")) return;
+      if ($id("hkFcModal") && $id("hkFcModal").classList.contains("show")) closeFc();
+      else if ($id("hkKkModal") && $id("hkKkModal").classList.contains("show")) closeModal();
+    });
     /* Delegation 1 lần: chọn mục trong combo pop-up chi tiết (innerHTML rebuild không mất listener) */
     $id("hkKkFilters").addEventListener("click", function(e){
       var it = e.target.closest(".hk-combo-item"); if (!it) return;
