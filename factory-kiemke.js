@@ -62,7 +62,7 @@ var _boot = false, _syncing = false, _loaded = 0, _lastSyncMs = 0, _deb = null, 
 var mFilter = { t: "all" }, mTab = "sku", mLabel = "";
 
 var $id = function(s){ return document.getElementById(s); };
-function nf(x){ return (x == null ? 0 : x).toLocaleString("en-US"); }
+function nf(x){ return (x == null ? 0 : x).toLocaleString("vi-VN"); }
 function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 function p2(n){ return (n < 10 ? "0" : "") + n; }
 function parseDate(s){
@@ -571,7 +571,7 @@ function ddRender(mountId, opts, cur, cb, prefix){
 
 /* ===== COUNTUP / FADE ===== */
 function countUp(el){ var to = Number(el.getAttribute("data-count")) || 0, dec = el.getAttribute("data-dec") === "1", suf = el.getAttribute("data-suf") || ""; var t0 = performance.now(), dur = 750;
-  function step(t){ var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3), v = to * e; el.textContent = (dec ? v.toFixed(1) : Math.round(v).toLocaleString("en-US")) + suf; if (k < 1) requestAnimationFrame(step); } requestAnimationFrame(step); }
+  function step(t){ var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3), v = to * e; el.textContent = (dec ? v.toFixed(1) : Math.round(v).toLocaleString("vi-VN")) + suf; if (k < 1) requestAnimationFrame(step); } requestAnimationFrame(step); }
 function runCount(){ PANE.querySelectorAll("[data-count]").forEach(countUp); }
 
 /* ===== DASHBOARD ===== */
