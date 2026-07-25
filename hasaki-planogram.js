@@ -67,12 +67,38 @@ function ycBucket(r){
   if (r.pt && r.ptDiLam) return "nhac";
   return "khong";
 }
-/* Ngày đang xem: hôm nay chia 3 nhóm (nhắc được theo chấm công); ngày quá khứ chỉ còn Đã/Chưa */
-function ngayXem(){ return S.ngay || S.yc.ngay; }
-function laHomNay(){ return ngayXem() === isoToday(); }
+/* KHOẢNG NGÀY đang xem (S.dTu → S.dDen). Đúng 1 ngày = hôm nay → chia 3 nhóm hành động
+ * (nhắc được theo chấm công hôm nay); mọi khoảng khác chỉ còn Đã/Chưa vệ sinh. */
+function ngayXem(){ return S.dDen || S.yc.ngay; }
+function khoang(){ var d = ngayXem(); return [S.dTu || d, S.dDen || d]; }
+function laHomNay(){ var k = khoang(); return k[0] === isoToday() && k[1] === isoToday(); }
+function la1Ngay(){ var k = khoang(); return k[0] === k[1]; }
 function bkNgay(r){ return r.bk === "da" ? "da" : (laHomNay() ? r.bk : "chua"); }
 function ycDates(){ var s = {}; S.yc.rows.forEach(function(r){ if (r.ngay) s[r.ngay] = 1; }); return Object.keys(s).sort().reverse(); }
-function setNgay(d){ if (S.ngay === d) return; S.ngay = d; renderWhBar(); renderToday(); }
+function nhanKhoang(){
+  var k = khoang();
+  if (k[0] === k[1]) return (k[0] === isoToday() ? "Hôm nay · " : "") + thuVN(k[0]) + " " + ngayVN(k[0]);
+  return ngayVN(k[0]) + " – " + ngayVN(k[1]) + " (" + (ycDates().filter(function(d){ return d >= k[0] && d <= k[1]; }).length) + " ngày)";
+}
+function setKhoang(tu, den){
+  if (tu > den){ var t = tu; tu = den; den = t; }
+  S.dTu = tu; S.dDen = den;
+  renderWhBar(); renderToday(); renderList();
+}
+function setNgay(d){ setKhoang(d, d); }
+function chonNgay(v){
+  var ds = ycDates();   // giảm dần, ds[0] = mới nhất
+  if (!ds.length) return;
+  if (v === "hnay") setKhoang(ds[0], ds[0]);
+  else if (v === "hqua") setKhoang(ds[1] || ds[0], ds[1] || ds[0]);
+  else if (v === "3n") setKhoang(ds[Math.min(2, ds.length - 1)], ds[0]);
+  else if (v === "7n") setKhoang(ds[ds.length - 1], ds[0]);
+  else setKhoang(v, v);
+}
+function moNgayMenu(){
+  var m = $id("hpNgayMenu"); if (!m) return;
+  m.classList.toggle("show");
+}
 /* Badge trạng thái HỆ THỐNG planogram của 1 yêu cầu */
 function stBadge(r){
   var lb = r.st || "—", c = "#6b7280";
@@ -184,10 +210,9 @@ function thuVN(iso){ var m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/)
   var d = new Date(+m[1], +m[2] - 1, +m[3]).getDay(); return d === 0 ? "CN" : "T" + (d + 1); }
 /* Link planogram */
 function pgDetailUrl(id){ return PG_BASE + "/details/" + id; }
-function pgListUrl(isoNgay, areaK, stIds){
-  var m = String(isoNgay || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
-  var d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date();
-  var f = d.getTime(), t = f + 86399999;
+function pgListUrl(isoNgay, areaK, stIds, isoNgayDen){
+  function moc(iso){ var m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/); return (m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date()).getTime(); }
+  var f = moc(isoNgay), t = moc(isoNgayDen || isoNgay) + 86399999;
   var u = PG_BASE + "/list?company_ids=1001&warehouse_ids=863&keyword_type=sku_or_barcode&page=1&size=100&from_date=" + f + "&to_date=" + t;
   if (areaK) u += "&location_description=F0-" + areaK;
   if (stIds) u += "&status_ids=" + stIds;
@@ -200,7 +225,7 @@ var S = { ok: false, all: [], area: "", lastAt: 0, tsData: 0,
   yc: { ok: false, rows: [], ts: 0, ngay: "" },
   nk: { ok: false, rows: [], ts: 0 },
   ai: { ok: false, by: {}, rows: [], ts: 0 }, aiKl: "", aiQ: "",
-  ngay: "", listMode: "ai" };   // ngay = NGÀY đang xem (chips); listMode = chế độ panel danh sách (ai | nv)
+  dTu: "", dDen: "", listMode: "ai" };   // dTu→dDen = KHOẢNG NGÀY đang xem; listMode = chế độ panel danh sách (ai | nv)
 var MODAL = { base: [], preset: null, mode: "loc" };
 var NK = { email: "", q: "" };
 var PANE = null, _nmColor = {}, _nmCi = 0, _deb = null, _debT = null, _ccDeb = null, _nkDeb = null;
@@ -273,6 +298,13 @@ var CSS = [
 "@media(max-width:640px){#pane-planogram .hp-row{grid-template-columns:1fr 84px;grid-template-areas:'l l' 't v';row-gap:5px;gap:8px;padding:7px 6px;}#pane-planogram .hp-rl{grid-area:l;}#pane-planogram .hp-track{grid-area:t;}#pane-planogram .hp-rv{grid-area:v;}}",
 "#pane-planogram .hp-empty{color:var(--muted,#9ca3af);font-size:12.5px;padding:18px 2px;text-align:center;}",
 "#pane-planogram .hp-mini{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;}",
+/* segmented control (chuyển chế độ trong 1 panel) — cùng họ với hp-whtab nhưng dính liền */
+"#pane-planogram .hp-seg{display:inline-flex;border:1px solid var(--border,#e8ecf1);border-radius:999px;overflow:hidden;background:var(--surface,#fff);}",
+"#pane-planogram .hp-seg button{border:0;background:transparent;padding:7px 15px;font-size:12px;font-weight:600;color:var(--muted,#6b7280);cursor:pointer;min-height:32px;transition:background .16s ease,color .16s ease;display:inline-flex;align-items:center;gap:6px;}",
+"#pane-planogram .hp-seg button b{font-variant-numeric:tabular-nums;font-weight:700;}",
+"#pane-planogram .hp-seg button:hover{background:color-mix(in srgb, var(--accent,#2563eb) 7%, transparent);}",
+"#pane-planogram .hp-seg button.on{background:var(--accent,#1f2937);color:var(--accent-text,#fff);}",
+"@media(max-width:768px){#pane-planogram .hp-seg button{min-height:42px;}}",
 /* sơ đồ mặt bằng — A1 (16 dãy kệ) + A8 (4 cụm bàn + băng chuyền) */
 "#pane-planogram .hp-maphdr{font-size:11px;font-weight:700;color:var(--muted,#6b7280);text-transform:uppercase;letter-spacing:.05em;margin:12px 2px 8px;}",
 "#pane-planogram .hp-mapa1{gap:18px 30px;}",
@@ -336,6 +368,7 @@ var CSS = [
 ".hp-combo-item .nm{overflow:hidden;text-overflow:ellipsis;} .hp-combo-item .c{color:var(--muted,#9ca3af);font-size:11px;flex:none;}",
 ".hp-combo-item:hover{background:color-mix(in srgb, var(--accent,#2563eb) 10%, transparent);color:var(--accent,#2563eb);}",
 ".hp-combo-item.all{border-bottom:1px solid var(--border,#e8ecf1);font-weight:600;}",
+".hp-combo-item.on{background:color-mix(in srgb, var(--accent,#2563eb) 12%, transparent);color:var(--accent,#2563eb);font-weight:650;}",
 ".hp-combo-empty{padding:12px;font-size:12px;color:var(--muted,#9ca3af);text-align:center;}",
 ".hp-msum{padding:9px 20px;font-size:12px;color:var(--muted,#6b7280);border-bottom:1px solid var(--border,#e8ecf1);font-variant-numeric:tabular-nums;}",
 ".hp-modalbody{overflow:auto;padding:0 20px 20px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}",
@@ -430,7 +463,7 @@ var MODAL_HTML =
 '<div id="hpVtModal" class="hp-modal">' +
 '  <div class="hp-modalbox" style="width:min(680px,96vw);">' +
 '    <div class="hp-modalhd"><div><div class="mt" id="hpVtTitle"></div><div class="mtsub" id="hpVtSub"></div></div>' +
-'      <div style="display:flex;align-items:center;gap:8px;"><a id="hpVtPg" class="hp-ext" target="_blank" rel="noopener" style="font-size:12px;white-space:nowrap;">Mở planogram ↗</a>' +
+'      <div style="display:flex;align-items:center;gap:8px;"><a id="hpVtPg" class="hp-ext" target="_blank" rel="noopener" style="font-size:12px;white-space:nowrap;"></a>' +
 '      <button class="hp-mclose" onclick="HPLANOGRAM.closeVt()">&times;</button></div></div>' +
 '    <div class="hp-modalbody" id="hpVtBody" style="padding:14px 20px 20px;"></div>' +
 '  </div>' +
@@ -558,7 +591,7 @@ function buildYC(H, rows2d){
     arr.push(r);
   });
   S.yc.ok = true; S.yc.rows = arr; S.yc.ngay = ngay;
-  if (!S.ngay || !arr.some(function(r){ return r.ngay === S.ngay; })) S.ngay = ngay;
+  if (!S.dDen || !arr.some(function(r){ return r.ngay >= (S.dTu || S.dDen) && r.ngay <= S.dDen; })){ S.dTu = ngay; S.dDen = ngay; }
   renderWhBar(); renderToday(); capNhatInfo();
 }
 function buildNK(H, rows2d){
@@ -613,12 +646,13 @@ function renderList(){
   var nAi = S.ai.ok ? S.ai.rows.filter(function(r){ return !S.area || r.area === S.area; }).length : 0;
   var nCc = S.cc.ok ? S.cc.rows.length : 0;
   var modes =
-    '<button class="hp-whtab' + (S.listMode === "ai" ? " active" : "") + '" onclick="HPLANOGRAM.setListMode(\'ai\')">AI xét duyệt ảnh · ' + nf(nAi) + '</button>' +
-    '<button class="hp-whtab' + (S.listMode === "nv" ? " active" : "") + '" onclick="HPLANOGRAM.setListMode(\'nv\')">Nhân viên hôm nay · ' + nf(nCc) + '</button>';
+    '<span class="hp-seg">' +
+    '<button class="' + (S.listMode === "ai" ? "on" : "") + '" onclick="HPLANOGRAM.setListMode(\'ai\')">AI xét duyệt ảnh <b>' + nf(nAi) + '</b></button>' +
+    '<button class="' + (S.listMode === "nv" ? "on" : "") + '" onclick="HPLANOGRAM.setListMode(\'nv\')">Nhân viên hôm nay <b>' + nf(nCc) + '</b></button>' +
+    '</span>';
   box.innerHTML =
     '<section class="hp-panel hp-fade" style="margin-top:12px">' +
-    '<h2>Danh sách theo dõi <span class="hp-hint">(' + (S.listMode === "nv" ? "đội vệ sinh × chấm công × đã làm hôm nay · bấm dòng xem nhật ký" : "AI chấm từng yêu cầu Chờ duyệt theo tiêu chuẩn từng ô, 14 ngày") + ')</span></h2>' +
-    '<div class="hp-whbar">' + modes + '</div>' +
+    '<h2>Danh sách theo dõi<span style="flex:1"></span>' + modes + '</h2>' +
     (S.listMode === "nv" ? htmlNhanVien() : htmlAiXetDuyet()) +
     '</section>';
 }
@@ -683,7 +717,7 @@ function capNhatInfo(){
 
 /* ===== LỌC + RENDER ===== */
 function rowsInScope(){ return S.all.filter(function(r){ return !S.area || r.area === S.area; }); }
-function ycInScope(){ var d = ngayXem(); return S.yc.rows.filter(function(r){ return r.ngay === d && (!S.area || r.area === S.area); }); }
+function ycInScope(){ var k = khoang(); return S.yc.rows.filter(function(r){ return r.ngay >= k[0] && r.ngay <= k[1] && (!S.area || r.area === S.area); }); }
 function setArea(a){ if (S.area === a) a = ""; S.area = a; renderWhBar(); renderToday(); renderList(); }
 /* THANH ĐIỀU KHIỂN duy nhất: Ngày · Khu vực · Tra cứu NV · Toàn bộ vị trí (45n) */
 function renderWhBar(){
@@ -702,12 +736,27 @@ function renderWhBar(){
   }
   var dates = ycDates();
   if (dates.length){
+    var k = khoang();
+    var mucNgay = function(v, lb, sub){
+      var on = false;
+      if (v === "hnay") on = k[0] === dates[0] && k[1] === dates[0];
+      else if (v === "hqua") on = dates[1] && k[0] === dates[1] && k[1] === dates[1];
+      else if (v === "3n") on = k[0] === dates[Math.min(2, dates.length - 1)] && k[1] === dates[0];
+      else if (v === "7n") on = k[0] === dates[dates.length - 1] && k[1] === dates[0];
+      else on = k[0] === v && k[1] === v;
+      return '<div class="hp-combo-item' + (on ? " on" : "") + '" data-v="' + v + '" onclick="HPLANOGRAM.chonNgay(this.getAttribute(\'data-v\'))"><span class="nm">' + esc(lb) + '</span>' + (sub ? '<span class="c">' + esc(sub) + '</span>' : "") + '</div>';
+    };
     html += '<span style="width:8px"></span><span class="hp-hint" style="font-weight:650">Ngày:</span>' +
-      '<select class="hp-datesel" onchange="HPLANOGRAM.setNgay(this.value)" title="Chọn ngày muốn xem (giữ ' + dates.length + ' ngày gần nhất)">' +
-      dates.slice(0, 7).map(function(d){
-        var nhan = d === isoToday() ? ("Hôm nay — " + thuVN(d) + " " + ngayVN(d)) : (thuVN(d) + " " + ngayVN(d));
-        return '<option value="' + d + '"' + (d === ngayXem() ? " selected" : "") + '>' + esc(nhan) + '</option>';
-      }).join("") + '</select>';
+      '<div class="hp-combo" style="display:inline-block">' +
+      '<button class="hp-whtab active" onclick="HPLANOGRAM.moNgayMenu();event.stopPropagation();">' + esc(nhanKhoang()) + ' <span style="font-size:9px;opacity:.75">▼</span></button>' +
+      '<div class="hp-combo-menu" id="hpNgayMenu" style="min-width:230px;right:auto;">' +
+        mucNgay("hnay", "Hôm nay", ngayVN(dates[0])) +
+        (dates[1] ? mucNgay("hqua", "Hôm qua", ngayVN(dates[1])) : "") +
+        (dates.length > 2 ? mucNgay("3n", "3 ngày gần nhất", ngayVN(dates[Math.min(2, dates.length - 1)]) + " – " + ngayVN(dates[0])) : "") +
+        (dates.length > 3 ? mucNgay("7n", dates.length + " ngày gần nhất", ngayVN(dates[dates.length - 1]) + " – " + ngayVN(dates[0])) : "") +
+        '<div class="hp-combo-item all" style="pointer-events:none"><span class="nm hp-hint">Hoặc chọn 1 ngày</span></div>' +
+        dates.slice(0, 7).map(function(d){ return mucNgay(d, thuVN(d) + " " + ngayVN(d), d === isoToday() ? "hôm nay" : ""); }).join("") +
+      '</div></div>';
   }
   var nNk = 0; if (S.nk.ok){ var em = {}; S.nk.rows.forEach(function(r){ em[r.email.toLowerCase()] = 1; }); nNk = Object.keys(em).length; }
   html += '<span style="flex:1"></span>' +
@@ -723,11 +772,11 @@ function renderToday(){
     return;
   }
   var rows = ycInScope(), nTot = rows.length;
-  var homNay = laHomNay(), ngay = ngayXem();
+  var homNay = laHomNay(), k = khoang();
   var cnt = { da: 0, nhac: 0, khong: 0, chua: 0 }, nvDa = {};
   rows.forEach(function(r){ cnt[bkNgay(r)]++; if (r.bk === "da" && r.email) nvDa[r.email.toLowerCase()] = 1; });
   var nNvDa = Object.keys(nvDa).length;
-  var chipNgay = '<span class="hp-chip" title="Ngày đang xem — đổi bằng chips Ngày phía trên">' + (homNay ? "Hôm nay · " : "") + thuVN(ngay) + " " + ngayVN(ngay) + '</span>';
+  var chipNgay = '<span class="hp-chip" title="Khoảng ngày đang xem — đổi ở ô Ngày phía trên">' + esc(nhanKhoang()) + '</span>';
 
   /* Hôm nay: chia 3 nhóm hành động; ngày quá khứ: chỉ Đã/Chưa (chấm công quá khứ không lưu) */
   var nhom = homNay ? YCST : [ycMeta("da"), META_CHUA];
@@ -762,10 +811,10 @@ function renderToday(){
   }
   box.innerHTML =
     '<section class="hp-panel hp-fade hp-hero" style="margin-bottom:12px">' +
-    '<h2>Vệ sinh hôm nay ' + chipNgay + '<span style="flex:1"></span><a class="hp-ext" style="font-size:12px" target="_blank" rel="noopener" href="' + esc(pgListUrl(ngay, S.area, "")) + '">Mở planogram ↗</a></h2>' +
+    '<h2>Vệ sinh ' + chipNgay + '<span style="flex:1"></span><a class="hp-ext" style="font-size:12px" target="_blank" rel="noopener" href="' + esc(pgListUrl(k[0], S.area, "", k[1])) + '">Mở planogram ↗</a></h2>' +
     '<div class="hp-tiles">' + tiles + '</div>' + bar + aiLine +
     '</section>';
-  renderMap();   // sơ đồ mặt bằng F0-A8 đi theo dữ liệu yêu cầu hôm nay
+  renderMap();   // sơ đồ mặt bằng đi theo khoảng ngày đang xem
 }
 /* --- KHỐI 2: TỔNG ĐIỀU PHỐI (dữ liệu PT/NK về sau thì vẽ lại các khối dùng tên NV) --- */
 function render(){
@@ -854,22 +903,36 @@ function keA1(){
 function renderMap(){
   var box = $id("hpMap"); if (!box) return;
   if (!S.yc.ok || !S.yc.rows.length){ box.innerHTML = ""; return; }
-  var d = ngayXem(), homNay = laHomNay();
-  var by = {}; S.yc.rows.forEach(function(r){ if (r.ngay === d) by[r.loc] = r; });
+  var k = khoang(), homNay = laHomNay(), mot = la1Ngay();
+  var byL = {}; S.yc.rows.forEach(function(r){ if (r.ngay >= k[0] && r.ngay <= k[1]) (byL[r.loc] = byL[r.loc] || []).push(r); });
 
-  function tinhTT(loc, r){
-    if (!r) return loc + "\nKhông có yêu cầu vệ sinh ngày " + ngayVN(d) + "\n(bấm xem lịch sử 7 ngày)";
-    var m = ycMeta(bkNgay(r)), ai = aiOf(r), aim = ai && aiMeta(ai.kl);
-    return loc + "\nTrạng thái: " + m.lb +
-      (r.email ? "\nNgười làm: " + (tenNm(r.email) || r.email) + (r.at ? " lúc " + String(r.at).slice(11, 16) : "")
-               : (r.pt ? "\nPhụ trách: " + (r.ptName || r.pt) + (homNay ? (r.ptDiLam ? " (đi làm" + (r.ptCi ? " · vào " + r.ptCi : "") + ")" : " (nghỉ)") : "") : "\nChưa có người phụ trách")) +
-      (aim ? "\nAI: " + aim.lb.replace("AI: ", "") + (ai.diem ? " · " + ai.diem + " điểm" : "") : "") +
-      "\n(bấm xem chi tiết + lịch sử 7 ngày)";
+  /* 1 ngày → màu theo nhóm hành động; KHOẢNG nhiều ngày → xanh = đủ mọi ngày, đỏ = có ngày chưa */
+  function mauCua(list){
+    if (!list || !list.length) return "";
+    if (mot) return ycMeta(bkNgay(list[0])).c;
+    var nDa = list.filter(function(r){ return r.bk === "da"; }).length;
+    return nDa === list.length ? ycMeta("da").c : META_CHUA.c;
+  }
+  function tinhTT(loc, list){
+    if (!list || !list.length) return loc + "\nKhông có yêu cầu vệ sinh trong khoảng đang xem\n(bấm xem lịch sử 7 ngày)";
+    if (mot){
+      var r = list[0];
+      var m = ycMeta(bkNgay(r)), ai = aiOf(r), aim = ai && aiMeta(ai.kl);
+      return loc + "\nTrạng thái: " + m.lb +
+        (r.email ? "\nNgười làm: " + (tenNm(r.email) || r.email) + (r.at ? " lúc " + String(r.at).slice(11, 16) : "")
+                 : (r.pt ? "\nPhụ trách: " + (r.ptName || r.pt) + (homNay ? (r.ptDiLam ? " (đi làm" + (r.ptCi ? " · vào " + r.ptCi : "") + ")" : " (nghỉ)") : "") : "\nChưa có người phụ trách")) +
+        (aim ? "\nAI: " + aim.lb.replace("AI: ", "") + (ai.diem ? " · " + ai.diem + " điểm" : "") : "") +
+        "\n(bấm xem chi tiết + lịch sử 7 ngày)";
+    }
+    var dong = list.slice().sort(function(a, b){ return a.ngay < b.ngay ? -1 : 1; }).map(function(r){
+      return ngayVN(r.ngay) + ": " + (r.bk === "da" ? "Đã vệ sinh" + (r.email ? " — " + (tenNm(r.email) || r.email) : "") : "Chưa vệ sinh");
+    });
+    return loc + "\n" + dong.join("\n") + "\n(bấm xem chi tiết từng ngày)";
   }
   function cell(loc, label){
-    var r = by[loc];
-    if (!r) return '<span class="hp-mapcell trong" style="cursor:pointer" title="' + esc(tinhTT(loc, null)) + '" data-l="' + esc(loc) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))">' + label + '</span>';
-    return '<span class="hp-mapcell" style="background:' + ycMeta(bkNgay(r)).c + '" title="' + esc(tinhTT(loc, r)) + '" data-l="' + esc(loc) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))">' + label + '</span>';
+    var list = byL[loc];
+    if (!list) return '<span class="hp-mapcell trong" style="cursor:pointer" title="' + esc(tinhTT(loc, null)) + '" data-l="' + esc(loc) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))">' + label + '</span>';
+    return '<span class="hp-mapcell" style="background:' + mauCua(list) + '" title="' + esc(tinhTT(loc, list)) + '" data-l="' + esc(loc) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))">' + label + '</span>';
   }
   function cot(day){
     var out = [];
@@ -884,8 +947,8 @@ function renderMap(){
   if (S.area !== "A1"){
     htmlA8 = '<div class="hp-maphdr">Bàn đóng gói &amp; băng chuyền (F0-A8)</div><div class="hp-map">' +
       MAP_A8.map(function(c){
-        var r = by[c.bc];
-        var belt = '<div class="hp-mapbelt" style="background:' + (r ? ycMeta(bkNgay(r)).c : "color-mix(in srgb, var(--muted,#9ca3af) 35%, transparent)") + '" title="' + esc(tinhTT(c.bc, r)) + '" data-l="' + esc(c.bc) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))"><span>BĂNG CHUYỀN ' + c.b + '</span></div>';
+        var list = byL[c.bc];
+        var belt = '<div class="hp-mapbelt" style="background:' + (list ? mauCua(list) : "color-mix(in srgb, var(--muted,#9ca3af) 35%, transparent)") + '" title="' + esc(tinhTT(c.bc, list)) + '" data-l="' + esc(c.bc) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))"><span>BĂNG CHUYỀN ' + c.b + '</span></div>';
         return '<div class="hp-mapc">' + cot(c.l) + belt + cot(c.r) + '</div>';
       }).join("") + '</div>';
   }
@@ -907,14 +970,13 @@ function renderMap(){
         theoDay[dd].forEach(function(o, i){
           /* lối đi giữa: tách khối kệ 01-05 (trên) và 06-10 (dưới) như bản vẽ */
           if (i > 0 && Number(o.k) === 6) out.push('<span class="hp-mapgap"></span>');
-          var r = by[o.loc];
           out.push(cell(o.loc, o.k));
         });
         return '<div class="hp-mapcol"><div class="cl">' + dd + '</div>' + out.join("") + '</div>';
       };
       var cums = [];
       for (var g = 0; g < days.length; g += 4) cums.push(days.slice(g, g + 4));
-      htmlA1 = '<div class="hp-maphdr">Quầy kệ (F0-A1) — mỗi ô = 1 kệ (4 mâm × 6 bin)</div><div class="hp-map hp-mapa1">' +
+      htmlA1 = '<div class="hp-maphdr">Quầy kệ (F0-A1)</div><div class="hp-map hp-mapa1">' +
         cums.map(function(nhomDay){
           return '<div class="hp-mapc1">' + nhomDay.map(cotKe).join("") + '</div>';
         }).join("") + '</div>';
@@ -929,9 +991,9 @@ function renderMap(){
 
   box.innerHTML =
     '<section class="hp-panel hp-fade" style="margin-top:12px">' +
-    '<h2>Sơ đồ khu vực — Quầy kệ (A1) &amp; Bàn đóng gói/băng chuyền (A8) <span class="hp-chip">' + (homNay ? "Hôm nay · " : "") + thuVN(d) + ' ' + ngayVN(d) + '</span> ' + legend + '</h2>' +
+    '<h2>Sơ đồ khu vực <span class="hp-chip">' + esc(nhanKhoang()) + '</span> ' + legend + '</h2>' +
     htmlA1 + htmlA8 +
-    '<p class="hp-hint" style="margin:10px 0 0">A1: 16 dãy kệ (501-516) gộp 4 cụm, ô = kệ — mã yêu cầu F0-A1-&lt;dãy&gt;-&lt;kệ&gt;-…; A8: 2 dãy bàn (8 ô) kẹp 1 băng chuyền — băng chuyền 502/505/508/511 là 1 mã vị trí. Màu = trạng thái ngày đang xem · <b>bấm ô để xem chi tiết báo cáo + lịch sử 7 ngày</b> · đổi ngày ở ô chọn phía trên.</p>' +
+    '<p class="hp-hint" style="margin:10px 0 0">Bấm một ô để xem chi tiết báo cáo và lịch sử 7 ngày' + (mot ? "" : " — xem theo khoảng: xanh = đủ mọi ngày, đỏ = có ngày chưa vệ sinh") + '.</p>' +
     '</section>';
 }
 
@@ -955,7 +1017,10 @@ function renderVt(){
   var mA1 = loc.match(/^F0-A1-(\d{3})-(\d{2})-/);
   $id("hpVtTitle").textContent = (laBang ? "Băng chuyền · " : (mA1 ? "Kệ " + mA1[2] + " · dãy " + mA1[1] + " · " : "")) + loc;
   $id("hpVtSub").textContent = "Chi tiết báo cáo vệ sinh — bấm ô ngày bên dưới để xem ngày khác";
-  var pg = $id("hpVtPg"); pg.href = r ? pgDetailUrl(r.id) : pgListUrlLoc(d, loc);
+  /* Hyperlink DUY NHẤT của pop-up: "Yêu cầu #… ↗" ở góc phải trên (không còn nút Mở planogram riêng) */
+  var pg = $id("hpVtPg");
+  pg.href = r ? pgDetailUrl(r.id) : pgListUrlLoc(d, loc);
+  pg.textContent = r ? ("Yêu cầu #" + r.id + " ↗") : "Tìm trên planogram ↗";
 
   /* Dải lịch sử 7 ngày (cũ → mới) */
   var dates = ycDates().slice(0, 7).sort();
@@ -976,7 +1041,7 @@ function renderVt(){
     /* 1 badge nhóm; badge hệ thống CHỈ thêm khi mang nghĩa khác (Chờ duyệt/Đã duyệt/Từ chối) — tránh "Chưa vệ sinh" ×2.
        Link planogram duy nhất nằm ở nút "Mở planogram ↗" trên đầu pop-up. */
     var themSt = (r.stId === 1 || /new/i.test(r.st)) ? "" : " " + stBadge(r);
-    rows.push(["Trạng thái", '<span class="hp-badge" style="background:color-mix(in srgb,' + m2.c + ' 15%,transparent);color:' + m2.c + '">' + esc(m2.lb) + '</span>' + themSt + ' <span class="hp-hint">yêu cầu #' + esc(r.id) + '</span>']);
+    rows.push(["Trạng thái", '<span class="hp-badge" style="background:color-mix(in srgb,' + m2.c + ' 15%,transparent);color:' + m2.c + '">' + esc(m2.lb) + '</span>' + themSt]);
     rows.push(["Người báo cáo", r.email ? (esc(tenNm(r.email) || r.email) + (r.at ? ' <span class="hp-hint">lúc ' + esc(String(r.at).slice(11, 16) || r.at) + " " + ngayVN(r.ngay) + '</span>' : "")) : '<span class="hp-hint">— chưa có ai báo cáo trong ngày này</span>']);
     var ai = aiOf(r), aim = ai && aiMeta(ai.kl);
     rows.push(["AI xét duyệt", aim
@@ -1113,9 +1178,9 @@ function mRender(){
   rows = rows.slice().sort(function(a, b){ return a.loc < b.loc ? -1 : a.loc > b.loc ? 1 : 0; });
   var out = [], sum;
   if (MODAL.mode === "req"){
-    var cnt = { da: 0, nhac: 0, khong: 0 };
+    var cnt = { da: 0, nhac: 0, khong: 0, chua: 0 };
     for (var i = 0; i < rows.length; i++){ var r = rows[i];
-      cnt[r.bk]++;
+      cnt[bkNgay(r)]++;
       if (out.length < CAP){
         var a = areaMeta(r.area);
         var thuc = r.email ? ('<span title="' + esc(r.email) + '">' + esc(tenNm(r.email) || r.email) + '</span>') : '<span class="mut">—</span>';
@@ -1137,13 +1202,14 @@ function mRender(){
           '<td>' + stBadge(r) + '</td>' +
           '<td>' + aiCell + '</td>' +
           '<td class="nm">' + thuc + '</td>' +
-          '<td>' + (r.at ? esc(String(r.at).slice(11, 16) || r.at) : '<span class="mut">—</span>') + '</td>' +
+          '<td>' + (r.at ? esc((la1Ngay() ? "" : ngayVN(r.ngay) + " ") + (String(r.at).slice(11, 16) || r.at)) : (la1Ngay() ? '<span class="mut">—</span>' : '<span class="mut">' + ngayVN(r.ngay) + '</span>')) + '</td>' +
           '<td class="nm">' + ptTxt + '</td>' +
           '<td>' + thumbs + '</td>' +
           '<td><a class="hp-ext" target="_blank" rel="noopener" href="' + esc(pgDetailUrl(r.id)) + '" title="Mở yêu cầu #' + esc(r.id) + ' trên planogram">Mở ↗</a></td></tr>');
       }
     }
-    sum = nf(rows.length) + " / " + nf(MODAL.base.length) + " yêu cầu · Đã vệ sinh: " + nf(cnt.da) + " · Chưa (có đi làm): " + nf(cnt.nhac) + " · Không có ca: " + nf(cnt.khong);
+    sum = nf(rows.length) + " / " + nf(MODAL.base.length) + " yêu cầu · Đã vệ sinh: " + nf(cnt.da) +
+      (laHomNay() ? " · Chưa (có đi làm): " + nf(cnt.nhac) + " · Không có ca: " + nf(cnt.khong) : " · Chưa vệ sinh: " + nf(cnt.chua));
     if (rows.length > CAP) out.push('<tr><td colspan="8" class="empty">Hiển thị ' + nf(CAP) + ' / ' + nf(rows.length) + ' dòng — dùng bộ lọc để thu hẹp.</td></tr>');
     if (!out.length) out.push('<tr><td colspan="8" class="empty">Không có dòng phù hợp</td></tr>');
   } else {
@@ -1279,7 +1345,10 @@ function init(pane){
       if (inp.value) inp.setAttribute("data-exact", "1"); else inp.removeAttribute("data-exact");
       closeCombos(); applyF();
     });
-    document.addEventListener("click", function(e){ if (!e.target.closest("#hpMFilters .hp-combo")) closeCombos(); });
+    document.addEventListener("click", function(e){
+      if (!e.target.closest("#hpMFilters .hp-combo")) closeCombos();
+      if (!e.target.closest("#hpWhBar .hp-combo")){ var nm = $id("hpNgayMenu"); if (nm) nm.classList.remove("show"); }
+    });
     pane.innerHTML = KHUNG;
     loadData();
     return;
@@ -1289,7 +1358,7 @@ function init(pane){
 }
 
 window.HPLANOGRAM = {
-  init: init, reload: loadData, setArea: setArea, setNgay: setNgay, setListMode: setListMode,
+  init: init, reload: loadData, setArea: setArea, setNgay: setNgay, chonNgay: chonNgay, moNgayMenu: moNgayMenu, setListMode: setListMode,
   openAll: openAll, openArea: openArea, openStatus: openStatus, openName: openName, openYc: openYc, openYcAi: openYcAi, closeModal: closeModal,
   comboInput: comboInput, comboMenu: comboMenu, quick: quick, openAnh: openAnh,
   openNk: openNk, closeNk: closeNk, nkPick: nkPick, nkSearch: nkSearch,
