@@ -753,6 +753,7 @@ function render(){
     cont.querySelectorAll(".hp-fill").forEach(function(f){ f.style.width = f.getAttribute("data-w") + "%"; });
   }); });
   if (!($id("hpToday") || {}).innerHTML) renderToday();   // YC có thể về trước PT — vẽ lại hero (kể cả hint trống)
+  renderAI();   // danh bạ tên NV (PT/NK) có thể về SAU bảng AI — vẽ lại để thay email bằng tên
   capNhatInfo();
 }
 
