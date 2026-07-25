@@ -3266,7 +3266,9 @@ document.addEventListener('click', ()=>csDongHet(null));
   function tabActive(){ var el = document.querySelector(".tab.active"); return el ? el.getAttribute("data-tab") : null; }
   function sync(){ var cur = tabActive(); nav.querySelectorAll(".s-item").forEach(function(el){ el.classList.toggle("on", el.getAttribute("data-tab") === cur); }); }
   function build(){
-    var tabs = (window.CTY && window.CTY_ID && CTY[CTY_ID] && CTY[CTY_ID].tabs) || [];
+    var tabs = [];
+    try{ if (typeof CTY !== "undefined" && typeof CTY_ID !== "undefined" && CTY[CTY_ID]) tabs = CTY[CTY_ID].tabs || []; }catch(e){}
+    if (!tabs.length) tabs = ["tong","task","planogram","hangmuc","kk","htonbat"];   // dự phòng
     var html = '<div class="s-brand"><span class="lg">H</span><div>AUDIT HASAKI<small>KIỂM SOÁT KHO</small></div></div>';
     HM.forEach(function(grp){
       var its = grp.items.filter(function(x){ return tabs.indexOf(x[0]) >= 0; });
