@@ -967,7 +967,7 @@ body.cty-trong .pane{display:none !important;}  body.cty-trong #ctyEmpty{display
 <style id="qc-side-css">
 /* ============ QC · SIDEBAR (phương án C) — DRAWER trượt (web + mobile), CHỈ đổi lớp điều hướng ============
    Ẩn mặc định · nút ›(mở)/‹(thu) mép trái · nền mờ · bấm nút HOẶC nền đều đóng · nội dung full-width, KHÔNG đổi. */
-#sideNav{position:fixed;top:0;left:0;bottom:0;width:186px;background:var(--surface2);border-right:1px solid var(--border);z-index:60;overflow-y:auto;display:flex;flex-direction:column;gap:1px;padding:13px 8px 18px;
+#sideNav{position:fixed;top:0;left:0;bottom:0;width:186px;background:var(--surface2);border-right:1px solid var(--border);z-index:60;overflow-y:auto;display:flex;flex-direction:column;gap:1px;padding:52px 8px 18px;
   transform:translateX(-100%);transition:transform .3s cubic-bezier(.32,.72,0,1);box-shadow:0 14px 46px rgba(0,0,0,.2);}
 body.side-open #sideNav{transform:none;}
 #sideNav .s-brand{display:flex;align-items:center;gap:9px;padding:2px 6px 11px;margin-bottom:3px;border-bottom:1px solid var(--border);color:var(--brand);font-weight:800;font-size:14.5px;letter-spacing:-.2px;}
@@ -3282,7 +3282,7 @@ document.addEventListener('click', ()=>csDongHet(null));
     var tabs = [];
     try{ if (typeof CTY !== "undefined" && typeof CTY_ID !== "undefined" && CTY[CTY_ID]) tabs = CTY[CTY_ID].tabs || []; }catch(e){}
     if (!tabs.length) tabs = ["tong","task","planogram","hangmuc","kk","htonbat"];   // dự phòng
-    var html = '<div class="s-brand"><span class="lg">H</span><div>AUDIT HASAKI<small>KIỂM SOÁT KHO</small></div></div>';
+    var html = "";   /* KHÔNG lặp brand — header đã có tiêu đề AUDIT HASAKI */
     HM.forEach(function(grp){
       var its = grp.items.filter(function(x){ return tabs.indexOf(x[0]) >= 0; });
       if (!its.length) return;
