@@ -300,7 +300,7 @@ var CSS = [
 ".fk-scope .fk-adv-grid{display:flex;flex-wrap:wrap;gap:8px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;}",
 ".fk-scope .fk-adv-title,.fk-scope .fk-adv-actions,.fk-scope .fk-sheet-x{display:none;}",   // chỉ hiện ở bottom-sheet mobile
 ".fk-scope .fk-scrim{display:none;}",
-/* ===== MOBILE <=768: toolbar = [tìm nhanh][🎛️]; core+advanced -> BOTTOM SHEET ===== */
+/* ===== MOBILE <=768: toolbar = [tìm nhanh][nút Bộ lọc]; core+advanced -> BOTTOM SHEET ===== */
 "@media(max-width:768px){.fk-scope{will-change:auto!important;transform:none!important;}}",
 "@media(max-width:768px){",
 "  .fk-scope .fk-toolbar{gap:8px;}",
