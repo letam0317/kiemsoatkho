@@ -156,6 +156,7 @@ function setKhoang(tu, den){
   renderWhBar(); renderToday(); renderList();
 }
 function setPtHi(e){ S.ptHi = (S.ptHi === e || !e) ? "" : e; renderMap(); }
+function togglePtNhac(){ S.ptOpen = !S.ptOpen; renderMap(); }
 function setNgay(d){ setKhoang(d, d); }
 function chonNgay(v){
   var ds = ycDates();   // giảm dần, ds[0] = mới nhất
@@ -298,7 +299,7 @@ var S = { ok: false, all: [], area: "", lastAt: 0, tsData: 0,
   yc: { ok: false, rows: [], ts: 0, ngay: "" },
   nk: { ok: false, rows: [], ts: 0 },
   ai: { ok: false, by: {}, rows: [], ts: 0 }, aiKl: "", aiQ: "",
-  dTu: "", dDen: "", listMode: "ai", ptHi: "" };   // dTu→dDen = KHOẢNG NGÀY đang xem; listMode = panel danh sách (ai | nv); ptHi = email NV đang SOI trên sơ đồ
+  dTu: "", dDen: "", listMode: "ai", ptHi: "", ptOpen: false };   // dTu→dDen = KHOẢNG NGÀY đang xem; listMode = panel danh sách (ai | nv); ptHi = email NV đang SOI; ptOpen = panel cần-nhắc đang xổ
 var MODAL = { base: [], preset: null, mode: "loc" };
 var NK = { email: "", q: "" };
 var PANE = null, _nmColor = {}, _nmCi = 0, _deb = null, _debT = null, _ccDeb = null, _nkDeb = null;
@@ -380,8 +381,14 @@ var CSS = [
 "@media(max-width:768px){#pane-planogram .hp-seg button{min-height:42px;}}",
 /* sơ đồ mặt bằng — A1 (16 dãy kệ) + A8 (4 cụm bàn + băng chuyền) */
 "#pane-planogram .hp-maphdr{font-size:11px;font-weight:700;color:var(--muted,#6b7280);text-transform:uppercase;letter-spacing:.05em;margin:12px 2px 8px;}",
-"#pane-planogram .hp-mapa1{gap:18px 30px;}",
-"#pane-planogram .hp-mapc1{display:flex;gap:7px;padding-bottom:6px;animation:hp-in .35s ease both;}",
+/* tỷ lệ thực địa ~10px/m: cặp dãy A1 lưng giáp lưng (3px), lối đi xen kẽ 1,5m=15px / 3m=30px; cụm A8 cách đều 2m=20px */
+"#pane-planogram .hp-mapscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;}",
+"#pane-planogram .hp-mapscroll > .hp-map{width:max-content;margin:0 auto;}",
+"#pane-planogram .hp-map.hp-mapa1{gap:0;flex-wrap:nowrap;justify-content:flex-start;}",
+"#pane-planogram .hp-map.hp-mapa8{gap:22px 20px;flex-wrap:nowrap;justify-content:flex-start;}",
+"#pane-planogram .hp-mapc1{display:flex;gap:3px;padding-bottom:6px;animation:hp-in .35s ease both;}",
+"#pane-planogram .hp-mapc1.hp-kc15{margin-right:15px;}",
+"#pane-planogram .hp-mapc1.hp-kc3{margin-right:30px;}",
 "#pane-planogram .hp-mapc1 .hp-mapcell{width:34px;}",
 "#pane-planogram .hp-map{display:flex;flex-wrap:wrap;gap:22px 34px;justify-content:space-evenly;padding:8px 2px 2px;}",
 "#pane-planogram .hp-mapc{display:grid;grid-template-columns:56px 34px 56px;gap:0 7px;align-items:stretch;animation:hp-in .35s ease both;}",
@@ -415,6 +422,10 @@ var CSS = [
 "#pane-planogram .hp-ptchip b{font-weight:780;font-variant-numeric:tabular-nums;}",
 "#pane-planogram .hp-ptchip .q{width:13px;height:13px;border-radius:50%;background:#d97706;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-style:normal;line-height:1;}",
 "#pane-planogram .hp-ptchip.clear{color:var(--muted,#6b7280);border-style:dashed;}",
+/* nút xổ/thu panel cần-nhắc: mặc định THU GỌN toàn thời gian, bấm mới xổ chips */
+"#pane-planogram .hp-ptchip.tog{border-color:color-mix(in srgb,#dc2626 40%,transparent);color:#dc2626;background:color-mix(in srgb,#dc2626 6%,var(--surface,#fff));}",
+"#pane-planogram .hp-ptchip.tog .car{font-size:10px;transition:transform .2s ease;}",
+"#pane-planogram .hp-ptchip.tog.mo{background:color-mix(in srgb,#dc2626 12%,var(--surface,#fff));}",
 "#pane-planogram .hp-mapgap{height:16px;flex:none;}",
 "#pane-planogram .hp-mapc > .hp-mapcol:first-of-type{grid-column:1;grid-row:1;}",
 "#pane-planogram .hp-mapc > .hp-mapcol:last-of-type{grid-column:3;grid-row:1;}",
@@ -423,7 +434,7 @@ var CSS = [
 "#pane-planogram .hp-mapbelt span{writing-mode:vertical-rl;font-size:9px;font-weight:750;color:rgba(255,255,255,.92);letter-spacing:.14em;white-space:nowrap;}",
 "#pane-planogram .hp-mapbelt::after{content:'';position:absolute;bottom:-14px;left:4px;right:4px;height:12px;border-radius:0 0 4px 4px;background:repeating-linear-gradient(45deg,color-mix(in srgb, var(--muted,#9ca3af) 55%, transparent) 0 4px,transparent 4px 8px);}",
 "#pane-planogram .hp-mapc{padding-bottom:14px;}",
-"@media(max-width:760px){#pane-planogram .hp-map{gap:18px;}#pane-planogram .hp-mapc{grid-template-columns:48px 30px 48px;}}",
+"@media(max-width:760px){#pane-planogram .hp-mapc{grid-template-columns:48px 30px 48px;}}",   /* giữ nguyên gap tỷ lệ — sơ đồ rộng thì cuộn ngang trong .hp-mapscroll */
 /* panel đối chiếu chấm công */
 "#pane-planogram .hp-cc{margin-top:12px;}",
 "#pane-planogram .hp-ccsearch{width:100%;max-width:340px;padding:9px 11px;border:1px solid var(--border,#d5dbe4);border-radius:9px;font-size:12.5px;background:var(--surface,#fff);color:var(--text,#1f2937);min-height:36px;margin:2px 0 10px;}",
@@ -1059,10 +1070,12 @@ function renderMap(){
     }
     return '<div class="hp-mapcol"><div class="cl">' + day + '</div>' + out.join("") + '</div>';
   }
-  /* --- Khối A8: 4 cụm bàn đóng gói + băng chuyền (theo bản vẽ BDG) --- */
+  /* --- Khối A8: 4 cụm bàn đóng gói + băng chuyền (theo bản vẽ BDG).
+     TỶ LỆ THỰC TẾ (đo 26/07, ~10px/m — chỉ để canh khoảng cách, KHÔNG hiển thị số mét):
+     cụm cách cụm 2m đều nhau (503↔504, 506↔507, …) → column-gap cố định 20px, không giãn đều nữa. --- */
   var htmlA8 = "";
   if (S.area !== "A1"){
-    htmlA8 = '<div class="hp-maphdr">Bàn đóng gói &amp; băng chuyền (F0-A8)</div><div class="hp-map">' +
+    htmlA8 = '<div class="hp-maphdr">Bàn đóng gói &amp; băng chuyền (F0-A8)</div><div class="hp-mapscroll"><div class="hp-map hp-mapa8">' +
       MAP_A8.map(function(c){
         var list = byL[c.bc], st = stateCua(list), m = cellMeta(st);
         var rep = mot ? repCua(list) : null;
@@ -1073,7 +1086,7 @@ function renderMap(){
         if (soiPT && S.ptHi) bcls += (rep && rep.bk === "nhac" && rep.pt === S.ptHi) ? " hi" : " dim";
         var belt = '<div class="' + bcls + '" style="background:' + bg + '" title="' + esc(tinhTT(c.bc, list)) + '" data-l="' + esc(c.bc) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))"><span>BĂNG CHUYỀN ' + c.b + '</span>' + qb + alb + '</div>';
         return '<div class="hp-mapc">' + cot(c.l) + belt + cot(c.r) + '</div>';
-      }).join("") + '</div>';
+      }).join("") + '</div></div>';
   }
 
   /* --- Khối A1: 16 dãy kệ (501-516) gộp 4 cụm, mỗi ô = 1 KỆ (kệ có 4 mâm × 6 bin) --- */
@@ -1097,12 +1110,18 @@ function renderMap(){
         });
         return '<div class="hp-mapcol"><div class="cl">' + dd + '</div>' + out.join("") + '</div>';
       };
-      var cums = [];
-      for (var g = 0; g < days.length; g += 4) cums.push(days.slice(g, g + 4));
-      htmlA1 = '<div class="hp-maphdr">Quầy kệ (F0-A1)</div><div class="hp-map hp-mapa1">' +
-        cums.map(function(nhomDay){
-          return '<div class="hp-mapc1">' + nhomDay.map(cotKe).join("") + '</div>';
-        }).join("") + '</div>';
+      /* TỶ LỆ THỰC TẾ (đo 26/07, ~10px/m — chỉ để canh khoảng cách, KHÔNG hiển thị số mét):
+         dãy đi theo CẶP lưng giáp lưng (501/502, 503/504, …); lối đi giữa các cặp XEN KẼ
+         1,5m (→15px) rồi 3m (→30px): 501/502 ↔503/504 1,5m · 503/504 ↔505/506 3m · cứ thế lặp.
+         Ghép cặp theo SỐ DÃY (chẵn/lẻ) chứ không theo thứ tự mảng — thiếu 1 dãy dữ liệu không làm lệch cặp. */
+      var capMap = {};
+      days.forEach(function(dd){ var g = Math.floor((Number(dd) - 501) / 2); (capMap[g] = capMap[g] || []).push(dd); });
+      var gIdx = Object.keys(capMap).map(Number).sort(function(a, b){ return a - b; });
+      htmlA1 = '<div class="hp-maphdr">Quầy kệ (F0-A1)</div><div class="hp-mapscroll"><div class="hp-map hp-mapa1">' +
+        gIdx.map(function(g, i){
+          var kc = i === gIdx.length - 1 ? "" : (g % 2 === 0 ? " hp-kc15" : " hp-kc3");   // sau cặp chẵn 1,5m · cặp lẻ 3m
+          return '<div class="hp-mapc1' + kc + '">' + capMap[g].sort().map(cotKe).join("") + '</div>';
+        }).join("") + '</div></div>';
     }
   }
   if (!htmlA1 && !htmlA8){ box.innerHTML = ""; return; }
@@ -1139,10 +1158,20 @@ function renderMap(){
     });
     var nvKeys = Object.keys(nhom).sort(function(a, b){ return nhom[b].n - nhom[a].n || String(nhom[a].name).localeCompare(String(nhom[b].name), "vi"); });
     if (nvKeys.length){
-      htmlNhac = '<div class="hp-ptnhac"><span class="hp-hint">Cần nhắc theo nhân viên (bấm để soi ô trên sơ đồ):</span>' +
-        nvKeys.map(function(e){ var g = nhom[e];
-          return '<button class="hp-ptchip' + (S.ptHi === e ? " on" : "") + '" data-e="' + esc(e) + '" onclick="HPLANOGRAM.setPtHi(this.getAttribute(\'data-e\'))" title="' + esc(e) + " — " + g.n + ' vị trí chưa vệ sinh (đang đi làm)' + (g.unsure ? " · " + g.unsure + " ô suy từ báo cáo cũ, chưa chắc" : "") + '">' + esc(g.name) + ' <b>' + g.n + '</b>' + (g.unsure ? '<i class="q">?</i>' : "") + '</button>';
-        }).join("") +
+      var tongO = 0; nvKeys.forEach(function(e){ tongO += nhom[e].n; });
+      /* MẶC ĐỊNH THU GỌN (S.ptOpen) — chỉ 1 nút tóm tắt; bấm xổ chips. Đang soi mà thu gọn
+         thì vẫn hiện chip NV đang soi + nút bỏ soi (không bắt xổ ra chỉ để tắt). */
+      var chips = nvKeys.map(function(e){ var g = nhom[e];
+        return '<button class="hp-ptchip' + (S.ptHi === e ? " on" : "") + '" data-e="' + esc(e) + '" onclick="HPLANOGRAM.setPtHi(this.getAttribute(\'data-e\'))" title="' + esc(e) + " — " + g.n + ' vị trí chưa vệ sinh (đang đi làm)' + (g.unsure ? " · " + g.unsure + " ô suy từ báo cáo cũ, chưa chắc" : "") + '">' + esc(g.name) + ' <b>' + g.n + '</b>' + (g.unsure ? '<i class="q">?</i>' : "") + '</button>';
+      }).join("");
+      var chipSoi = "";
+      if (!S.ptOpen && S.ptHi && nhom[S.ptHi]){
+        var gs = nhom[S.ptHi];
+        chipSoi = '<button class="hp-ptchip on" data-e="' + esc(S.ptHi) + '" onclick="HPLANOGRAM.setPtHi(this.getAttribute(\'data-e\'))">' + esc(gs.name) + ' <b>' + gs.n + '</b></button>';
+      }
+      htmlNhac = '<div class="hp-ptnhac">' +
+        '<button class="hp-ptchip tog' + (S.ptOpen ? " mo" : "") + '" onclick="HPLANOGRAM.togglePtNhac()" title="' + (S.ptOpen ? "Thu gọn danh sách" : "Xổ danh sách nhân viên cần nhắc — bấm tên để soi ô trên sơ đồ") + '"><span class="car">' + (S.ptOpen ? "▾" : "▸") + '</span>Cần nhắc theo nhân viên <b>' + nvKeys.length + '</b> NV · <b>' + tongO + '</b> ô</button>' +
+        (S.ptOpen ? chips : chipSoi) +
         (S.ptHi ? '<button class="hp-ptchip clear" onclick="HPLANOGRAM.setPtHi(\'\')">Bỏ soi ✕</button>' : "") + '</div>';
     }
   }
@@ -1552,7 +1581,7 @@ window.HPLANOGRAM = {
   openAll: openAll, openArea: openArea, openStatus: openStatus, openName: openName, openYc: openYc, openYcAi: openYcAi, closeModal: closeModal,
   comboInput: comboInput, comboMenu: comboMenu, quick: quick, openAnh: openAnh,
   openNk: openNk, closeNk: closeNk, nkPick: nkPick, nkSearch: nkSearch,
-  openViTri: openViTri, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao, setPtHi: setPtHi,
+  openViTri: openViTri, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
   ccSetStatus: ccSetStatus, ccSearch: ccSearch, aiSetKl: aiSetKl, aiSearch: aiSearch, moMap: moMap
 };
 })();
