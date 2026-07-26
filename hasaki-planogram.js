@@ -65,6 +65,23 @@ var META_CHUA = { k: "chua", lb: "Chưa vệ sinh", sub: "không có báo cáo t
  * NGUYÊN TẮC: màu status luôn kèm NHÃN (chú giải) + TOOLTIP; chất lượng AI phân biệt thêm bằng HÌNH DẠNG
  * (chấm tròn = Cần xem, tam giác = làm lại) — không bao giờ chỉ dựa vào màu. */
 var NGUONG_CANHBAO = 3;   // ≥3 ngày yêu cầu liên tiếp không báo cáo → cảnh báo quá hạn
+/* Phụ trách vị trí = executor GẦN NHẤT 45 ngày (heuristic). Backtest 45n (26/07/2026, 250 lượt):
+ * A1 98,8% · A8 100% đoán đúng người làm lần kế — NHƯNG mọi lượt đúng đều có bằng chứng ≤7 ngày.
+ * Bằng chứng cũ hơn là ngoài vùng kiểm chứng (người có thể đã đổi vị trí/nghỉ) → hạ mức "CHƯA CHẮC":
+ * vẫn tô đỏ Chưa VS nhưng gắn badge ? và tách nhóm riêng — KHÔNG réo tên như nhóm chắc chắn. */
+var NGUONG_PT_CU = 7;     // bằng chứng phụ trách cũ hơn N ngày → CHƯA CHẮC còn phụ trách
+function tuoiNgay(iso){ var m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/); if (!m) return null;
+  var t = new Date(); return Math.round((new Date(t.getFullYear(), t.getMonth(), t.getDate()) - new Date(+m[1], +m[2] - 1, +m[3])) / 86400000); }
+function ptTuoi(r){ return r && r.pt ? tuoiNgay(r.ptAt) : null; }
+function ptKhongChac(r){ var t = ptTuoi(r); return t != null && t > NGUONG_PT_CU; }
+/* Khoá Ô sơ đồ: A1 gom theo KỆ (dãy-kệ) vì 1 kệ có thể mang nhiều mã mâm-bin qua các ngày
+ * (alias — vd kệ 513-02 có 4 mã); tra theo mã đúng từng ký tự sẽ lạc dữ liệu sang ô "trống".
+ * A8 giữ nguyên mã đầy đủ (mỗi ô bàn/băng chuyền 1 mã ổn định). */
+function khoaO(loc){ var m = String(loc).match(/^F0-A1-(\d{3})-(\d{2})-/); return m ? "F0-A1-" + m[1] + "-" + m[2] : String(loc); }
+/* Yêu cầu ĐẠI DIỆN của 1 ô trong 1 ngày (ô alias có thể dính nhiều mã cùng ngày): ưu tiên bản ĐÃ vệ sinh. */
+function repCua(list){ if (!list || !list.length) return null;
+  for (var i = 0; i < list.length; i++) if (list[i].bk === "da") return list[i];
+  return list[0]; }
 var CELLST = {
   noreq:  { c: "",         lb: "Không có yêu cầu",                    dashed: true },
   done:   { c: "#059669",  lb: "Đã vệ sinh (đạt / chờ AI)" },
@@ -97,12 +114,18 @@ function cellStateN(list){
 /* Cảnh báo quá hạn: mỗi vị trí, đếm số NGÀY yêu cầu GẦN NHẤT LIÊN TIẾP không báo cáo (toàn bộ dữ liệu) */
 function tinhCanhBao(){
   if (!S.yc.ok) return {};
-  var byLoc = {}; S.yc.rows.forEach(function(r){ (byLoc[r.loc] = byLoc[r.loc] || []).push(r); });
+  /* gom theo KHOÁ Ô rồi theo NGÀY: ô alias (A1) nhiều mã cùng kệ không làm gãy chuỗi;
+     1 ngày có nhiều yêu cầu thì "đã báo cáo" khi BẤT KỲ yêu cầu nào của ngày đó đã VS. */
+  var byLoc = {}; S.yc.rows.forEach(function(r){ var k = khoaO(r.loc);
+    var m = byLoc[k] = byLoc[k] || {}; (m[r.ngay] = m[r.ngay] || []).push(r); });
   var al = {};
   Object.keys(byLoc).forEach(function(loc){
-    var rs = byLoc[loc].slice().sort(function(a, b){ return a.ngay < b.ngay ? 1 : -1; });   // mới → cũ
+    var days = Object.keys(byLoc[loc]).sort().reverse();   // mới → cũ
     var streak = 0;
-    for (var i = 0; i < rs.length; i++){ if (rs[i].bk !== "da") streak++; else break; }
+    for (var i = 0; i < days.length; i++){
+      if (byLoc[loc][days[i]].some(function(r){ return r.bk === "da"; })) break;
+      streak++;
+    }
     if (streak >= NGUONG_CANHBAO) al[loc] = streak;
   });
   return al;
@@ -129,9 +152,10 @@ function nhanKhoang(){
 }
 function setKhoang(tu, den){
   if (tu > den){ var t = tu; tu = den; den = t; }
-  S.dTu = tu; S.dDen = den;
+  S.dTu = tu; S.dDen = den; S.ptHi = "";   // đổi khoảng ngày → bỏ chế độ soi NV (chấm công chỉ có hôm nay)
   renderWhBar(); renderToday(); renderList();
 }
+function setPtHi(e){ S.ptHi = (S.ptHi === e || !e) ? "" : e; renderMap(); }
 function setNgay(d){ setKhoang(d, d); }
 function chonNgay(v){
   var ds = ycDates();   // giảm dần, ds[0] = mới nhất
@@ -162,7 +186,8 @@ var COLS = {
   loc:   ["location", "mã vị trí", "ma vi tri", "vị trí", "vi tri"],
   email: ["executed by", "executed_by", "email", "mail", "mail hasaki", "mail hsk"],
   code:  ["code", "mã nv", "ma nv", "mã nhân viên", "id nhân viên", "id nhan vien"],
-  name:  ["name", "tên", "ten", "tên nhân viên", "ten nhan vien", "họ tên", "ho ten"]
+  name:  ["name", "tên", "ten", "tên nhân viên", "ten nhan vien", "họ tên", "ho ten"],
+  at:    ["executed at", "executed_at"]
 };
 /* Cột tab CHAMCONG-VESINH */
 var COLS_CC = {
@@ -190,7 +215,8 @@ var COLS_YC = {
   ptname: ["pt name"],
   ptdilam:["pt đi làm", "pt di lam"],
   ptci:   ["pt giờ vào", "pt gio vao"],
-  anh:    ["ảnh", "anh", "images"]
+  anh:    ["ảnh", "anh", "images"],
+  ptat:   ["pt lần cuối", "pt lan cuoi"]
 };
 /* Cột tab VESINH-AI + nhãn kết luận AI */
 var COLS_AI = {
@@ -272,7 +298,7 @@ var S = { ok: false, all: [], area: "", lastAt: 0, tsData: 0,
   yc: { ok: false, rows: [], ts: 0, ngay: "" },
   nk: { ok: false, rows: [], ts: 0 },
   ai: { ok: false, by: {}, rows: [], ts: 0 }, aiKl: "", aiQ: "",
-  dTu: "", dDen: "", listMode: "ai" };   // dTu→dDen = KHOẢNG NGÀY đang xem; listMode = chế độ panel danh sách (ai | nv)
+  dTu: "", dDen: "", listMode: "ai", ptHi: "" };   // dTu→dDen = KHOẢNG NGÀY đang xem; listMode = panel danh sách (ai | nv); ptHi = email NV đang SOI trên sơ đồ
 var MODAL = { base: [], preset: null, mode: "loc" };
 var NK = { email: "", q: "" };
 var PANE = null, _nmColor = {}, _nmCi = 0, _deb = null, _debT = null, _ccDeb = null, _nkDeb = null;
@@ -377,6 +403,18 @@ var CSS = [
 "#pane-planogram .hp-alertbar .ic{font-size:16px;animation:hp-blink 1.5s ease-in-out infinite;}",
 "#pane-planogram .hp-alertbar b{color:#dc2626;font-size:14px;font-variant-numeric:tabular-nums;}",
 "#pane-planogram .hp-legend .hp-cdot{position:static;width:8px;height:8px;box-shadow:none;}",
+/* badge ? = phụ trách suy từ báo cáo cũ (>NGUONG_PT_CU ngày) — CHƯA CHẮC, tránh réo nhầm người */
+"#pane-planogram .hp-cq{position:absolute;top:-5px;right:-5px;width:13px;height:13px;border-radius:50%;background:#d97706;color:#fff;font-size:9.5px;font-weight:800;display:flex;align-items:center;justify-content:center;font-style:normal;line-height:1;box-shadow:0 0 0 1.5px rgba(255,255,255,.9);}",
+/* chế độ SOI theo NV: ô của NV được chọn nổi vòng accent, ô khác mờ đi */
+"#pane-planogram .hp-mapcell.dim,#pane-planogram .hp-mapbelt.dim{opacity:.16;filter:saturate(.35);}",
+"#pane-planogram .hp-mapcell.hi,#pane-planogram .hp-mapbelt.hi{box-shadow:0 0 0 2px var(--accent,#326e51);z-index:1;}",
+"#pane-planogram .hp-ptnhac{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;animation:hp-in .35s ease both;}",
+"#pane-planogram .hp-ptchip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;min-height:26px;border-radius:999px;border:1px solid var(--border,#d5dbe4);background:var(--surface,#fff);color:var(--text,#1f2937);font-size:12px;font-weight:600;cursor:pointer;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .2s ease,border-color .16s ease;}",
+"#pane-planogram .hp-ptchip:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(16,24,40,.14);}",
+"#pane-planogram .hp-ptchip.on{border-color:#dc2626;background:color-mix(in srgb,#dc2626 12%,var(--surface,#fff));color:#dc2626;}",
+"#pane-planogram .hp-ptchip b{font-weight:780;font-variant-numeric:tabular-nums;}",
+"#pane-planogram .hp-ptchip .q{width:13px;height:13px;border-radius:50%;background:#d97706;color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-style:normal;line-height:1;}",
+"#pane-planogram .hp-ptchip.clear{color:var(--muted,#6b7280);border-style:dashed;}",
 "#pane-planogram .hp-mapgap{height:16px;flex:none;}",
 "#pane-planogram .hp-mapc > .hp-mapcol:first-of-type{grid-column:1;grid-row:1;}",
 "#pane-planogram .hp-mapc > .hp-mapcol:last-of-type{grid-column:3;grid-row:1;}",
@@ -603,7 +641,7 @@ function buildMain(H, rows2d){
     var email = String(gv(idx.email) || "").trim();
     var code = String(gv(idx.code) || "").trim(), name = String(gv(idx.name) || "").trim();
     ghiNhoNm(email, code, name);
-    arr.push({ loc: loc, area: a.k, email: email, code: code, name: name, done: !!email });
+    arr.push({ loc: loc, area: a.k, email: email, code: code, name: name, at: fmtNgayGio(gv(idx.at)), done: !!email });
   });
   S.ok = true; S.all = arr; render();
 }
@@ -642,6 +680,7 @@ function buildYC(H, rows2d){
       pt: String(gv(idx.pt) || "").trim(),
       ptCode: String(gv(idx.ptcode) || "").trim(), ptName: String(gv(idx.ptname) || "").trim(),
       ptDiLam: Number(gv(idx.ptdilam)) || 0, ptCi: fmtHM(gv(idx.ptci)),
+      ptAt: fmtNgay(gv(idx.ptat)),
       anh: String(gv(idx.anh) || "").split(/\s*\|\s*/).filter(Boolean)
     };
     r.bk = ycBucket(r);
@@ -777,7 +816,7 @@ function capNhatInfo(){
 /* ===== LỌC + RENDER ===== */
 function rowsInScope(){ return S.all.filter(function(r){ return !S.area || r.area === S.area; }); }
 function ycInScope(){ var k = khoang(); return S.yc.rows.filter(function(r){ return r.ngay >= k[0] && r.ngay <= k[1] && (!S.area || r.area === S.area); }); }
-function setArea(a){ if (S.area === a) a = ""; S.area = a; renderWhBar(); renderToday(); renderList(); }
+function setArea(a){ if (S.area === a) a = ""; S.area = a; S.ptHi = ""; renderWhBar(); renderToday(); renderList(); }
 /* THANH ĐIỀU KHIỂN duy nhất: Ngày · Khu vực · Tra cứu NV · Toàn bộ vị trí (45n) */
 function renderWhBar(){
   var el = $id("hpWhBar"); if (!el) return;
@@ -971,18 +1010,27 @@ function renderMap(){
   var box = $id("hpMap"); if (!box) return;
   if (!S.yc.ok || !S.yc.rows.length){ box.innerHTML = ""; return; }
   var k = khoang(), homNay = laHomNay(), mot = la1Ngay();
-  var byL = {}; S.yc.rows.forEach(function(r){ if (r.ngay >= k[0] && r.ngay <= k[1]) (byL[r.loc] = byL[r.loc] || []).push(r); });
+  /* byL gom theo KHOÁ Ô (khoaO) — kệ A1 có mã alias vẫn rơi đúng ô của nó */
+  var byL = {}; S.yc.rows.forEach(function(r){ if (r.ngay >= k[0] && r.ngay <= k[1]){ var kk = khoaO(r.loc); (byL[kk] = byL[kk] || []).push(r); } });
   var alert = tinhCanhBao();
+  var soiPT = homNay && mot;   // chế độ "cần nhắc theo NV" chỉ có nghĩa khi xem đúng HÔM NAY (chấm công chỉ lưu hôm nay)
 
-  function stateCua(list){ return mot ? cellState1(list && list[0]) : cellStateN(list); }
+  function stateCua(list){ return mot ? cellState1(repCua(list)) : cellStateN(list); }
   function tinhTT(loc, list){
-    var head = alert[loc] ? "⚠ QUÁ HẠN: " + alert[loc] + " ngày yêu cầu liên tiếp chưa báo cáo\n" : "";
+    var kk = khoaO(loc);
+    var head = alert[kk] ? "⚠ QUÁ HẠN: " + alert[kk] + " ngày yêu cầu liên tiếp chưa báo cáo\n" : "";
     if (!list || !list.length) return head + loc + "\nKhông có yêu cầu vệ sinh trong khoảng đang xem\n(bấm xem lịch sử 7 ngày)";
     if (mot){
-      var r = list[0], st = cellMeta(cellState1(r)), ai = aiOf(r), aim = ai && aiMeta(ai.kl);
+      var r = repCua(list), st = cellMeta(cellState1(r)), ai = aiOf(r), aim = ai && aiMeta(ai.kl);
+      var ptTxt = "";
+      if (!r.email){
+        if (r.pt){
+          ptTxt = "\nPhụ trách: " + (r.ptName || r.pt) + (homNay ? (r.ptDiLam ? " (đi làm" + (r.ptCi ? " · vào " + r.ptCi : "") + ")" : " (nghỉ)") : "");
+          if (r.ptAt) ptTxt += "\n   theo báo cáo gần nhất " + ngayVN(r.ptAt) + (ptKhongChac(r) ? " — ⚠ " + ptTuoi(r) + " ngày trước, CHƯA CHẮC còn phụ trách" : "");
+        } else ptTxt = "\nChưa có người phụ trách";
+      }
       return head + loc + "\nTrạng thái: " + st.lb +
-        (r.email ? "\nNgười làm: " + (tenNm(r.email) || r.email) + (r.at ? " lúc " + String(r.at).slice(11, 16) : "")
-                 : (r.pt ? "\nPhụ trách: " + (r.ptName || r.pt) + (homNay ? (r.ptDiLam ? " (đi làm" + (r.ptCi ? " · vào " + r.ptCi : "") + ")" : " (nghỉ)") : "") : "\nChưa có người phụ trách")) +
+        (r.email ? "\nNgười làm: " + (tenNm(r.email) || r.email) + (r.at ? " lúc " + String(r.at).slice(11, 16) : "") : ptTxt) +
         (aim ? "\nAI: " + aim.lb.replace("AI: ", "") + (ai.diem ? " · " + ai.diem + " điểm" : "") : "") +
         "\n(bấm xem chi tiết + lịch sử 7 ngày)";
     }
@@ -992,10 +1040,14 @@ function renderMap(){
     return head + loc + "\n" + dong.join("\n") + "\n(bấm xem chi tiết từng ngày)";
   }
   function cell(loc, label){
-    var list = byL[loc], st = stateCua(list), m = cellMeta(st);
-    var badge = m.dot ? '<i class="hp-cdot" style="background:' + m.dot + '"></i>' : (m.tri ? '<i class="hp-ctri"></i>' : "");
-    var al = alert[loc] ? '<i class="hp-cwarn" title="Quá ' + alert[loc] + ' ngày chưa báo cáo">⚠</i>' : "";
-    var cls = "hp-mapcell" + (m.dashed ? " trong" : "") + (alert[loc] ? " canhbao" : "");
+    var kk = khoaO(loc), list = byL[kk], st = stateCua(list), m = cellMeta(st);
+    var rep = mot ? repCua(list) : null;
+    var badge = m.dot ? '<i class="hp-cdot" style="background:' + m.dot + '"></i>'
+              : m.tri ? '<i class="hp-ctri"></i>'
+              : (st === "remind" && rep && ptKhongChac(rep) ? '<i class="hp-cq">?</i>' : "");
+    var al = alert[kk] ? '<i class="hp-cwarn" title="Quá ' + alert[kk] + ' ngày chưa báo cáo">⚠</i>' : "";
+    var cls = "hp-mapcell" + (m.dashed ? " trong" : "") + (alert[kk] ? " canhbao" : "");
+    if (soiPT && S.ptHi) cls += (rep && rep.bk === "nhac" && rep.pt === S.ptHi) ? " hi" : " dim";
     var sty = m.dashed ? "cursor:pointer" : "background:" + m.c;
     return '<span class="' + cls + '" style="' + sty + '" title="' + esc(tinhTT(loc, list)) + '" data-l="' + esc(loc) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))">' + label + badge + al + '</span>';
   }
@@ -1013,9 +1065,13 @@ function renderMap(){
     htmlA8 = '<div class="hp-maphdr">Bàn đóng gói &amp; băng chuyền (F0-A8)</div><div class="hp-map">' +
       MAP_A8.map(function(c){
         var list = byL[c.bc], st = stateCua(list), m = cellMeta(st);
+        var rep = mot ? repCua(list) : null;
         var alb = alert[c.bc] ? '<i class="hp-cwarn" title="Quá ' + alert[c.bc] + ' ngày chưa báo cáo">⚠</i>' : "";
+        var qb = (st === "remind" && rep && ptKhongChac(rep)) ? '<i class="hp-cq">?</i>' : "";
         var bg = m.dashed ? "color-mix(in srgb, var(--muted,#9ca3af) 35%, transparent)" : m.c;
-        var belt = '<div class="hp-mapbelt' + (alert[c.bc] ? " canhbao" : "") + '" style="background:' + bg + '" title="' + esc(tinhTT(c.bc, list)) + '" data-l="' + esc(c.bc) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))"><span>BĂNG CHUYỀN ' + c.b + '</span>' + alb + '</div>';
+        var bcls = "hp-mapbelt" + (alert[c.bc] ? " canhbao" : "");
+        if (soiPT && S.ptHi) bcls += (rep && rep.bk === "nhac" && rep.pt === S.ptHi) ? " hi" : " dim";
+        var belt = '<div class="' + bcls + '" style="background:' + bg + '" title="' + esc(tinhTT(c.bc, list)) + '" data-l="' + esc(c.bc) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))"><span>BĂNG CHUYỀN ' + c.b + '</span>' + qb + alb + '</div>';
         return '<div class="hp-mapc">' + cot(c.l) + belt + cot(c.r) + '</div>';
       }).join("") + '</div>';
   }
@@ -1061,6 +1117,7 @@ function renderMap(){
       return '<span>' + mk + esc(m.lb) + '</span>';
     }).join("") +
     '<span><i style="background:transparent;border:1px dashed var(--muted,#9ca3af)"></i>Không có yêu cầu</span>' +
+    (soiPT ? '<span><i class="hp-cq" style="position:static;box-shadow:none">?</i>phụ trách suy từ báo cáo cũ (&gt;' + NGUONG_PT_CU + ' ngày) — chưa chắc</span>' : '') +
     '<span><i class="hp-cwarn" style="position:static;color:#dc2626">⚠</i>Quá ' + NGUONG_CANHBAO + ' ngày chưa báo cáo</span></span>';
 
   var nAlert = Object.keys(alert).length;
@@ -1068,10 +1125,32 @@ function renderMap(){
     ? '<div class="hp-alertbar" onclick="HPLANOGRAM.openCanhBao()" title="Bấm xem danh sách vị trí quá hạn"><span class="ic">⚠</span><b>' + nf(nAlert) + '</b> vị trí quá ' + NGUONG_CANHBAO + ' ngày chưa có ai báo cáo vệ sinh — bấm để xử lý</div>'
     : "";
 
+  /* Panel "CẦN NHẮC THEO NHÂN VIÊN" (chỉ HÔM NAY): gom các ô Chưa VS mà phụ trách CÓ chấm công,
+     nhóm theo NV — bấm chip tô nổi đúng các ô của NV đó trên sơ đồ (ô khác mờ đi), bấm lại để bỏ. */
+  var htmlNhac = "";
+  if (soiPT){
+    var nhom = {};
+    Object.keys(byL).forEach(function(kk){
+      if (S.area && !(areaOf(kk) && areaOf(kk).k === S.area)) return;
+      var rep = repCua(byL[kk]);
+      if (!rep || rep.bk !== "nhac") return;
+      var g = nhom[rep.pt] || (nhom[rep.pt] = { name: rep.ptName || rep.pt, n: 0, unsure: 0 });
+      g.n++; if (ptKhongChac(rep)) g.unsure++;
+    });
+    var nvKeys = Object.keys(nhom).sort(function(a, b){ return nhom[b].n - nhom[a].n || String(nhom[a].name).localeCompare(String(nhom[b].name), "vi"); });
+    if (nvKeys.length){
+      htmlNhac = '<div class="hp-ptnhac"><span class="hp-hint">Cần nhắc theo nhân viên (bấm để soi ô trên sơ đồ):</span>' +
+        nvKeys.map(function(e){ var g = nhom[e];
+          return '<button class="hp-ptchip' + (S.ptHi === e ? " on" : "") + '" data-e="' + esc(e) + '" onclick="HPLANOGRAM.setPtHi(this.getAttribute(\'data-e\'))" title="' + esc(e) + " — " + g.n + ' vị trí chưa vệ sinh (đang đi làm)' + (g.unsure ? " · " + g.unsure + " ô suy từ báo cáo cũ, chưa chắc" : "") + '">' + esc(g.name) + ' <b>' + g.n + '</b>' + (g.unsure ? '<i class="q">?</i>' : "") + '</button>';
+        }).join("") +
+        (S.ptHi ? '<button class="hp-ptchip clear" onclick="HPLANOGRAM.setPtHi(\'\')">Bỏ soi ✕</button>' : "") + '</div>';
+    }
+  }
+
   box.innerHTML =
     '<section class="hp-panel hp-fade" style="margin-top:12px">' +
     '<h2>Sơ đồ khu vực <span class="hp-chip">' + esc(nhanKhoang()) + '</span> ' + legend + '</h2>' +
-    bannerAlert + htmlA1 + htmlA8 +
+    bannerAlert + htmlNhac + htmlA1 + htmlA8 +
     '<p class="hp-hint" style="margin:10px 0 0">Bấm một ô để xem chi tiết báo cáo và lịch sử 7 ngày' + (mot ? "" : " — theo khoảng: xanh = mọi ngày đạt, cam = có ngày không đạt, đỏ = có ngày chưa vệ sinh") + '.</p>' +
     '</section>';
 }
@@ -1081,7 +1160,7 @@ function openCanhBao(){
   var locs = Object.keys(alert).filter(function(loc){ return !S.area || (areaOf(loc) && areaOf(loc).k === S.area); });
   locs.sort(function(a, b){ return alert[b] - alert[a] || (a < b ? -1 : 1); });
   var base = locs.map(function(loc){
-    var rs = S.yc.rows.filter(function(r){ return r.loc === loc; }).sort(function(a, b){ return a.ngay < b.ngay ? 1 : -1; });
+    var rs = S.yc.rows.filter(function(r){ return khoaO(r.loc) === loc; }).sort(function(a, b){ return a.ngay < b.ngay ? 1 : -1; });
     var r = rs[0] || { id: "", loc: loc, area: (areaOf(loc) || {}).k, ngay: "", stId: 1, st: "New", email: "", at: "", pt: "", ptName: "", anh: [] };
     return Object.assign({}, r, { _streak: alert[loc] });
   });
@@ -1101,8 +1180,10 @@ function openViTri(loc){
 function closeVt(){ var m = $id("hpVtModal"); m.classList.remove("show"); setTimeout(function(){ m.style.display = "none"; $id("hpVtBody").innerHTML = ""; }, 240); }
 function vtNgay(d){ VT.ngay = d; renderVt(); }
 function renderVt(){
-  var loc = VT.loc, d = VT.ngay;
-  var byNgay = {}; S.yc.rows.forEach(function(r){ if (r.loc === loc) byNgay[r.ngay] = r; });
+  var loc = VT.loc, d = VT.ngay, kO = khoaO(loc);
+  /* gom theo KHOÁ Ô (kệ alias nhiều mã vẫn về đúng pop-up); 1 ngày nhiều mã → ưu tiên bản ĐÃ vệ sinh */
+  var byNgay = {}; S.yc.rows.forEach(function(r){ if (khoaO(r.loc) !== kO) return;
+    var cur = byNgay[r.ngay]; if (!cur || (cur.bk !== "da" && r.bk === "da")) byNgay[r.ngay] = r; });
   var r = byNgay[d] || null;
   var laBang = /-01-01-0[1-4]$/.test(loc) && MAP_A8.some(function(c){ return c.bc === loc; });
   var mA1 = loc.match(/^F0-A1-(\d{3})-(\d{2})-/);
@@ -1122,10 +1203,12 @@ function renderVt(){
       '<b>' + esc(thuVN(dd)) + '</b>' + esc(ngayVN(dd)) + '</span>';
   }).join("");
   /* Cảnh báo quá hạn cho vị trí này */
-  var al = tinhCanhBao()[loc];
+  var al = tinhCanhBao()[kO];
 
-  /* Phụ trách gần nhất (45 ngày) từ tab PHU-TRACH */
-  var ptAll = null; for (var i = 0; i < S.all.length; i++) if (S.all[i].loc === loc){ ptAll = S.all[i]; break; }
+  /* Phụ trách gần nhất (45 ngày) từ tab PHU-TRACH — ô alias lấy bản CÓ NGƯỜI + mới nhất */
+  var ptAll = null;
+  S.all.forEach(function(x){ if (khoaO(x.loc) !== kO || !x.email) return;
+    if (!ptAll || String(x.at || "") > String(ptAll.at || "")) ptAll = x; });
 
   var rows = [];
   if (al) rows.push(["Cảnh báo", '<span class="hp-badge" style="background:color-mix(in srgb,#dc2626 15%,transparent);color:#dc2626">⚠ Quá hạn ' + al + ' ngày chưa báo cáo</span>']);
@@ -1149,7 +1232,13 @@ function renderVt(){
   } else {
     rows.push(["Trạng thái", '<span class="hp-hint">Ngày ' + ngayVN(d) + ' vị trí này KHÔNG có yêu cầu vệ sinh trên planogram.</span>']);
   }
-  rows.push(["Phụ trách gần nhất", ptAll && ptAll.name ? esc(ptAll.name) + (ptAll.code ? ' <span class="hp-hint">' + esc(ptAll.code) + '</span>' : "") : (r && r.ptName ? esc(r.ptName) : '<span class="hp-hint">chưa từng có người báo cáo vị trí này (45 ngày)</span>')]);
+  var ptTuoiVt = ptAll ? tuoiNgay(ptAll.at) : (r ? ptTuoi(r) : null);
+  var ptCu = ptTuoiVt != null && ptTuoiVt > NGUONG_PT_CU;
+  rows.push(["Phụ trách gần nhất",
+    (ptAll && ptAll.name ? esc(ptAll.name) + (ptAll.code ? ' <span class="hp-hint">' + esc(ptAll.code) + '</span>' : "")
+      : (r && r.ptName ? esc(r.ptName) : '<span class="hp-hint">chưa từng có người báo cáo vị trí này (45 ngày)</span>')) +
+    (ptTuoiVt != null ? ' <span class="hp-hint">· theo báo cáo gần nhất ' + esc(ngayVN((ptAll && ptAll.at) || (r && r.ptAt))) + (ptTuoiVt > 0 ? " (" + ptTuoiVt + " ngày trước)" : " (hôm nay)") + '</span>' : "") +
+    (ptCu ? '<div style="margin-top:4px"><span class="hp-badge" style="background:color-mix(in srgb,#d97706 15%,transparent);color:#d97706">? Chưa chắc — báo cáo cuối đã ' + ptTuoiVt + ' ngày, người phụ trách có thể đã đổi</span></div>' : "")]);
 
   $id("hpVtBody").innerHTML =
     '<div class="hp-vthistrow">' + hist + '</div>' +
@@ -1463,7 +1552,7 @@ window.HPLANOGRAM = {
   openAll: openAll, openArea: openArea, openStatus: openStatus, openName: openName, openYc: openYc, openYcAi: openYcAi, closeModal: closeModal,
   comboInput: comboInput, comboMenu: comboMenu, quick: quick, openAnh: openAnh,
   openNk: openNk, closeNk: closeNk, nkPick: nkPick, nkSearch: nkSearch,
-  openViTri: openViTri, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao,
+  openViTri: openViTri, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao, setPtHi: setPtHi,
   ccSetStatus: ccSetStatus, ccSearch: ccSearch, aiSetKl: aiSetKl, aiSearch: aiSearch, moMap: moMap
 };
 })();
