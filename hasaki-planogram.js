@@ -356,6 +356,12 @@ var CSS = [
 "#pane-planogram .hp-grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:12px;margin-top:12px;}",
 "@media(max-width:1024px){#pane-planogram .hp-grid2{grid-template-columns:1fr;}}",
 "#pane-planogram .hp-panel{background:var(--surface,#fff);border:1px solid var(--border,#e8ecf1);border-radius:14px;padding:14px 16px;}",
+/* hàng trên 2 cột: trái = sơ đồ (ôm sát nội dung, trần 780px), phải = Vệ sinh (ăn phần còn lại, sticky) */
+"#pane-planogram .hp-main{display:grid;grid-template-columns:fit-content(780px) minmax(300px,1fr);gap:12px 14px;align-items:start;margin-top:12px;}",
+"#pane-planogram .hp-main > #hpToday{position:sticky;top:10px;}",
+"#pane-planogram #hpToday{container-type:inline-size;}",
+"@container (max-width:700px){#pane-planogram .hp-tiles{grid-template-columns:repeat(2,minmax(0,1fr));}}",   /* cột hẹp: KPI xếp 2×2 cho cân (tránh 3+1 lệch) */
+"@media(max-width:1150px){#pane-planogram .hp-main{grid-template-columns:minmax(0,1fr);}#pane-planogram .hp-main > #hpToday{position:static;}}",
 "#pane-planogram .hp-panel h2{margin:0 0 12px;font-size:14px;font-weight:680;color:var(--text,#374151);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}",
 "#pane-planogram .hp-legend{display:inline-flex;flex-wrap:wrap;gap:3px 10px;font-weight:400;font-size:10.5px;color:var(--muted,#6b7280);}",
 "#pane-planogram .hp-legend span{display:inline-flex;align-items:center;gap:5px;}",
@@ -543,8 +549,13 @@ var CSS = [
 /* ===== KHUNG HTML ===== */
 var KHUNG =
 '<div class="hp-whbar" id="hpWhBar"></div>' +
-'<div id="hpToday"></div>' +
-'<div id="hpMap"></div>' +
+/* Hàng trên 2 cột (26/07): TRÁI = Sơ đồ khu vực (rộng theo tỷ lệ thực địa), PHẢI = Vệ sinh (KPI).
+   Sơ đồ cao hơn nhiều nên khối Vệ sinh DÍNH (sticky) khi cuộn — hết cảm giác cột phải trống.
+   Mobile/hẹp (<1150px): xếp dọc Sơ đồ → Vệ sinh. Danh sách theo dõi luôn nằm DƯỚI cả hai. */
+'<div class="hp-main" id="hpMain">' +
+'  <div id="hpMap"></div>' +
+'  <div id="hpToday"></div>' +
+'</div>' +
 '<div id="hpAI"></div>' +
 '<div id="hpState" class="hp-state"><div class="hp-spin"></div>Đang tải dữ liệu vệ sinh…</div>' +
 '<div class="hp-srcfoot">' +
@@ -877,7 +888,7 @@ function renderWhBar(){
 function renderToday(){
   var box = $id("hpToday"); if (!box) return;
   if (!S.yc.ok || !S.yc.rows.length){
-    box.innerHTML = S.ok ? ('<section class="hp-panel hp-fade" style="margin-bottom:12px"><div class="hp-empty">Chưa có dữ liệu yêu cầu vệ sinh trong ngày (tab <code>' + esc(TAB_YC) + '</code>) — chạy <code>sync-vesinh-all.js</code> hoặc bấm "Cập nhật ngay" ở tab Tổng quan.</div></section>') : "";
+    box.innerHTML = S.ok ? ('<section class="hp-panel hp-fade"><div class="hp-empty">Chưa có dữ liệu yêu cầu vệ sinh trong ngày (tab <code>' + esc(TAB_YC) + '</code>) — chạy <code>sync-vesinh-all.js</code> hoặc bấm "Cập nhật ngay" ở tab Tổng quan.</div></section>') : "";
     return;
   }
   var rows = ycInScope(), nTot = rows.length;
@@ -889,7 +900,7 @@ function renderToday(){
 
   /* Không có yêu cầu trong khoảng → empty-state gọn thay vì 4 thẻ số 0 */
   if (!nTot){
-    box.innerHTML = '<section class="hp-panel hp-fade hp-hero" style="margin-bottom:12px"><h2>Vệ sinh ' + chipNgay +
+    box.innerHTML = '<section class="hp-panel hp-fade hp-hero"><h2>Vệ sinh ' + chipNgay +
       (S.area ? ' <span class="hp-hint">' + esc(areaMeta(S.area).short) + '</span>' : '') + '</h2>' +
       '<div class="hp-empty">Không có yêu cầu vệ sinh trong khoảng này' + (S.area ? ' ở ' + esc(areaMeta(S.area).short) : '') + '. Chọn khoảng ngày khác ở ô Ngày phía trên.</div></section>';
     renderMap(); return;
@@ -927,7 +938,7 @@ function renderToday(){
     }
   }
   box.innerHTML =
-    '<section class="hp-panel hp-fade hp-hero" style="margin-bottom:12px">' +
+    '<section class="hp-panel hp-fade hp-hero">' +
     '<h2>Vệ sinh ' + chipNgay + '<span style="flex:1"></span><a class="hp-ext" style="font-size:12px" target="_blank" rel="noopener" href="' + esc(pgListUrl(k[0], S.area, "", k[1])) + '">Mở planogram ↗</a></h2>' +
     '<div class="hp-tiles">' + tiles + '</div>' + bar + aiLine +
     '</section>';
@@ -1177,7 +1188,7 @@ function renderMap(){
   }
 
   box.innerHTML =
-    '<section class="hp-panel hp-fade" style="margin-top:12px">' +
+    '<section class="hp-panel hp-fade">' +
     '<h2>Sơ đồ khu vực <span class="hp-chip">' + esc(nhanKhoang()) + '</span> ' + legend + '</h2>' +
     bannerAlert + htmlNhac + htmlA1 + htmlA8 +
     '<p class="hp-hint" style="margin:10px 0 0">Bấm một ô để xem chi tiết báo cáo và lịch sử 7 ngày' + (mot ? "" : " — theo khoảng: xanh = mọi ngày đạt, cam = có ngày không đạt, đỏ = có ngày chưa vệ sinh") + '.</p>' +
