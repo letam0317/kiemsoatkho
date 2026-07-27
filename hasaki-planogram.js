@@ -302,7 +302,7 @@ var S = { ok: false, all: [], area: "", lastAt: 0, tsData: 0,
   dTu: "", dDen: "", listMode: "ai", ptHi: "", ptOpen: false };   // dTu→dDen = KHOẢNG NGÀY đang xem; listMode = panel danh sách (ai | nv); ptHi = email NV đang SOI; ptOpen = panel cần-nhắc đang xổ
 var MODAL = { base: [], preset: null, mode: "loc" };
 var NK = { email: "", q: "" };
-var PANE = null, _nmColor = {}, _nmCi = 0, _deb = null, _debT = null, _ccDeb = null, _nkDeb = null;
+var PANE = null, _nmColor = {}, _nmCi = 0, _deb = null, _debT = null, _ccDeb = null, _nkDeb = null, _fitT = null;
 var _emNm = {};   // email(lower) -> { code, name } (gom từ PT + NK để hiện tên người thực hiện)
 
 var $id = function(s){ return document.getElementById(s); };
@@ -356,8 +356,9 @@ var CSS = [
 "#pane-planogram .hp-grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:12px;margin-top:12px;}",
 "@media(max-width:1024px){#pane-planogram .hp-grid2{grid-template-columns:1fr;}}",
 "#pane-planogram .hp-panel{background:var(--surface,#fff);border:1px solid var(--border,#e8ecf1);border-radius:14px;padding:14px 16px;}",
-/* hàng trên 2 cột: trái = sơ đồ (ôm sát nội dung, trần 780px), phải = Vệ sinh (ăn phần còn lại, sticky) */
-"#pane-planogram .hp-main{display:grid;grid-template-columns:fit-content(780px) minmax(300px,1fr);gap:12px 14px;align-items:start;margin-top:12px;}",
+/* hàng trên 2 cột (27/07 đảo ưu tiên): TRÁI = sơ đồ ăn hết bề rộng còn lại (tự phóng theo cột — fitMaps),
+   PHẢI = Vệ sinh giữ trần 380px (KPI tự xếp 2×2 nhờ container query) — hết cảnh cột phải rộng mà trống */
+"#pane-planogram .hp-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,380px);gap:12px 14px;align-items:start;margin-top:12px;}",
 "#pane-planogram .hp-main > #hpToday{position:sticky;top:10px;}",
 "#pane-planogram #hpToday{container-type:inline-size;}",
 "@container (max-width:700px){#pane-planogram .hp-tiles{grid-template-columns:repeat(2,minmax(0,1fr));}}",   /* cột hẹp: KPI xếp 2×2 cho cân (tránh 3+1 lệch) */
@@ -549,8 +550,8 @@ var CSS = [
 /* ===== KHUNG HTML ===== */
 var KHUNG =
 '<div class="hp-whbar" id="hpWhBar"></div>' +
-/* Hàng trên 2 cột (26/07): TRÁI = Sơ đồ khu vực (rộng theo tỷ lệ thực địa), PHẢI = Vệ sinh (KPI).
-   Sơ đồ cao hơn nhiều nên khối Vệ sinh DÍNH (sticky) khi cuộn — hết cảm giác cột phải trống.
+/* Hàng trên 2 cột (27/07): TRÁI = Sơ đồ khu vực ưu tiên bề rộng (ăn hết phần còn lại, tự phóng
+   theo cột — fitMaps), PHẢI = Vệ sinh (KPI) thu về cột hẹp trần 380px + DÍNH (sticky) khi cuộn.
    Mobile/hẹp (<1150px): xếp dọc Sơ đồ → Vệ sinh. Danh sách theo dõi luôn nằm DƯỚI cả hai. */
 '<div class="hp-main" id="hpMain">' +
 '  <div id="hpMap"></div>' +
@@ -1028,6 +1029,21 @@ function keA1(){
   S.yc.rows.forEach(function(r){ nap(r.loc); });
   return ke;
 }
+/* Sơ đồ tự PHÓNG theo bề rộng cột trái: tỷ lệ thực địa (~10px/m) giữ nguyên, chỉ nhân đều bằng
+ * zoom (ảnh hưởng layout — Chromium/Safari/FF126+; trình cũ bỏ qua = giữ 1× như cũ). A1 + A8 dùng
+ * CHUNG 1 hệ số cho ô đồng cỡ; trần 1.5× để ô không thô, sàn 1× (màn hẹp giữ cuộn ngang sẵn có). */
+function fitMaps(){
+  var box = $id("hpMap"); if (!box || !box.offsetParent) return;
+  var scs = box.querySelectorAll(".hp-mapscroll"); if (!scs.length) return;
+  var z = 1.5, i, mp;
+  for (i = 0; i < scs.length; i++){
+    mp = scs[i].firstElementChild; if (!mp) continue;
+    mp.style.zoom = "";
+    z = Math.min(z, (scs[i].clientWidth - 2) / Math.max(1, mp.offsetWidth));
+  }
+  z = Math.max(1, z);
+  for (i = 0; i < scs.length; i++){ mp = scs[i].firstElementChild; if (mp) mp.style.zoom = z; }
+}
 function renderMap(){
   var box = $id("hpMap"); if (!box) return;
   if (!S.yc.ok || !S.yc.rows.length){ box.innerHTML = ""; return; }
@@ -1193,6 +1209,7 @@ function renderMap(){
     bannerAlert + htmlNhac + htmlA1 + htmlA8 +
     '<p class="hp-hint" style="margin:10px 0 0">Bấm một ô để xem chi tiết báo cáo và lịch sử 7 ngày' + (mot ? "" : " — theo khoảng: xanh = mọi ngày đạt, cam = có ngày không đạt, đỏ = có ngày chưa vệ sinh") + '.</p>' +
     '</section>';
+  fitMaps();
 }
 /* Pop-up danh sách vị trí quá hạn (bấm banner cảnh báo) */
 function openCanhBao(){
@@ -1579,11 +1596,14 @@ function init(pane){
       if (!e.target.closest("#hpMFilters .hp-combo")) closeCombos();
       if (!e.target.closest("#hpWhBar .hp-combo")){ var nm = $id("hpNgayMenu"); if (nm) nm.classList.remove("show"); }
     });
+    /* sơ đồ phóng theo bề rộng cột trái — tính lại hệ số khi đổi cỡ cửa sổ */
+    window.addEventListener("resize", function(){ clearTimeout(_fitT); _fitT = setTimeout(fitMaps, 120); });
     pane.innerHTML = KHUNG;
     loadData();
     return;
   }
   if (!pane.querySelector("#hpToday")){ pane.innerHTML = KHUNG; render(); }
+  else fitMaps();   // quay lại tab sau khi đổi cỡ cửa sổ ở tab khác — chỉnh lại hệ số phóng
   if (Date.now() - S.lastAt > STALE_MS) loadData();
 }
 
