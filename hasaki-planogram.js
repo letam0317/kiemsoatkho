@@ -310,11 +310,12 @@ function pgLocUrl(loc){
 }
 
 /* ===== STATE ===== */
-var S = { ok: false, all: [], area: "", lastAt: 0, tsData: 0,
-  cc: { ok: false, rows: [], ts: 0 }, ccStatus: "", ccQ: "",
+/* dang = ĐANG chờ mạng cho nguồn đó (nạp phân bậc) → UI hiện "đang tải" thay vì "không có dữ liệu" */
+var S = { ok: false, dangPT: false, all: [], area: "", lastAt: 0, tsData: 0,
+  cc: { ok: false, dang: false, rows: [], ts: 0 }, ccStatus: "", ccQ: "",
   yc: { ok: false, rows: [], ts: 0, ngay: "" },
-  nk: { ok: false, rows: [], ts: 0 },
-  ai: { ok: false, by: {}, rows: [], ts: 0 }, aiKl: "", aiQ: "",
+  nk: { ok: false, dang: false, rows: [], ts: 0 },
+  ai: { ok: false, dang: false, by: {}, rows: [], ts: 0 }, aiKl: "", aiQ: "",
   dTu: "", dDen: "", listMode: "ai", ptHi: "", ptOpen: false };   // dTu→dDen = KHOẢNG NGÀY đang xem; listMode = panel danh sách (ai | nv); ptHi = email NV đang SOI; ptOpen = panel cần-nhắc đang xổ
 var MODAL = { base: [], preset: null, mode: "loc" };
 var NK = { email: "", q: "" };
@@ -716,38 +717,106 @@ function gvizRows(resp){ return ((resp.table && resp.table.rows) || []).map(func
 /* nạp 1 tab: GAS readTab trước, hỏng thì gviz (cbBuild(header, rows2d, ts)) */
 function loadTab(tab, cbName, cbBuild, onFail){
   window[cbName] = function(j){
-    if (j && j.status === "success" && j.header && j.header.length){ cbBuild(j.header, j.rows || [], Number(j.ts) || 0); }
+    if (j && j.status === "success" && j.header && j.header.length){
+      cacheSet(tab, j.header, j.rows || [], Number(j.ts) || 0);
+      cbBuild(j.header, j.rows || [], Number(j.ts) || 0);
+    }
     else { loadTabGviz(tab, cbName, cbBuild, onFail); }
   };
   injectJSONP(APPSCRIPT_URL + "?action=readTab&tab=" + encodeURIComponent(tab) + "&callback=" + cbName + "&_=" + Date.now(), "hp_sc_" + cbName, function(){ loadTabGviz(tab, cbName, cbBuild, onFail); });
 }
+
+/* ===== CACHE PHIÊN (sessionStorage) =====
+ * Quay lại tab / F5 → vẽ NGAY từ cache rồi mới làm mới nền (stale-while-revalidate).
+ * DÙNG sessionStorage, KHÔNG localStorage: dữ liệu có email + tên nhân viên, chỉ nên sống
+ * trong tab đang mở (đóng tab là mất), không để PII nằm lại trên đĩa máy dùng chung.
+ * Nguồn chỉ đổi 1 lần/ngày (cụm 8h40) nên hạn 30' là thừa an toàn. */
+var CACHE_V = "hpc1:", CACHE_TTL = 30 * 60 * 1000;
+function cacheGet(tab){
+  try{ var o = JSON.parse(sessionStorage.getItem(CACHE_V + tab) || "null");
+    return (o && o.H && Date.now() - o.at < CACHE_TTL) ? o : null; }catch(e){ return null; }
+}
+function cacheSet(tab, H, rows, ts){
+  try{ sessionStorage.setItem(CACHE_V + tab, JSON.stringify({ at: Date.now(), H: H, rows: rows, ts: ts })); }
+  catch(e){ /* hết quota / chế độ riêng tư — bỏ cache, luồng chính không đổi */ }
+}
+
+/* ===== NẠP PHÂN BẬC =====
+ * ĐO THẬT 30/07 (đừng suy đoán lại): Apps Script cho khoảng 3 request chạy SONG SONG, phần dư
+ * mới phải chờ — 5 tab gọi một lượt về ở 1,9s · 1,9s · 1,9s · 2,7s · 3,0s. Đã thử tách riêng
+ * VESINH-YEUCAU gọi một mình rồi mới gọi phần còn lại: CHẬM HƠN (6,2s so với 5,0s) vì mất luôn
+ * phần song song. Cách đúng là GIẢM SỐ REQUEST TRANH NHAU, không phải xếp chúng nối đuôi:
+ *   bậc 1 — bắn CÙNG LÚC 3 nguồn cần để vẽ màn hình: VESINH-YEUCAU (KPI + sơ đồ + độ phủ),
+ *           PHU-TRACH (tên người + phân loại vị trí thiếu), VESINH-AI (panel danh sách mặc định).
+ *   bậc 3 — CHAMCONG-VESINH chỉ nạp khi mở danh sách "Nhân viên hôm nay" · VESINH-NHATKY chỉ nạp
+ *           khi mở pop-up "Tra cứu nhân viên". Trước đây luôn tải dù hầu như không ai mở tới,
+ *           lại là 2 tab NẶNG (nhật ký 45 ngày) → chính chúng đẩy nhóm còn lại ra sau hàng đợi. */
+var NGUON = [
+  { tab: TAB_YC, cb: "hpgv_yc",
+    build: function(H, rows, ts){ if (ts > 0){ S.yc.ts = ts; if (!S.tsData) S.tsData = ts; } buildYC(H, rows); },
+    fail: function(){ S.yc.ok = false; renderToday(); renderMap(); } },
+  { tab: TAB, cb: "hpgv_pt",
+    build: function(H, rows, ts){ if (ts > 0) S.tsData = ts; S.dangPT = false; buildMain(H, rows); if (!ts) loadMeta(); capNhatInfo(); },
+    fail: function(){ S.ok = false; S.dangPT = false; render(); } },
+  { tab: TAB_AI, cb: "hpgv_ai",
+    build: function(H, rows, ts){ if (ts > 0) S.ai.ts = ts; S.ai.dang = false; buildAI(H, rows); },
+    fail: function(){ S.ai.ok = false; S.ai.dang = false; renderAI(); } },
+  { tab: TAB_CC, cb: "hpgv_cc",
+    build: function(H, rows, ts){ if (ts > 0) S.cc.ts = ts; S.cc.dang = false; buildCC(H, rows); },
+    fail: function(){ S.cc.ok = false; S.cc.dang = false; renderCC(); } },
+  { tab: TAB_NK, cb: "hpgv_nk",
+    build: function(H, rows, ts){ if (ts > 0) S.nk.ts = ts; S.nk.dang = false; buildNK(H, rows); },
+    fail: function(){ S.nk.ok = false; S.nk.dang = false; renderNkList(); renderWhBar(); } }
+];
+var _daGoi = {};   // tab -> đã bắn request ở lượt tải này (chống gọi trùng)
+function nguonOf(tab){ for (var i = 0; i < NGUON.length; i++) if (NGUON[i].tab === tab) return NGUON[i]; return null; }
+function goiNguon(tab){
+  var n = nguonOf(tab); if (!n || _daGoi[tab]) return;
+  _daGoi[tab] = 1; loadTab(n.tab, n.cb, n.build, n.fail);
+}
+function tuCache(tab){   // vẽ ngay từ cache nếu còn hạn → true khi màn hình đã có dữ liệu
+  var n = nguonOf(tab), c = n && cacheGet(tab); if (!c) return false;
+  n.build(c.H, c.rows, c.ts); return true;
+}
+/* bậc 1 — 3 nguồn dựng màn hình, bắn cùng lúc (YEUCAU đi đầu để nếu có hàng đợi thì nó thắng) */
+function bac1(){
+  goiNguon(TAB_YC); goiNguon(TAB); goiNguon(TAB_AI);
+  if (S.cc.ok || S.cc.dang) goiNguon(TAB_CC);   // đang mở sẵn danh sách NV / pop-up thì làm mới luôn
+  if (S.nk.ok || S.nk.dang) goiNguon(TAB_NK);
+}
+/* bậc 3 — nạp theo yêu cầu, gọi từ chỗ người dùng thực sự cần dữ liệu đó */
+function canCC(){ if (S.cc.ok || S.cc.dang) return; S.cc.dang = true; goiNguon(TAB_CC); }
+function canNK(){ if (S.nk.ok || S.nk.dang) return; S.nk.dang = true; goiNguon(TAB_NK); }
 function loadTabGviz(tab, cbName, cbBuild, onFail){
   var cb2 = cbName + "g";
   window[cb2] = function(resp){
     if (!resp || resp.status === "error"){ onFail && onFail(); }
-    else cbBuild(gvizHeader(resp), gvizRows(resp), 0);
+    else { var H = gvizHeader(resp), rows = gvizRows(resp); cacheSet(tab, H, rows, 0); cbBuild(H, rows, 0); }
   };
   var url = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:json;responseHandler:" + cb2 + "&sheet=" + encodeURIComponent(tab) + "&headers=1";
   injectJSONP(url, "hp_sc_" + cb2, function(){ onFail && onFail(); });
 }
 function loadData(){
   var st = $id("hpState"); if (!st) return;
-  animBat();   // dữ liệu mới thật → cho chạy animation vào 1 lượt
   var btn = $id("hpReload"); if (btn) btn.disabled = true;
-  st.style.display = "block";
-  st.innerHTML = '<div class="hp-spin"></div>Đang tải dữ liệu vệ sinh…';
-  /* KHÔNG xoá trắng 2 cột — đổ skeleton giữ chỗ để khung không co về 0 rồi bung ra (giật) */
-  $id("hpToday").innerHTML = SK_TODAY; $id("hpMap").innerHTML = SK_MAP;
-  $id("hpAI").innerHTML = ""; $id("hpWhBar").innerHTML = "";
-  S.lastAt = Date.now();
-  loadTab(TAB, "hpgv_pt", function(H, rows, ts){ if (ts > 0) S.tsData = ts; buildMain(H, rows); if (!ts) loadMeta(); capNhatInfo(); },
-    function(){ S.ok = false; render(); });
-  loadTab(TAB_CC, "hpgv_cc", function(H, rows, ts){ if (ts > 0) S.cc.ts = ts; buildCC(H, rows); },
-    function(){ S.cc.ok = false; renderCC(); });
-  loadTab(TAB_YC, "hpgv_yc", function(H, rows, ts){ if (ts > 0) S.yc.ts = ts; buildYC(H, rows); },
-    function(){ S.yc.ok = false; renderToday(); renderMap(); });   // renderMap dọn skeleton cột sơ đồ khi YC hỏng
-  loadTab(TAB_NK, "hpgv_nk", function(H, rows, ts){ if (ts > 0) S.nk.ts = ts; buildNK(H, rows); }, function(){ S.nk.ok = false; });
-  loadTab(TAB_AI, "hpgv_ai", function(H, rows, ts){ if (ts > 0) S.ai.ts = ts; buildAI(H, rows); }, function(){ S.ai.ok = false; });
+  _daGoi = {}; S.lastAt = Date.now();
+  S.dangPT = true; S.ai.dang = true;
+  /* 1) VẼ TỪ CACHE trước (đồng bộ): có cache là màn hình đủ dữ liệu ngay từ khung hình đầu —
+        không spinner, không skeleton, không animation vào (tránh chớp trên nội dung đang có). */
+  var coYc = tuCache(TAB_YC);
+  tuCache(TAB); tuCache(TAB_AI);
+  if (S.cc.ok || S.cc.dang) tuCache(TAB_CC);
+  if (S.nk.ok || S.nk.dang) tuCache(TAB_NK);
+  if (!coYc){
+    animBat();   // dữ liệu mới thật → cho chạy animation vào 1 lượt
+    st.style.display = "block";
+    st.innerHTML = '<div class="hp-spin"></div>Đang tải dữ liệu vệ sinh…';
+    /* KHÔNG xoá trắng 2 cột — đổ skeleton giữ chỗ để khung không co về 0 rồi bung ra (giật) */
+    $id("hpToday").innerHTML = SK_TODAY; $id("hpMap").innerHTML = SK_MAP;
+    $id("hpAI").innerHTML = ""; $id("hpWhBar").innerHTML = "";
+  }
+  /* 2) BẬC 1: 3 nguồn dựng màn hình bắn song song (CHAMCONG + NHATKY để dành bậc 3) */
+  bac1();
 }
 /* Chip giờ dữ liệu: hỏi GAS lastSync (mốc apiAt lúc bộ sync ghi) — chỉ cần khi rơi về gviz */
 function loadMeta(){
@@ -817,7 +886,10 @@ function buildYC(H, rows2d){
   });
   S.yc.ok = true; S.yc.rows = arr; S.yc.ngay = ngay;
   if (!S.dDen || !arr.some(function(r){ return r.ngay >= (S.dTu || S.dDen) && r.ngay <= S.dDen; })){ S.dTu = ngay; S.dDen = ngay; }
-  renderWhBar(); renderToday(); capNhatInfo();
+  /* BẬC 1 xong = màn hình đã dùng được: tắt spinner, mở lại nút Làm mới, vẽ cả 3 khối
+     (khối danh sách tự hiện trạng thái "đang tải" cho nguồn bậc 2/3 chưa về). */
+  xongTai();
+  renderWhBar(); renderToday(); renderList(); capNhatInfo();
 }
 function buildNK(H, rows2d){
   var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
@@ -835,6 +907,12 @@ function buildNK(H, rows2d){
       locs: String(gv(idx.locs) || "").split(/\s*,\s*/).filter(Boolean) });
   });
   S.nk.ok = true; S.nk.rows = arr;
+  /* pop-up có thể đang mở ở trạng thái "đang tải" (bậc 3) → chọn sẵn NV đầu rồi vẽ lại */
+  var mo = $id("hpNkModal");
+  if (mo && mo.classList.contains("show")){
+    if (!NK.email){ var l = nkStaff(); if (l.length) NK.email = l[0].email.toLowerCase(); }
+    renderNkList(); renderNkRight();
+  }
   render();   // vẽ lại panel phụ trách (nút tra cứu đếm NV)
 }
 function buildAI(H, rows2d){
@@ -867,13 +945,15 @@ var _aiDeb = null;
 function aiSearch(v){ S.aiQ = String(v || "").trim().toLowerCase(); clearTimeout(_aiDeb); _aiDeb = setTimeout(renderList, 130); }
 function renderList(){
   var box = $id("hpAI"); if (!box) return;
-  if (!S.ai.ok && !S.cc.ok){ box.innerHTML = ""; return; }
-  var nAi = S.ai.ok ? S.ai.rows.filter(function(r){ return !S.area || r.area === S.area; }).length : 0;
-  var nCc = S.cc.ok ? S.cc.rows.length : 0;
+  if (!S.ai.ok && !S.cc.ok && !S.ai.dang && !S.cc.dang){ box.innerHTML = ""; return; }
+  /* Số trên nút: chỉ hiện khi nguồn đã về — nguồn bậc 2/3 chưa tải thì để "…" cho khỏi
+     hiểu nhầm là "có 0 kết quả". */
+  var nAi = S.ai.ok ? '<b>' + nf(S.ai.rows.filter(function(r){ return !S.area || r.area === S.area; }).length) + '</b>' : (S.ai.dang ? '<b class="hp-hint">…</b>' : '');
+  var nCc = S.cc.ok ? '<b>' + nf(S.cc.rows.length) + '</b>' : (S.cc.dang ? '<b class="hp-hint">…</b>' : '');
   var modes =
     '<span class="hp-seg">' +
-    '<button class="' + (S.listMode === "ai" ? "on" : "") + '" onclick="HPLANOGRAM.setListMode(\'ai\')">AI xét duyệt ảnh <b>' + nf(nAi) + '</b></button>' +
-    '<button class="' + (S.listMode === "nv" ? "on" : "") + '" onclick="HPLANOGRAM.setListMode(\'nv\')">Nhân viên hôm nay <b>' + nf(nCc) + '</b></button>' +
+    '<button class="' + (S.listMode === "ai" ? "on" : "") + '" onclick="HPLANOGRAM.setListMode(\'ai\')">AI xét duyệt ảnh ' + nAi + '</button>' +
+    '<button class="' + (S.listMode === "nv" ? "on" : "") + '" onclick="HPLANOGRAM.setListMode(\'nv\')">Nhân viên hôm nay ' + nCc + '</button>' +
     '</span>';
   box.innerHTML =
     '<section class="hp-panel hp-fade" style="margin-top:10px">' +
@@ -883,6 +963,7 @@ function renderList(){
 }
 function renderAI(){ renderList(); }
 function htmlAiXetDuyet(){
+  if (!S.ai.ok && S.ai.dang) return '<div class="hp-empty"><div class="hp-spin" style="width:22px;height:22px;border-width:2px;margin-bottom:10px"></div>Đang tải kết quả AI xét duyệt ảnh…</div>';
   if (!S.ai.ok || !S.ai.rows.length) return '<div class="hp-empty">Chưa có kết quả AI (tab <code>VESINH-AI</code>) — bộ <code>sync-vesinh-ai.mjs</code> chạy cùng cụm 8h40 / nút Cập nhật ngay.</div>';
   var all = S.ai.rows.filter(function(r){ return !S.area || r.area === S.area; });
   var cnt = { DAT: 0, KHONG_DAT: 0, CAN_XEM: 0 };
@@ -949,7 +1030,11 @@ function renderWhBar(){
   var el = $id("hpWhBar"); if (!el) return;
   var html = "";
   /* KHU VỰC trước — NGÀY sau (ô chọn gọn, không xổ 7 chips) */
-  var cnt = {}; S.all.forEach(function(r){ cnt[r.area] = (cnt[r.area] || 0) + 1; });
+  /* Đếm theo CẢ 2 nguồn: bậc 1 (VESINH-YEUCAU) về trước PHU-TRACH — chỉ dựa vào S.all thì
+     thanh lọc Khu vực trống trong giây đầu rồi mới bật ra (nhìn như giật). */
+  var cnt = {};
+  S.all.forEach(function(r){ cnt[r.area] = (cnt[r.area] || 0) + 1; });
+  S.yc.rows.forEach(function(r){ cnt[r.area] = (cnt[r.area] || 0) + 1; });
   var keys = AREAS.filter(function(a){ return cnt[a.k]; });
   if (keys.length){
     html += '<span class="hp-hint" style="font-weight:650">Khu vực:</span>' +
@@ -984,8 +1069,9 @@ function renderWhBar(){
       '</div></div>';
   }
   var nNk = 0; if (S.nk.ok){ var em = {}; S.nk.rows.forEach(function(r){ em[r.email.toLowerCase()] = 1; }); nNk = Object.keys(em).length; }
+  /* Nút LUÔN hiện: tab nhật ký nay nạp lúc bấm (bậc 3) nên không còn chờ S.nk.ok mới cho bấm */
   html += '<span style="flex:1"></span>' +
-    (S.nk.ok ? '<button class="hp-whtab" onclick="HPLANOGRAM.openNk()" title="Xem 1 nhân viên làm việc ở đâu theo từng ngày (45 ngày)">Tra cứu nhân viên · ' + nf(nNk) + '</button>' : "") +
+    '<button class="hp-whtab" onclick="HPLANOGRAM.openNk()" title="Xem 1 nhân viên làm việc ở đâu theo từng ngày (45 ngày)">Tra cứu nhân viên' + (nNk ? ' · ' + nf(nNk) : '') + '</button>' +
     (S.all.length ? '<button class="hp-whtab" onclick="HPLANOGRAM.openAll()" title="Danh sách toàn bộ vị trí + người phụ trách gần nhất (45 ngày)">Toàn bộ vị trí · ' + nf(rowsInScope().length) + '</button>' : "");
   el.innerHTML = html;
 }
@@ -1011,14 +1097,16 @@ function htmlDoPhu(){
     ? '<div class="hp-alertbar ok"><span class="ic">✓</span><span>Đủ yêu cầu vệ sinh cho <b>' + nf(dp.tot) + '</b> vị trí trên mặt bằng</span></div>'
     : '<div class="hp-alertbar warn" onclick="HPLANOGRAM.openThieu()" title="Bấm xem danh sách vị trí planogram không phát yêu cầu vệ sinh">' +
       '<span class="ic">⚠</span><span><b>' + nf(dp.tot - dp.co) + '</b> vị trí không có yêu cầu báo cáo vệ sinh' +
-      (dp.nChua ? ' · <b>' + nf(dp.nChua) + '</b> chưa khai báo lịch' : '') + ' — bấm xem</span></div>';
+      (S.ok && dp.nChua ? ' · <b>' + nf(dp.nChua) + '</b> chưa khai báo lịch' : '') + ' — bấm xem</span></div>';
   return '<div class="hp-cov">' +
     '<div class="hp-covhd" title="Danh mục vị trí lấy theo MẶT BẰNG THẬT (quầy kệ ' + (A1_DAY_DEN - A1_DAY_TU + 1) + ' dãy × ' + A1_SO_KE +
       ' kệ · bản vẽ bàn đóng gói &amp; băng chuyền), không lấy từ chính dữ liệu yêu cầu — có vậy vị trí bị bỏ quên mới lộ ra.' +
       (la1Ngay() ? '' : ' Khoảng nhiều ngày: tính có yêu cầu khi trúng ít nhất 1 ngày.') + '">Độ phủ yêu cầu vệ sinh' +
       '<b style="color:' + (du ? "#059669" : "#d97706") + '">' + nf(dp.co) + '/' + nf(dp.tot) + ' vị trí</b></div>' +
     rows + banner +
-    (S.ok ? '' : '<p class="hp-hint" style="margin:6px 0 0">Chưa đọc được tab ' + esc(TAB) + ' — chưa tách được "đã dừng phát" và "chưa khai báo".</p>') +
+    (S.ok ? '' : '<p class="hp-hint" style="margin:6px 0 0">' + (S.dangPT
+      ? 'Đang tải danh sách phụ trách — tách được "đã dừng phát" ↔ "chưa khai báo" ngay sau đó.'
+      : 'Chưa đọc được tab ' + esc(TAB) + ' — chưa tách được "đã dừng phát" và "chưa khai báo".') + '</p>') +
     '</div>';
 }
 function renderToday(){
@@ -1085,6 +1173,11 @@ function renderToday(){
     '</section>';
   renderMap();   // sơ đồ mặt bằng đi theo khoảng ngày đang xem
 }
+/* Bậc nào về trước cũng dùng chung: tắt spinner + mở lại nút Làm mới */
+function xongTai(){
+  var st = $id("hpState"); if (st) st.style.display = "none";
+  var btn = $id("hpReload"); if (btn) btn.disabled = false;
+}
 /* --- KHỐI 2: TỔNG ĐIỀU PHỐI (dữ liệu PT/NK về sau thì vẽ lại các khối dùng tên NV) --- */
 function render(){
   var st = $id("hpState"); if (!st) return;
@@ -1110,9 +1203,11 @@ function render(){
 /* --- KHỐI 3: chế độ NHÂN VIÊN của panel danh sách (đội vệ sinh × chấm công hôm nay) --- */
 function ccSetStatus(k){ if (S.ccStatus === k) k = ""; S.ccStatus = k; renderList(); }
 function ccSearch(v){ S.ccQ = v; clearTimeout(_ccDeb); _ccDeb = setTimeout(renderList, 130); }
-function setListMode(m){ if (S.listMode === m) return; S.listMode = m; renderList(); }
+/* Đổi chế độ danh sách: "nv" mới cần tab CHAMCONG → nạp lúc này (bậc 3) thay vì tải sẵn */
+function setListMode(m){ if (S.listMode === m) return; S.listMode = m; if (m === "nv") canCC(); renderList(); }
 function renderCC(){ renderList(); }
 function htmlNhanVien(){
+  if (!S.cc.ok && S.cc.dang) return '<div class="hp-empty"><div class="hp-spin" style="width:22px;height:22px;border-width:2px;margin-bottom:10px"></div>Đang tải chấm công hôm nay…</div>';
   if (!S.cc.ok || !S.cc.rows.length) return '<div class="hp-empty">Chưa có dữ liệu chấm công (tab <code>' + esc(TAB_CC) + '</code>).</div>';
   var all = S.cc.rows;
   var cnt = { chua: 0, da: 0, nghi: 0 };
@@ -1792,11 +1887,13 @@ function nkStaff(){
     .sort(function(a, b){ return b.last < a.last ? -1 : b.last > a.last ? 1 : (b.nLoc - a.nLoc); });
 }
 function openNk(email){
-  if (!S.nk.ok || !S.nk.rows.length) return;
   NK.email = String(email || "").toLowerCase(); NK.q = "";
   var inp = $id("hpNkQ"); if (inp) inp.value = "";
-  var list = nkStaff();
-  if (!NK.email && list.length) NK.email = list[0].email.toLowerCase();
+  canNK();   // bậc 3: tab nhật ký 45 ngày CHỈ tải khi thực sự mở pop-up này (trước đây luôn tải)
+  if (S.nk.ok){
+    var list = nkStaff();
+    if (!NK.email && list.length) NK.email = list[0].email.toLowerCase();
+  }
   renderNkList(); renderNkRight();
   var m = $id("hpNkModal"); m.style.display = "flex";
   requestAnimationFrame(function(){ m.classList.add("show"); });
@@ -1809,6 +1906,7 @@ function nkSearch(v){ NK.q = String(v || "").trim().toLowerCase(); clearTimeout(
 function nkPick(email){ NK.email = String(email || "").toLowerCase(); renderNkList(); renderNkRight(); }
 function renderNkList(){
   var el = $id("hpNkList"); if (!el) return;
+  if (!S.nk.ok && S.nk.dang){ el.innerHTML = '<div class="hp-nk-empty"><div class="hp-spin" style="width:22px;height:22px;border-width:2px;margin-bottom:10px"></div>Đang tải nhật ký 45 ngày…</div>'; return; }
   var list = nkStaff().filter(function(o){
     return !NK.q || (o.name + " " + o.code + " " + o.email).toLowerCase().indexOf(NK.q) >= 0;
   });
@@ -1821,6 +1919,7 @@ function renderNkList(){
 }
 function renderNkRight(){
   var el = $id("hpNkRight"); if (!el) return;
+  if (!S.nk.ok && S.nk.dang){ el.innerHTML = '<div class="hp-nk-empty">Đang tải nhật ký vệ sinh 45 ngày…</div>'; return; }
   var rows = S.nk.rows.filter(function(r){ return r.email.toLowerCase() === NK.email; });
   if (!rows.length){ el.innerHTML = '<div class="hp-nk-empty">Chọn 1 nhân viên bên trái để xem nhật ký vệ sinh theo ngày.</div>'; return; }
   var o = { name: rows[0].name || tenNm(rows[0].email) || rows[0].email, code: rows[0].code, email: rows[0].email };
