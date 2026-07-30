@@ -25,6 +25,11 @@
  *
  *  LAZY: host chỉ inject khi người dùng đứng ở HASAKI ▸ Planogram.
  *  API: HPLANOGRAM.init(paneEl) — idempotent; gọi lại chỉ refresh nếu dữ liệu cũ >5'.
+ *
+ *  NÉN DỌC (30/07/2026): mục tiêu A1 + A8 lọt TRỌN 1 khung nhìn ~800-900px không cuộn —
+ *   ô kệ 30×24 gap 3/2, lối đi giữa 8px, legend 1 hàng, alert strip mỏng; KPI 1 hàng
+ *   thẻ nền nhuộm màu, progress 6px, chips AI nhỏ; panel "Cần nhắc theo NV" dời sang
+ *   cột phải (hpNhacSlot) cho 2 cột cân cao; fitMaps chặn hệ số phóng theo CẢ chiều cao.
  * ============================================================================
  */
 (function(){
@@ -323,7 +328,7 @@ function tenNm(email){ var o = _emNm[String(email || "").toLowerCase()]; return 
 var CSS = [
 "#pane-planogram .hp-srcbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 10px;font-size:12.5px;}",
 /* nguồn/mô tả/Làm mới ĐƯA XUỐNG CHÂN tab — đồng bộ với footer .foot của các tab native (ghi chú ở dưới) */
-"#pane-planogram .hp-srcfoot{margin-top:22px;padding-top:14px;border-top:1px solid var(--border,#e8ecf1);text-align:center;}",
+"#pane-planogram .hp-srcfoot{margin-top:10px;padding-top:10px;border-top:1px solid var(--border,#e8ecf1);text-align:center;}",
 "#pane-planogram .hp-srcfoot .hp-srcbar{margin:0 0 6px;justify-content:center;font-size:12px;}",
 "#pane-planogram .hp-srcfoot .hp-hint{display:inline;}",
 "#pane-planogram .hp-chip{background:color-mix(in srgb, var(--accent,#326e51) 14%, transparent);color:var(--accent,#326e51);border-radius:999px;padding:4px 13px;font-weight:650;font-size:12px;}",
@@ -333,7 +338,7 @@ var CSS = [
 "#hpReload,#pane-planogram .hp-btn{background:var(--accent,#326e51);color:var(--accent-text,#fff);border:0;border-radius:9px;padding:8px 15px;font-size:12.5px;font-weight:650;cursor:pointer;min-height:36px;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .25s ease;}",
 "#pane-planogram .hp-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(16,24,40,.16);}",
 "#hpReload:disabled{background:color-mix(in srgb, var(--muted,#9ca3af) 42%, var(--surface,#fff));color:var(--muted,#9ca3af);cursor:not-allowed;}",
-"#pane-planogram .hp-whbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;}",
+"#pane-planogram .hp-whbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px;}",
 "#pane-planogram .hp-whtab{border:1px solid var(--border,#e8ecf1);background:var(--surface,#fff);color:var(--text,#374151);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;min-height:32px;display:inline-flex;align-items:center;gap:7px;transition:background .16s ease,border-color .16s ease;}",
 "#pane-planogram .hp-whtab:hover{background:color-mix(in srgb, var(--accent,#326e51) 8%, transparent);}",
 "#pane-planogram .hp-whtab.active{background:var(--accent,#326e51);color:var(--accent-text,#fff);border-color:var(--accent,#326e51);}",
@@ -343,29 +348,41 @@ var CSS = [
 "#pane-planogram .hp-datesel:focus{outline:0;border-color:var(--accent,#326e51);}",
 "@media(max-width:768px){#pane-planogram .hp-datesel{min-height:44px;}}",
 "#pane-planogram .hp-dot,.hp-modal .hp-dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none;vertical-align:middle;}",
-"#pane-planogram .hp-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(136px,1fr));gap:8px;margin:4px 0 12px;}",
-"#pane-planogram .hp-tile{--cc:var(--accent,#326e51);background:var(--surface,#fff);border:1px solid var(--border,#e8ecf1);border-left:4px solid var(--cc);border-radius:10px;padding:9px 12px;cursor:pointer;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .25s ease;animation:hp-in .3s ease both;}",
+/* KPI: 1 HÀNG N CỘT (grid-auto-flow) — thẻ nền nhuộm màu nhóm (xám/xanh/đỏ), số 18px */
+"#pane-planogram .hp-tiles{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;margin:4px 0 8px;}",
+"@media(max-width:520px){#pane-planogram .hp-tiles{grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr));}}",
+"#pane-planogram .hp-tile{--cc:var(--accent,#326e51);background:color-mix(in srgb, var(--cc) 8%, var(--surface,#fff));border:1px solid color-mix(in srgb, var(--cc) 22%, var(--border,#e2e8f0));border-radius:10px;padding:8px 10px;cursor:pointer;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .25s ease;animation:hp-in .3s ease both;}",
 "#pane-planogram .hp-tile:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(16,24,40,.12);}",
-"#pane-planogram .hp-tile .k{font-size:20px;font-weight:780;font-variant-numeric:tabular-nums;line-height:1;color:var(--cc);}",
+"#pane-planogram .hp-tile .k{font-size:18px;font-weight:780;font-variant-numeric:tabular-nums;line-height:1;color:var(--cc);}",
+"#pane-planogram .hp-tile.tot{--cc:#64748b;}",
 "#pane-planogram .hp-tile.tot .k{color:var(--text,#1f2937);}",
 "#pane-planogram .hp-tile .l{font-size:11px;color:var(--text,#374151);margin-top:4px;font-weight:650;line-height:1.2;}",
 "#pane-planogram .hp-tile .s{font-size:10px;color:var(--muted,#9ca3af);margin-top:1px;}",
-/* hero "hôm nay": số to hơn 1 nấc + thanh tiến độ xếp chồng */
-"#pane-planogram .hp-hero .hp-tile .k{font-size:24px;}",
-"#pane-planogram .hp-herobar{margin:2px 0 4px;}",
+/* hero "hôm nay": thanh tiến độ mỏng 6px xếp chồng (.hp-track.hp-herobar thắng height 16px của .hp-track) */
+"#pane-planogram .hp-track.hp-herobar{height:6px;margin:8px 0 6px;}",
+/* chips AI xét duyệt thu nhỏ + neo đáy panel (cột phải giãn cao bằng cột trái) */
+"#pane-planogram .hp-aimini{margin:auto 0 0;padding-top:10px;gap:4px;}",
+"#pane-planogram .hp-aimini .hp-whtab{font-size:11px;padding:2px 8px;min-height:22px;gap:5px;}",
+"@media(max-width:768px){#pane-planogram .hp-aimini .hp-whtab{min-height:36px;}}",
+"#pane-planogram .hp-aimini .hp-hint{font-size:10.5px;width:100%;}",
 "#pane-planogram .hp-grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:12px;margin-top:12px;}",
 "@media(max-width:1024px){#pane-planogram .hp-grid2{grid-template-columns:1fr;}}",
-"#pane-planogram .hp-panel{background:var(--surface,#fff);border:1px solid var(--border,#e8ecf1);border-radius:14px;padding:14px 16px;}",
-/* hàng trên 2 cột (27/07 đảo ưu tiên): TRÁI = sơ đồ ăn hết bề rộng còn lại (tự phóng theo cột — fitMaps),
-   PHẢI = Vệ sinh giữ trần 380px (KPI tự xếp 2×2 nhờ container query) — hết cảnh cột phải rộng mà trống */
-"#pane-planogram .hp-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,380px);gap:12px 14px;align-items:start;margin-top:12px;}",
-"#pane-planogram .hp-main > #hpToday{position:sticky;top:10px;}",
-"#pane-planogram #hpToday{container-type:inline-size;}",
-"@container (max-width:700px){#pane-planogram .hp-tiles{grid-template-columns:repeat(2,minmax(0,1fr));}}",   /* cột hẹp: KPI xếp 2×2 cho cân (tránh 3+1 lệch) */
-"@media(max-width:1150px){#pane-planogram .hp-main{grid-template-columns:minmax(0,1fr);}#pane-planogram .hp-main > #hpToday{position:static;}}",
-"#pane-planogram .hp-panel h2{margin:0 0 12px;font-size:14px;font-weight:680;color:var(--text,#374151);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}",
+"#pane-planogram .hp-panel{background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.05);}",
+/* hàng trên 2 cột (30/07 nén dọc): TRÁI = sơ đồ ăn hết bề rộng còn lại (fitMaps phóng theo cột
+   VÀ chặn theo chiều cao — A1+A8 lọt trọn khung nhìn), PHẢI = Vệ sinh trần 380px GIÃN CAO
+   bằng cột trái (stretch, chips AI neo đáy) — 2 cột cân nhau, hết trống chân trang */
+"#pane-planogram .hp-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,380px);gap:10px 12px;align-items:stretch;margin-top:10px;}",
+"#pane-planogram #hpToday > .hp-panel{height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:stretch;}",
+"@media(max-width:1150px){#pane-planogram .hp-main{grid-template-columns:minmax(0,1fr);}#pane-planogram #hpToday > .hp-panel{height:auto;}}",
+"#pane-planogram .hp-panel h2{margin:0 0 8px;font-size:14px;font-weight:680;color:var(--text,#374151);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}",
 "#pane-planogram .hp-legend{display:inline-flex;flex-wrap:wrap;gap:3px 10px;font-weight:400;font-size:10.5px;color:var(--muted,#6b7280);}",
 "#pane-planogram .hp-legend span{display:inline-flex;align-items:center;gap:5px;}",
+/* chú giải sơ đồ (cột trái): GOM 1 HÀNG — tràn thì cuộn ngang, không bung nhiều dòng */
+"#pane-planogram #hpMap .hp-panel h2{flex-wrap:nowrap;}",
+"#pane-planogram #hpMap .hp-panel h2 .hp-chip{flex:none;white-space:nowrap;}",
+"#pane-planogram #hpMap .hp-legend{flex:1;min-width:0;flex-wrap:nowrap;gap:8px;font-size:11px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}",
+"#pane-planogram #hpMap .hp-legend::-webkit-scrollbar{display:none;}",
+"#pane-planogram #hpMap .hp-legend > span{white-space:nowrap;flex:none;}",
 "#pane-planogram .hp-legend i{width:9px;height:9px;border-radius:3px;display:inline-block;flex:none;}",
 "#pane-planogram .hp-chart{display:flex;flex-direction:column;gap:1px;max-height:330px;overflow-y:auto;padding-right:6px;}",
 "#pane-planogram .hp-row{display:grid;grid-template-columns:210px 1fr 92px;align-items:center;gap:10px;padding:5px 6px;border-radius:8px;cursor:pointer;transition:background .16s ease;}",
@@ -387,7 +404,7 @@ var CSS = [
 "#pane-planogram .hp-seg button.on{background:var(--accent,#326e51);color:var(--accent-text,#fff);}",
 "@media(max-width:768px){#pane-planogram .hp-seg button{min-height:42px;}}",
 /* sơ đồ mặt bằng — A1 (16 dãy kệ) + A8 (4 cụm bàn + băng chuyền) */
-"#pane-planogram .hp-maphdr{font-size:11px;font-weight:700;color:var(--muted,#6b7280);text-transform:uppercase;letter-spacing:.05em;margin:12px 2px 8px;}",
+"#pane-planogram .hp-maphdr{font-size:12px;font-weight:700;color:var(--muted,#64748b);text-transform:uppercase;letter-spacing:.05em;margin:12px 2px 6px;}",
 /* tỷ lệ thực địa ~10px/m: cặp dãy A1 lưng giáp lưng (3px), lối đi xen kẽ 1,5m=15px / 3m=30px; cụm A8 cách đều 2m=20px */
 "#pane-planogram .hp-mapscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;}",
 "#pane-planogram .hp-mapscroll > .hp-map{width:max-content;margin:0 auto;}",
@@ -396,12 +413,12 @@ var CSS = [
 "#pane-planogram .hp-mapc1{display:flex;gap:3px;padding-bottom:6px;animation:hp-in .35s ease both;}",
 "#pane-planogram .hp-mapc1.hp-kc15{margin-right:15px;}",
 "#pane-planogram .hp-mapc1.hp-kc3{margin-right:30px;}",
-"#pane-planogram .hp-mapc1 .hp-mapcell{width:34px;}",
-"#pane-planogram .hp-map{display:flex;flex-wrap:wrap;gap:22px 34px;justify-content:space-evenly;padding:8px 2px 2px;}",
+"#pane-planogram .hp-mapc1 .hp-mapcell{width:30px;}",
+"#pane-planogram .hp-map{display:flex;flex-wrap:wrap;gap:22px 34px;justify-content:space-evenly;padding:4px 2px 0;}",
 "#pane-planogram .hp-mapc{display:grid;grid-template-columns:56px 34px 56px;gap:0 7px;align-items:stretch;animation:hp-in .35s ease both;}",
-"#pane-planogram .hp-mapcol{display:flex;flex-direction:column;gap:4px;}",
+"#pane-planogram .hp-mapcol{display:flex;flex-direction:column;gap:2px;}",
 "#pane-planogram .hp-mapcol .cl{text-align:center;font-size:10px;font-weight:700;color:var(--muted,#6b7280);margin-bottom:4px;letter-spacing:.03em;}",
-"#pane-planogram .hp-mapcell{height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:750;color:#fff;cursor:pointer;border:1px solid transparent;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .2s ease;}",
+"#pane-planogram .hp-mapcell{height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;cursor:pointer;border:1px solid transparent;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .2s ease;}",
 "#pane-planogram .hp-mapcell:hover{transform:scale(1.14);box-shadow:0 4px 14px rgba(16,24,40,.25);z-index:2;}",
 "#pane-planogram .hp-mapcell.trong{background:transparent;border:1px dashed color-mix(in srgb, var(--muted,#9ca3af) 55%, transparent);color:var(--muted,#9ca3af);}",
 "#pane-planogram .hp-mapcell{position:relative;}",
@@ -410,19 +427,22 @@ var CSS = [
 "#pane-planogram .hp-ctri{position:absolute;top:0;right:0;width:0;height:0;border-top:9px solid rgba(255,255,255,.92);border-left:9px solid transparent;}",
 /* Cảnh báo trên Ô: viền TĨNH + ⚠ nhỏ (không nhấp nháy — tránh nhiễu khi nhiều ô cùng cảnh báo). Nhấp nháy chỉ ở banner. */
 "#pane-planogram .hp-cwarn{position:absolute;bottom:-4px;left:-4px;font-size:10.5px;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4));}",
+/* ⚠ trên Ô thu 0.7 lần để không che số (bản trong chú giải giữ nguyên cỡ) */
+"#pane-planogram .hp-mapcell .hp-cwarn,#pane-planogram .hp-mapbelt .hp-cwarn{transform:scale(.7);transform-origin:bottom left;bottom:-3px;left:-3px;}",
 "#pane-planogram .hp-mapcell.canhbao,#pane-planogram .hp-mapbelt.canhbao{box-shadow:0 0 0 2px #dc2626;}",
 "@keyframes hp-blink{0%,100%{opacity:1}50%{opacity:.4}}",
-"#pane-planogram .hp-alertbar{display:flex;align-items:center;gap:9px;margin:2px 0 14px;padding:10px 14px;border-radius:11px;background:color-mix(in srgb,#dc2626 9%,var(--surface,#fff));border:1px solid color-mix(in srgb,#dc2626 35%,transparent);color:var(--text,#7f1d1d);font-size:12.5px;font-weight:600;cursor:pointer;transition:background .16s ease;}",
+/* Compact Alert Strip — dải cảnh báo mỏng, không chiếm chiều cao sơ đồ */
+"#pane-planogram .hp-alertbar{display:flex;align-items:center;gap:8px;margin:0 0 8px;padding:4px 12px;border-radius:6px;background:color-mix(in srgb,#dc2626 9%,var(--surface,#fff));border:1px solid color-mix(in srgb,#dc2626 35%,transparent);color:var(--text,#7f1d1d);font-size:12px;font-weight:600;cursor:pointer;transition:background .16s ease;}",
 "#pane-planogram .hp-alertbar:hover{background:color-mix(in srgb,#dc2626 15%,var(--surface,#fff));}",
-"#pane-planogram .hp-alertbar .ic{font-size:16px;animation:hp-blink 1.5s ease-in-out infinite;}",
-"#pane-planogram .hp-alertbar b{color:#dc2626;font-size:14px;font-variant-numeric:tabular-nums;}",
+"#pane-planogram .hp-alertbar .ic{font-size:13px;animation:hp-blink 1.5s ease-in-out infinite;}",
+"#pane-planogram .hp-alertbar b{color:#dc2626;font-size:12.5px;font-variant-numeric:tabular-nums;}",
 "#pane-planogram .hp-legend .hp-cdot{position:static;width:8px;height:8px;box-shadow:none;}",
 /* badge ? = phụ trách suy từ báo cáo cũ (>NGUONG_PT_CU ngày) — CHƯA CHẮC, tránh réo nhầm người */
 "#pane-planogram .hp-cq{position:absolute;top:-5px;right:-5px;width:13px;height:13px;border-radius:50%;background:#d97706;color:#fff;font-size:9.5px;font-weight:800;display:flex;align-items:center;justify-content:center;font-style:normal;line-height:1;box-shadow:0 0 0 1.5px rgba(255,255,255,.9);}",
 /* chế độ SOI theo NV: ô của NV được chọn nổi vòng accent, ô khác mờ đi */
 "#pane-planogram .hp-mapcell.dim,#pane-planogram .hp-mapbelt.dim{opacity:.16;filter:saturate(.35);}",
 "#pane-planogram .hp-mapcell.hi,#pane-planogram .hp-mapbelt.hi{box-shadow:0 0 0 2px var(--accent,#326e51);z-index:1;}",
-"#pane-planogram .hp-ptnhac{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;animation:hp-in .35s ease both;}",
+"#pane-planogram .hp-ptnhac{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 0;animation:hp-in .35s ease both;}",
 "#pane-planogram .hp-ptchip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;min-height:26px;border-radius:999px;border:1px solid var(--border,#d5dbe4);background:var(--surface,#fff);color:var(--text,#1f2937);font-size:12px;font-weight:600;cursor:pointer;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .2s ease,border-color .16s ease;}",
 "#pane-planogram .hp-ptchip:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(16,24,40,.14);}",
 "#pane-planogram .hp-ptchip.on{border-color:#dc2626;background:color-mix(in srgb,#dc2626 12%,var(--surface,#fff));color:#dc2626;}",
@@ -433,10 +453,10 @@ var CSS = [
 "#pane-planogram .hp-ptchip.tog{border-color:color-mix(in srgb,#dc2626 40%,transparent);color:#dc2626;background:color-mix(in srgb,#dc2626 6%,var(--surface,#fff));}",
 "#pane-planogram .hp-ptchip.tog .car{font-size:10px;transition:transform .2s ease;}",
 "#pane-planogram .hp-ptchip.tog.mo{background:color-mix(in srgb,#dc2626 12%,var(--surface,#fff));}",
-"#pane-planogram .hp-mapgap{height:16px;flex:none;}",
+"#pane-planogram .hp-mapgap{height:8px;flex:none;}",
 "#pane-planogram .hp-mapc > .hp-mapcol:first-of-type{grid-column:1;grid-row:1;}",
 "#pane-planogram .hp-mapc > .hp-mapcol:last-of-type{grid-column:3;grid-row:1;}",
-"#pane-planogram .hp-mapbelt{grid-column:2;grid-row:1;margin-top:18px;border-radius:9px 9px 3px 3px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:filter .16s ease;min-height:230px;}",
+"#pane-planogram .hp-mapbelt{grid-column:2;grid-row:1;margin-top:18px;border-radius:9px 9px 3px 3px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:filter .16s ease;min-height:200px;}",
 "#pane-planogram .hp-mapbelt:hover{filter:brightness(1.12);}",
 "#pane-planogram .hp-mapbelt span{writing-mode:vertical-rl;font-size:9px;font-weight:750;color:rgba(255,255,255,.92);letter-spacing:.14em;white-space:nowrap;}",
 "#pane-planogram .hp-mapbelt::after{content:'';position:absolute;bottom:-14px;left:4px;right:4px;height:12px;border-radius:0 0 4px 4px;background:repeating-linear-gradient(45deg,color-mix(in srgb, var(--muted,#9ca3af) 55%, transparent) 0 4px,transparent 4px 8px);}",
@@ -550,8 +570,9 @@ var CSS = [
 /* ===== KHUNG HTML ===== */
 var KHUNG =
 '<div class="hp-whbar" id="hpWhBar"></div>' +
-/* Hàng trên 2 cột (27/07): TRÁI = Sơ đồ khu vực ưu tiên bề rộng (ăn hết phần còn lại, tự phóng
-   theo cột — fitMaps), PHẢI = Vệ sinh (KPI) thu về cột hẹp trần 380px + DÍNH (sticky) khi cuộn.
+/* Hàng trên 2 cột (30/07 nén dọc): TRÁI = Sơ đồ khu vực (fitMaps phóng theo bề rộng cột,
+   chặn theo chiều cao khung nhìn — A1+A8 lọt trọn 1 màn), PHẢI = Vệ sinh trần 380px GIÃN CAO
+   bằng cột trái (KPI 1 hàng + progress + Cần nhắc theo NV + chips AI neo đáy).
    Mobile/hẹp (<1150px): xếp dọc Sơ đồ → Vệ sinh. Danh sách theo dõi luôn nằm DƯỚI cả hai. */
 '<div class="hp-main" id="hpMain">' +
 '  <div id="hpMap"></div>' +
@@ -772,7 +793,7 @@ function renderList(){
     '<button class="' + (S.listMode === "nv" ? "on" : "") + '" onclick="HPLANOGRAM.setListMode(\'nv\')">Nhân viên hôm nay <b>' + nf(nCc) + '</b></button>' +
     '</span>';
   box.innerHTML =
-    '<section class="hp-panel hp-fade" style="margin-top:12px">' +
+    '<section class="hp-panel hp-fade" style="margin-top:10px">' +
     '<h2>Danh sách theo dõi<span style="flex:1"></span>' + modes + '</h2>' +
     (S.listMode === "nv" ? htmlNhanVien() : htmlAiXetDuyet()) +
     '</section>';
@@ -930,7 +951,7 @@ function renderToday(){
     var ac = { DAT: 0, KHONG_DAT: 0, CAN_XEM: 0 }, nAi = 0;
     rows.forEach(function(r){ var a2 = aiOf(r); if (a2 && ac[a2.kl] != null){ ac[a2.kl]++; nAi++; } });
     if (nAi){
-      aiLine = '<div class="hp-whbar" style="margin:12px 0 0">' +
+      aiLine = '<div class="hp-whbar hp-aimini">' +
         '<span class="hp-hint" style="font-weight:650">AI xét duyệt ảnh:</span>' +
         AIST.map(function(m){
           return '<button class="hp-whtab" data-k="' + m.k + '" title="' + esc(m.lb) + ' — bấm xem danh sách" onclick="HPLANOGRAM.openYcAi(this.getAttribute(\'data-k\'))"><span class="hp-dot" style="background:' + m.c + '"></span>' + esc(m.lb.replace("AI: ", "")) + ' <b>' + nf(ac[m.k]) + '</b></button>';
@@ -938,10 +959,13 @@ function renderToday(){
         '<span class="hp-hint">' + nf(nAi) + '/' + nf(nTot) + ' yêu cầu đã được AI chấm ảnh' + (S.ai.ts ? ' · ' + fmtTime(S.ai.ts) : '') + '</span></div>';
     }
   }
+  /* hpNhacSlot: renderMap đổ panel "Cần nhắc theo nhân viên" vào đây (cột phải) —
+     dời khỏi cột sơ đồ để 2 cột cân cao và sơ đồ không bị đẩy tràn khung nhìn */
   box.innerHTML =
     '<section class="hp-panel hp-fade hp-hero">' +
     '<h2>Vệ sinh ' + chipNgay + '<span style="flex:1"></span><a class="hp-ext" style="font-size:12px" target="_blank" rel="noopener" href="' + esc(pgListUrl(k[0], S.area, "", k[1])) + '">Mở planogram ↗</a></h2>' +
-    '<div class="hp-tiles">' + tiles + '</div>' + bar + aiLine +
+    '<div class="hp-tiles">' + tiles + '</div>' + bar +
+    '<div id="hpNhacSlot"></div>' + aiLine +
     '</section>';
   renderMap();   // sơ đồ mặt bằng đi theo khoảng ngày đang xem
 }
@@ -1031,17 +1055,30 @@ function keA1(){
 }
 /* Sơ đồ tự PHÓNG theo bề rộng cột trái: tỷ lệ thực địa (~10px/m) giữ nguyên, chỉ nhân đều bằng
  * zoom (ảnh hưởng layout — Chromium/Safari/FF126+; trình cũ bỏ qua = giữ 1× như cũ). A1 + A8 dùng
- * CHUNG 1 hệ số cho ô đồng cỡ; trần 1.5× để ô không thô, sàn 1× (màn hẹp giữ cuộn ngang sẵn có). */
+ * CHUNG 1 hệ số cho ô đồng cỡ; trần 1.3× để ô không thô.
+ * 30/07 (nén dọc): hệ số còn bị chặn theo CHIỀU CAO — phần chữ quanh sơ đồ (header/banner/hint)
+ * giữ nguyên, 2 sơ đồ chia phần cao còn lại của khung nhìn để A1 + A8 lọt trọn 1 màn không cuộn.
+ * Sàn 0.9× giữ ô đọc được; màn hẹp (<1150px, xếp dọc) bỏ chặn cao — cuộn dọc là bình thường. */
 function fitMaps(){
   var box = $id("hpMap"); if (!box || !box.offsetParent) return;
   var scs = box.querySelectorAll(".hp-mapscroll"); if (!scs.length) return;
-  var z = 1.5, i, mp;
+  var z = 1.3, i, mp, mapsH = 0;
   for (i = 0; i < scs.length; i++){
     mp = scs[i].firstElementChild; if (!mp) continue;
     mp.style.zoom = "";
     z = Math.min(z, (scs[i].clientWidth - 2) / Math.max(1, mp.offsetWidth));
+    mapsH += mp.offsetHeight;
   }
-  z = Math.max(1, z);
+  if (mapsH > 0 && window.innerWidth > 1150){
+    var sec = box.firstElementChild;
+    if (sec){
+      var chu = sec.offsetHeight - mapsH;   // phần chữ cố định quanh 2 sơ đồ (đo ở 1×)
+      var docTop = sec.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0);
+      var cao = window.innerHeight - docTop - 18;   // chỗ còn lại khi trang ở đầu (chừa mép dưới)
+      if (cao > chu) z = Math.min(z, (cao - chu) / mapsH);
+    }
+  }
+  z = Math.max(0.9, Math.min(1.3, z));
   for (i = 0; i < scs.length; i++){ mp = scs[i].firstElementChild; if (mp) mp.style.zoom = z; }
 }
 function renderMap(){
@@ -1151,7 +1188,8 @@ function renderMap(){
         }).join("") + '</div></div>';
     }
   }
-  if (!htmlA1 && !htmlA8){ box.innerHTML = ""; return; }
+  var slot = $id("hpNhacSlot");
+  if (!htmlA1 && !htmlA8){ box.innerHTML = ""; if (slot) slot.innerHTML = ""; return; }
 
   /* Chú giải: liệt kê đủ trạng thái (mỗi màu 1 nghĩa), hình dạng badge, + cảnh báo */
   var legKeys = mot ? ["done", "review", "rework", "remind", "noshift"] : ["done", "rework", "chua"];
@@ -1172,7 +1210,8 @@ function renderMap(){
     : "";
 
   /* Panel "CẦN NHẮC THEO NHÂN VIÊN" (chỉ HÔM NAY): gom các ô Chưa VS mà phụ trách CÓ chấm công,
-     nhóm theo NV — bấm chip tô nổi đúng các ô của NV đó trên sơ đồ (ô khác mờ đi), bấm lại để bỏ. */
+     nhóm theo NV — bấm chip tô nổi đúng các ô của NV đó trên sơ đồ (ô khác mờ đi), bấm lại để bỏ.
+     30/07: đổ vào hpNhacSlot ở CỘT PHẢI (panel Vệ sinh) — cột sơ đồ chỉ còn banner + 2 sơ đồ. */
   var htmlNhac = "";
   if (soiPT){
     var nhom = {};
@@ -1203,11 +1242,12 @@ function renderMap(){
     }
   }
 
+  if (slot) slot.innerHTML = htmlNhac;
   box.innerHTML =
     '<section class="hp-panel hp-fade">' +
     '<h2>Sơ đồ khu vực <span class="hp-chip">' + esc(nhanKhoang()) + '</span> ' + legend + '</h2>' +
-    bannerAlert + htmlNhac + htmlA1 + htmlA8 +
-    '<p class="hp-hint" style="margin:10px 0 0">Bấm một ô để xem chi tiết báo cáo và lịch sử 7 ngày' + (mot ? "" : " — theo khoảng: xanh = mọi ngày đạt, cam = có ngày không đạt, đỏ = có ngày chưa vệ sinh") + '.</p>' +
+    bannerAlert + (slot ? "" : htmlNhac) + htmlA1 + htmlA8 +
+    '<p class="hp-hint" style="margin:6px 0 0">Bấm một ô để xem chi tiết báo cáo và lịch sử 7 ngày' + (mot ? "" : " — theo khoảng: xanh = mọi ngày đạt, cam = có ngày không đạt, đỏ = có ngày chưa vệ sinh") + '.</p>' +
     '</section>';
   fitMaps();
 }
