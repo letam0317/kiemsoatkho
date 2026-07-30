@@ -313,7 +313,7 @@ function pgLocUrl(loc){
 /* dang = ĐANG chờ mạng cho nguồn đó (nạp phân bậc) → UI hiện "đang tải" thay vì "không có dữ liệu" */
 var S = { ok: false, dangPT: false, all: [], area: "", lastAt: 0, tsData: 0,
   cc: { ok: false, dang: false, rows: [], ts: 0 }, ccStatus: "", ccQ: "",
-  yc: { ok: false, rows: [], ts: 0, ngay: "" },
+  yc: { ok: false, dang: false, rows: [], ts: 0, ngay: "" },
   nk: { ok: false, dang: false, rows: [], ts: 0 },
   ai: { ok: false, dang: false, by: {}, rows: [], ts: 0 }, aiKl: "", aiQ: "",
   dTu: "", dDen: "", listMode: "ai", ptHi: "", ptOpen: false };   // dTu→dDen = KHOẢNG NGÀY đang xem; listMode = panel danh sách (ai | nv); ptHi = email NV đang SOI; ptOpen = panel cần-nhắc đang xổ
@@ -753,8 +753,8 @@ function cacheSet(tab, H, rows, ts){
  *           lại là 2 tab NẶNG (nhật ký 45 ngày) → chính chúng đẩy nhóm còn lại ra sau hàng đợi. */
 var NGUON = [
   { tab: TAB_YC, cb: "hpgv_yc",
-    build: function(H, rows, ts){ if (ts > 0){ S.yc.ts = ts; if (!S.tsData) S.tsData = ts; } buildYC(H, rows); },
-    fail: function(){ S.yc.ok = false; renderToday(); renderMap(); } },
+    build: function(H, rows, ts){ if (ts > 0){ S.yc.ts = ts; if (!S.tsData) S.tsData = ts; } clearTimeout(_ycTO); S.yc.dang = false; buildYC(H, rows); },
+    fail: function(){ clearTimeout(_ycTO); S.yc.ok = false; S.yc.dang = false; renderToday(); renderMap(); } },
   { tab: TAB, cb: "hpgv_pt",
     build: function(H, rows, ts){ if (ts > 0) S.tsData = ts; S.dangPT = false; buildMain(H, rows); if (!ts) loadMeta(); capNhatInfo(); },
     fail: function(){ S.ok = false; S.dangPT = false; render(); } },
@@ -768,7 +768,7 @@ var NGUON = [
     build: function(H, rows, ts){ if (ts > 0) S.nk.ts = ts; S.nk.dang = false; buildNK(H, rows); },
     fail: function(){ S.nk.ok = false; S.nk.dang = false; renderNkList(); renderWhBar(); } }
 ];
-var _daGoi = {};   // tab -> đã bắn request ở lượt tải này (chống gọi trùng)
+var _daGoi = {}, _ycTO = null;   // _daGoi: tab -> đã bắn request lượt này · _ycTO: watchdog VESINH-YEUCAU
 function nguonOf(tab){ for (var i = 0; i < NGUON.length; i++) if (NGUON[i].tab === tab) return NGUON[i]; return null; }
 function goiNguon(tab){
   var n = nguonOf(tab); if (!n || _daGoi[tab]) return;
@@ -778,11 +778,16 @@ function tuCache(tab){   // vẽ ngay từ cache nếu còn hạn → true khi m
   var n = nguonOf(tab), c = n && cacheGet(tab); if (!c) return false;
   n.build(c.H, c.rows, c.ts); return true;
 }
-/* bậc 1 — 3 nguồn dựng màn hình, bắn cùng lúc (YEUCAU đi đầu để nếu có hàng đợi thì nó thắng) */
+/* bậc 1 — 3 nguồn dựng màn hình. VESINH-YEUCAU bắn TRƯỚC một nhịp ngắn: Apps Script phục vụ
+ * nối đuôi (đo 30/07: 302 của tab sau chỉ phát sau khi tab trước trả xong), mà YEUCAU vừa nặng
+ * nhất vừa là tab quyết định lúc nào màn hình có nội dung → phải chiếm chỗ đầu hàng. */
 function bac1(){
-  goiNguon(TAB_YC); goiNguon(TAB); goiNguon(TAB_AI);
-  if (S.cc.ok || S.cc.dang) goiNguon(TAB_CC);   // đang mở sẵn danh sách NV / pop-up thì làm mới luôn
-  if (S.nk.ok || S.nk.dang) goiNguon(TAB_NK);
+  goiNguon(TAB_YC);
+  setTimeout(function(){
+    goiNguon(TAB); goiNguon(TAB_AI);
+    if (S.cc.ok || S.cc.dang) goiNguon(TAB_CC);   // đang mở sẵn danh sách NV / pop-up thì làm mới luôn
+    if (S.nk.ok || S.nk.dang) goiNguon(TAB_NK);
+  }, 250);
 }
 /* bậc 3 — nạp theo yêu cầu, gọi từ chỗ người dùng thực sự cần dữ liệu đó */
 function canCC(){ if (S.cc.ok || S.cc.dang) return; S.cc.dang = true; goiNguon(TAB_CC); }
@@ -800,7 +805,7 @@ function loadData(){
   var st = $id("hpState"); if (!st) return;
   var btn = $id("hpReload"); if (btn) btn.disabled = true;
   _daGoi = {}; S.lastAt = Date.now();
-  S.dangPT = true; S.ai.dang = true;
+  S.yc.dang = true; S.dangPT = true; S.ai.dang = true;
   /* 1) VẼ TỪ CACHE trước (đồng bộ): có cache là màn hình đủ dữ liệu ngay từ khung hình đầu —
         không spinner, không skeleton, không animation vào (tránh chớp trên nội dung đang có). */
   var coYc = tuCache(TAB_YC);
@@ -815,8 +820,15 @@ function loadData(){
     $id("hpToday").innerHTML = SK_TODAY; $id("hpMap").innerHTML = SK_MAP;
     $id("hpAI").innerHTML = ""; $id("hpWhBar").innerHTML = "";
   }
-  /* 2) BẬC 1: 3 nguồn dựng màn hình bắn song song (CHAMCONG + NHATKY để dành bậc 3) */
+  /* 2) BẬC 1: 3 nguồn dựng màn hình (CHAMCONG + NHATKY để dành bậc 3) */
   bac1();
+  /* Watchdog: JSONP không phải lúc nào cũng bắn onerror (Apps Script quá tải có khi im luôn) —
+     quá 25s chưa thấy YEUCAU thì thôi giữ skeleton, hiện thẳng thông báo để người dùng biết đường xử lý. */
+  clearTimeout(_ycTO);
+  _ycTO = setTimeout(function(){
+    if (!S.yc.dang) return;
+    S.yc.dang = false; xongTai(); renderToday(); renderMap(); render();
+  }, 25000);
 }
 /* Chip giờ dữ liệu: hỏi GAS lastSync (mốc apiAt lúc bộ sync ghi) — chỉ cần khi rơi về gviz */
 function loadMeta(){
@@ -1112,6 +1124,10 @@ function htmlDoPhu(){
 function renderToday(){
   var box = $id("hpToday"); if (!box) return;
   if (!S.yc.ok || !S.yc.rows.length){
+    /* YEUCAU là tab nặng nhất nên hay về SAU PHU-TRACH — mà PHU-TRACH về là render() chạy.
+       Còn đang tải thì GIỮ SKELETON, tuyệt đối không báo "chưa có dữ liệu": vài giây sau tab
+       về là có đủ, báo sớm khiến người dùng tưởng mất dữ liệu và đi chạy lại bộ sync. */
+    if (S.yc.dang){ box.innerHTML = SK_TODAY; return; }
     box.innerHTML = S.ok ? ('<section class="hp-panel hp-fade"><div class="hp-empty">Chưa có dữ liệu yêu cầu vệ sinh trong ngày (tab <code>' + esc(TAB_YC) + '</code>) — chạy <code>sync-vesinh-all.js</code> hoặc bấm "Cập nhật ngay" ở tab Tổng quan.</div></section>') : "";
     return;
   }
@@ -1182,7 +1198,7 @@ function xongTai(){
 function render(){
   var st = $id("hpState"); if (!st) return;
   var btn = $id("hpReload"); if (btn) btn.disabled = false;
-  if (!S.ok && !S.yc.ok){
+  if (!S.ok && !S.yc.ok && !S.yc.dang){   // YEUCAU còn đang tải thì chưa kết luận "không có dữ liệu"
     $id("hpWhBar").innerHTML = "";
     $id("hpMap").innerHTML = ""; $id("hpToday").innerHTML = "";   // dọn skeleton giữ chỗ
     st.style.display = "block";
@@ -1380,7 +1396,7 @@ function fitMaps(){
 }
 function renderMap(){
   var box = $id("hpMap"); if (!box) return;
-  if (!S.yc.ok || !S.yc.rows.length){ box.innerHTML = ""; return; }
+  if (!S.yc.ok || !S.yc.rows.length){ box.innerHTML = S.yc.dang ? SK_MAP : ""; return; }
   var k = khoang(), homNay = laHomNay(), mot = la1Ngay();
   /* byL gom theo KHOÁ Ô (khoaO) — kệ A1 có mã alias vẫn rơi đúng ô của nó */
   var byL = {}; S.yc.rows.forEach(function(r){ if (r.ngay >= k[0] && r.ngay <= k[1]){ var kk = khoaO(r.loc); (byL[kk] = byL[kk] || []).push(r); } });
