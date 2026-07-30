@@ -307,7 +307,7 @@ var S = { ok: false, all: [], area: "", lastAt: 0, tsData: 0,
   dTu: "", dDen: "", listMode: "ai", ptHi: "", ptOpen: false };   // dTu→dDen = KHOẢNG NGÀY đang xem; listMode = panel danh sách (ai | nv); ptHi = email NV đang SOI; ptOpen = panel cần-nhắc đang xổ
 var MODAL = { base: [], preset: null, mode: "loc" };
 var NK = { email: "", q: "" };
-var PANE = null, _nmColor = {}, _nmCi = 0, _deb = null, _debT = null, _ccDeb = null, _nkDeb = null, _fitT = null, _animT = null;
+var PANE = null, _nmColor = {}, _nmCi = 0, _deb = null, _debT = null, _ccDeb = null, _nkDeb = null, _fitT = null, _animT = null, _fitW = 0, _fitZ = 0;   // _fitW/_fitZ: bề rộng + hệ số zoom lượt fit trước (chống rung)
 /* Bật animation VÀO cho lượt vẽ kế tiếp rồi tự tắt — chỉ dùng khi nội dung MỚI THẬT
  * (tải đầu / Làm mới). Re-render do bấm lọc thì render tức thì, không chớp trắng. */
 function animBat(){
@@ -377,10 +377,17 @@ var CSS = [
 "@media(max-width:1024px){#pane-planogram .hp-grid2{grid-template-columns:1fr;}}",
 "#pane-planogram .hp-panel{background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.05);}",
 /* hàng trên 2 cột (30/07 nén dọc): TRÁI = sơ đồ ăn hết bề rộng còn lại (fitMaps phóng theo cột
-   VÀ chặn theo chiều cao — A1+A8 lọt trọn khung nhìn), PHẢI = Vệ sinh trần 380px GIÃN CAO
-   bằng cột trái (stretch, chips AI neo đáy) — 2 cột cân nhau, hết trống chân trang */
-"#pane-planogram .hp-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,380px);gap:10px 12px;align-items:stretch;margin-top:10px;}",
+   VÀ chặn theo chiều cao — A1+A8 lọt trọn khung nhìn), PHẢI = Vệ sinh CỐ ĐỊNH 380px GIÃN CAO
+   bằng cột trái (stretch, chips AI neo đáy) — 2 cột cân nhau, hết trống chân trang.
+   30/07 chống layout-shift: cột phải chốt cứng 380px (bỏ minmax co theo nội dung) — bề rộng
+   cột trái BẤT BIẾN từ 0ms, data/font về sau không làm sơ đồ bị "đá ngang" trái↔giữa. */
+"#pane-planogram .hp-main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:10px 12px;align-items:stretch;margin-top:10px;}",
 "#pane-planogram #hpToday > .hp-panel{height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:stretch;}",
+/* cột sơ đồ: căn giữa/giữ chỗ THUẦN CSS ngay khung hình đầu — flex dọc + min-height khi có ruột
+   (skeleton lúc tải cũng tính), panel giãn hết cao; :empty (không có dữ liệu) thì xẹp tự nhiên */
+"#pane-planogram #hpMap{display:flex;flex-direction:column;align-items:stretch;min-width:0;}",
+"#pane-planogram #hpMap:not(:empty){min-height:380px;}",
+"#pane-planogram #hpMap > .hp-panel{flex:1;}",
 "@media(max-width:1150px){#pane-planogram .hp-main{grid-template-columns:minmax(0,1fr);}#pane-planogram #hpToday > .hp-panel{height:auto;}}",
 "#pane-planogram .hp-panel h2{margin:0 0 8px;font-size:14px;font-weight:680;color:var(--text,#374151);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}",
 "#pane-planogram .hp-legend{display:inline-flex;flex-wrap:wrap;gap:3px 10px;font-weight:400;font-size:10.5px;color:var(--muted,#6b7280);}",
@@ -602,6 +609,29 @@ var KHUNG =
 '  <p class="hp-hint" style="margin:0" title="Bộ sync-vesinh-all.js (cụm 8h40 / nút Cập nhật ngay) ghi 4 tab: ' + TAB_YC + ', ' + TAB_NK + ', ' + TAB + ', ' + TAB_CC + '. Ảnh trong pop-up là ảnh nhân viên chụp khi báo cáo.">Nguồn: <b>planogram</b> · cập nhật lúc 8h40 &amp; khi bấm “Cập nhật ngay”. Bấm ảnh để phóng to.</p>' +
 '</div>';
 
+/* Skeleton GIỮ CHỖ 2 cột trong lúc tải (chống layout-shift khi F5): khối sơ đồ + khối KPI
+ * có sẵn hình khối ~ nội dung thật (tái dùng shimmer .sk của host) — bề rộng/chiều cao khung
+ * không đổi khi data về, sơ đồ vẽ ra là đứng yên ở giữa ngay từ khung hình đầu. */
+var SK_MAP =
+'<section class="hp-panel" aria-hidden="true">' +
+'<div class="sk sk-line" style="width:38%;margin:2px 0 12px"></div>' +
+'<div class="sk" style="height:128px;border-radius:9px;margin:0"></div>' +
+'<div class="sk sk-line" style="width:30%;margin:16px 0 10px"></div>' +
+'<div class="sk" style="height:168px;border-radius:9px;margin:0 0 2px"></div>' +
+'</section>';
+var SK_TODAY =
+'<section class="hp-panel" aria-hidden="true">' +
+'<div class="sk sk-line" style="width:55%;margin:2px 0 12px"></div>' +
+'<div class="hp-tiles">' +
+'<div class="sk" style="height:64px;border-radius:10px"></div>' +
+'<div class="sk" style="height:64px;border-radius:10px"></div>' +
+'<div class="sk" style="height:64px;border-radius:10px"></div>' +
+'<div class="sk" style="height:64px;border-radius:10px"></div>' +
+'</div>' +
+'<div class="sk" style="height:6px;border-radius:999px;margin:8px 0 6px"></div>' +
+'<div class="sk sk-line" style="width:70%;margin:10px 0 0"></div>' +
+'</section>';
+
 var MODAL_HTML =
 '<div id="hpModal" class="hp-modal">' +
 '  <div class="hp-modalbox">' +
@@ -668,14 +698,16 @@ function loadData(){
   var btn = $id("hpReload"); if (btn) btn.disabled = true;
   st.style.display = "block";
   st.innerHTML = '<div class="hp-spin"></div>Đang tải dữ liệu vệ sinh…';
-  $id("hpToday").innerHTML = ""; $id("hpAI").innerHTML = ""; $id("hpMap").innerHTML = ""; $id("hpWhBar").innerHTML = "";
+  /* KHÔNG xoá trắng 2 cột — đổ skeleton giữ chỗ để khung không co về 0 rồi bung ra (giật) */
+  $id("hpToday").innerHTML = SK_TODAY; $id("hpMap").innerHTML = SK_MAP;
+  $id("hpAI").innerHTML = ""; $id("hpWhBar").innerHTML = "";
   S.lastAt = Date.now();
   loadTab(TAB, "hpgv_pt", function(H, rows, ts){ if (ts > 0) S.tsData = ts; buildMain(H, rows); if (!ts) loadMeta(); capNhatInfo(); },
     function(){ S.ok = false; render(); });
   loadTab(TAB_CC, "hpgv_cc", function(H, rows, ts){ if (ts > 0) S.cc.ts = ts; buildCC(H, rows); },
     function(){ S.cc.ok = false; renderCC(); });
   loadTab(TAB_YC, "hpgv_yc", function(H, rows, ts){ if (ts > 0) S.yc.ts = ts; buildYC(H, rows); },
-    function(){ S.yc.ok = false; renderToday(); });
+    function(){ S.yc.ok = false; renderToday(); renderMap(); });   // renderMap dọn skeleton cột sơ đồ khi YC hỏng
   loadTab(TAB_NK, "hpgv_nk", function(H, rows, ts){ if (ts > 0) S.nk.ts = ts; buildNK(H, rows); }, function(){ S.nk.ok = false; });
   loadTab(TAB_AI, "hpgv_ai", function(H, rows, ts){ if (ts > 0) S.ai.ts = ts; buildAI(H, rows); }, function(){ S.ai.ok = false; });
 }
@@ -988,6 +1020,7 @@ function render(){
   var btn = $id("hpReload"); if (btn) btn.disabled = false;
   if (!S.ok && !S.yc.ok){
     $id("hpWhBar").innerHTML = "";
+    $id("hpMap").innerHTML = ""; $id("hpToday").innerHTML = "";   // dọn skeleton giữ chỗ
     st.style.display = "block";
     st.innerHTML = '<div style="max-width:720px;margin:0 auto;text-align:left;line-height:1.75;color:var(--muted,#6b7280)">' +
       '<b style="color:var(--text,#1f2937)">Chưa có dữ liệu vệ sinh trong Google Sheet.</b><br>' +
@@ -1093,6 +1126,11 @@ function fitMaps(){
   }
   /* làm tròn XUỐNG 2 chữ số: hệ số ổn định giữa các lượt đo, không dư sub-pixel gây tràn/rung */
   z = Math.max(0.9, Math.min(1.3, Math.floor(z * 100) / 100));
+  /* GIỮ LÌ hệ số: cột không đổi bề rộng + lệch đo ≤0.04 (banner/chips lắt nhắt về sau) → dùng lại
+     hệ số cũ, sơ đồ ĐỨNG YÊN giữa các đợt dữ liệu; lệch thật (đổi cỡ cửa sổ…) mới áp số mới */
+  var w = scs[0].clientWidth;
+  if (w === _fitW && Math.abs(z - _fitZ) <= 0.04) z = _fitZ;
+  _fitW = w; _fitZ = z;
   for (i = 0; i < scs.length; i++){ mp = scs[i].firstElementChild; if (mp) mp.style.zoom = z; }
 }
 function renderMap(){
@@ -1652,6 +1690,10 @@ function init(pane){
     });
     /* sơ đồ phóng theo bề rộng cột trái — tính lại hệ số khi đổi cỡ cửa sổ */
     window.addEventListener("resize", function(){ clearTimeout(_fitT); _fitT = setTimeout(fitMaps, 120); });
+    /* font Inter (display=swap) về SAU lượt vẽ đầu làm chữ đổi metrics → đo lại 1 lần cho chắc
+       (đã có giữ-lì hệ số nên lệch nhỏ không gây nhảy); load = logo/ảnh xong (đổi mốc chặn cao) */
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitMaps(); });
+    window.addEventListener("load", function(){ fitMaps(); });
     pane.innerHTML = KHUNG;
     loadData();
     return;
