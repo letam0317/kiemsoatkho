@@ -291,6 +291,12 @@ function isoToday(){ var d = new Date(); return d.getFullYear() + "-" + p2(d.get
 function ngayVN(iso){ var m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3] + "/" + m[2] : iso; }
 function thuVN(iso){ var m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/); if (!m) return "";
   var d = new Date(+m[1], +m[2] - 1, +m[3]).getDay(); return d === 0 ? "CN" : "T" + (d + 1); }
+/* Ảnh báo cáo: MỌI url ảnh planogram dùng chung 76 ký tự đầu, đúng một nửa độ dài trung bình
+ * (đo 30/07: 1000 ảnh × 154 ký tự). sync-vesinh-all.js ghi vào Sheet phần ĐUÔI, dashboard ghép
+ * lại tiền tố → payload tab VESINH-YEUCAU nhẹ đi 74KB mỗi lượt tải mà không mất gì.
+ * Vẫn nhận url đầy đủ để đọc được dòng cũ trong Sheet / bản sync chưa cập nhật. */
+var ANH_PREFIX = "https://wms-gw-external.hasaki.vn/api/v1/filesmanagement/planogram/standard/";
+function urlAnh(s){ s = String(s || ""); return (!s || /^https?:\/\//i.test(s)) ? s : ANH_PREFIX + s; }
 /* Link planogram */
 function pgDetailUrl(id){ return PG_BASE + "/details/" + id; }
 function pgListUrl(isoNgay, areaK, stIds, isoNgayDen){
@@ -889,7 +895,7 @@ function buildYC(H, rows2d){
       ptCode: String(gv(idx.ptcode) || "").trim(), ptName: String(gv(idx.ptname) || "").trim(),
       ptDiLam: Number(gv(idx.ptdilam)) || 0, ptCi: fmtHM(gv(idx.ptci)),
       ptAt: fmtNgay(gv(idx.ptat)),
-      anh: String(gv(idx.anh) || "").split(/\s*\|\s*/).filter(Boolean)
+      anh: String(gv(idx.anh) || "").split(/\s*\|\s*/).filter(Boolean).map(urlAnh)
     };
     r.bk = ycBucket(r);
     ghiNhoNm(r.pt, r.ptCode, r.ptName);
