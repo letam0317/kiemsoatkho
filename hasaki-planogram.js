@@ -307,7 +307,15 @@ var S = { ok: false, all: [], area: "", lastAt: 0, tsData: 0,
   dTu: "", dDen: "", listMode: "ai", ptHi: "", ptOpen: false };   // dTu→dDen = KHOẢNG NGÀY đang xem; listMode = panel danh sách (ai | nv); ptHi = email NV đang SOI; ptOpen = panel cần-nhắc đang xổ
 var MODAL = { base: [], preset: null, mode: "loc" };
 var NK = { email: "", q: "" };
-var PANE = null, _nmColor = {}, _nmCi = 0, _deb = null, _debT = null, _ccDeb = null, _nkDeb = null, _fitT = null;
+var PANE = null, _nmColor = {}, _nmCi = 0, _deb = null, _debT = null, _ccDeb = null, _nkDeb = null, _fitT = null, _animT = null;
+/* Bật animation VÀO cho lượt vẽ kế tiếp rồi tự tắt — chỉ dùng khi nội dung MỚI THẬT
+ * (tải đầu / Làm mới). Re-render do bấm lọc thì render tức thì, không chớp trắng. */
+function animBat(){
+  if (!PANE) return;
+  PANE.classList.add("hp-anim");
+  clearTimeout(_animT);
+  _animT = setTimeout(function(){ if (PANE) PANE.classList.remove("hp-anim"); }, 900);
+}
 var _emNm = {};   // email(lower) -> { code, name } (gom từ PT + NK để hiện tên người thực hiện)
 
 var $id = function(s){ return document.getElementById(s); };
@@ -351,7 +359,7 @@ var CSS = [
 /* KPI: 1 HÀNG N CỘT (grid-auto-flow) — thẻ nền nhuộm màu nhóm (xám/xanh/đỏ), số 18px */
 "#pane-planogram .hp-tiles{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;margin:4px 0 8px;}",
 "@media(max-width:520px){#pane-planogram .hp-tiles{grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr));}}",
-"#pane-planogram .hp-tile{--cc:var(--accent,#326e51);background:color-mix(in srgb, var(--cc) 8%, var(--surface,#fff));border:1px solid color-mix(in srgb, var(--cc) 22%, var(--border,#e2e8f0));border-radius:10px;padding:8px 10px;cursor:pointer;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .25s ease;animation:hp-in .3s ease both;}",
+"#pane-planogram .hp-tile{--cc:var(--accent,#326e51);background:color-mix(in srgb, var(--cc) 8%, var(--surface,#fff));border:1px solid color-mix(in srgb, var(--cc) 22%, var(--border,#e2e8f0));border-radius:10px;padding:8px 10px;cursor:pointer;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .25s ease;}",
 "#pane-planogram .hp-tile:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(16,24,40,.12);}",
 "#pane-planogram .hp-tile .k{font-size:18px;font-weight:780;font-variant-numeric:tabular-nums;line-height:1;color:var(--cc);}",
 "#pane-planogram .hp-tile.tot{--cc:#64748b;}",
@@ -410,12 +418,12 @@ var CSS = [
 "#pane-planogram .hp-mapscroll > .hp-map{width:max-content;margin:0 auto;}",
 "#pane-planogram .hp-map.hp-mapa1{gap:0;flex-wrap:nowrap;justify-content:flex-start;}",
 "#pane-planogram .hp-map.hp-mapa8{gap:22px 20px;flex-wrap:nowrap;justify-content:flex-start;}",
-"#pane-planogram .hp-mapc1{display:flex;gap:3px;padding-bottom:6px;animation:hp-in .35s ease both;}",
+"#pane-planogram .hp-mapc1{display:flex;gap:3px;padding-bottom:6px;}",
 "#pane-planogram .hp-mapc1.hp-kc15{margin-right:15px;}",
 "#pane-planogram .hp-mapc1.hp-kc3{margin-right:30px;}",
 "#pane-planogram .hp-mapc1 .hp-mapcell{width:30px;}",
 "#pane-planogram .hp-map{display:flex;flex-wrap:wrap;gap:22px 34px;justify-content:space-evenly;padding:4px 2px 0;}",
-"#pane-planogram .hp-mapc{display:grid;grid-template-columns:56px 34px 56px;gap:0 7px;align-items:stretch;animation:hp-in .35s ease both;}",
+"#pane-planogram .hp-mapc{display:grid;grid-template-columns:56px 34px 56px;gap:0 7px;align-items:stretch;}",
 "#pane-planogram .hp-mapcol{display:flex;flex-direction:column;gap:2px;}",
 "#pane-planogram .hp-mapcol .cl{text-align:center;font-size:10px;font-weight:700;color:var(--muted,#6b7280);margin-bottom:4px;letter-spacing:.03em;}",
 "#pane-planogram .hp-mapcell{height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;cursor:pointer;border:1px solid transparent;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .2s ease;}",
@@ -442,7 +450,7 @@ var CSS = [
 /* chế độ SOI theo NV: ô của NV được chọn nổi vòng accent, ô khác mờ đi */
 "#pane-planogram .hp-mapcell.dim,#pane-planogram .hp-mapbelt.dim{opacity:.16;filter:saturate(.35);}",
 "#pane-planogram .hp-mapcell.hi,#pane-planogram .hp-mapbelt.hi{box-shadow:0 0 0 2px var(--accent,#326e51);z-index:1;}",
-"#pane-planogram .hp-ptnhac{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 0;animation:hp-in .35s ease both;}",
+"#pane-planogram .hp-ptnhac{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 0;}",
 "#pane-planogram .hp-ptchip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;min-height:26px;border-radius:999px;border:1px solid var(--border,#d5dbe4);background:var(--surface,#fff);color:var(--text,#1f2937);font-size:12px;font-weight:600;cursor:pointer;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .2s ease,border-color .16s ease;}",
 "#pane-planogram .hp-ptchip:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(16,24,40,.14);}",
 "#pane-planogram .hp-ptchip.on{border-color:#dc2626;background:color-mix(in srgb,#dc2626 12%,var(--surface,#fff));color:#dc2626;}",
@@ -480,7 +488,11 @@ var CSS = [
 "#pane-planogram .hp-state{padding:56px 20px;text-align:center;color:var(--muted,#6b7280);}",
 "#pane-planogram .hp-spin{width:32px;height:32px;border:3px solid var(--border,#d5dbe4);border-top-color:var(--accent,#326e51);border-radius:50%;margin:0 auto 16px;animation:hp-sp .8s linear infinite;}",
 "@keyframes hp-sp{to{transform:rotate(360deg)}}",
-"#pane-planogram .hp-fade{animation:hp-in .45s cubic-bezier(.32,.72,0,1) both;}",
+/* ANIMATION VÀO chỉ chạy khi pane mang class hp-anim (lần tải đầu / nút Làm mới — animBat()).
+   Bấm lọc khu vực/ngày KHÔNG animate lại: tránh 3-4 khung trắng + panel trượt gây cảm giác giật. */
+"#pane-planogram.hp-anim .hp-fade{animation:hp-in .45s cubic-bezier(.32,.72,0,1) both;}",
+"#pane-planogram.hp-anim .hp-tile{animation:hp-in .3s ease both;}",
+"#pane-planogram.hp-anim .hp-mapc1,#pane-planogram.hp-anim .hp-mapc,#pane-planogram.hp-anim .hp-ptnhac{animation:hp-in .35s ease both;}",
 "@keyframes hp-in{from{opacity:0;transform:translate3d(0,12px,0)}to{opacity:1;transform:none}}",
 ".hp-modal{display:none;position:fixed;inset:0;background:rgba(17,24,39,.55);backdrop-filter:blur(6px);z-index:1200;align-items:center;justify-content:center;padding:18px;opacity:0;transition:opacity .22s;}",
 ".hp-modal.show{opacity:1;}",
@@ -652,6 +664,7 @@ function loadTabGviz(tab, cbName, cbBuild, onFail){
 }
 function loadData(){
   var st = $id("hpState"); if (!st) return;
+  animBat();   // dữ liệu mới thật → cho chạy animation vào 1 lượt
   var btn = $id("hpReload"); if (btn) btn.disabled = true;
   st.style.display = "block";
   st.innerHTML = '<div class="hp-spin"></div>Đang tải dữ liệu vệ sinh…';
@@ -1078,7 +1091,8 @@ function fitMaps(){
       if (cao > chu) z = Math.min(z, (cao - chu) / mapsH);
     }
   }
-  z = Math.max(0.9, Math.min(1.3, z));
+  /* làm tròn XUỐNG 2 chữ số: hệ số ổn định giữa các lượt đo, không dư sub-pixel gây tràn/rung */
+  z = Math.max(0.9, Math.min(1.3, Math.floor(z * 100) / 100));
   for (i = 0; i < scs.length; i++){ mp = scs[i].firstElementChild; if (mp) mp.style.zoom = z; }
 }
 function renderMap(){
@@ -1642,7 +1656,7 @@ function init(pane){
     loadData();
     return;
   }
-  if (!pane.querySelector("#hpToday")){ pane.innerHTML = KHUNG; render(); }
+  if (!pane.querySelector("#hpToday")){ animBat(); pane.innerHTML = KHUNG; render(); }
   else fitMaps();   // quay lại tab sau khi đổi cỡ cửa sổ ở tab khác — chỉnh lại hệ số phóng
   if (Date.now() - S.lastAt > STALE_MS) loadData();
 }
