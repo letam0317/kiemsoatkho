@@ -77,7 +77,8 @@ var META_CHUA = { k: "chua", lb: "Chưa vệ sinh", sub: "không có báo cáo t
 
 /* ===== HỆ TRẠNG THÁI Ô SƠ ĐỒ (nhiều màu ↔ nhiều việc) — palette status đã kiểm CVD/tương phản.
  * NGUYÊN TẮC: màu status luôn kèm NHÃN (chú giải) + TOOLTIP; chất lượng AI phân biệt thêm bằng HÌNH DẠNG
- * (chấm tròn = Cần xem, tam giác = làm lại) — không bao giờ chỉ dựa vào màu. */
+ * (chấm tròn = Cần xem, tam giác = làm lại) + VẠCH XANH mép trái (đã báo cáo) — không bao giờ chỉ dựa
+ * vào màu. Bảng màu và lý do chọn từng màu: xem khối chú giải ngay trên CELLST bên dưới. */
 var NGUONG_CANHBAO = 3;   // ≥3 ngày yêu cầu liên tiếp không báo cáo → cảnh báo quá hạn
 /* Phụ trách vị trí = executor GẦN NHẤT 45 ngày (heuristic). Backtest 45n (26/07/2026, 250 lượt):
  * A1 98,8% · A8 100% đoán đúng người làm lần kế — NHƯNG mọi lượt đúng đều có bằng chứng ≤7 ngày.
@@ -96,16 +97,51 @@ function khoaO(loc){ var m = String(loc).match(/^F0-A1-(\d{3})-(\d{2})-/); retur
 function repCua(list){ if (!list || !list.length) return null;
   for (var i = 0; i < list.length; i++) if (list[i].bk === "da") return list[i];
   return list[0]; }
+/* ---------------------------------------------------------------------------
+ * PALETTE Ô SƠ ĐỒ (sửa 31/07/2026) — 1 MÀU = 1 BẢN CHẤT, không để hai nghĩa trái ngược
+ * nằm cạnh nhau trên vòng màu. Bố cục 2 TRỤC:
+ *
+ *   TRỤC 1 — HÀNH ĐỘNG (đã báo cáo hay chưa) quyết định HỆ MÀU:
+ *      ĐÃ báo cáo   → xanh lá · hổ phách · tím   (+ vạch xanh mép trái, xem `da`)
+ *      CHƯA báo cáo → ĐỎ (nhắc được: phụ trách đi làm) · XÁM XANH (không nhắc được: nghỉ/chưa nhận)
+ *      Không phát yêu cầu → nét đứt, KHÔNG tô nền (ngoài phạm vi đánh giá)
+ *   TRỤC 2 — CHẤT LƯỢNG AI chỉ đổi màu TRONG hệ "đã báo cáo", TUYỆT ĐỐI không mượn đỏ/xám:
+ *      đạt hoặc chờ chấm = xanh lá · cần xem lại = hổ phách · không đạt = TÍM
+ *
+ * Vì sao BỎ cam #ea580c của "AI không đạt": cam sát đỏ #dc2626 → ô "đã làm nhưng AI loại"
+ *   trông y như ô "chưa làm", đọc SAI BẢN CHẤT (đúng phản hồi 31/07). Tím nằm đối diện trục
+ *   đỏ↔lá nên nhìn là biết "có làm rồi, nhưng phải làm lại"; tím cũng là màu người mù màu
+ *   đỏ-lục (deuteran/protan) phân biệt tốt nhất so với cả đỏ và xanh lá.
+ * Vì sao KHÔNG dùng xám cho "AI không đạt": xám đã mang nghĩa "ngoài tầm nhắc" (phụ trách nghỉ)
+ *   và nét đứt xám = "không có yêu cầu" → dùng lại là chồng nghĩa, đúng cái đang gặp.
+ * Vì sao "AI cần xem lại" tách khỏi xanh lá: nó là VIỆC CỦA QUẢN LÝ (vào xem ảnh), không phải
+ *   "xong hẳn"; để chung xanh thì không ai biết còn tồn việc. Hổ phách = chờ người phán.
+ * remind và chua CÙNG một đỏ vì cùng nghĩa "chưa vệ sinh" — và không bao giờ hiện cùng lúc
+ *   (remind chỉ khi xem đúng hôm nay, chua chỉ khi xem quá khứ/khoảng nhiều ngày).
+ *
+ * Ba trường phụ trợ:
+ *   da   = thuộc hệ "đã báo cáo" → thêm VẠCH XANH mép trái ô (kênh thứ 2, không chỉ dựa vào màu)
+ *   ink  = "dark": nền sáng (hổ phách) nên chữ trong ô đổi sang mực đậm cho đủ tương phản
+ *   ct   = màu CHỮ khi vẽ dạng badge nền nhuộm nhạt (phải đậm hơn màu tô ô mới đọc được)
+ * --------------------------------------------------------------------------- */
+/* lb = nhãn ĐẦY ĐỦ (tooltip ô, badge pop-up) · sh = nhãn NGẮN cho chú giải 1 hàng: hàng chú giải
+   bị chốt 1 dòng (tràn thì cuộn ngang), dùng nhãn dài thì 2 mục cuối bị đẩy ra ngoài màn — chú giải
+   đọc không được thì hệ màu coi như không có. Luật đọc đầy đủ nằm ở dòng gợi ý dưới sơ đồ. */
 var CELLST = {
-  noreq:  { c: "",         lb: "Không có yêu cầu",                    dashed: true },
-  done:   { c: "#059669",  lb: "Đã vệ sinh (đạt / chờ AI)" },
-  review: { c: "#059669",  lb: "Đã vệ sinh · AI cần xem lại",        dot: "#f59e0b" },
-  rework: { c: "#ea580c",  lb: "Đã vệ sinh · AI không đạt — làm lại", tri: true },
-  remind: { c: "#dc2626",  lb: "Chưa vệ sinh · có người đi làm (nhắc ngay)" },
-  chua:   { c: "#dc2626",  lb: "Chưa vệ sinh" },
-  noshift:{ c: "#64748b",  lb: "Chưa vệ sinh · phụ trách nghỉ / chưa nhận" }
+  noreq:  { c: "",         lb: "Không có yêu cầu",                    sh: "Không có yêu cầu", dashed: true },
+  done:   { c: "#059669",  lb: "Đã vệ sinh (đạt / chờ AI)",           sh: "Đã VS · đạt",           da: true },
+  review: { c: "#f59e0b",  lb: "Đã vệ sinh · AI cần xem lại",         sh: "Đã VS · AI cần xem",    da: true, ink: "dark", ct: "#b45309", dot: "#78350f" },
+  rework: { c: "#7c3aed",  lb: "Đã vệ sinh · AI không đạt — làm lại", sh: "Đã VS · làm lại",       da: true, ct: "#6d28d9", tri: true },
+  remind: { c: "#dc2626",  lb: "Chưa vệ sinh · có người đi làm (nhắc ngay)", sh: "Chưa VS · nhắc ngay" },
+  chua:   { c: "#dc2626",  lb: "Chưa vệ sinh",                        sh: "Chưa vệ sinh" },
+  noshift:{ c: "#64748b",  lb: "Chưa vệ sinh · phụ trách nghỉ / chưa nhận", sh: "Chưa VS · nghỉ / chưa nhận" }
 };
 function cellMeta(k){ return CELLST[k] || CELLST.noreq; }
+/* Màu CHỮ cho badge nền nhuộm nhạt — nền ô sáng (hổ phách) phải dùng bản đậm hơn */
+function cellInk(m){ return m.ct || m.c || "#6b7280"; }
+/* Class phụ của ô theo palette: vạch "đã báo cáo" + mực đậm khi nền sáng.
+   Ô "done" bỏ vạch — nền đã chính là màu xanh đó, vẽ thêm chỉ là vạch xanh trên xanh. */
+function cellCls(m){ return (m.da && !m.dashed && m.c !== CELLST.done.c ? " dalam" : "") + (m.ink === "dark" ? " inkdark" : ""); }
 /* trạng thái 1 ô cho 1 NGÀY cụ thể dd (r = yêu cầu của ô ngày đó, hoặc null) */
 function cellStateDay(r, dd){
   if (!r) return "noreq";
@@ -248,9 +284,14 @@ var COLS_AI = {
   model:  ["model"],
   jat:    ["judged at", "judged_at"]
 };
+/* Màu kết luận AI phải KHỚP màu ô sơ đồ (CELLST bên dưới) — cùng một sự thật thì cùng một màu,
+ * nếu không người dùng thấy ô tím trên sơ đồ mà chip dưới danh sách lại đỏ, hiểu thành 2 việc khác nhau.
+ * KHONG_DAT đổi đỏ → TÍM 31/07: đỏ được giữ riêng cho "CHƯA vệ sinh"; AI loại là "đã làm, phải làm lại".
+ * CAN_XEM dùng bản hổ phách ĐẬM hơn ô (#d97706 vs #f59e0b) vì ở đây màu vừa tô chấm vừa làm màu CHỮ
+ * trên badge nền nhuộm nhạt — hổ phách sáng làm chữ thì không đọc được. */
 var AIST = [
   { k: "DAT",       lb: "AI: Đạt",       c: "#059669" },
-  { k: "KHONG_DAT", lb: "AI: Không đạt", c: "#dc2626" },
+  { k: "KHONG_DAT", lb: "AI: Không đạt", c: "#7c3aed" },
   { k: "CAN_XEM",   lb: "AI: Cần xem",   c: "#d97706" }
 ];
 function aiMeta(k){ for (var i = 0; i < AIST.length; i++) if (AIST[i].k === k) return AIST[i]; return null; }
@@ -376,7 +417,10 @@ var CSS = [
 "#pane-planogram .hp-chip{background:color-mix(in srgb, var(--accent,#326e51) 14%, transparent);color:var(--accent,#326e51);border-radius:999px;padding:4px 13px;font-weight:650;font-size:12px;}",
 "#pane-planogram .hp-srcbar a,#pane-planogram .hp-ext,.hp-modal .hp-ext{color:var(--accent,#326e51);text-decoration:none;font-weight:600;}",
 "#pane-planogram .hp-srcbar a:hover,#pane-planogram .hp-ext:hover,.hp-modal .hp-ext:hover{text-decoration:underline;}",
-"#pane-planogram .hp-hint{color:var(--muted,#9ca3af);font-size:11.5px;font-weight:400;}",
+/* .hp-hint / .hp-badge phải phủ CẢ pop-up: modal được append vào <body> nên nằm NGOÀI
+   #pane-planogram — trước 31/07 hai class này trong pop-up vị trí không ăn style nào
+   (chữ phụ to bằng chữ chính, badge mất viên thuốc), cùng khuôn với .hp-ext đã làm sẵn. */
+"#pane-planogram .hp-hint,.hp-modal .hp-hint{color:var(--muted,#9ca3af);font-size:11.5px;font-weight:400;}",
 "#hpReload,#pane-planogram .hp-btn{background:var(--accent,#326e51);color:var(--accent-text,#fff);border:0;border-radius:9px;padding:8px 15px;font-size:12.5px;font-weight:650;cursor:pointer;min-height:36px;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .25s ease;}",
 "#pane-planogram .hp-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(16,24,40,.16);}",
 "#hpReload:disabled{background:color-mix(in srgb, var(--muted,#9ca3af) 42%, var(--surface,#fff));color:var(--muted,#9ca3af);cursor:not-allowed;}",
@@ -476,6 +520,16 @@ var CSS = [
 /* badge góc: chấm tròn = AI cần xem · tam giác = làm lại (phân biệt bằng HÌNH DẠNG, không chỉ màu) */
 "#pane-planogram .hp-cdot{position:absolute;top:2px;right:2px;width:7px;height:7px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,255,255,.9);}",
 "#pane-planogram .hp-ctri{position:absolute;top:0;right:0;width:0;height:0;border-top:9px solid rgba(255,255,255,.92);border-left:9px solid transparent;}",
+/* KÊNH THỨ 2 của palette (31/07): VẠCH XANH mép trái = ĐÃ BÁO CÁO. Nhờ nó ô hổ phách (AI cần xem)
+   và ô tím (AI không đạt) vẫn đọc ngay ra "đã làm rồi, còn tồn việc chất lượng" — không bị hiểu
+   thành "chưa làm" như bản cam cũ. Dùng ::after (không dùng box-shadow inset) để KHÔNG tranh chấp
+   với vòng .canhbao / .hi vốn cũng là box-shadow; belt đã chiếm ::after nên dùng ::before.
+   Vạch THỤT VÀO 3-4px mỗi phía: đặt sát mép (left/top/bottom:0) thì vạch thẳng chìa ra ngoài
+   góc bo của ô, nhìn thành cái tai xanh dính bên ngoài chứ không phải dấu hiệu trong ô. */
+"#pane-planogram .hp-mapcell.dalam::after,#pane-planogram .hp-mapbelt.dalam::before,.hp-vthist.dalam::after{content:'';position:absolute;left:3px;top:4px;bottom:4px;width:3px;border-radius:2px;background:#059669;pointer-events:none;}",
+/* nền sáng (hổ phách) → mực đậm cho đủ tương phản chữ trong ô / chữ dọc băng chuyền */
+"#pane-planogram .hp-mapcell.inkdark{color:#422006;}",
+"#pane-planogram .hp-mapbelt.inkdark span{color:rgba(66,32,6,.92);}",
 /* Cảnh báo trên Ô: viền TĨNH + ⚠ nhỏ (không nhấp nháy — tránh nhiễu khi nhiều ô cùng cảnh báo). Nhấp nháy chỉ ở banner. */
 "#pane-planogram .hp-cwarn{position:absolute;bottom:-4px;left:-4px;font-size:10.5px;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4));}",
 /* ⚠ trên Ô thu 0.7 lần để không che số (bản trong chú giải giữ nguyên cỡ) */
@@ -544,7 +598,7 @@ var CSS = [
 "#pane-planogram .hp-cctbl .mut{color:var(--muted,#9ca3af);}",
 "#pane-planogram .hp-cctbl .empty{text-align:center;color:var(--muted,#9ca3af);padding:26px;}",
 "#pane-planogram .hp-cctbl td.wrap{white-space:normal;min-width:280px;max-width:520px;line-height:1.5;}",
-"#pane-planogram .hp-badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:650;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;}",
+"#pane-planogram .hp-badge,.hp-modal .hp-badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:650;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;}",
 "#pane-planogram .hp-state{padding:56px 20px;text-align:center;color:var(--muted,#6b7280);}",
 "#pane-planogram .hp-spin{width:32px;height:32px;border:3px solid var(--border,#d5dbe4);border-top-color:var(--accent,#326e51);border-radius:50%;margin:0 auto 16px;animation:hp-sp .8s linear infinite;}",
 "@keyframes hp-sp{to{transform:rotate(360deg)}}",
@@ -596,7 +650,8 @@ var CSS = [
 ".hp-thumbs .more:hover{background:color-mix(in srgb, var(--accent,#326e51) 10%, transparent);}",
 /* pop-up CHI TIẾT VỊ TRÍ (bấm ô sơ đồ) — dải lịch sử 7 ngày + hàng nhãn/giá trị */
 ".hp-vthistrow{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 14px;}",
-".hp-vthist{min-width:52px;padding:5px 8px;border-radius:9px;text-align:center;font-size:10.5px;font-weight:650;color:#fff;cursor:pointer;line-height:1.3;border:2px solid transparent;transition:transform .16s cubic-bezier(.32,.72,0,1);}",
+".hp-vthist{position:relative;min-width:52px;padding:5px 8px;border-radius:9px;text-align:center;font-size:10.5px;font-weight:650;color:#fff;cursor:pointer;line-height:1.3;border:2px solid transparent;transition:transform .16s cubic-bezier(.32,.72,0,1);}",
+".hp-vthist.inkdark{color:#422006;}",
 ".hp-vthist b{display:block;font-size:9px;opacity:.85;}",
 ".hp-vthist.trong{background:transparent;border:2px dashed color-mix(in srgb, var(--muted,#9ca3af) 50%, transparent);color:var(--muted,#9ca3af);}",
 ".hp-vthist.on{border-color:var(--text,#1f2937);transform:scale(1.08);box-shadow:0 4px 14px rgba(16,24,40,.18);}",
@@ -604,10 +659,35 @@ var CSS = [
 ".hp-vtrow{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--border,#f1f4f8);font-size:12.5px;color:var(--text,#1f2937);}",
 ".hp-vtrow:last-child{border-bottom:0;}",
 ".hp-vtrow label{font-size:10.5px;font-weight:650;color:var(--muted,#9ca3af);text-transform:uppercase;letter-spacing:.04em;padding-top:2px;}",
+/* Badge trong hàng chi tiết được XUỐNG DÒNG: nhãn trạng thái ô đã dài ra (kèm luôn lý do,
+   vd "Chưa vệ sinh · có người đi làm (nhắc ngay)") — giữ max-width 180px của badge chung
+   thì cắt mất đúng phần mang thông tin. Badge trong tiêu đề thẻ vẫn ngắn nên để nguyên. */
+".hp-modal .hp-vtrow .hp-badge{max-width:none;white-space:normal;}",
 "@media(max-width:560px){.hp-vtrow{grid-template-columns:1fr;gap:4px;}}",
 ".hp-vtthumbs{display:flex;flex-wrap:wrap;gap:6px;}",
 ".hp-vtthumbs img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border,#e8ecf1);cursor:zoom-in;transition:transform .16s cubic-bezier(.32,.72,0,1);background:color-mix(in srgb, var(--muted,#9ca3af) 14%, transparent);}",
 ".hp-vtthumbs img:hover{transform:scale(1.1);}",
+/* HAI THẺ SONG SONG trong pop-up vị trí: TRÁI Phụ trách (nhấn accent — đây là người phải chịu
+   trách nhiệm) · PHẢI Báo cáo gần nhất (nền trung tính — chỉ để tham khảo/đối chiếu).
+   Tái dùng keyframes hp-in + easing/độ mượt sẵn có của module, không chế animation mới. */
+".hp-vtduo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 0;}",
+"@media(max-width:560px){.hp-vtduo{grid-template-columns:1fr;}}",
+".hp-vtcard{border:1px solid var(--border,#e8ecf1);border-radius:12px;padding:11px 12px;display:flex;flex-direction:column;gap:8px;background:color-mix(in srgb, var(--muted,#9ca3af) 6%, var(--surface,#fff));animation:hp-in .34s cubic-bezier(.32,.72,0,1) both;}",
+".hp-vtcard.pt{border-color:color-mix(in srgb, var(--accent,#326e51) 32%, transparent);background:color-mix(in srgb, var(--accent,#326e51) 7%, var(--surface,#fff));}",
+".hp-vtcard.ref{animation-delay:.06s;}",
+".hp-vtcard .hd{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:10.5px;font-weight:700;color:var(--muted,#6b7280);text-transform:uppercase;letter-spacing:.04em;}",
+".hp-vtcard .who{display:flex;align-items:center;gap:9px;min-width:0;}",
+".hp-vtcard .who > div{min-width:0;}",
+".hp-vtcard .av{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:750;color:#fff;letter-spacing:.02em;}",
+".hp-vtcard .who b{display:block;font-size:13px;font-weight:700;line-height:1.3;color:var(--text,#1f2937);}",
+".hp-vtcard .who small{display:block;font-size:10.5px;font-weight:500;color:var(--muted,#9ca3af);line-height:1.4;word-break:break-all;}",
+/* dòng chấm công: chấm màu trạng thái + nhãn đậm + phụ đề (cùng khuôn .hp-dot dùng khắp module) */
+".hp-vtcard .cc{display:flex;align-items:flex-start;gap:7px;padding-top:7px;border-top:1px dashed var(--border,#e2e8f0);}",
+".hp-vtcard .cc .hp-dot{margin-top:4px;}",
+".hp-vtcard .cc b{display:block;font-size:12px;font-weight:700;line-height:1.35;}",
+".hp-vtcard .cc small{display:block;font-size:10.5px;color:var(--muted,#9ca3af);line-height:1.4;margin-top:1px;}",
+".hp-vtcard .ln{font-size:11.5px;line-height:1.45;color:var(--text,#374151);}",
+".hp-vtcard .ln.mut{color:var(--muted,#9ca3af);}",
 /* pop-up TRA CỨU THEO NHÂN VIÊN (nhật ký theo ngày) */
 ".hp-nk-grid{display:grid;grid-template-columns:280px 1fr;gap:0;flex:1;min-height:0;}",
 ".hp-nk-left{border-right:1px solid var(--border,#e8ecf1);display:flex;flex-direction:column;min-height:0;}",
@@ -816,7 +896,9 @@ function bac1(){
   }, 250);
 }
 /* bậc 3 — nạp theo yêu cầu, gọi từ chỗ người dùng thực sự cần dữ liệu đó */
-function canCC(){ if (S.cc.ok || S.cc.dang) return; S.cc.dang = true; goiNguon(TAB_CC); }
+/* Chấm công: vẽ NGAY từ cache nếu còn (pop-up vị trí mở ra là có luôn dòng "hôm nay có đi làm
+   không", không phải chờ mạng) rồi vẫn gọi tab để lấy bản mới — đúng nhịp cache-rồi-tải của loadData. */
+function canCC(){ if (S.cc.ok || S.cc.dang) return; S.cc.dang = true; tuCache(TAB_CC); goiNguon(TAB_CC); }
 function canNK(){ if (S.nk.ok || S.nk.dang) return; S.nk.dang = true; goiNguon(TAB_NK); }
 function loadTabGviz(tab, cbName, cbBuild, onFail){
   var cb2 = cbName + "g";
@@ -882,6 +964,7 @@ function buildMain(H, rows2d){
 function buildCC(H, rows2d){
   var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
   var idx = {}; Object.keys(COLS_CC).forEach(function(k){ idx[k] = idxOf(hl, COLS_CC[k]); });
+  _ccIdx = null;   // bảng tra chấm công (ccIndex) dựng lại theo dữ liệu mới
   if (idx.name < 0 || idx.tt < 0){ S.cc.ok = false; S.cc.rows = []; renderCC(); return; }
   var arr = [];
   rows2d.forEach(function(row){
@@ -895,6 +978,11 @@ function buildCC(H, rows2d){
       vs: Number(gv(idx.vs)) || 0, loc: String(gv(idx.loc) || "").trim(), tt: tt, bk: ccBucket(tt) });
   });
   S.cc.ok = true; S.cc.rows = arr; renderCC();
+  /* Chấm công là nguồn BẬC 3 (nạp muộn) nhưng pop-up vị trí + tooltip ô đều cần nó để trả lời
+     "phụ trách hôm nay có đi làm không" → vẽ lại cả hai khi dữ liệu về. */
+  renderMap();
+  var mv = $id("hpVtModal");
+  if (mv && mv.classList.contains("show")) renderVt();
 }
 function buildYC(H, rows2d){
   var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
@@ -996,6 +1084,52 @@ function buildPC(H, rows2d){
 }
 /** Người phụ trách CHÍNH THỨC của 1 vị trí (theo bảng phân công) — null nếu chưa nạp/không có */
 function pcCua(loc){ return S.pc.ok ? (S.pc.by[khoaO(loc)] || null) : null; }
+/* --- CHẤM CÔNG HÔM NAY CỦA 1 NGƯỜI (tab CHAMCONG-VESINH) ---
+ * Dùng cho pop-up vị trí: biết ai phụ trách thì phải biết LUÔN hôm nay người đó có đi làm không,
+ * nếu không thì "chưa vệ sinh" của ô đó là chuyện phải bố trí người khác, chứ không phải đi nhắc.
+ * Khớp theo EMAIL trước (khoá chắc nhất), rớt về MÃ NV cho dòng g-sheet chỉ ghi mã.
+ * Lưu ý: tab này chỉ có DỮ LIỆU HÔM NAY — không tra được chấm công ngày quá khứ. */
+var _ccIdx = null;   // buildCC() xoá về null mỗi lượt nạp lại → không bao giờ tra bản cũ
+function ccIndex(){
+  if (_ccIdx) return _ccIdx;
+  var byEm = {}, byCode = {};
+  S.cc.rows.forEach(function(x){
+    var e = String(x.email || "").toLowerCase(); if (e && !byEm[e]) byEm[e] = x;
+    var c = String(x.code || "").trim(); if (c && !byCode[c]) byCode[c] = x;
+  });
+  _ccIdx = { em: byEm, code: byCode };
+  return _ccIdx;
+}
+function ccCua(email, code){
+  if (!S.cc.ok || !S.cc.rows.length) return null;
+  var ix = ccIndex();
+  return ix.em[String(email || "").toLowerCase()] || ix.code[String(code || "").trim()] || null;
+}
+/* Chấm công hôm nay để hiển thị: { c, lb, sub, subC }.
+ * TÁCH ĐÔI HAI SỰ THẬT, đừng nhuộm chung một màu:
+ *   dòng ĐẬM + chấm màu = CÓ ĐI LÀM HAY KHÔNG (xanh lá đi làm · xám nghỉ · xám mờ ngoài danh sách)
+ *   dòng phụ = đã/chưa báo cáo vệ sinh trong ngày, ĐỎ khi chưa — đúng luật màu của sơ đồ
+ *     (đỏ chỉ dành cho "chưa vệ sinh", không dành cho "có chấm công").
+ * Trộn hai thứ vào một màu thì "Hôm nay có chấm công" hiện màu đỏ, đọc ra như thể đi làm là lỗi. */
+function ccTrangThai(email, code){
+  if (S.cc.dang) return { c: "#6b7280", lb: "đang tra chấm công…", sub: "", dang: true };
+  if (!S.cc.ok) return { c: "#6b7280", lb: "chưa đọc được chấm công", sub: "tab " + TAB_CC, dang: true };
+  var x = ccCua(email, code);
+  if (!x) return { c: "#9ca3af", lb: "Không có trong bảng chấm công hôm nay", sub: "không thuộc danh sách nghiệp vụ vệ sinh đang theo dõi" };
+  if (x.bk === "nghi") return { c: "#64748b", lb: "Hôm nay KHÔNG chấm công",
+    sub: (x.tt || "nghỉ / chưa vào ca") + " — nhắc không tới, cần bố trí người khác", x: x };
+  var gio = (x.ci ? "vào " + x.ci : "") + (x.co ? (x.ci ? " · ra " + x.co : "ra " + x.co) : "");
+  return { c: "#059669", lb: "Hôm nay ĐI LÀM" + (gio ? " · " + gio : ""),
+    sub: x.bk === "da" ? "đã báo cáo vệ sinh trong ngày" + (x.vs > 1 ? " (" + x.vs + " lượt)" : "") : "chưa báo cáo vệ sinh nào trong ngày — nhắc được ngay",
+    subC: x.bk === "da" ? "" : "#dc2626", x: x };
+}
+/* Chữ đầu của tên (avatar) — bỏ dấu không cần, chỉ lấy 2 ký tự đầu của 2 từ cuối */
+function chuDau(s){
+  var w = String(s || "").trim().split(/\s+/).filter(Boolean);
+  if (!w.length) return "?";
+  if (w.length === 1) return w[0].slice(0, 2).toUpperCase();
+  return (w[w.length - 2].charAt(0) + w[w.length - 1].charAt(0)).toUpperCase();
+}
 /* --- KHỐI 1b: PANEL DANH SÁCH — 1 panel duy nhất, 2 chế độ: AI XÉT DUYỆT · NHÂN VIÊN --- */
 function aiSetKl(k){ if (S.aiKl === k) k = ""; S.aiKl = k; renderList(); }
 var _aiDeb = null;
@@ -1238,6 +1372,20 @@ function renderToday(){
 function xongTai(){
   var st = $id("hpState"); if (st) st.style.display = "none";
   var btn = $id("hpReload"); if (btn) btn.disabled = false;
+  hamNongCC();
+}
+/* HÂM NÓNG CHẤM CÔNG khi màn hình đã dùng được (bậc 1 xong, hàng đợi Apps Script đã rỗng).
+ * Pop-up vị trí nào cũng cần trả lời "phụ trách hôm nay có đi làm không"; đợi tới lúc bấm ô
+ * mới gọi thì người dùng thấy "đang tra chấm công…" một nhịp. CHAMCONG-VESINH là tab NHẸ
+ * (1 dòng/NV nghiệp vụ vệ sinh, ~40 dòng) — khác VESINH-NHATKY 45 ngày vẫn để lazy hẳn.
+ * Hoãn tới lúc nhàn rỗi để không tranh chỗ với bậc 1: đó mới là thứ dựng màn hình. */
+var _ccWarm = false;
+function hamNongCC(){
+  if (_ccWarm || S.cc.ok || S.cc.dang) return;
+  _ccWarm = true;
+  var go = function(){ canCC(); };
+  if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 2500 });
+  else setTimeout(go, 1200);
 }
 /* --- KHỐI 2: TỔNG ĐIỀU PHỐI (dữ liệu PT/NK về sau thì vẽ lại các khối dùng tên NV) --- */
 function render(){
@@ -1462,6 +1610,11 @@ function renderMap(){
       ? "\nPhụ trách: " + (pcO.ten || pcO.em) + (pcO.code ? " (" + pcO.code + ")" : "") +
         (/g-sheet/i.test(pcO.nguon) ? "" : " — suy từ báo cáo gần nhất, g-sheet chưa phân công")
       : "";
+    /* Chấm công hôm nay của người phụ trách — chỉ có nghĩa khi đang xem đúng hôm nay */
+    if (pcO && pcO.em && homNay){
+      var ccP = ccTrangThai(pcO.em, pcO.code);
+      if (ccP && !ccP.dang) pcT += "\n   chấm công: " + ccP.lb.replace(/^Hôm nay /, "");
+    }
     if (!list || !list.length){
       var mi = thieuBy[kk], vs = "";
       if (mi){
@@ -1480,10 +1633,16 @@ function renderMap(){
       var r = repCua(list), st = cellMeta(cellState1(r)), ai = aiOf(r), aim = ai && aiMeta(ai.kl);
       var ptTxt = "";
       if (!r.email){
-        if (r.pt){
-          ptTxt = "\nPhụ trách: " + (r.ptName || r.pt) + (homNay ? (r.ptDiLam ? " (đi làm" + (r.ptCi ? " · vào " + r.ptCi : "") + ")" : " (nghỉ)") : "");
+        /* pcT phía trên đã in "Phụ trách (mã) + chấm công hôm nay" theo BẢNG PHÂN CÔNG — nguồn chính thức.
+           Người phụ trách ghi trên chính yêu cầu chỉ nhắc lại khi KHÁC người đó (phân công lệch thực tế,
+           đáng biết); trùng nhau thì in 2 lần cùng một cái tên + cùng một trạng thái đi làm. */
+        var trungPc = !!(pcO && pcO.em && r.pt && String(r.pt).toLowerCase() === String(pcO.em).toLowerCase());
+        if (r.pt && !trungPc){
+          ptTxt = "\nPhụ trách theo yêu cầu: " + (r.ptName || r.pt) + (homNay ? (r.ptDiLam ? " (đi làm" + (r.ptCi ? " · vào " + r.ptCi : "") + ")" : " (nghỉ)") : "");
           if (r.ptAt) ptTxt += "\n   theo báo cáo gần nhất " + ngayVN(r.ptAt) + (ptKhongChac(r) ? " — ⚠ " + ptTuoi(r) + " ngày trước, CHƯA CHẮC còn phụ trách" : "");
-        } else ptTxt = "\nChưa có người phụ trách";
+        } else if (trungPc && ptKhongChac(r)){
+          ptTxt = "\n   ⚠ bằng chứng phụ trách " + ptTuoi(r) + " ngày trước — chưa chắc còn phụ trách";
+        } else if (!r.pt && !(pcO && pcO.em)) ptTxt = "\nChưa có người phụ trách";
       }
       return head + loc + pcT + "\nTrạng thái: " + st.lb +
         (r.email ? "\nNgười làm: " + (tenNm(r.email) || r.email) + (r.at ? " lúc " + String(r.at).slice(11, 16) : "") : ptTxt) +
@@ -1502,7 +1661,7 @@ function renderMap(){
               : m.tri ? '<i class="hp-ctri"></i>'
               : (st === "remind" && rep && ptKhongChac(rep) ? '<i class="hp-cq">?</i>' : "");
     var al = alert[kk] ? '<i class="hp-cwarn" title="Quá ' + alert[kk] + ' ngày chưa báo cáo">⚠</i>' : "";
-    var cls = "hp-mapcell" + (m.dashed ? " trong" : "") + (alert[kk] ? " canhbao" : "");
+    var cls = "hp-mapcell" + (m.dashed ? " trong" : "") + cellCls(m) + (alert[kk] ? " canhbao" : "");
     if (soiPT && S.ptHi) cls += (rep && rep.bk === "nhac" && rep.pt === S.ptHi) ? " hi" : " dim";
     var sty = m.dashed ? "cursor:pointer" : "background:" + m.c;
     return '<span class="' + cls + '" style="' + sty + '" title="' + esc(tinhTT(loc, list)) + '" data-l="' + esc(loc) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))">' + label + badge + al + '</span>';
@@ -1527,7 +1686,7 @@ function renderMap(){
         var alb = alert[c.bc] ? '<i class="hp-cwarn" title="Quá ' + alert[c.bc] + ' ngày chưa báo cáo">⚠</i>' : "";
         var qb = (st === "remind" && rep && ptKhongChac(rep)) ? '<i class="hp-cq">?</i>' : "";
         var bg = m.dashed ? "color-mix(in srgb, var(--muted,#9ca3af) 35%, transparent)" : m.c;
-        var bcls = "hp-mapbelt" + (alert[c.bc] ? " canhbao" : "");
+        var bcls = "hp-mapbelt" + cellCls(m) + (alert[c.bc] ? " canhbao" : "");
         if (soiPT && S.ptHi) bcls += (rep && rep.bk === "nhac" && rep.pt === S.ptHi) ? " hi" : " dim";
         var belt = '<div class="' + bcls + '" style="background:' + bg + '" title="' + esc(tinhTT(c.bc, list)) + '" data-l="' + esc(c.bc) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))"><span>BĂNG CHUYỀN ' + c.b + '</span>' + qb + alb + '</div>';
         return '<div class="hp-mapc">' + cot(c.l) + belt + cot(c.r) + '</div>';
@@ -1572,18 +1731,20 @@ function renderMap(){
   var slot = $id("hpNhacSlot");
   if (!htmlA1 && !htmlA8){ box.innerHTML = ""; if (slot) slot.innerHTML = ""; return; }
 
-  /* Chú giải: liệt kê đủ trạng thái (mỗi màu 1 nghĩa), hình dạng badge, + cảnh báo */
+  /* Chú giải: liệt kê đủ trạng thái (mỗi màu 1 nghĩa), hình dạng badge, + cảnh báo.
+     Ô thuộc hệ "đã báo cáo" (m.da) mang thêm vạch xanh mép trái — swatch chú giải vẽ y hệt
+     bằng box-shadow inset để người đọc khớp được vạch trên sơ đồ với nghĩa của nó. */
   var legKeys = mot ? ["done", "review", "rework", "remind", "noshift"] : ["done", "rework", "chua"];
   var legend = '<span class="hp-legend">' +
     legKeys.map(function(kk){ var m = cellMeta(kk);
-      var mk = m.dot ? '<i style="background:' + m.c + '"></i><i class="hp-cdot" style="position:static;background:' + m.dot + ';margin-left:-5px"></i>'
-             : m.tri ? '<i style="background:' + m.c + '"></i>'
-             : '<i style="background:' + m.c + '"></i>';
-      return '<span>' + mk + esc(m.lb) + '</span>';
+      var vach = m.da && kk !== "done" ? ";box-shadow:inset 3px 0 0 #059669" : "";
+      var mk = '<i style="background:' + m.c + vach + '"></i>' +
+        (m.dot ? '<i class="hp-cdot" style="position:static;background:' + m.dot + ';margin-left:-5px"></i>' : "");
+      return '<span title="' + esc(m.lb) + '">' + mk + esc(m.sh || m.lb) + '</span>';
     }).join("") +
     '<span><i style="background:transparent;border:1px dashed var(--muted,#9ca3af)"></i>Không có yêu cầu</span>' +
-    (soiPT ? '<span><i class="hp-cq" style="position:static;box-shadow:none">?</i>phụ trách suy từ báo cáo cũ (&gt;' + NGUONG_PT_CU + ' ngày) — chưa chắc</span>' : '') +
-    '<span><i class="hp-cwarn" style="position:static;color:#dc2626">⚠</i>Quá ' + NGUONG_CANHBAO + ' ngày chưa báo cáo</span></span>';
+    (soiPT ? '<span title="Phụ trách suy từ báo cáo cũ hơn ' + NGUONG_PT_CU + ' ngày — chưa chắc còn phụ trách"><i class="hp-cq" style="position:static;box-shadow:none">?</i>chưa chắc</span>' : '') +
+    '<span title="Quá ' + NGUONG_CANHBAO + ' ngày yêu cầu liên tiếp không có ai báo cáo"><i class="hp-cwarn" style="position:static;color:#dc2626">⚠</i>quá ' + NGUONG_CANHBAO + ' ngày</span></span>';
 
   var nAlert = Object.keys(alert).length;
   var bannerAlert = nAlert
@@ -1628,7 +1789,9 @@ function renderMap(){
     '<section class="hp-panel hp-fade">' +
     '<h2>Sơ đồ khu vực <span class="hp-chip">' + esc(nhanKhoang()) + '</span> ' + legend + '</h2>' +
     bannerAlert + (slot ? "" : htmlNhac) + htmlA1 + htmlA8 +
-    '<p class="hp-hint" style="margin:6px 0 0">Bấm một ô để xem chi tiết báo cáo và lịch sử 7 ngày' + (mot ? "" : " — theo khoảng: xanh = mọi ngày đạt, cam = có ngày không đạt, đỏ = có ngày chưa vệ sinh") + '.</p>' +
+    '<p class="hp-hint" style="margin:6px 0 0">Bấm một ô để xem chi tiết báo cáo và lịch sử 7 ngày' +
+      (mot ? ' — cách đọc màu: <b>ô có vạch xanh mép trái = đã báo cáo</b> (xanh xong hẳn · hổ phách chờ mình xem lại ảnh · tím phải làm lại), <b>đỏ = chưa vệ sinh mà phụ trách đang đi làm</b> (nhắc được ngay), xám xanh = chưa vệ sinh nhưng phụ trách nghỉ / chưa có người nhận'
+           : " — theo khoảng: xanh = mọi ngày đạt, tím = có ngày AI không đạt, đỏ = có ngày chưa vệ sinh") + '.</p>' +
     '</section>';
   fitMaps();
 }
@@ -1651,6 +1814,7 @@ function bkCua(r, dd){ return r.bk === "da" ? "da" : (dd === isoToday() ? r.bk :
 function openViTri(loc){
   if (!loc) return;
   VT.loc = loc; VT.ngay = ngayXem();
+  canCC();   // pop-up cần chấm công hôm nay của phụ trách — nguồn bậc 3, nạp lúc mở (buildCC vẽ lại)
   renderVt();
   var m = $id("hpVtModal"); m.style.display = "flex";
   requestAnimationFrame(function(){ m.classList.add("show"); });
@@ -1677,7 +1841,7 @@ function renderVt(){
   var hist = dates.map(function(dd){
     var rr = byNgay[dd], stm = cellMeta(cellStateDay(rr, dd));
     var tt = ngayVN(dd) + " — " + (rr ? stm.lb : "không có yêu cầu");
-    return '<span class="hp-vthist' + (dd === d ? " on" : "") + (rr && !stm.dashed ? "" : " trong") + '" style="' + (rr && !stm.dashed ? "background:" + stm.c : "") + '" title="' + esc(tt) + '" data-d="' + dd + '" onclick="HPLANOGRAM.vtNgay(this.getAttribute(\'data-d\'))">' +
+    return '<span class="hp-vthist' + (dd === d ? " on" : "") + (rr && !stm.dashed ? cellCls(stm) : " trong") + '" style="' + (rr && !stm.dashed ? "background:" + stm.c : "") + '" title="' + esc(tt) + '" data-d="' + dd + '" onclick="HPLANOGRAM.vtNgay(this.getAttribute(\'data-d\'))">' +
       '<b>' + esc(thuVN(dd)) + '</b>' + esc(ngayVN(dd)) + '</span>';
   }).join("");
   /* Cảnh báo quá hạn cho vị trí này */
@@ -1695,7 +1859,7 @@ function renderVt(){
     /* 1 badge nhóm; badge hệ thống CHỈ thêm khi mang nghĩa khác (Chờ duyệt/Đã duyệt/Từ chối) — tránh trùng lặp.
        Hyperlink duy nhất "Yêu cầu #… ↗" ở góc phải trên pop-up. */
     var themSt = (r.stId === 1 || /new/i.test(r.st)) ? "" : " " + stBadge(r);
-    rows.push(["Trạng thái", '<span class="hp-badge" style="background:color-mix(in srgb,' + m2.c + ' 15%,transparent);color:' + m2.c + '">' + esc(m2.lb) + '</span>' + themSt]);
+    rows.push(["Trạng thái", '<span class="hp-badge" style="background:color-mix(in srgb,' + m2.c + ' 15%,transparent);color:' + cellInk(m2) + '">' + esc(m2.lb) + '</span>' + themSt]);
     rows.push(["Người báo cáo", r.email ? (esc(tenNm(r.email) || r.email) + (r.at ? ' <span class="hp-hint">lúc ' + esc(String(r.at).slice(11, 16) || r.at) + " " + ngayVN(r.ngay) + '</span>' : "")) : '<span class="hp-hint">— chưa có ai báo cáo trong ngày này</span>']);
     var ai = aiOf(r), aim = ai && aiMeta(ai.kl);
     rows.push(["AI xét duyệt", aim
@@ -1710,36 +1874,68 @@ function renderVt(){
   } else {
     rows.push(["Trạng thái", '<span class="hp-hint">Ngày ' + ngayVN(d) + ' vị trí này KHÔNG có yêu cầu vệ sinh trên planogram.</span>']);
   }
-  /* PHỤ TRÁCH — nguồn CHÍNH THỨC là bảng phân công (VESINH-PHANCONG), luôn có người.
-     Tách hẳn khỏi "Báo cáo gần nhất" bên dưới: trước đây gộp hai thứ vào một dòng nên vị trí
-     chưa ai báo cáo thì hiện "chưa từng có người báo cáo (45 ngày)" — đọc ra như thể vị trí
-     không có ai phụ trách, trong khi bảng phân công có ghi rõ tên. */
+  /* ===== HAI THẺ SONG SONG (31/07/2026) — TRÁI "Phụ trách" (ai chịu trách nhiệm + hôm nay có
+     đi làm không) · PHẢI "Báo cáo gần nhất" (tham khảo: thực tế ai đã làm, cách đây bao lâu).
+     Trước đây hai mục này là 2 hàng nhãn/giá trị xếp dọc y như "Trạng thái"/"Ảnh" nên đọc ra
+     như 2 dữ kiện rời rạc ngang cấp; đặt cạnh nhau thì so sánh được ngay:
+     người được giao ↔ người thực sự làm, và biết nên đi nhắc ai. ===== */
   var pc = pcCua(loc);
+  var tuGS = !!(pc && pc.em && /g-sheet/i.test(pc.nguon));   // phân công THẬT từ g-sheet, không phải suy diễn
+  var cardPt;
   if (pc && pc.em){
-    var tuGS = /g-sheet/i.test(pc.nguon);
     var mauNg = tuGS ? "#059669" : "#d97706";
-    rows.push(["Phụ trách",
-      '<b>' + esc(pc.ten || pc.em) + '</b>' + (pc.code ? ' <span class="hp-hint">' + esc(pc.code) + '</span>' : "") +
-      '<div class="hp-hint" style="margin-top:3px">' + esc(pc.em) + '</div>' +
-      '<div style="margin-top:5px"><span class="hp-badge" style="background:color-mix(in srgb,' + mauNg + ' 14%,transparent);color:' + mauNg + '">' +
-        esc(tuGS ? "Bảng phân công của bộ phận" : "Suy từ báo cáo gần nhất (g-sheet chưa phân công)") + '</span>' +
-        (pc.bc ? ' <span class="hp-hint">· bằng chứng ' + esc(ngayVN(pc.bc)) + '</span>' : "") + '</div>' +
-      (pc.gc ? '<div class="hp-hint" style="margin-top:4px;line-height:1.5">' + esc(pc.gc) + '</div>' : "")]);
-  } else if (S.pc.dang){
-    rows.push(["Phụ trách", '<span class="hp-hint">đang tải bảng phân công…</span>']);
+    var ten = pc.ten || pc.em;
+    /* Chấm công HÔM NAY của đúng người này (tab CHAMCONG-VESINH, bậc 3 — nạp khi mở pop-up):
+       trả lời trực tiếp "nhắc được hay phải bố trí người khác". */
+    var cc = ccTrangThai(pc.em, pc.code);
+    cardPt =
+      '<div class="hp-vtcard pt">' +
+      '<div class="hd">Phụ trách <span class="hp-badge" style="background:color-mix(in srgb,' + mauNg + ' 14%,transparent);color:' + mauNg + '">' +
+        esc(tuGS ? "Bảng phân công" : "Suy từ báo cáo gần nhất") + '</span></div>' +
+      '<div class="who"><span class="av" style="background:' + nmColor(ten) + '">' + esc(chuDau(ten)) + '</span>' +
+        '<div><b>' + esc(ten) + '</b><small>' + (pc.code ? esc(pc.code) + " · " : "") + esc(pc.em) + '</small></div></div>' +
+      '<div class="cc"><span class="hp-dot" style="background:' + cc.c + '"></span>' +
+        '<div><b style="color:' + cc.c + '">' + esc(cc.lb) + '</b>' +
+        (cc.sub ? '<small' + (cc.subC ? ' style="color:' + cc.subC + ';font-weight:650"' : "") + '>' + esc(cc.sub) + '</small>' : "") + '</div></div>' +
+      (tuGS ? "" : '<div class="ln mut">g-sheet chưa phân công vị trí này' + (pc.bc ? " — bằng chứng " + esc(ngayVN(pc.bc)) : "") + '</div>') +
+      (pc.gc ? '<div class="ln mut">' + esc(pc.gc) + '</div>' : "") +
+      '</div>';
   } else {
-    rows.push(["Phụ trách", '<span class="hp-hint">không có trong bảng phân công' + (S.pc.ok ? "" : " (chưa đọc được tab " + esc(TAB_PC) + ")") + '</span>']);
+    cardPt = '<div class="hp-vtcard pt"><div class="hd">Phụ trách</div><div class="ln mut">' +
+      (S.pc.dang ? "đang tải bảng phân công…"
+        : "không có trong bảng phân công" + (S.pc.ok ? "" : " (chưa đọc được tab " + esc(TAB_PC) + ")")) + '</div></div>';
   }
 
   var ptTuoiVt = ptAll ? tuoiNgay(ptAll.at) : (r ? ptTuoi(r) : null);
-  rows.push(["Báo cáo gần nhất",
-    (ptAll && ptAll.name ? esc(ptAll.name) + (ptAll.code ? ' <span class="hp-hint">' + esc(ptAll.code) + '</span>' : "")
-      : (r && r.ptName ? esc(r.ptName) : '<span class="hp-hint">chưa ai báo cáo vị trí này trong 45 ngày</span>')) +
-    (ptTuoiVt != null ? ' <span class="hp-hint">· ' + esc(ngayVN((ptAll && ptAll.at) || (r && r.ptAt))) + (ptTuoiVt > 0 ? " (" + ptTuoiVt + " ngày trước)" : " (hôm nay)") + '</span>' : "")]);
+  var bcTen = (ptAll && ptAll.name) || (r && r.ptName) || "";
+  var bcEm = (ptAll && ptAll.email) || (r && r.pt) || "";
+  var bcCode = (ptAll && ptAll.code) || (r && r.ptCode) || "";
+  var bcNgay = (ptAll && ptAll.at) || (r && r.ptAt) || "";
+  /* Cùng người hay khác người phụ trách? Đây là điều duy nhất khiến cột "tham khảo" này đáng đọc:
+     lệch nhau = phân công trên giấy chưa khớp thực tế → cần chỉnh bảng phân công hoặc nhắc đúng người.
+     CHỈ đối chiếu khi phân công lấy từ g-sheet: nếu phân công vốn đã SUY TỪ báo cáo gần nhất thì hai
+     bên là cùng một nguồn, in "đúng người" chỉ là so nó với chính nó — vô nghĩa mà lại nghe như bằng chứng. */
+  var soDuoc = tuGS && !!bcEm;
+  var khacNguoi = soDuoc && String(bcEm).toLowerCase() !== String(pc.em).toLowerCase();
+  var cardBc = '<div class="hp-vtcard ref"><div class="hd">Báo cáo gần nhất <span class="hp-hint" style="font-size:10.5px;text-transform:none;letter-spacing:0;font-weight:500">tham khảo</span></div>';
+  if (bcTen || bcEm){
+    var tenBc = bcTen || bcEm;
+    cardBc += '<div class="who"><span class="av" style="background:' + nmColor(tenBc) + '">' + esc(chuDau(tenBc)) + '</span>' +
+      '<div><b>' + esc(tenBc) + '</b><small>' + (bcCode ? esc(bcCode) + (bcEm ? " · " : "") : "") + esc(bcEm) + '</small></div></div>' +
+      '<div class="ln">' + (bcNgay ? esc(thuVN(bcNgay)) + " " + esc(ngayVN(bcNgay)) +
+        (ptTuoiVt != null ? ' <span class="hp-hint">· ' + (ptTuoiVt > 0 ? ptTuoiVt + " ngày trước" : "hôm nay") + '</span>' : "") : '<span class="hp-hint">không rõ ngày</span>') + '</div>' +
+      (!soDuoc ? "" : khacNguoi ? '<div class="ln" style="color:#d97706">⚠ khác người trong bảng phân công</div>'
+        : '<div class="ln" style="color:#059669">✓ đúng người trong bảng phân công</div>') +
+      (ptTuoiVt != null && ptTuoiVt > NGUONG_PT_CU ? '<div class="ln mut">quá ' + NGUONG_PT_CU + ' ngày — bằng chứng cũ, chưa chắc còn phụ trách</div>' : "");
+  } else {
+    cardBc += '<div class="ln mut">chưa ai báo cáo vị trí này trong 45 ngày</div>';
+  }
+  cardBc += '</div>';
 
   $id("hpVtBody").innerHTML =
     '<div class="hp-vthistrow">' + hist + '</div>' +
-    rows.map(function(x){ return '<div class="hp-vtrow"><label>' + x[0] + '</label><div>' + x[1] + '</div></div>'; }).join("");
+    rows.map(function(x){ return '<div class="hp-vtrow"><label>' + x[0] + '</label><div>' + x[1] + '</div></div>'; }).join("") +
+    '<div class="hp-vtduo">' + cardPt + cardBc + '</div>';
 }
 
 /* ===== MODAL DRILL-DOWN — combo chain-filter (2 chế độ: loc = vị trí phụ trách · req = yêu cầu hôm nay) ===== */
