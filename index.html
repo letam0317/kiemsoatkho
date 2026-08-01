@@ -1100,7 +1100,7 @@ body.side-open #sideToggle{left:193px;}
   <section id="pane-fkiemke" class="pane hidden"></section>
   <!-- ===== TAB TỒN KHO BẤT THƯỜNG (Hasaki) — hasaki-tonbatthuong.js, LAZY; data tab stock-inventory-hasaki ===== -->
   <section id="pane-htonbat" class="pane hidden"></section>
-  <!-- ===== TAB PLANOGRAM (Hasaki) — hasaki-planogram.js, LAZY; data 6 tab: VESINH-YEUCAU (yêu cầu hôm nay + ảnh) / VESINH-NHATKY (NV theo ngày) / PHU-TRACH-QUAY-KE / CHAMCONG-VESINH / VESINH-PHANCONG (chủ vị trí) / VESINH-LICHSU (lịch sử báo cáo 60 ngày, nạp khi mở pop-up ô) ===== -->
+  <!-- ===== TAB PLANOGRAM (Hasaki) — hasaki-planogram.js, LAZY; data 6 tab: VESINH-YEUCAU (yêu cầu hôm nay + ảnh) / VESINH-NHATKY (NV theo ngày) / PHU-TRACH-QUAY-KE / CHAMCONG-VESINH / VESINH-PHANCONG (chủ vị trí) / VESINH-LICHSU (lịch sử báo cáo 60 ngày) / VESINH-CHAMCONG-NGAY (chấm công theo ngày 60 ngày — 2 tab này nạp khi mở pop-up ô) ===== -->
   <section id="pane-planogram" class="pane hidden"></section>
 
   <!-- ===== TAB TỔNG HỢP (thống kê) ===== -->
@@ -2663,7 +2663,7 @@ function moHasakiPlanogram(){
       '<div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:54%"></div>'+
       '<div class="sk sk-line" style="width:62%"></div></div>';
     _hpNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20260801a';
+      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20260801b';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-planogram.js'));
       document.body.appendChild(s);
     });
