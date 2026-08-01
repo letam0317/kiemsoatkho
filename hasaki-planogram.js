@@ -919,7 +919,7 @@ var NGUON = [
     build: function(H, rows, ts){ if (ts > 0) S.ccn.ts = ts; S.ccn.dang = false; buildCCN(H, rows); },
     fail: function(){ S.ccn.ok = false; S.ccn.dang = false; veLaiVt(); } }
 ];
-var _daGoi = {}, _ycTO = null;   // _daGoi: tab -> đã bắn request lượt này · _ycTO: watchdog VESINH-YEUCAU
+var _daGoi = {}, _ycTO = null, _preTO = null;   // _daGoi: tab -> đã bắn request lượt này · _ycTO: watchdog VESINH-YEUCAU
 function nguonOf(tab){ for (var i = 0; i < NGUON.length; i++) if (NGUON[i].tab === tab) return NGUON[i]; return null; }
 function goiNguon(tab){
   var n = nguonOf(tab); if (!n || _daGoi[tab]) return;
@@ -986,6 +986,12 @@ function loadData(){
   }
   /* 2) BẬC 1: 3 nguồn dựng màn hình (CHAMCONG + NHATKY để dành bậc 3) */
   bac1();
+  /* 2b) NẠP TRƯỚC 2 nguồn của pop-up ô (lịch sử báo cáo + chấm công theo ngày) sau khi màn hình đã
+     dựng xong. Đợi tới lúc bấm mới gọi thì cú bấm ĐẦU TIÊN phải chờ Apps Script 4-8s (nó phục vụ
+     NỐI ĐUÔI, đo 30/07) — thấy rõ dòng "đang tra chấm công…". Trễ 4s nên không tranh chỗ với 3
+     nguồn dựng màn hình; lượt sau đã có cache phiên nên không gọi lại. */
+  clearTimeout(_preTO);
+  _preTO = setTimeout(function(){ canLS(); canCCN(); }, 4000);
   /* Watchdog: JSONP không phải lúc nào cũng bắn onerror (Apps Script quá tải có khi im luôn) —
      quá 25s chưa thấy YEUCAU thì thôi giữ skeleton, hiện thẳng thông báo để người dùng biết đường xử lý. */
   clearTimeout(_ycTO);
