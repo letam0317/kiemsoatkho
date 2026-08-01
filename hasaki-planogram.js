@@ -17,9 +17,13 @@
  *      việc Ở ĐÂU THEO NGÀY (F0-A8 đổi theo ngày, F0-A1 theo tuần) — tham khảo.
  *   3. "Đối chiếu chấm công hôm nay" (giữ nguyên) — bấm 1 dòng NV mở nhật ký NV đó.
  *
- *  Dữ liệu: 4 tab Sheet 5S do sync-vesinh-all.js ghi (cụm 8h40 / nút Cập nhật ngay):
+ *  Dữ liệu: 5 tab Sheet 5S do sync-vesinh-all.js ghi (cụm 8h40 / nút Cập nhật ngay):
  *   PHU-TRACH-QUAY-KE · CHAMCONG-VESINH · VESINH-YEUCAU (yêu cầu hôm nay + ảnh)
- *   · VESINH-NHATKY (NV × ngày × khu vực, 45 ngày).
+ *   · VESINH-NHATKY (NV × ngày × khu vực, 45 ngày)
+ *   · VESINH-LICHSU (01/08/2026 — LỊCH SỬ từng lượt báo cáo theo vị trí + GIỜ, cửa sổ trượt 60
+ *     ngày, sync tự xoá dòng sang ngày thứ 61): nguồn đối chiếu "ô này ai đã làm, lúc mấy giờ,
+ *     mấy lượt do đúng người phụ trách" trong pop-up ô sơ đồ. Nạp BẬC 3 (khi mở pop-up).
+ *   + VESINH-PHANCONG (sync-phancong.mjs) = chủ vị trí chính thức · VESINH-AI = AI xét ảnh.
  *
  *  Đồng bộ thiết kế TUYỆT ĐỐI với các tab khác (khuôn hasaki-tonbatthuong.js):
  *   - Closure kín, CHỈ lộ window.HPLANOGRAM; DOM/CSS tiền tố hp-.
@@ -47,6 +51,13 @@ var TAB = "PHU-TRACH-QUAY-KE";
 var TAB_CC = "CHAMCONG-VESINH";     // đối chiếu chấm công × vệ sinh hôm nay
 var TAB_YC = "VESINH-YEUCAU";       // từng yêu cầu vệ sinh hôm nay (trạng thái + ảnh)
 var TAB_NK = "VESINH-NHATKY";       // nhật ký NV × ngày × khu vực (45 ngày)
+/* Lịch sử TỪNG LƯỢT báo cáo theo VỊ TRÍ + GIỜ, cửa sổ trượt 60 ngày (sync-vesinh-all.js cộng dồn
+ * mỗi lượt rồi tự xoá dòng sang ngày thứ 61). VÌ SAO CẦN: 3 nguồn kia đều bị cắt cửa sổ (YEUCAU 7
+ * ngày · quét planogram 45 ngày) và PHU-TRACH chỉ giữ lượt GẦN NHẤT mỗi vị trí — ô nào 45 ngày
+ * không ai báo cáo thì pop-up không có ngày nào để hiện, đành in "không rõ ngày". Đây là nguồn duy
+ * nhất đối chiếu được "ai đã làm ô này, lúc mấy giờ" trong 60 ngày. Nạp BẬC 3 (lúc mở pop-up ô). */
+var TAB_LS = "VESINH-LICHSU";
+var LS_NGAY = 60;                   // cửa sổ lịch sử (phải khớp VS_LS_NGAY của sync-vesinh-all.js)
 var TAB_AI = "VESINH-AI";           // AI xét duyệt ảnh (sync-vesinh-ai.mjs — Claude chấm từng yêu cầu)
 /* Bảng phân công phụ trách theo vị trí (sync-phancong.mjs): g-sheet phân công gốc của bộ phận,
  * vị trí nào g-sheet bỏ trống thì bù bằng người báo cáo gần nhất 30 ngày → LUÔN có người.
@@ -314,6 +325,16 @@ var COLS_NK = {
   khu:   ["khu vực", "khu vuc", "area"],
   locs:  ["vị trí", "vi tri", "locations"]
 };
+/* Cột tab VESINH-LICHSU (1 dòng = 1 lượt báo cáo thật: vị trí + ngày + GIỜ + người) */
+var COLS_LS = {
+  ngay:  ["ngày", "ngay", "date"],
+  gio:   ["giờ", "gio", "time"],
+  loc:   ["location", "vị trí", "vi tri"],
+  email: ["executed by", "executed_by", "email"],
+  code:  ["code", "mã nv", "ma nv"],
+  name:  ["name", "tên", "ten"],
+  id:    ["request id", "request_id"]
+};
 /* Nhóm trạng thái chấm công (màu + nhãn) */
 var CCST = [
   { k: "chua", lb: "Đi làm - chưa vệ sinh", short: "Chưa vệ sinh", c: "#dc2626" },
@@ -377,6 +398,7 @@ var S = { ok: false, dangPT: false, all: [], area: "", lastAt: 0, tsData: 0,
   cc: { ok: false, dang: false, rows: [], ts: 0 }, ccStatus: "", ccQ: "",
   yc: { ok: false, dang: false, rows: [], ts: 0, ngay: "" },
   nk: { ok: false, dang: false, rows: [], ts: 0 },
+  ls: { ok: false, dang: false, by: {}, ts: 0, n: 0, tu: "" },   // by[khoá ô] = [lượt báo cáo] mới → cũ (60 ngày) · tu = ngày sớm nhất còn trong tab
   ai: { ok: false, dang: false, by: {}, rows: [], ts: 0 }, aiKl: "", aiQ: "",
   pc: { ok: false, dang: false, by: {}, ts: 0 },   // by[khoá ô] = { em, code, ten, nguon, bc, gc }
   dTu: "", dDen: "", listMode: "ai", ptHi: "", ptOpen: false };   // dTu→dDen = KHOẢNG NGÀY đang xem; listMode = panel danh sách (ai | nv); ptHi = email NV đang SOI; ptOpen = panel cần-nhắc đang xổ
@@ -676,6 +698,9 @@ var CSS = [
 ".hp-vtcard.pt{border-color:color-mix(in srgb, var(--accent,#326e51) 32%, transparent);background:color-mix(in srgb, var(--accent,#326e51) 7%, var(--surface,#fff));}",
 ".hp-vtcard.ref{animation-delay:.06s;}",
 ".hp-vtcard .hd{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:10.5px;font-weight:700;color:var(--muted,#6b7280);text-transform:uppercase;letter-spacing:.04em;}",
+/* badge nguồn phân công ("Suy từ báo cáo gần nhất") dài hơn max-width mặc định của .hp-badge →
+   bị cắt còn "SUY TỪ BÁO CÁO GẦN NH…", đọc không ra nguồn. Trong thẻ pop-up cho xuống dòng. */
+".hp-modal .hp-vtcard .hd .hp-badge{max-width:none;white-space:normal;}",
 ".hp-vtcard .who{display:flex;align-items:center;gap:9px;min-width:0;}",
 ".hp-vtcard .who > div{min-width:0;}",
 ".hp-vtcard .av{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:750;color:#fff;letter-spacing:.02em;}",
@@ -688,6 +713,18 @@ var CSS = [
 ".hp-vtcard .cc small{display:block;font-size:10.5px;color:var(--muted,#9ca3af);line-height:1.4;margin-top:1px;}",
 ".hp-vtcard .ln{font-size:11.5px;line-height:1.45;color:var(--text,#374151);}",
 ".hp-vtcard .ln.mut{color:var(--muted,#9ca3af);}",
+/* LỊCH SỬ 60 NGÀY của ô (tab VESINH-LICHSU) — cùng khuôn "gạch ngang chấm + nhãn hoa nhỏ" của
+   dòng chấm công .cc ở thẻ Phụ trách để 2 thẻ đọc như một hệ, không phải 2 kiểu trình bày. */
+".hp-vtcard .hp-vtls{padding-top:7px;border-top:1px dashed var(--border,#e2e8f0);display:flex;flex-direction:column;gap:5px;}",
+".hp-vtcard .hp-vtls .hd2{font-size:10.5px;font-weight:700;color:var(--muted,#6b7280);text-transform:uppercase;letter-spacing:.04em;}",
+".hp-vtcard .hp-vtls .hd2 b{font-weight:750;color:var(--text,#1f2937);}",
+".hp-vtcard .hp-vtls .evs{list-style:none;margin:1px 0 0;padding:0;display:flex;flex-direction:column;gap:3px;max-height:132px;overflow-y:auto;overscroll-behavior:contain;}",
+".hp-vtcard .hp-vtls .evs li{display:grid;grid-template-columns:62px 40px 1fr;gap:6px;align-items:baseline;font-size:11.5px;line-height:1.4;}",
+".hp-vtcard .hp-vtls .evs .d{color:var(--muted,#9ca3af);font-variant-numeric:tabular-nums;}",
+".hp-vtcard .hp-vtls .evs .g{font-weight:700;font-variant-numeric:tabular-nums;color:var(--text,#1f2937);}",
+".hp-vtcard .hp-vtls .evs .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text,#374151);}",
+/* người KHÁC người phụ trách: hổ phách — cùng màu "lệch phân công" dùng ở dòng đối chiếu ngay trên */
+".hp-vtcard .hp-vtls .evs .nm.la{color:#d97706;font-weight:650;}",
 /* pop-up TRA CỨU THEO NHÂN VIÊN (nhật ký theo ngày) */
 ".hp-nk-grid{display:grid;grid-template-columns:280px 1fr;gap:0;flex:1;min-height:0;}",
 ".hp-nk-left{border-right:1px solid var(--border,#e8ecf1);display:flex;flex-direction:column;min-height:0;}",
@@ -739,7 +776,7 @@ var KHUNG =
 '    <span id="hpLoadinfo" class="hp-hint"></span>' +
 '    <button id="hpReload" onclick="HPLANOGRAM.reload()" title="Đọc lại dữ liệu mới nhất từ Google Sheet">Làm mới</button>' +
 '  </div>' +
-'  <p class="hp-hint" style="margin:0" title="Bộ sync-vesinh-all.js (cụm 8h40 / nút Cập nhật ngay) ghi 4 tab: ' + TAB_YC + ', ' + TAB_NK + ', ' + TAB + ', ' + TAB_CC + '. Ảnh trong pop-up là ảnh nhân viên chụp khi báo cáo.">Nguồn: <b>planogram</b> · cập nhật lúc 8h40 &amp; khi bấm “Cập nhật ngay”. Bấm ảnh để phóng to.</p>' +
+'  <p class="hp-hint" style="margin:0" title="Bộ sync-vesinh-all.js (cụm 8h40 / nút Cập nhật ngay) ghi 5 tab: ' + TAB_YC + ', ' + TAB_NK + ', ' + TAB + ', ' + TAB_CC + ', ' + TAB_LS + ' (lịch sử ' + LS_NGAY + ' ngày). Ảnh trong pop-up là ảnh nhân viên chụp khi báo cáo.">Nguồn: <b>planogram</b> · cập nhật lúc 8h40 &amp; khi bấm “Cập nhật ngay”. Bấm ảnh để phóng to.</p>' +
 '</div>';
 
 /* Skeleton GIỮ CHỖ 2 cột trong lúc tải (chống layout-shift khi F5): khối sơ đồ + khối KPI
@@ -871,7 +908,10 @@ var NGUON = [
     fail: function(){ S.cc.ok = false; S.cc.dang = false; renderCC(); } },
   { tab: TAB_NK, cb: "hpgv_nk",
     build: function(H, rows, ts){ if (ts > 0) S.nk.ts = ts; S.nk.dang = false; buildNK(H, rows); },
-    fail: function(){ S.nk.ok = false; S.nk.dang = false; renderNkList(); renderWhBar(); } }
+    fail: function(){ S.nk.ok = false; S.nk.dang = false; renderNkList(); renderWhBar(); } },
+  { tab: TAB_LS, cb: "hpgv_ls",
+    build: function(H, rows, ts){ if (ts > 0) S.ls.ts = ts; S.ls.dang = false; buildLS(H, rows); },
+    fail: function(){ S.ls.ok = false; S.ls.dang = false; veLaiVt(); } }
 ];
 var _daGoi = {}, _ycTO = null;   // _daGoi: tab -> đã bắn request lượt này · _ycTO: watchdog VESINH-YEUCAU
 function nguonOf(tab){ for (var i = 0; i < NGUON.length; i++) if (NGUON[i].tab === tab) return NGUON[i]; return null; }
@@ -893,6 +933,7 @@ function bac1(){
     goiNguon(TAB); goiNguon(TAB_AI);
     if (S.cc.ok || S.cc.dang) goiNguon(TAB_CC);   // đang mở sẵn danh sách NV / pop-up thì làm mới luôn
     if (S.nk.ok || S.nk.dang) goiNguon(TAB_NK);
+    if (S.ls.ok || S.ls.dang) goiNguon(TAB_LS);
   }, 250);
 }
 /* bậc 3 — nạp theo yêu cầu, gọi từ chỗ người dùng thực sự cần dữ liệu đó */
@@ -900,6 +941,9 @@ function bac1(){
    không", không phải chờ mạng) rồi vẫn gọi tab để lấy bản mới — đúng nhịp cache-rồi-tải của loadData. */
 function canCC(){ if (S.cc.ok || S.cc.dang) return; S.cc.dang = true; tuCache(TAB_CC); goiNguon(TAB_CC); }
 function canNK(){ if (S.nk.ok || S.nk.dang) return; S.nk.dang = true; goiNguon(TAB_NK); }
+/* Lịch sử 60 ngày: cũng vẽ ngay từ cache phiên rồi mới gọi bản mới — pop-up ô vừa mở đã có
+   "báo cáo gần nhất + mấy lượt trong 60 ngày", không phải chờ mạng. */
+function canLS(){ if (S.ls.ok || S.ls.dang) return; S.ls.dang = true; tuCache(TAB_LS); goiNguon(TAB_LS); }
 function loadTabGviz(tab, cbName, cbBuild, onFail){
   var cb2 = cbName + "g";
   window[cb2] = function(resp){
@@ -920,6 +964,7 @@ function loadData(){
   tuCache(TAB); tuCache(TAB_AI); tuCache(TAB_PC);
   if (S.cc.ok || S.cc.dang) tuCache(TAB_CC);
   if (S.nk.ok || S.nk.dang) tuCache(TAB_NK);
+  if (S.ls.ok || S.ls.dang) tuCache(TAB_LS);
   if (!coYc){
     animBat();   // dữ liệu mới thật → cho chạy animation vào 1 lượt
     st.style.display = "block";
@@ -1041,6 +1086,39 @@ function buildNK(H, rows2d){
   }
   render();   // vẽ lại panel phụ trách (nút tra cứu đếm NV)
 }
+/* Lịch sử báo cáo 60 ngày — gom theo KHOÁ Ô (khoaO) vì kệ A1 mang nhiều mã mâm-bin qua các ngày:
+   tra theo mã đúng từng ký tự sẽ chia lịch sử của 1 kệ thành nhiều mảnh rời. */
+function buildLS(H, rows2d){
+  var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
+  var idx = {}; Object.keys(COLS_LS).forEach(function(k){ idx[k] = idxOf(hl, COLS_LS[k]); });
+  if (idx.ngay < 0 || idx.loc < 0){ S.ls.ok = false; S.ls.by = {}; S.ls.n = 0; veLaiVt(); return; }
+  var by = {}, n = 0;
+  rows2d.forEach(function(row){
+    function gv(i){ return (i >= 0 && row[i] != null) ? row[i] : ""; }
+    var loc = String(gv(idx.loc)).trim(); if (!loc) return;
+    var ngay = fmtNgay(gv(idx.ngay)); if (!ngay) return;
+    var email = String(gv(idx.email) || "").trim();
+    var code = String(gv(idx.code) || "").trim(), name = String(gv(idx.name) || "").trim();
+    ghiNhoNm(email, code, name);
+    var k = khoaO(loc);
+    (by[k] || (by[k] = [])).push({ loc: loc, ngay: ngay, gio: fmtHM(gv(idx.gio)), email: email,
+      code: code, name: name, id: String(gv(idx.id) || "").replace(/\.0$/, "").trim() });
+    n++;
+  });
+  Object.keys(by).forEach(function(k){
+    by[k].sort(function(a, b){ return (a.ngay + " " + a.gio) < (b.ngay + " " + b.gio) ? 1 : -1; });   // mới → cũ
+  });
+  /* Ngày SỚM NHẤT còn trong tab: lịch sử cộng dồn dần (lượt sync đầu chỉ có 45 ngày quét, sau đó
+     mới đủ 60) → pop-up in kèm "dữ liệu từ …" để không ai hiểu 0 lượt là "chắc chắn 60 ngày không ai làm". */
+  var tu = "";
+  Object.keys(by).forEach(function(k){ var l = by[k], x = l[l.length - 1]; if (x && (!tu || x.ngay < tu)) tu = x.ngay; });
+  S.ls.ok = true; S.ls.by = by; S.ls.n = n; S.ls.tu = tu;
+  veLaiVt();
+}
+/** Lượt báo cáo THẬT của 1 ô trong 60 ngày (mới → cũ). [] khi chưa nạp / ô chưa ai làm. */
+function lsCua(loc){ return (S.ls.ok && S.ls.by[khoaO(loc)]) || []; }
+/** Pop-up vị trí có thể đang mở khi nguồn bậc 3 về → vẽ lại đúng chỗ đó (giống buildCC). */
+function veLaiVt(){ var m = $id("hpVtModal"); if (m && m.classList.contains("show")) renderVt(); }
 function buildAI(H, rows2d){
   var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
   var idx = {}; Object.keys(COLS_AI).forEach(function(k){ idx[k] = idxOf(hl, COLS_AI[k]); });
@@ -1627,7 +1705,7 @@ function renderMap(){
           ? "\n   vệ sinh gần nhất: " + ngayVN(mi.vsCuoi) + (mi.name || mi.email ? " — " + (mi.name || mi.email) : "")
           : "\n   chưa ai từng vệ sinh vị trí này";
       }
-      return head + loc + pcT + "\nKhông có yêu cầu vệ sinh trong khoảng đang xem" + vs + "\n(bấm xem lịch sử 7 ngày)";
+      return head + loc + pcT + "\nKhông có yêu cầu vệ sinh trong khoảng đang xem" + vs + "\n(bấm xem lịch sử 7 ngày + 60 ngày)";
     }
     if (mot){
       var r = repCua(list), st = cellMeta(cellState1(r)), ai = aiOf(r), aim = ai && aiMeta(ai.kl);
@@ -1647,7 +1725,7 @@ function renderMap(){
       return head + loc + pcT + "\nTrạng thái: " + st.lb +
         (r.email ? "\nNgười làm: " + (tenNm(r.email) || r.email) + (r.at ? " lúc " + String(r.at).slice(11, 16) : "") : ptTxt) +
         (aim ? "\nAI: " + aim.lb.replace("AI: ", "") + (ai.diem ? " · " + ai.diem + " điểm" : "") : "") +
-        "\n(bấm xem chi tiết + lịch sử 7 ngày)";
+        "\n(bấm xem chi tiết + lịch sử 60 ngày)";
     }
     var dong = list.slice().sort(function(a, b){ return a.ngay < b.ngay ? -1 : 1; }).map(function(r){
       return ngayVN(r.ngay) + ": " + (r.bk === "da" ? "Đã vệ sinh" + (r.email ? " — " + (tenNm(r.email) || r.email) : "") : "Chưa vệ sinh");
@@ -1789,7 +1867,7 @@ function renderMap(){
     '<section class="hp-panel hp-fade">' +
     '<h2>Sơ đồ khu vực <span class="hp-chip">' + esc(nhanKhoang()) + '</span> ' + legend + '</h2>' +
     bannerAlert + (slot ? "" : htmlNhac) + htmlA1 + htmlA8 +
-    '<p class="hp-hint" style="margin:6px 0 0">Bấm một ô để xem chi tiết báo cáo và lịch sử 7 ngày' +
+    '<p class="hp-hint" style="margin:6px 0 0">Bấm một ô để xem chi tiết báo cáo, dải 7 ngày và lịch sử 60 ngày' +
       (mot ? ' — cách đọc màu: <b>ô có vạch xanh mép trái = đã báo cáo</b> (xanh xong hẳn · hổ phách chờ mình xem lại ảnh · tím phải làm lại), <b>đỏ = chưa vệ sinh mà phụ trách đang đi làm</b> (nhắc được ngay), xám xanh = chưa vệ sinh nhưng phụ trách nghỉ / chưa có người nhận'
            : " — theo khoảng: xanh = mọi ngày đạt, tím = có ngày AI không đạt, đỏ = có ngày chưa vệ sinh") + '.</p>' +
     '</section>';
@@ -1815,12 +1893,55 @@ function openViTri(loc){
   if (!loc) return;
   VT.loc = loc; VT.ngay = ngayXem();
   canCC();   // pop-up cần chấm công hôm nay của phụ trách — nguồn bậc 3, nạp lúc mở (buildCC vẽ lại)
+  canLS();   // + lịch sử báo cáo 60 ngày của ô (bậc 3 — chỉ pop-up này dùng, buildLS vẽ lại)
   renderVt();
   var m = $id("hpVtModal"); m.style.display = "flex";
   requestAnimationFrame(function(){ m.classList.add("show"); });
 }
 function closeVt(){ var m = $id("hpVtModal"); m.classList.remove("show"); setTimeout(function(){ m.style.display = "none"; $id("hpVtBody").innerHTML = ""; }, 240); }
 function vtNgay(d){ VT.ngay = d; renderVt(); }
+/* ===== KHỐI "LỊCH SỬ 60 NGÀY" trong thẻ Báo cáo gần nhất (01/08/2026) ======================
+ * Trả lời đúng câu hỏi cần đối chiếu: ô này ĐƯỢC LÀM MẤY LƯỢT, ai làm, LÚC MẤY GIỜ — và bao nhiêu
+ * lượt do đúng người trong bảng phân công. Trước đây pop-up chỉ có lượt GẦN NHẤT (mà ô chưa ai làm
+ * thì không có gì cả), nên không cách nào biết "người này có thật sự phụ trách ô này không".
+ * Nguồn VESINH-LICHSU: cửa sổ TRƯỢT — sync cộng dồn lượt mới và tự xoá dòng rơi sang ngày thứ 61. */
+var LS_HIEN = 6;   // in thẳng N lượt gần nhất, phần còn lại gộp 1 dòng "… và M lượt trước đó"
+function htmlLsO(list, pc){
+  var hd = '<div class="hd2">Lịch sử ' + LS_NGAY + ' ngày';
+  if (!S.ls.ok) return S.ls.dang ? '<div class="hp-vtls">' + hd + '</div><div class="ln mut">đang đọc tab ' + esc(TAB_LS) + '…</div></div>' : "";
+  var tuTxt = S.ls.tu ? ' <span class="hp-hint">· dữ liệu từ ' + esc(ngayVN(S.ls.tu)) + '</span>' : "";
+  if (!list.length) return '<div class="hp-vtls">' + hd + tuTxt + '</div><div class="ln mut">không có lượt báo cáo nào ở ô này</div></div>';
+  /* Đếm theo NGƯỜI để so với bảng phân công: 1 người làm hết = phân công khớp thực tế;
+     có người khác xen vào = hoặc làm thay, hoặc bảng phân công đã lạc hậu → đáng xem lại. */
+  var dem = {}, thuTu = [];
+  list.forEach(function(v){
+    var k = String(v.email || "").toLowerCase();
+    if (!dem[k]){ dem[k] = { n: 0, ten: v.name || tenNm(v.email) || v.email || "(không rõ)" }; thuTu.push(k); }
+    dem[k].n++;
+  });
+  var pcEm = (pc && pc.em) ? String(pc.em).toLowerCase() : "";
+  var khac = thuTu.filter(function(k){ return k !== pcEm; });
+  var doi = "";
+  if (pcEm){
+    doi = khac.length
+      ? '<div class="ln" style="color:#d97706">⚠ ' + (dem[pcEm] ? dem[pcEm].n : 0) + "/" + list.length +
+        ' lượt do đúng người phụ trách · còn ' + khac.map(function(k){ return esc(dem[k].ten) + " " + dem[k].n + " lượt"; }).join(", ") + '</div>'
+      : '<div class="ln" style="color:#059669">✓ cả ' + list.length + ' lượt đều do đúng người phụ trách</div>';
+  }
+  var evs = list.slice(0, LS_HIEN).map(function(v){
+    var la = pcEm && String(v.email || "").toLowerCase() !== pcEm;
+    return '<li title="' + esc(v.loc + (v.id ? " · yêu cầu #" + v.id : "") + (v.email ? " · " + v.email : "")) + '">' +
+      '<span class="d">' + esc(thuVN(v.ngay) + " " + ngayVN(v.ngay)) + '</span>' +
+      '<span class="g">' + esc(v.gio || "--:--") + '</span>' +
+      '<span class="nm' + (la ? " la" : "") + '">' + esc(v.name || tenNm(v.email) || v.email || "—") + '</span></li>';
+  }).join("");
+  var con = list.length - LS_HIEN;
+  return '<div class="hp-vtls">' + hd + ' · <b>' + list.length + '</b> lượt' +
+    (thuTu.length > 1 ? " · " + thuTu.length + " người" : "") + tuTxt + '</div>' + doi +
+    '<ul class="evs">' + evs + '</ul>' +
+    (con > 0 ? '<div class="ln mut">… và ' + con + ' lượt trước đó trong ' + LS_NGAY + ' ngày</div>' : "") +
+    '</div>';
+}
 function renderVt(){
   var loc = VT.loc, d = VT.ngay, kO = khoaO(loc);
   /* gom theo KHOÁ Ô (kệ alias nhiều mã vẫn về đúng pop-up); 1 ngày nhiều mã → ưu tiên bản ĐÃ vệ sinh */
@@ -1888,6 +2009,7 @@ function renderVt(){
     /* Chấm công HÔM NAY của đúng người này (tab CHAMCONG-VESINH, bậc 3 — nạp khi mở pop-up):
        trả lời trực tiếp "nhắc được hay phải bố trí người khác". */
     var cc = ccTrangThai(pc.em, pc.code);
+    var gcVe = String(pc.gc || "").replace(/^\s*g-sheet chưa phân công vị trí này\s*(·\s*)?/i, "");
     cardPt =
       '<div class="hp-vtcard pt">' +
       '<div class="hd">Phụ trách <span class="hp-badge" style="background:color-mix(in srgb,' + mauNg + ' 14%,transparent);color:' + mauNg + '">' +
@@ -1898,7 +2020,9 @@ function renderVt(){
         '<div><b style="color:' + cc.c + '">' + esc(cc.lb) + '</b>' +
         (cc.sub ? '<small' + (cc.subC ? ' style="color:' + cc.subC + ';font-weight:650"' : "") + '>' + esc(cc.sub) + '</small>' : "") + '</div></div>' +
       (tuGS ? "" : '<div class="ln mut">g-sheet chưa phân công vị trí này' + (pc.bc ? " — bằng chứng " + esc(ngayVN(pc.bc)) : "") + '</div>') +
-      (pc.gc ? '<div class="ln mut">' + esc(pc.gc) + '</div>' : "") +
+      /* Ghi chú của dòng BÙ trong bảng phân công vốn mở đầu đúng bằng câu "g-sheet chưa phân công
+         vị trí này" (sync-phancong ghi vậy) → in tiếp cả ghi chú là lặp nguyên câu vừa đọc. Cắt vế trùng. */
+      (gcVe ? '<div class="ln mut">' + esc(gcVe) + '</div>' : "") +
       '</div>';
   } else {
     cardPt = '<div class="hp-vtcard pt"><div class="hd">Phụ trách</div><div class="ln mut">' +
@@ -1906,11 +2030,27 @@ function renderVt(){
         : "không có trong bảng phân công" + (S.pc.ok ? "" : " (chưa đọc được tab " + esc(TAB_PC) + ")")) + '</div></div>';
   }
 
-  var ptTuoiVt = ptAll ? tuoiNgay(ptAll.at) : (r ? ptTuoi(r) : null);
-  var bcTen = (ptAll && ptAll.name) || (r && r.ptName) || "";
-  var bcEm = (ptAll && ptAll.email) || (r && r.pt) || "";
-  var bcCode = (ptAll && ptAll.code) || (r && r.ptCode) || "";
-  var bcNgay = (ptAll && ptAll.at) || (r && r.ptAt) || "";
+  /* ===== BẰNG CHỨNG "AI ĐÃ THỰC SỰ LÀM" — chỉ nhận nguồn LÀ BÁO CÁO THẬT (01/08/2026) =====
+     Thứ tự: (1) lịch sử 60 ngày VESINH-LICHSU — có cả GIỜ, sống lâu nhất; (2) tab PHU-TRACH (lượt
+     gần nhất 45 ngày); (3) chính yêu cầu của ngày đang xem.
+     TUYỆT ĐỐI KHÔNG lấy các cột "Phụ trách / PT Name / PT lần cuối" của VESINH-YEUCAU: từ 30/07
+     chúng được sync ghi theo BẢNG PHÂN CÔNG, không phải người đã làm. Lấy chúng làm "báo cáo gần
+     nhất" chính là lỗi user gặp ở ô F0-A1-513-10 (chưa ai báo cáo lần nào trong 45 ngày): thẻ tham
+     khảo in lại đúng người phụ trách, ngày thì "không rõ", rồi tự kết luận "✓ đúng người trong bảng
+     phân công" — tức là so bảng phân công với chính nó và trình bày như bằng chứng. */
+  var lsAll = lsCua(loc), lsMoi = lsAll[0] || null;
+  var bcTen = "", bcEm = "", bcCode = "", bcNgay = "", bcGio = "", bcNguon = "";
+  if (lsMoi){
+    bcEm = lsMoi.email; bcTen = lsMoi.name || tenNm(lsMoi.email); bcCode = lsMoi.code;
+    bcNgay = lsMoi.ngay; bcGio = lsMoi.gio; bcNguon = "lịch sử " + LS_NGAY + " ngày";
+  } else if (ptAll){
+    bcEm = ptAll.email; bcTen = ptAll.name || tenNm(ptAll.email); bcCode = ptAll.code;
+    bcNgay = String(ptAll.at || "").slice(0, 10); bcGio = String(ptAll.at || "").slice(11, 16); bcNguon = "lượt gần nhất 45 ngày";
+  } else if (r && r.email){
+    bcEm = r.email; bcTen = tenNm(r.email); bcCode = "";
+    bcNgay = String(r.at || "").slice(0, 10) || r.ngay; bcGio = String(r.at || "").slice(11, 16); bcNguon = "yêu cầu ngày " + ngayVN(d);
+  }
+  var ptTuoiVt = bcNgay ? tuoiNgay(bcNgay) : null;
   /* Cùng người hay khác người phụ trách? Đây là điều duy nhất khiến cột "tham khảo" này đáng đọc:
      lệch nhau = phân công trên giấy chưa khớp thực tế → cần chỉnh bảng phân công hoặc nhắc đúng người.
      CHỈ đối chiếu khi phân công lấy từ g-sheet: nếu phân công vốn đã SUY TỪ báo cáo gần nhất thì hai
@@ -1922,15 +2062,19 @@ function renderVt(){
     var tenBc = bcTen || bcEm;
     cardBc += '<div class="who"><span class="av" style="background:' + nmColor(tenBc) + '">' + esc(chuDau(tenBc)) + '</span>' +
       '<div><b>' + esc(tenBc) + '</b><small>' + (bcCode ? esc(bcCode) + (bcEm ? " · " : "") : "") + esc(bcEm) + '</small></div></div>' +
-      '<div class="ln">' + (bcNgay ? esc(thuVN(bcNgay)) + " " + esc(ngayVN(bcNgay)) +
-        (ptTuoiVt != null ? ' <span class="hp-hint">· ' + (ptTuoiVt > 0 ? ptTuoiVt + " ngày trước" : "hôm nay") + '</span>' : "") : '<span class="hp-hint">không rõ ngày</span>') + '</div>' +
+      '<div class="ln"><b>' + esc(thuVN(bcNgay)) + " " + esc(ngayVN(bcNgay)) + '</b>' +
+        (bcGio ? ' lúc <b>' + esc(bcGio) + '</b>' : "") +
+        (ptTuoiVt != null ? ' <span class="hp-hint">· ' + (ptTuoiVt > 0 ? ptTuoiVt + " ngày trước" : "hôm nay") + '</span>' : "") +
+        (bcNguon ? ' <span class="hp-hint">(' + esc(bcNguon) + ')</span>' : "") + '</div>' +
       (!soDuoc ? "" : khacNguoi ? '<div class="ln" style="color:#d97706">⚠ khác người trong bảng phân công</div>'
         : '<div class="ln" style="color:#059669">✓ đúng người trong bảng phân công</div>') +
       (ptTuoiVt != null && ptTuoiVt > NGUONG_PT_CU ? '<div class="ln mut">quá ' + NGUONG_PT_CU + ' ngày — bằng chứng cũ, chưa chắc còn phụ trách</div>' : "");
   } else {
-    cardBc += '<div class="ln mut">chưa ai báo cáo vị trí này trong 45 ngày</div>';
+    cardBc += '<div class="ln mut">' + (S.ls.dang ? "đang đọc lịch sử " + LS_NGAY + " ngày…"
+      : !S.ls.ok ? "chưa đọc được tab " + esc(TAB_LS) + " — 45 ngày quét cũng không có lượt nào"
+      : "chưa ai báo cáo vị trí này trong " + LS_NGAY + " ngày") + '</div>';
   }
-  cardBc += '</div>';
+  cardBc += htmlLsO(lsAll, pc) + '</div>';
 
   $id("hpVtBody").innerHTML =
     '<div class="hp-vthistrow">' + hist + '</div>' +
