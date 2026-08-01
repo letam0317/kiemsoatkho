@@ -19,7 +19,8 @@
  *
  *  Dữ liệu: 5 tab Sheet 5S do sync-vesinh-all.js ghi (cụm 8h40 / nút Cập nhật ngay):
  *   PHU-TRACH-QUAY-KE · CHAMCONG-VESINH · VESINH-YEUCAU (yêu cầu hôm nay + ảnh)
- *   · VESINH-NHATKY (NV × ngày × khu vực, 45 ngày)
+ *   · VESINH-NHATKY (NV × ngày × khu vực, 45 ngày) — 01/08/2026 DASHBOARD KHÔNG ĐỌC NỮA:
+ *     nhật ký theo nhân viên nay gom từ VESINH-LICHSU (khớp 272/272 dòng, lại phủ 60 ngày)
  *   · VESINH-LICHSU (01/08/2026 — LỊCH SỬ từng lượt báo cáo theo vị trí + GIỜ, cửa sổ trượt 60
  *     ngày, sync tự xoá dòng sang ngày thứ 61): nguồn đối chiếu "ô này ai đã làm, lúc mấy giờ,
  *     mấy lượt do đúng người phụ trách" trong pop-up ô sơ đồ. Nạp BẬC 3 (khi mở pop-up).
@@ -53,7 +54,11 @@ var SHEET_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/edit";
 var TAB = "PHU-TRACH-QUAY-KE";
 var TAB_CC = "CHAMCONG-VESINH";     // đối chiếu chấm công × vệ sinh hôm nay
 var TAB_YC = "VESINH-YEUCAU";       // từng yêu cầu vệ sinh hôm nay (trạng thái + ảnh)
-var TAB_NK = "VESINH-NHATKY";       // nhật ký NV × ngày × khu vực (45 ngày)
+/* VESINH-NHATKY: sync vẫn ghi (tab cho người đọc trên Sheet) nhưng DASHBOARD KHÔNG ĐỌC NỮA
+ * (01/08/2026). Đối chiếu thật: 272/272 dòng của nó dựng lại được y nguyên từ VESINH-LICHSU
+ * (gom theo ngày|email|khu) — mà LICHSU phủ 60 ngày (rộng hơn 45) và đã được nạp trước sẵn cho
+ * pop-up ô. Đọc thêm nó chỉ tốn 1 request GAS + 34KB cho cùng một sự thật. */
+var TAB_NK_BO = "VESINH-NHATKY";
 /* Lịch sử TỪNG LƯỢT báo cáo theo VỊ TRÍ + GIỜ, cửa sổ trượt 60 ngày (sync-vesinh-all.js cộng dồn
  * mỗi lượt rồi tự xoá dòng sang ngày thứ 61). VÌ SAO CẦN: 3 nguồn kia đều bị cắt cửa sổ (YEUCAU 7
  * ngày · quét planogram 45 ngày) và PHU-TRACH chỉ giữ lượt GẦN NHẤT mỗi vị trí — ô nào 45 ngày
@@ -323,15 +328,6 @@ var COLS_PC = {
   bc:    ["bằng chứng", "bang chung"],
   gc:    ["ghi chú", "ghi chu", "note"]
 };
-/* Cột tab VESINH-NHATKY */
-var COLS_NK = {
-  ngay:  ["ngày", "ngay", "date"],
-  email: ["email", "mail"],
-  code:  ["code", "mã nv", "ma nv"],
-  name:  ["name", "tên", "ten"],
-  khu:   ["khu vực", "khu vuc", "area"],
-  locs:  ["vị trí", "vi tri", "locations"]
-};
 /* Cột tab VESINH-LICHSU (1 dòng = 1 lượt báo cáo thật: vị trí + ngày + GIỜ + người) */
 var COLS_LS = {
   ngay:  ["ngày", "ngay", "date"],
@@ -411,8 +407,7 @@ function pgLocUrl(loc){
 var S = { ok: false, dangPT: false, all: [], area: "", lastAt: 0, tsData: 0,
   cc: { ok: false, dang: false, rows: [], ts: 0 }, ccStatus: "", ccQ: "",
   yc: { ok: false, dang: false, rows: [], ts: 0, ngay: "" },
-  nk: { ok: false, dang: false, rows: [], ts: 0 },
-  ls: { ok: false, dang: false, by: {}, ts: 0, n: 0 },   // by[khoá ô] = [lượt báo cáo] mới → cũ (60 ngày) — nguồn "báo cáo gần nhất" của pop-up
+  ls: { ok: false, dang: false, by: {}, ev: [], ts: 0, n: 0 },   // by[khoá ô] = [lượt báo cáo] mới → cũ (60 ngày) — nguồn "báo cáo gần nhất" của pop-up
   ccn: { ok: false, dang: false, em: {}, code: {}, ts: 0, ngay: {} },   // chấm công theo ngày: em/code -> { ten, d:{ngày:{vao,ra}} } · ngay = tập ngày CÓ dữ liệu
   ai: { ok: false, dang: false, by: {}, rows: [], ts: 0 }, aiKl: "", aiQ: "",
   pc: { ok: false, dang: false, by: {}, ts: 0 },   // by[khoá ô] = { em, code, ten, nguon, bc, gc }
@@ -779,7 +774,7 @@ var KHUNG =
 '    <span id="hpLoadinfo" class="hp-hint"></span>' +
 '    <button id="hpReload" onclick="HPLANOGRAM.reload()" title="Đọc lại dữ liệu mới nhất từ Google Sheet">Làm mới</button>' +
 '  </div>' +
-'  <p class="hp-hint" style="margin:0" title="Bộ sync-vesinh-all.js (cụm 8h40 / nút Cập nhật ngay) ghi 6 tab: ' + TAB_YC + ', ' + TAB_NK + ', ' + TAB + ', ' + TAB_CC + ', ' + TAB_LS + ' (lịch sử báo cáo ' + LS_NGAY + ' ngày), ' + TAB_CCN + ' (chấm công theo ngày). Ảnh trong pop-up là ảnh nhân viên chụp khi báo cáo.">Nguồn: <b>planogram</b> · cập nhật lúc 8h40 &amp; khi bấm “Cập nhật ngay”. Bấm ảnh để phóng to.</p>' +
+'  <p class="hp-hint" style="margin:0" title="Bộ sync-vesinh-all.js (cụm 8h40 / nút Cập nhật ngay) ghi 6 tab: ' + TAB_YC + ', ' + TAB + ', ' + TAB_CC + ', ' + TAB_LS + ' (lịch sử báo cáo ' + LS_NGAY + ' ngày), ' + TAB_CCN + ' (chấm công theo ngày), ' + TAB_NK_BO + ' (chỉ cho người đọc trên Sheet). Ảnh trong pop-up là ảnh nhân viên chụp khi báo cáo.">Nguồn: <b>planogram</b> · cập nhật lúc 8h40 &amp; khi bấm “Cập nhật ngay”. Bấm ảnh để phóng to.</p>' +
 '</div>';
 
 /* Skeleton GIỮ CHỖ 2 cột trong lúc tải (chống layout-shift khi F5): khối sơ đồ + khối KPI
@@ -832,7 +827,7 @@ var MODAL_HTML =
 '<div id="hpNkModal" class="hp-modal">' +
 '  <div class="hp-modalbox" style="width:min(920px,96vw);height:min(640px,90vh);">' +
 '    <div class="hp-modalhd"><div><div class="mt">Tra cứu theo nhân viên</div>' +
-'      <div class="mtsub">Nhật ký vệ sinh theo NGÀY (45 ngày) — quầy kệ F0-A1 thường giữ theo tuần, không gian F0-A8 đổi theo ngày</div></div>' +
+'      <div class="mtsub">Nhật ký vệ sinh theo NGÀY (' + LS_NGAY + ' ngày) — quầy kệ F0-A1 thường giữ theo tuần, không gian F0-A8 đổi theo ngày</div></div>' +
 '      <button class="hp-mclose" onclick="HPLANOGRAM.closeNk()">&times;</button></div>' +
 '    <div class="hp-nk-grid">' +
 '      <div class="hp-nk-left"><input id="hpNkQ" autocomplete="off" placeholder="Tìm tên / mã nhân viên…" oninput="HPLANOGRAM.nkSearch(this.value)"><div class="hp-nk-list" id="hpNkList"></div></div>' +
@@ -909,9 +904,6 @@ var NGUON = [
   { tab: TAB_CC, cb: "hpgv_cc",
     build: function(H, rows, ts){ if (ts > 0) S.cc.ts = ts; S.cc.dang = false; buildCC(H, rows); },
     fail: function(){ S.cc.ok = false; S.cc.dang = false; renderCC(); } },
-  { tab: TAB_NK, cb: "hpgv_nk",
-    build: function(H, rows, ts){ if (ts > 0) S.nk.ts = ts; S.nk.dang = false; buildNK(H, rows); },
-    fail: function(){ S.nk.ok = false; S.nk.dang = false; renderNkList(); renderWhBar(); } },
   { tab: TAB_LS, cb: "hpgv_ls",
     build: function(H, rows, ts){ if (ts > 0) S.ls.ts = ts; S.ls.dang = false; buildLS(H, rows); },
     fail: function(){ S.ls.ok = false; S.ls.dang = false; veLaiVt(); } },
@@ -938,7 +930,6 @@ function bac1(){
     goiNguon(TAB_PC);   // nhẹ (~20KB) mà quyết định tên người phụ trách hiện ở tooltip + pop-up
     goiNguon(TAB); goiNguon(TAB_AI);
     if (S.cc.ok || S.cc.dang) goiNguon(TAB_CC);   // đang mở sẵn danh sách NV / pop-up thì làm mới luôn
-    if (S.nk.ok || S.nk.dang) goiNguon(TAB_NK);
     if (S.ls.ok || S.ls.dang) goiNguon(TAB_LS);
     if (S.ccn.ok || S.ccn.dang) goiNguon(TAB_CCN);
   }, 250);
@@ -947,7 +938,6 @@ function bac1(){
 /* Chấm công: vẽ NGAY từ cache nếu còn (pop-up vị trí mở ra là có luôn dòng "hôm nay có đi làm
    không", không phải chờ mạng) rồi vẫn gọi tab để lấy bản mới — đúng nhịp cache-rồi-tải của loadData. */
 function canCC(){ if (S.cc.ok || S.cc.dang) return; S.cc.dang = true; tuCache(TAB_CC); goiNguon(TAB_CC); }
-function canNK(){ if (S.nk.ok || S.nk.dang) return; S.nk.dang = true; goiNguon(TAB_NK); }
 /* Lịch sử 60 ngày: cũng vẽ ngay từ cache phiên rồi mới gọi bản mới — pop-up ô vừa mở đã có
    "báo cáo gần nhất + mấy lượt trong 60 ngày", không phải chờ mạng. */
 function canLS(){ if (S.ls.ok || S.ls.dang) return; S.ls.dang = true; tuCache(TAB_LS); goiNguon(TAB_LS); }
@@ -973,7 +963,6 @@ function loadData(){
   var coYc = tuCache(TAB_YC);
   tuCache(TAB); tuCache(TAB_AI); tuCache(TAB_PC);
   if (S.cc.ok || S.cc.dang) tuCache(TAB_CC);
-  if (S.nk.ok || S.nk.dang) tuCache(TAB_NK);
   if (S.ls.ok || S.ls.dang) tuCache(TAB_LS);
   if (S.ccn.ok || S.ccn.dang) tuCache(TAB_CCN);
   if (!coYc){
@@ -1079,37 +1068,13 @@ function buildYC(H, rows2d){
   xongTai();
   renderWhBar(); renderToday(); renderList(); capNhatInfo();
 }
-function buildNK(H, rows2d){
-  var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
-  var idx = {}; Object.keys(COLS_NK).forEach(function(k){ idx[k] = idxOf(hl, COLS_NK[k]); });
-  if (idx.ngay < 0 || idx.email < 0){ S.nk.ok = false; S.nk.rows = []; return; }
-  var arr = [];
-  rows2d.forEach(function(row){
-    function gv(i){ return (i >= 0 && row[i] != null) ? row[i] : ""; }
-    var email = String(gv(idx.email)).trim(); if (!email) return;
-    var code = String(gv(idx.code) || "").trim(), name = String(gv(idx.name) || "").trim();
-    ghiNhoNm(email, code, name);
-    var khu = String(gv(idx.khu) || "").trim();
-    arr.push({ ngay: fmtNgay(gv(idx.ngay)), email: email, code: code, name: name,
-      area: /A8/.test(khu) ? "A8" : "A1",
-      locs: String(gv(idx.locs) || "").split(/\s*,\s*/).filter(Boolean) });
-  });
-  S.nk.ok = true; S.nk.rows = arr;
-  /* pop-up có thể đang mở ở trạng thái "đang tải" (bậc 3) → chọn sẵn NV đầu rồi vẽ lại */
-  var mo = $id("hpNkModal");
-  if (mo && mo.classList.contains("show")){
-    if (!NK.email){ var l = nkStaff(); if (l.length) NK.email = l[0].email.toLowerCase(); }
-    renderNkList(); renderNkRight();
-  }
-  render();   // vẽ lại panel phụ trách (nút tra cứu đếm NV)
-}
 /* Lịch sử báo cáo 60 ngày — gom theo KHOÁ Ô (khoaO) vì kệ A1 mang nhiều mã mâm-bin qua các ngày:
    tra theo mã đúng từng ký tự sẽ chia lịch sử của 1 kệ thành nhiều mảnh rời. */
 function buildLS(H, rows2d){
   var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
   var idx = {}; Object.keys(COLS_LS).forEach(function(k){ idx[k] = idxOf(hl, COLS_LS[k]); });
-  if (idx.ngay < 0 || idx.loc < 0){ S.ls.ok = false; S.ls.by = {}; S.ls.n = 0; veLaiVt(); return; }
-  var by = {}, n = 0;
+  if (idx.ngay < 0 || idx.loc < 0){ S.ls.ok = false; S.ls.by = {}; S.ls.ev = []; S.ls.n = 0; _nkRows = null; veLaiVt(); return; }
+  var by = {}, ev = [], n = 0;
   rows2d.forEach(function(row){
     function gv(i){ return (i >= 0 && row[i] != null) ? row[i] : ""; }
     var loc = String(gv(idx.loc)).trim(); if (!loc) return;
@@ -1118,15 +1083,25 @@ function buildLS(H, rows2d){
     var code = String(gv(idx.code) || "").trim(), name = String(gv(idx.name) || "").trim();
     ghiNhoNm(email, code, name);
     var k = khoaO(loc);
-    (by[k] || (by[k] = [])).push({ loc: loc, ngay: ngay, gio: fmtHM(gv(idx.gio)), email: email,
-      code: code, name: name, id: String(gv(idx.id) || "").replace(/\.0$/, "").trim() });
+    var luot = { loc: loc, ngay: ngay, gio: fmtHM(gv(idx.gio)), email: email,
+      code: code, name: name, id: String(gv(idx.id) || "").replace(/\.0$/, "").trim() };
+    (by[k] || (by[k] = [])).push(luot);
+    ev.push(luot);   // danh sách PHẲNG: nguồn của nhật ký theo nhân viên (nkRows)
     n++;
   });
   Object.keys(by).forEach(function(k){
     by[k].sort(function(a, b){ return (a.ngay + " " + a.gio) < (b.ngay + " " + b.gio) ? 1 : -1; });   // mới → cũ
   });
-  S.ls.ok = true; S.ls.by = by; S.ls.n = n;
+  S.ls.ok = true; S.ls.by = by; S.ls.n = n; S.ls.ev = ev; _nkRows = null;
   veLaiVt();
+  /* pop-up "Tra cứu theo nhân viên" nay cũng ăn nguồn này (thay tab VESINH-NHATKY) → đang mở thì
+     chọn sẵn NV đầu rồi vẽ lại, y như buildNK cũ làm. */
+  var mo = $id("hpNkModal");
+  if (mo && mo.classList.contains("show")){
+    if (!NK.email){ var l = nkStaff(); if (l.length) NK.email = l[0].email.toLowerCase(); }
+    renderNkList(); renderNkRight();
+  }
+  render();   // panel phụ trách hiện số NV có nhật ký
 }
 /** Lượt báo cáo THẬT của 1 ô trong 60 ngày (mới → cũ). [] khi chưa nạp / ô chưa ai làm. */
 function lsCua(loc){ return (S.ls.ok && S.ls.by[khoaO(loc)]) || []; }
@@ -1385,10 +1360,10 @@ function renderWhBar(){
         dates.slice(0, 7).map(function(d){ return mucNgay(d, thuVN(d) + " " + ngayVN(d), d === isoToday() ? "hôm nay" : ""); }).join("") +
       '</div></div>';
   }
-  var nNk = 0; if (S.nk.ok){ var em = {}; S.nk.rows.forEach(function(r){ em[r.email.toLowerCase()] = 1; }); nNk = Object.keys(em).length; }
-  /* Nút LUÔN hiện: tab nhật ký nay nạp lúc bấm (bậc 3) nên không còn chờ S.nk.ok mới cho bấm */
+  var nNk = 0; if (S.ls.ok){ var em = {}; nkRows().forEach(function(r){ em[r.email.toLowerCase()] = 1; }); nNk = Object.keys(em).length; }
+  /* Nút LUÔN hiện: nguồn nhật ký nạp bậc 3 (nạp trước sau 4s) nên không chờ dữ liệu mới cho bấm */
   html += '<span style="flex:1"></span>' +
-    '<button class="hp-whtab" onclick="HPLANOGRAM.openNk()" title="Xem 1 nhân viên làm việc ở đâu theo từng ngày (45 ngày)">Tra cứu nhân viên' + (nNk ? ' · ' + nf(nNk) : '') + '</button>' +
+    '<button class="hp-whtab" onclick="HPLANOGRAM.openNk()" title="Xem 1 nhân viên làm việc ở đâu theo từng ngày (' + LS_NGAY + ' ngày)">Tra cứu nhân viên' + (nNk ? ' · ' + nf(nNk) : '') + '</button>' +
     (S.all.length ? '<button class="hp-whtab" onclick="HPLANOGRAM.openAll()" title="Danh sách toàn bộ vị trí + người phụ trách gần nhất (45 ngày)">Toàn bộ vị trí · ' + nf(rowsInScope().length) + '</button>' : "");
   el.innerHTML = html;
 }
@@ -2353,10 +2328,30 @@ function openAnh(id, i){
   else window.open(r.anh[i || 0], "_blank", "noopener");
 }
 
-/* ===== POP-UP TRA CỨU THEO NHÂN VIÊN (nhật ký theo ngày, tab VESINH-NHATKY) ===== */
+/* ===== POP-UP TRA CỨU THEO NHÂN VIÊN (nhật ký theo ngày) =======================================
+ * Nguồn: VESINH-LICHSU (gom lượt báo cáo theo NGÀY × NGƯỜI × KHU) — trước 01/08/2026 đọc tab
+ * VESINH-NHATKY riêng, nhưng nó chính là bảng gom này (đối chiếu 272/272 dòng khớp y nguyên) nên
+ * đọc thêm chỉ tốn 1 request GAS + 34KB. Đổi nguồn còn LỢI: phủ 60 ngày thay vì 45, và LICHSU đã
+ * được nạp trước nên pop-up mở ra là có dữ liệu ngay. Memo theo số lượt để không gom lại mỗi lần vẽ. */
+var _nkRows = null;
+function nkRows(){
+  if (_nkRows) return _nkRows;
+  var g = {};
+  (S.ls.ev || []).forEach(function(v){
+    if (!v.email) return;
+    var kv = /^F0-A8/i.test(v.loc) ? "A8" : "A1";
+    var k = v.ngay + "|" + v.email.toLowerCase() + "|" + kv;
+    var o = g[k] || (g[k] = { ngay: v.ngay, email: v.email, code: v.code, name: v.name || tenNm(v.email), area: kv, locs: [] });
+    if (!o.code && v.code) o.code = v.code;
+    if (!o.name && v.name) o.name = v.name;
+    if (o.locs.indexOf(v.loc) < 0) o.locs.push(v.loc);
+  });
+  _nkRows = Object.keys(g).map(function(k){ g[k].locs.sort(); return g[k]; });
+  return _nkRows;
+}
 function nkStaff(){
   var by = {};
-  S.nk.rows.forEach(function(r){
+  nkRows().forEach(function(r){
     var k = r.email.toLowerCase();
     var o = by[k] || (by[k] = { email: r.email, code: r.code, name: r.name || tenNm(r.email) || r.email, nLoc: 0, days: {}, last: "" });
     o.nLoc += r.locs.length; o.days[r.ngay] = 1;
@@ -2369,8 +2364,8 @@ function nkStaff(){
 function openNk(email){
   NK.email = String(email || "").toLowerCase(); NK.q = "";
   var inp = $id("hpNkQ"); if (inp) inp.value = "";
-  canNK();   // bậc 3: tab nhật ký 45 ngày CHỈ tải khi thực sự mở pop-up này (trước đây luôn tải)
-  if (S.nk.ok){
+  canLS();   // bậc 3: nhật ký lấy từ lịch sử 60 ngày (thường đã nạp trước xong)
+  if (S.ls.ok){
     var list = nkStaff();
     if (!NK.email && list.length) NK.email = list[0].email.toLowerCase();
   }
@@ -2386,7 +2381,7 @@ function nkSearch(v){ NK.q = String(v || "").trim().toLowerCase(); clearTimeout(
 function nkPick(email){ NK.email = String(email || "").toLowerCase(); renderNkList(); renderNkRight(); }
 function renderNkList(){
   var el = $id("hpNkList"); if (!el) return;
-  if (!S.nk.ok && S.nk.dang){ el.innerHTML = '<div class="hp-nk-empty"><div class="hp-spin" style="width:22px;height:22px;border-width:2px;margin-bottom:10px"></div>Đang tải nhật ký 45 ngày…</div>'; return; }
+  if (!S.ls.ok && S.ls.dang){ el.innerHTML = '<div class="hp-nk-empty"><div class="hp-spin" style="width:22px;height:22px;border-width:2px;margin-bottom:10px"></div>Đang tải nhật ký ' + LS_NGAY + ' ngày…</div>'; return; }
   var list = nkStaff().filter(function(o){
     return !NK.q || (o.name + " " + o.code + " " + o.email).toLowerCase().indexOf(NK.q) >= 0;
   });
@@ -2399,8 +2394,8 @@ function renderNkList(){
 }
 function renderNkRight(){
   var el = $id("hpNkRight"); if (!el) return;
-  if (!S.nk.ok && S.nk.dang){ el.innerHTML = '<div class="hp-nk-empty">Đang tải nhật ký vệ sinh 45 ngày…</div>'; return; }
-  var rows = S.nk.rows.filter(function(r){ return r.email.toLowerCase() === NK.email; });
+  if (!S.ls.ok && S.ls.dang){ el.innerHTML = '<div class="hp-nk-empty">Đang tải nhật ký vệ sinh ' + LS_NGAY + ' ngày…</div>'; return; }
+  var rows = nkRows().filter(function(r){ return r.email.toLowerCase() === NK.email; });
   if (!rows.length){ el.innerHTML = '<div class="hp-nk-empty">Chọn 1 nhân viên bên trái để xem nhật ký vệ sinh theo ngày.</div>'; return; }
   var o = { name: rows[0].name || tenNm(rows[0].email) || rows[0].email, code: rows[0].code, email: rows[0].email };
   /* gom theo ngày (giảm dần) → từng khu vực */
@@ -2414,7 +2409,7 @@ function renderNkRight(){
   var homNay = isoToday();
   var nLoc = 0; rows.forEach(function(r){ nLoc += r.locs.length; });
   var html = '<div class="hd">' + esc(o.name) + (o.code ? ' <span class="hp-hint">' + esc(o.code) + '</span>' : '') + '</div>' +
-    '<div class="sub">' + esc(o.email) + ' · ' + nf(nLoc) + ' lượt vị trí / ' + nf(days.length) + ' ngày (45 ngày gần nhất). Quầy kệ F0-A1 thường giữ theo tuần · không gian F0-A8 đổi theo ngày.</div>';
+    '<div class="sub">' + esc(o.email) + ' · ' + nf(nLoc) + ' lượt vị trí / ' + nf(days.length) + ' ngày (' + LS_NGAY + ' ngày gần nhất). Quầy kệ F0-A1 thường giữ theo tuần · không gian F0-A8 đổi theo ngày.</div>';
   html += days.map(function(d){
     var khu = byDay[d];
     return '<div class="hp-nk-day"><div class="d">' + thuVN(d) + ' ' + ngayVN(d) + (d === homNay ? ' <span class="today">Hôm nay</span>' : '') + '</div>' +
