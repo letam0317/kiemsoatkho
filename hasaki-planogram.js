@@ -18,7 +18,10 @@
  *   3. "Đối chiếu chấm công hôm nay" (giữ nguyên) — bấm 1 dòng NV mở nhật ký NV đó.
  *
  *  Dữ liệu: 5 tab Sheet 5S do sync-vesinh-all.js ghi (cụm 8h40 / nút Cập nhật ngay):
- *   PHU-TRACH-QUAY-KE · CHAMCONG-VESINH · VESINH-YEUCAU (yêu cầu hôm nay + ảnh)
+ *   PHU-TRACH-QUAY-KE · CHAMCONG-VESINH · VESINH-YEUCAU (yêu cầu 7 ngày — 03/08/2026 CẮT 5 cột
+ *     suy được, 246KB → 113KB; Khu vực/Trạng thái/PT Name/PT lần cuối nay dashboard tự suy)
+ *   · VESINH-ANH (03/08/2026 — ảnh báo cáo tách khỏi VESINH-YEUCAU, nạp BẬC 3 lúc mở pop-up ô
+ *     hoặc danh sách yêu cầu; chưa về thì chỉ là không có thumbnail, không lỗi)
  *   · VESINH-NHATKY (NV × ngày × khu vực, 45 ngày) — 01/08/2026 DASHBOARD KHÔNG ĐỌC NỮA:
  *     nhật ký theo nhân viên nay gom từ VESINH-LICHSU (khớp 272/272 dòng, lại phủ 60 ngày)
  *   · VESINH-LICHSU (01/08/2026 — LỊCH SỬ từng lượt báo cáo theo vị trí + GIỜ, cửa sổ trượt 60
@@ -53,7 +56,11 @@ var SHEET_ID = "1FWffWi75aATbokfqIcqjByEPzkJLQBngTXp5aPOIbLM";   // Sheet 5S (ki
 var SHEET_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/edit";
 var TAB = "PHU-TRACH-QUAY-KE";
 var TAB_CC = "CHAMCONG-VESINH";     // đối chiếu chấm công × vệ sinh hôm nay
-var TAB_YC = "VESINH-YEUCAU";       // từng yêu cầu vệ sinh hôm nay (trạng thái + ảnh)
+var TAB_YC = "VESINH-YEUCAU";       // từng yêu cầu vệ sinh hôm nay (trạng thái, KHÔNG còn ảnh)
+/* Ảnh báo cáo tách ra tab riêng 03/08/2026: nó chiếm 44/246KB của VESINH-YEUCAU — tab quyết định
+ * lúc nào màn hình có nội dung — mà không khối nào của màn hình đầu cần tới ảnh. Nạp BẬC 3
+ * (mở pop-up ô / mở danh sách yêu cầu). Chưa về thì mọi chỗ chỉ đơn giản là không có thumbnail. */
+var TAB_ANH = "VESINH-ANH";
 /* VESINH-NHATKY: sync vẫn ghi (tab cho người đọc trên Sheet) nhưng DASHBOARD KHÔNG ĐỌC NỮA
  * (01/08/2026). Đối chiếu thật: 272/272 dòng của nó dựng lại được y nguyên từ VESINH-LICHSU
  * (gom theo ngày|email|khu) — mà LICHSU phủ 60 ngày (rộng hơn 45) và đã được nạp trước sẵn cho
@@ -90,12 +97,19 @@ var ST = {
   done:    { k: "done",    lb: "Đã có người phụ trách", c: "#059669" },
   pending: { k: "pending", lb: "Chưa báo cáo",          c: "#9ca3af" }
 };
-/* Nhóm HÀNH ĐỘNG của 1 yêu cầu vệ sinh hôm nay */
+/* Nhóm HÀNH ĐỘNG của 1 yêu cầu vệ sinh.
+ * 03/08/2026: dùng được cho CẢ NGÀY QUÁ KHỨ, không chỉ hôm nay. Trước đây phần "phụ trách có
+ * chấm công hay không" chỉ có nguồn cho hôm nay (cột PT đi làm của VESINH-YEUCAU) nên xem lại
+ * ngày cũ chỉ còn Đã/Chưa — đúng câu hỏi quan trọng nhất ("hôm đó ai ĐI LÀM mà KHÔNG báo cáo?")
+ * lại phải bấm từng ô mới biết. Từ 01/08 đã có VESINH-CHAMCONG-NGAY (60 ngày) nên tách được.
+ * Nhãn viết trung tính cho cả 2 mốc thời gian (xem YCST_CU cho phần phụ đề của ngày cũ). */
 var YCST = [
-  { k: "da",    lb: "Đã vệ sinh",                 sub: "báo cáo hoàn tất",                 c: "#059669" },
-  { k: "nhac",  lb: "Chưa vệ sinh",               sub: "phụ trách CÓ chấm công — cần nhắc", c: "#dc2626" },
-  { k: "khong", lb: "Không có ca làm việc",        sub: "phụ trách nghỉ / chưa có người nhận", c: "#9ca3af" }
+  { k: "da",    lb: "Đã vệ sinh",           sub: "báo cáo hoàn tất",                     c: "#059669" },
+  { k: "nhac",  lb: "Chưa vệ sinh",         sub: "phụ trách CÓ chấm công — cần nhắc",     c: "#dc2626" },
+  { k: "khong", lb: "Không có ca làm việc",  sub: "phụ trách nghỉ / chưa có người nhận",   c: "#9ca3af" }
 ];
+/* Phụ đề khi soi NGÀY QUÁ KHỨ: việc phải làm khác hẳn (đi truy chứ không đi nhắc) */
+var YCST_CU = { nhac: "phụ trách ĐI LÀM mà không báo cáo", khong: "phụ trách nghỉ hôm đó — không phải lỗi họ" };
 var META_CHUA = { k: "chua", lb: "Chưa vệ sinh", sub: "không có báo cáo trong ngày", c: "#dc2626" };
 
 /* ===== HỆ TRẠNG THÁI Ô SƠ ĐỒ (nhiều màu ↔ nhiều việc) — palette status đã kiểm CVD/tương phản.
@@ -110,7 +124,7 @@ var NGUONG_CANHBAO = 3;   // ≥3 ngày yêu cầu liên tiếp không báo cáo
 var NGUONG_PT_CU = 7;     // bằng chứng phụ trách cũ hơn N ngày → CHƯA CHẮC còn phụ trách
 function tuoiNgay(iso){ var m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/); if (!m) return null;
   var t = new Date(); return Math.round((new Date(t.getFullYear(), t.getMonth(), t.getDate()) - new Date(+m[1], +m[2] - 1, +m[3])) / 86400000); }
-function ptTuoi(r){ return r && r.pt ? tuoiNgay(r.ptAt) : null; }
+function ptTuoi(r){ return r && r.pt ? tuoiNgay(ptAtCua(r)) : null; }
 function ptKhongChac(r){ var t = ptTuoi(r); return t != null && t > NGUONG_PT_CU; }
 /* Khoá Ô sơ đồ: A1 gom theo KỆ (dãy-kệ) vì 1 kệ có thể mang nhiều mã mâm-bin qua các ngày
  * (alias — vd kệ 513-02 có 4 mã); tra theo mã đúng từng ký tự sẽ lạc dữ liệu sang ô "trống".
@@ -155,7 +169,9 @@ var CELLST = {
   done:   { c: "#059669",  lb: "Đã vệ sinh (đạt / chờ AI)",           sh: "Đã VS · đạt",           da: true },
   review: { c: "#f59e0b",  lb: "Đã vệ sinh · AI cần xem lại",         sh: "Đã VS · AI cần xem",    da: true, ink: "dark", ct: "#b45309", dot: "#78350f" },
   rework: { c: "#7c3aed",  lb: "Đã vệ sinh · AI không đạt — làm lại", sh: "Đã VS · làm lại",       da: true, ct: "#6d28d9", tri: true },
-  remind: { c: "#dc2626",  lb: "Chưa vệ sinh · có người đi làm (nhắc ngay)", sh: "Chưa VS · nhắc ngay" },
+  /* 03/08/2026 đổi nhãn cho trung tính về thời gian: ô này nay xuất hiện cả khi soi NGÀY CŨ
+     (nguồn VESINH-CHAMCONG-NGAY 60 ngày), lúc đó việc phải làm là ĐI TRUY chứ không "nhắc ngay". */
+  remind: { c: "#dc2626",  lb: "Chưa vệ sinh · phụ trách CÓ đi làm hôm đó", sh: "Chưa VS · có đi làm" },
   chua:   { c: "#dc2626",  lb: "Chưa vệ sinh",                        sh: "Chưa vệ sinh" },
   noshift:{ c: "#64748b",  lb: "Chưa vệ sinh · phụ trách nghỉ / chưa nhận", sh: "Chưa VS · nghỉ / chưa nhận" }
 };
@@ -165,6 +181,27 @@ function cellInk(m){ return m.ct || m.c || "#6b7280"; }
 /* Class phụ của ô theo palette: vạch "đã báo cáo" + mực đậm khi nền sáng.
    Ô "done" bỏ vạch — nền đã chính là màu xanh đó, vẽ thêm chỉ là vạch xanh trên xanh. */
 function cellCls(m){ return (m.da && !m.dashed && m.c !== CELLST.done.c ? " dalam" : "") + (m.ink === "dark" ? " inkdark" : ""); }
+/* NGƯỜI PHỤ TRÁCH ô này HÔM ĐÓ CÓ ĐI LÀM KHÔNG? true / false / null = chưa biết (03/08/2026).
+ * Hai nguồn, theo thứ tự tin cậy:
+ *   1) VESINH-CHAMCONG-NGAY — chấm công thật theo từng ngày, 60 ngày (nguồn duy nhất cho ngày cũ)
+ *   2) cột "PT đi làm" của VESINH-YEUCAU — CHỈ đúng cho hôm nay, dùng khi tab (1) chưa về
+ * null có nghĩa "chưa đủ dữ liệu để phán", KHÔNG phải "nghỉ" — phải giữ tách bạch để không tô đỏ
+ * oan người nghỉ phép, cũng không xoá dấu người đi làm mà im lặng.
+ * Chủ ô lấy theo BẢNG PHÂN CÔNG trước (pcCua — nguồn chính thức, nạp bậc 1), rớt về cột của yêu cầu. */
+function ptDiLamNgay(r, dd){
+  if (!r || !dd) return null;
+  var pc = pcCua(r.loc);
+  var em = (pc && pc.em) || r.pt, code = (pc && pc.code) || r.ptCode;
+  if (!em && !code) return null;
+  if (S.ccn.ok){
+    var cn = ccNgayCua(em, code, dd);
+    /* ngoaiTam = ngày đó không có dòng chấm công nào của cả đội (ngoài 60 ngày / cả đội nghỉ)
+       → không kết luận được, rơi xuống nguồn 2. */
+    if (cn && !cn.ngoaiTam) return !!cn.co;
+  }
+  if (dd === isoToday()) return !!r.ptDiLam;
+  return null;
+}
 /* trạng thái 1 ô cho 1 NGÀY cụ thể dd (r = yêu cầu của ô ngày đó, hoặc null) */
 function cellStateDay(r, dd){
   if (!r) return "noreq";
@@ -173,8 +210,10 @@ function cellStateDay(r, dd){
     if (ai){ if (ai.kl === "KHONG_DAT") return "rework"; if (ai.kl === "CAN_XEM") return "review"; }
     return "done";
   }
-  if (dd === isoToday()){ return (r.pt && r.ptDiLam) ? "remind" : "noshift"; }
-  return "chua";   // ngày quá khứ: không có dữ liệu chấm công → chỉ Đã/Chưa
+  var dl = ptDiLamNgay(r, dd);
+  if (dl === true) return "remind";     // chưa vệ sinh mà hôm đó CÓ đi làm
+  if (dl === false) return "noshift";   // nghỉ / không chấm công → lỗi bố trí, không đi truy
+  return dd === isoToday() ? "noshift" : "chua";   // chưa đủ dữ liệu chấm công → chỉ nói "chưa vệ sinh"
 }
 function cellState1(r){ return cellStateDay(r, ngayXem()); }
 /* trạng thái 1 ô cho KHOẢNG nhiều ngày (list = các yêu cầu của ô trong khoảng) */
@@ -216,7 +255,19 @@ function ngayXem(){ return S.dDen || S.yc.ngay; }
 function khoang(){ var d = ngayXem(); return [S.dTu || d, S.dDen || d]; }
 function laHomNay(){ var k = khoang(); return k[0] === isoToday() && k[1] === isoToday(); }
 function la1Ngay(){ var k = khoang(); return k[0] === k[1]; }
-function bkNgay(r){ return r.bk === "da" ? "da" : (laHomNay() ? r.bk : "chua"); }
+/* CÓ TÁCH ĐƯỢC "đi làm mà không báo cáo" ↔ "nghỉ" cho khoảng đang xem không? (03/08/2026)
+ * Cần: đúng 1 ngày (gộp nhiều ngày thì một người vừa đi làm vừa nghỉ, tách ra vô nghĩa) VÀ có
+ * nguồn chấm công của ngày đó — hôm nay thì luôn có, ngày cũ thì phải chờ VESINH-CHAMCONG-NGAY. */
+function coTachCa(){ if (!la1Ngay()) return false;
+  return laHomNay() || !!(S.ccn.ok && S.ccn.ngay[ngayXem()]); }
+function bkNgay(r){
+  if (r.bk === "da") return "da";
+  if (!la1Ngay()) return "chua";           // khoảng nhiều ngày → chỉ Đã/Chưa
+  var dl = ptDiLamNgay(r, ngayXem());
+  if (dl === true) return "nhac";
+  if (dl === false) return "khong";
+  return laHomNay() ? r.bk : "chua";       // chưa đủ dữ liệu chấm công của ngày cũ
+}
 function ycDates(){ var s = {}; S.yc.rows.forEach(function(r){ if (r.ngay) s[r.ngay] = 1; }); return Object.keys(s).sort().reverse(); }
 function nhanKhoang(){
   var k = khoang();
@@ -225,7 +276,11 @@ function nhanKhoang(){
 }
 function setKhoang(tu, den){
   if (tu > den){ var t = tu; tu = den; den = t; }
-  S.dTu = tu; S.dDen = den; S.ptHi = "";   // đổi khoảng ngày → bỏ chế độ soi NV (chấm công chỉ có hôm nay)
+  S.dTu = tu; S.dDen = den; S.ptHi = "";   // đổi khoảng ngày → bỏ chế độ soi NV (nhóm NV đổi theo ngày)
+  /* 03/08/2026: soi 1 NGÀY CŨ cũng tách được "đi làm mà không báo cáo" ↔ "nghỉ", nhưng phải có
+     VESINH-CHAMCONG-NGAY. Bình thường loadData đã nạp trước ở giây thứ 4; gọi lại ở đây để người
+     bấm ngày sớm hơn thế (hoặc lượt nạp trước hỏng) vẫn có, thay vì im lặng tụt về "chỉ Đã/Chưa". */
+  if (tu === den && tu !== isoToday()) canCCN();
   renderWhBar(); renderToday(); renderList();
 }
 function setPtHi(e){ S.ptHi = (S.ptHi === e || !e) ? "" : e; renderMap(); }
@@ -275,7 +330,14 @@ var COLS_CC = {
   loc:   ["vị trí gần nhất", "vi tri gan nhat", "vị trí", "location"],
   tt:    ["trạng thái", "trang thai", "status"]
 };
-/* Cột tab VESINH-YEUCAU */
+/* Cột tab VESINH-YEUCAU.
+ * 03/08/2026 — sync BỎ 5 cột suy được (tab 246KB → 113KB, tab nặng nhất lúc mở trang):
+ *   Khu vực    → dashboard vốn đã tự suy từ tiền tố Location (areaOf), chưa từng đọc cột này
+ *   Trạng thái → ST_TEN[Status ID] (đo 1.246 dòng: ánh xạ 1:1, không ngoại lệ)
+ *   PT Name    → tenNm(email) từ PHU-TRACH + VESINH-PHANCONG (0/47 email tra không ra)
+ *   PT lần cuối→ cột Executed At của PHU-TRACH-QUAY-KE cùng Location (khớp 1246/1246)
+ *   Ảnh        → tab VESINH-ANH riêng, nạp bậc 3
+ * VẪN khai báo tên cột cũ: sheet/cache phiên có thể còn dữ liệu bản cũ, đọc được thì ưu tiên dùng. */
 var COLS_YC = {
   id:     ["request id", "request_id", "id"],
   ngay:   ["ngày", "ngay", "date"],
@@ -292,6 +354,12 @@ var COLS_YC = {
   anh:    ["ảnh", "anh", "images"],
   ptat:   ["pt lần cuối", "pt lan cuoi"]
 };
+/* Status ID → tên trạng thái WMS. Đo trên toàn bộ 1.246 dòng đang chạy (03/08/2026):
+   1 New ×174 · 3 Waiting For Approve ×154 · 4 Approved ×5 · 7 Not Performed ×913.
+   Mã lạ ngoài bảng → hiện "#<id>"; sync-vesinh-all.js cũng log cảnh báo khi WMS đẻ mã mới. */
+var ST_TEN = { 1: "New", 3: "Waiting For Approve", 4: "Approved", 7: "Not Performed" };
+/* Cột tab VESINH-ANH (ảnh báo cáo tách khỏi VESINH-YEUCAU) */
+var COLS_ANH = { id: ["request id", "request_id", "id"], ngay: ["ngày", "ngay"], anh: ["ảnh", "anh", "images"] };
 /* Cột tab VESINH-AI + nhãn kết luận AI */
 var COLS_AI = {
   id:     ["request id", "request_id", "id"],
@@ -409,6 +477,7 @@ var S = { ok: false, dangPT: false, all: [], area: "", lastAt: 0, tsData: 0,
   yc: { ok: false, dang: false, rows: [], ts: 0, ngay: "" },
   ls: { ok: false, dang: false, by: {}, ev: [], ts: 0, n: 0 },   // by[khoá ô] = [lượt báo cáo] mới → cũ (60 ngày) — nguồn "báo cáo gần nhất" của pop-up
   ccn: { ok: false, dang: false, em: {}, code: {}, ts: 0, ngay: {} },   // chấm công theo ngày: em/code -> { ten, d:{ngày:{vao,ra}} } · ngay = tập ngày CÓ dữ liệu
+  anh: { ok: false, dang: false, by: {}, ts: 0 },   // ảnh báo cáo tách tab (bậc 3): by[request id] = [url…]
   ai: { ok: false, dang: false, by: {}, rows: [], ts: 0 }, aiKl: "", aiQ: "",
   pc: { ok: false, dang: false, by: {}, ts: 0 },   // by[khoá ô] = { em, code, ten, nguon, bc, gc }
   dTu: "", dDen: "", listMode: "ai", ptHi: "", ptOpen: false };   // dTu→dDen = KHOẢNG NGÀY đang xem; listMode = panel danh sách (ai | nv); ptHi = email NV đang SOI; ptOpen = panel cần-nhắc đang xổ
@@ -909,7 +978,10 @@ var NGUON = [
     fail: function(){ S.ls.ok = false; S.ls.dang = false; veLaiVt(); } },
   { tab: TAB_CCN, cb: "hpgv_ccn",
     build: function(H, rows, ts){ if (ts > 0) S.ccn.ts = ts; S.ccn.dang = false; buildCCN(H, rows); },
-    fail: function(){ S.ccn.ok = false; S.ccn.dang = false; veLaiVt(); } }
+    fail: function(){ S.ccn.ok = false; S.ccn.dang = false; veLaiVt(); } },
+  { tab: TAB_ANH, cb: "hpgv_anh",
+    build: function(H, rows, ts){ if (ts > 0) S.anh.ts = ts; S.anh.dang = false; buildANH(H, rows); },
+    fail: function(){ S.anh.ok = false; S.anh.dang = false; } }
 ];
 var _daGoi = {}, _ycTO = null, _preTO = null;   // _daGoi: tab -> đã bắn request lượt này · _ycTO: watchdog VESINH-YEUCAU
 function nguonOf(tab){ for (var i = 0; i < NGUON.length; i++) if (NGUON[i].tab === tab) return NGUON[i]; return null; }
@@ -932,6 +1004,7 @@ function bac1(){
     if (S.cc.ok || S.cc.dang) goiNguon(TAB_CC);   // đang mở sẵn danh sách NV / pop-up thì làm mới luôn
     if (S.ls.ok || S.ls.dang) goiNguon(TAB_LS);
     if (S.ccn.ok || S.ccn.dang) goiNguon(TAB_CCN);
+    if (S.anh.ok || S.anh.dang) goiNguon(TAB_ANH);
   }, 250);
 }
 /* bậc 3 — nạp theo yêu cầu, gọi từ chỗ người dùng thực sự cần dữ liệu đó */
@@ -944,6 +1017,9 @@ function canLS(){ if (S.ls.ok || S.ls.dang) return; S.ls.dang = true; tuCache(TA
 /* Chấm công THEO NGÀY: pop-up cho chọn ngày cũ nên phải có nguồn theo ngày, không dùng được tab
    chấm công hôm nay. Cũng vẽ ngay từ cache phiên rồi mới gọi bản mới. */
 function canCCN(){ if (S.ccn.ok || S.ccn.dang) return; S.ccn.dang = true; tuCache(TAB_CCN); goiNguon(TAB_CCN); }
+/* Ảnh báo cáo: nặng thứ nhì (44KB) mà chỉ cần khi người dùng THẬT SỰ nhìn ảnh — mở pop-up ô hoặc
+   mở danh sách yêu cầu. Cũng vẽ ngay từ cache phiên rồi mới gọi bản mới. */
+function canANH(){ if (S.anh.ok || S.anh.dang) return; S.anh.dang = true; tuCache(TAB_ANH); goiNguon(TAB_ANH); }
 function loadTabGviz(tab, cbName, cbBuild, onFail){
   var cb2 = cbName + "g";
   window[cb2] = function(resp){
@@ -965,6 +1041,7 @@ function loadData(){
   if (S.cc.ok || S.cc.dang) tuCache(TAB_CC);
   if (S.ls.ok || S.ls.dang) tuCache(TAB_LS);
   if (S.ccn.ok || S.ccn.dang) tuCache(TAB_CCN);
+  if (S.anh.ok || S.anh.dang) tuCache(TAB_ANH);
   if (!coYc){
     animBat();   // dữ liệu mới thật → cho chạy animation vào 1 lượt
     st.style.display = "block";
@@ -1010,7 +1087,12 @@ function buildMain(H, rows2d){
     ghiNhoNm(email, code, name);
     arr.push({ loc: loc, area: a.k, email: email, code: code, name: name, at: fmtNgayGio(gv(idx.at)), done: !!email });
   });
-  S.ok = true; S.all = arr; render();
+  S.ok = true; S.all = arr;
+  /* Chỉ mục NGÀY báo cáo gần nhất theo vị trí — thay cột "PT lần cuối" đã bỏ khỏi VESINH-YEUCAU
+     (ptAtCua). Khoá bằng mã vị trí ĐẦY ĐỦ, y như cột cũ được sync ghi ra. */
+  _ptAtBy = {};
+  arr.forEach(function(x){ if (x.at) _ptAtBy[x.loc] = String(x.at).slice(0, 10); });
+  render();
 }
 function buildCC(H, rows2d){
   var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
@@ -1038,29 +1120,34 @@ function buildCC(H, rows2d){
 function buildYC(H, rows2d){
   var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
   var idx = {}; Object.keys(COLS_YC).forEach(function(k){ idx[k] = idxOf(hl, COLS_YC[k]); });
-  if (idx.loc < 0 || idx.st < 0){ S.yc.ok = false; S.yc.rows = []; renderToday(); return; }
+  /* Chốt nguồn: cần Location + Status ID. Trước 03/08 chốt bằng cột "Trạng thái", nhưng cột đó
+     nay đã bỏ (suy từ Status ID) — giữ chốt cũ là tab mới về sẽ bị coi như "không đúng nguồn". */
+  if (idx.loc < 0 || idx.stid < 0){ S.yc.ok = false; S.yc.rows = []; renderToday(); return; }
   var arr = [], ngay = "";
   rows2d.forEach(function(row){
     function gv(i){ return (i >= 0 && row[i] != null) ? row[i] : ""; }
     var loc = String(gv(idx.loc)).trim(); if (!loc) return;
     var a = areaOf(loc); if (!a) return;
+    var stId = Number(gv(idx.stid)) || 0;
     var r = {
       id: String(gv(idx.id)).replace(/\.0$/, "").trim(),
       ngay: fmtNgay(gv(idx.ngay)),
       loc: loc, area: a.k,
-      stId: Number(gv(idx.stid)) || 0, st: String(gv(idx.st)).trim(),
+      /* Tên trạng thái: cột cũ nếu tab/cache còn có, không thì tra ST_TEN. Mọi chỗ dùng r.st
+         (badge, ycBucket) giữ nguyên regex — chỉ đổi CHỖ LẤY, không đổi giá trị. */
+      stId: stId, st: String(gv(idx.st) || ST_TEN[stId] || (stId ? "#" + stId : "")).trim(),
       email: String(gv(idx.email) || "").trim(), at: fmtNgayGio(gv(idx.at)),
       pt: String(gv(idx.pt) || "").trim(),
-      ptCode: String(gv(idx.ptcode) || "").trim(), ptName: String(gv(idx.ptname) || "").trim(),
+      ptCode: String(gv(idx.ptcode) || "").trim(),
       ptDiLam: Number(gv(idx.ptdilam)) || 0, ptCi: fmtHM(gv(idx.ptci)),
-      ptAt: fmtNgay(gv(idx.ptat)),
-      anh: String(gv(idx.anh) || "").split(/\s*\|\s*/).filter(Boolean).map(urlAnh)
+      anh: []   // đổ từ tab VESINH-ANH (bậc 3) — xem buildANH/ganAnh
     };
     r.bk = ycBucket(r);
-    ghiNhoNm(r.pt, r.ptCode, r.ptName);
+    ghiNhoNm(r.pt, r.ptCode, String(gv(idx.ptname) || "").trim());
     if (r.ngay > ngay) ngay = r.ngay;
     arr.push(r);
   });
+  ganAnh(arr);   // ảnh đã về trước (cache phiên) thì gắn ngay, không đợi lượt sau
   S.yc.ok = true; S.yc.rows = arr; S.yc.ngay = ngay;
   if (!S.dDen || !arr.some(function(r){ return r.ngay >= (S.dTu || S.dDen) && r.ngay <= S.dDen; })){ S.dTu = ngay; S.dDen = ngay; }
   /* BẬC 1 xong = màn hình đã dùng được: tắt spinner, mở lại nút Làm mới, vẽ cả 3 khối
@@ -1068,6 +1155,41 @@ function buildYC(H, rows2d){
   xongTai();
   renderWhBar(); renderToday(); renderList(); capNhatInfo();
 }
+/* ẢNH BÁO CÁO (tab VESINH-ANH, tách khỏi VESINH-YEUCAU 03/08/2026 — bậc 3).
+ * Gắn thẳng vào r.anh của dòng yêu cầu để 4 chỗ vẽ ảnh (danh sách NV, pop-up ô, modal yêu cầu,
+ * lightbox) không phải đổi gì. Tab chưa về = r.anh rỗng = không có thumbnail, không lỗi. */
+function ganAnh(rows){
+  if (!S.anh.ok || !rows) return 0;
+  var n = 0;
+  rows.forEach(function(r){ var a = S.anh.by[String(r.id)]; if (a && a.length){ r.anh = a; n++; } });
+  return n;
+}
+function buildANH(H, rows2d){
+  var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
+  var idx = {}; Object.keys(COLS_ANH).forEach(function(k){ idx[k] = idxOf(hl, COLS_ANH[k]); });
+  if (idx.id < 0 || idx.anh < 0){ S.anh.ok = false; S.anh.by = {}; return; }
+  var by = {};
+  rows2d.forEach(function(row){
+    function gv(i){ return (i >= 0 && row[i] != null) ? row[i] : ""; }
+    var id = String(gv(idx.id)).replace(/\.0$/, "").trim(); if (!id) return;
+    var a = String(gv(idx.anh) || "").split(/\s*\|\s*/).filter(Boolean).map(urlAnh);
+    if (a.length) by[id] = a;
+  });
+  S.anh.ok = true; S.anh.by = by;
+  if (!ganAnh(S.yc.rows)) return;   // chưa có dòng nào nhận ảnh → khỏi vẽ lại
+  renderList();                     // cột thumbnail của danh sách nhân viên/AI
+  veLaiVt();                        // pop-up ô đang mở
+  var m = $id("hpModal");           // modal danh sách yêu cầu đang mở
+  if (m && m.classList.contains("show")) mRender();
+}
+/** Tên người phụ trách của 1 yêu cầu — cột "PT Name" đã bỏ, tra từ sổ tên chung (PHU-TRACH +
+ *  VESINH-PHANCONG đều nạp ở bậc 1 và cả hai đều gọi ghiNhoNm). Chưa có tên thì hiện email. */
+function ptTen(r){ return (r && r.pt) ? (tenNm(r.pt) || r.pt) : ""; }
+/** NGÀY bằng chứng phụ trách ("PT lần cuối" cũ) = Executed At của chính vị trí đó ở tab PHU-TRACH.
+ *  Đối chiếu 1246/1246 dòng ngày 03/08/2026 trước khi bỏ cột. PHU-TRACH chưa về → "" (ptKhongChac
+ *  trả false → không gắn badge "chưa chắc" chứ không kết luận sai). */
+var _ptAtBy = {};
+function ptAtCua(r){ return (r && r.loc) ? (_ptAtBy[r.loc] || "") : ""; }
 /* Lịch sử báo cáo 60 ngày — gom theo KHOÁ Ô (khoaO) vì kệ A1 mang nhiều mã mâm-bin qua các ngày:
    tra theo mã đúng từng ký tự sẽ chia lịch sử của 1 kệ thành nhiều mảnh rời. */
 function buildLS(H, rows2d){
@@ -1128,6 +1250,9 @@ function buildCCN(H, rows2d){
   });
   S.ccn.ok = true; S.ccn.em = byEm; S.ccn.code = byCode; S.ccn.ngay = ngay;
   veLaiVt();
+  /* 03/08/2026: tab này nay còn quyết định MÀU Ô + 3 thẻ KPI + panel "cần nhắc" khi soi NGÀY CŨ
+     (trước chỉ pop-up dùng nó) → về tới là phải vẽ lại cả màn hình, không chỉ pop-up. */
+  if (!laHomNay() && la1Ngay()){ renderToday(); render(); }
 }
 var GIO_TRONG = "??:??";   // khớp sync-vesinh-all.js: ô giờ thiếu (chưa chấm ra / quên chấm)
 /** Chấm công của 1 người trong 1 NGÀY: null = chưa nạp được · {co:false} = hôm đó KHÔNG chấm công */
@@ -1426,13 +1551,17 @@ function renderToday(){
     renderMap(); return;
   }
 
-  /* Hôm nay: chia 3 nhóm hành động; ngày quá khứ: chỉ Đã/Chưa (chấm công quá khứ không lưu) */
-  var nhom = homNay ? YCST : [ycMeta("da"), META_CHUA];
+  /* 1 ngày + có chấm công của ngày đó → chia 3 nhóm hành động (kể cả NGÀY CŨ, từ 03/08/2026:
+     nguồn VESINH-CHAMCONG-NGAY 60 ngày). Khoảng nhiều ngày / chưa có chấm công → chỉ Đã/Chưa. */
+  var tach = coTachCa();
+  var nhom = tach ? YCST : [ycMeta("da"), META_CHUA];
   var tiles =
     '<div class="hp-tile tot" onclick="HPLANOGRAM.openYc(\'\')" title="Xem mọi yêu cầu vệ sinh trong ngày"><div class="k">' + nf(nTot) + '</div><div class="l">Tổng yêu cầu vệ sinh</div><div class="s">' + (S.area ? esc(areaMeta(S.area).short) : "F0-A1 + F0-A8") + '</div></div>' +
     nhom.map(function(m){
-      var extra = m.k === "da" ? (pct(cnt.da, nTot) + "% · " + nf(nNvDa) + " nhân viên") : m.sub;
-      return '<div class="hp-tile" style="--cc:' + m.c + '" data-k="' + m.k + '" onclick="HPLANOGRAM.openYc(this.getAttribute(\'data-k\'))" title="' + esc(m.lb + (m.sub ? " — " + m.sub : "")) + '"><div class="k">' + nf(cnt[m.k]) + '</div><div class="l">' + esc(m.lb) + '</div><div class="s">' + esc(extra) + '</div></div>';
+      /* Ngày cũ: cùng con số nhưng VIỆC PHẢI LÀM khác — "đi truy" chứ không "đi nhắc". */
+      var sub = (!homNay && YCST_CU[m.k]) ? YCST_CU[m.k] : m.sub;
+      var extra = m.k === "da" ? (pct(cnt.da, nTot) + "% · " + nf(nNvDa) + " nhân viên") : sub;
+      return '<div class="hp-tile" style="--cc:' + m.c + '" data-k="' + m.k + '" onclick="HPLANOGRAM.openYc(this.getAttribute(\'data-k\'))" title="' + esc(m.lb + (sub ? " — " + sub : "")) + '"><div class="k">' + nf(cnt[m.k]) + '</div><div class="l">' + esc(m.lb) + '</div><div class="s">' + esc(extra) + '</div></div>';
     }).join("");
 
   var bar =
@@ -1698,7 +1827,9 @@ function renderMap(){
   /* vị trí KHÔNG được phát yêu cầu trong khoảng — tra nhanh khi dựng tooltip ô nét đứt */
   var thieuBy = {}; doPhu().thieu.forEach(function(t){ thieuBy[khoaO(t.loc)] = t; });
   var nNgayYc = ycDates().length;   // số ngày tab VESINH-YEUCAU đang lưu (mặc định 7)
-  var soiPT = homNay && mot;   // chế độ "cần nhắc theo NV" chỉ có nghĩa khi xem đúng HÔM NAY (chấm công chỉ lưu hôm nay)
+  /* Chế độ "gom ô chưa vệ sinh theo NHÂN VIÊN": cần đúng 1 ngày + có chấm công của ngày đó.
+     03/08/2026 mở cho cả NGÀY CŨ (VESINH-CHAMCONG-NGAY 60 ngày) — trước chỉ hôm nay. */
+  var soiPT = coTachCa();
 
   function stateCua(list){ return mot ? cellState1(repCua(list)) : cellStateN(list); }
   function tinhTT(loc, list){
@@ -1739,8 +1870,9 @@ function renderMap(){
            đáng biết); trùng nhau thì in 2 lần cùng một cái tên + cùng một trạng thái đi làm. */
         var trungPc = !!(pcO && pcO.em && r.pt && String(r.pt).toLowerCase() === String(pcO.em).toLowerCase());
         if (r.pt && !trungPc){
-          ptTxt = "\nPhụ trách theo yêu cầu: " + (r.ptName || r.pt) + (homNay ? (r.ptDiLam ? " (đi làm" + (r.ptCi ? " · vào " + r.ptCi : "") + ")" : " (nghỉ)") : "");
-          if (r.ptAt) ptTxt += "\n   theo báo cáo gần nhất " + ngayVN(r.ptAt) + (ptKhongChac(r) ? " — ⚠ " + ptTuoi(r) + " ngày trước, CHƯA CHẮC còn phụ trách" : "");
+          ptTxt = "\nPhụ trách theo yêu cầu: " + ptTen(r) + (homNay ? (r.ptDiLam ? " (đi làm" + (r.ptCi ? " · vào " + r.ptCi : "") + ")" : " (nghỉ)") : "");
+          var ptA = ptAtCua(r);
+          if (ptA) ptTxt += "\n   theo báo cáo gần nhất " + ngayVN(ptA) + (ptKhongChac(r) ? " — ⚠ " + ptTuoi(r) + " ngày trước, CHƯA CHẮC còn phụ trách" : "");
         } else if (trungPc && ptKhongChac(r)){
           ptTxt = "\n   ⚠ bằng chứng phụ trách " + ptTuoi(r) + " ngày trước — chưa chắc còn phụ trách";
         } else if (!r.pt && !(pcO && pcO.em)) ptTxt = "\nChưa có người phụ trách";
@@ -1763,7 +1895,7 @@ function renderMap(){
               : (st === "remind" && rep && ptKhongChac(rep) ? '<i class="hp-cq">?</i>' : "");
     var al = alert[kk] ? '<i class="hp-cwarn" title="Quá ' + alert[kk] + ' ngày chưa báo cáo">⚠</i>' : "";
     var cls = "hp-mapcell" + (m.dashed ? " trong" : "") + cellCls(m) + (alert[kk] ? " canhbao" : "");
-    if (soiPT && S.ptHi) cls += (rep && rep.bk === "nhac" && rep.pt === S.ptHi) ? " hi" : " dim";
+    if (soiPT && S.ptHi) cls += (rep && bkNgay(rep) === "nhac" && rep.pt === S.ptHi) ? " hi" : " dim";
     var sty = m.dashed ? "cursor:pointer" : "background:" + m.c;
     return '<span class="' + cls + '" style="' + sty + '" title="' + esc(tinhTT(loc, list)) + '" data-l="' + esc(loc) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))">' + label + badge + al + '</span>';
   }
@@ -1788,7 +1920,7 @@ function renderMap(){
         var qb = (st === "remind" && rep && ptKhongChac(rep)) ? '<i class="hp-cq">?</i>' : "";
         var bg = m.dashed ? "color-mix(in srgb, var(--muted,#9ca3af) 35%, transparent)" : m.c;
         var bcls = "hp-mapbelt" + cellCls(m) + (alert[c.bc] ? " canhbao" : "");
-        if (soiPT && S.ptHi) bcls += (rep && rep.bk === "nhac" && rep.pt === S.ptHi) ? " hi" : " dim";
+        if (soiPT && S.ptHi) bcls += (rep && bkNgay(rep) === "nhac" && rep.pt === S.ptHi) ? " hi" : " dim";
         var belt = '<div class="' + bcls + '" style="background:' + bg + '" title="' + esc(tinhTT(c.bc, list)) + '" data-l="' + esc(c.bc) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))"><span>BĂNG CHUYỀN ' + c.b + '</span>' + qb + alb + '</div>';
         return '<div class="hp-mapc">' + cot(c.l) + belt + cot(c.r) + '</div>';
       }).join("") + '</div></div>';
@@ -1852,17 +1984,18 @@ function renderMap(){
     ? '<div class="hp-alertbar" onclick="HPLANOGRAM.openCanhBao()" title="Bấm xem danh sách vị trí quá hạn"><span class="ic">⚠</span><b>' + nf(nAlert) + '</b> vị trí quá ' + NGUONG_CANHBAO + ' ngày chưa có ai báo cáo vệ sinh — bấm để xử lý</div>'
     : "";
 
-  /* Panel "CẦN NHẮC THEO NHÂN VIÊN" (chỉ HÔM NAY): gom các ô Chưa VS mà phụ trách CÓ chấm công,
-     nhóm theo NV — bấm chip tô nổi đúng các ô của NV đó trên sơ đồ (ô khác mờ đi), bấm lại để bỏ.
-     30/07: đổ vào hpNhacSlot ở CỘT PHẢI (panel Vệ sinh) — cột sơ đồ chỉ còn banner + 2 sơ đồ. */
+  /* Panel "ĐI LÀM MÀ KHÔNG BÁO CÁO" (tên cũ: Cần nhắc theo nhân viên): gom các ô Chưa VS mà phụ
+     trách CÓ chấm công hôm đó, nhóm theo NV — bấm chip tô nổi đúng các ô của NV đó trên sơ đồ.
+     30/07: đổ vào hpNhacSlot ở CỘT PHẢI (panel Vệ sinh) — cột sơ đồ chỉ còn banner + 2 sơ đồ.
+     03/08: chạy được cho cả NGÀY CŨ (bkNgay tra VESINH-CHAMCONG-NGAY thay cho cột "PT đi làm"). */
   var htmlNhac = "";
   if (soiPT){
     var nhom = {};
     Object.keys(byL).forEach(function(kk){
       if (S.area && !(areaOf(kk) && areaOf(kk).k === S.area)) return;
       var rep = repCua(byL[kk]);
-      if (!rep || rep.bk !== "nhac") return;
-      var g = nhom[rep.pt] || (nhom[rep.pt] = { name: rep.ptName || rep.pt, n: 0, unsure: 0 });
+      if (!rep || bkNgay(rep) !== "nhac") return;
+      var g = nhom[rep.pt] || (nhom[rep.pt] = { name: ptTen(rep), n: 0, unsure: 0 });
       g.n++; if (ptKhongChac(rep)) g.unsure++;
     });
     var nvKeys = Object.keys(nhom).sort(function(a, b){ return nhom[b].n - nhom[a].n || String(nhom[a].name).localeCompare(String(nhom[b].name), "vi"); });
@@ -1870,8 +2003,9 @@ function renderMap(){
       var tongO = 0; nvKeys.forEach(function(e){ tongO += nhom[e].n; });
       /* MẶC ĐỊNH THU GỌN (S.ptOpen) — chỉ 1 nút tóm tắt; bấm xổ chips. Đang soi mà thu gọn
          thì vẫn hiện chip NV đang soi + nút bỏ soi (không bắt xổ ra chỉ để tắt). */
+      var nhanNhac = homNay ? "Cần nhắc theo nhân viên" : "Đi làm mà không báo cáo";
       var chips = nvKeys.map(function(e){ var g = nhom[e];
-        return '<button class="hp-ptchip' + (S.ptHi === e ? " on" : "") + '" data-e="' + esc(e) + '" onclick="HPLANOGRAM.setPtHi(this.getAttribute(\'data-e\'))" title="' + esc(e) + " — " + g.n + ' vị trí chưa vệ sinh (đang đi làm)' + (g.unsure ? " · " + g.unsure + " ô suy từ báo cáo cũ, chưa chắc" : "") + '">' + esc(g.name) + ' <b>' + g.n + '</b>' + (g.unsure ? '<i class="q">?</i>' : "") + '</button>';
+        return '<button class="hp-ptchip' + (S.ptHi === e ? " on" : "") + '" data-e="' + esc(e) + '" onclick="HPLANOGRAM.setPtHi(this.getAttribute(\'data-e\'))" title="' + esc(e) + " — " + g.n + ' vị trí chưa vệ sinh (' + (homNay ? "đang đi làm" : "hôm đó CÓ chấm công") + ')' + (g.unsure ? " · " + g.unsure + " ô suy từ báo cáo cũ, chưa chắc" : "") + '">' + esc(g.name) + ' <b>' + g.n + '</b>' + (g.unsure ? '<i class="q">?</i>' : "") + '</button>';
       }).join("");
       var chipSoi = "";
       if (!S.ptOpen && S.ptHi && nhom[S.ptHi]){
@@ -1879,7 +2013,7 @@ function renderMap(){
         chipSoi = '<button class="hp-ptchip on" data-e="' + esc(S.ptHi) + '" onclick="HPLANOGRAM.setPtHi(this.getAttribute(\'data-e\'))">' + esc(gs.name) + ' <b>' + gs.n + '</b></button>';
       }
       htmlNhac = '<div class="hp-ptnhac">' +
-        '<button class="hp-ptchip tog' + (S.ptOpen ? " mo" : "") + '" onclick="HPLANOGRAM.togglePtNhac()" title="' + (S.ptOpen ? "Thu gọn danh sách" : "Xổ danh sách nhân viên cần nhắc — bấm tên để soi ô trên sơ đồ") + '"><span class="car">' + (S.ptOpen ? "▾" : "▸") + '</span>Cần nhắc theo nhân viên <b>' + nvKeys.length + '</b> NV · <b>' + tongO + '</b> ô</button>' +
+        '<button class="hp-ptchip tog' + (S.ptOpen ? " mo" : "") + '" onclick="HPLANOGRAM.togglePtNhac()" title="' + (S.ptOpen ? "Thu gọn danh sách" : "Xổ danh sách " + (homNay ? "nhân viên cần nhắc" : "nhân viên đi làm mà không báo cáo hôm đó") + " — bấm tên để soi ô trên sơ đồ") + '"><span class="car">' + (S.ptOpen ? "▾" : "▸") + '</span>' + nhanNhac + ' <b>' + nvKeys.length + '</b> NV · <b>' + tongO + '</b> ô</button>' +
         (S.ptOpen ? chips : chipSoi) +
         (S.ptHi ? '<button class="hp-ptchip clear" onclick="HPLANOGRAM.setPtHi(\'\')">Bỏ soi ✕</button>' : "") + '</div>';
     }
@@ -1891,7 +2025,10 @@ function renderMap(){
     '<h2>Sơ đồ khu vực <span class="hp-chip">' + esc(nhanKhoang()) + '</span> ' + legend + '</h2>' +
     bannerAlert + (slot ? "" : htmlNhac) + htmlA1 + htmlA8 +
     '<p class="hp-hint" style="margin:6px 0 0">Bấm một ô để xem chi tiết báo cáo, dải 7 ngày và lịch sử 60 ngày' +
-      (mot ? ' — cách đọc màu: <b>ô có vạch xanh mép trái = đã báo cáo</b> (xanh xong hẳn · hổ phách chờ mình xem lại ảnh · tím phải làm lại), <b>đỏ = chưa vệ sinh mà phụ trách đang đi làm</b> (nhắc được ngay), xám xanh = chưa vệ sinh nhưng phụ trách nghỉ / chưa có người nhận'
+      (mot ? ' — cách đọc màu: <b>ô có vạch xanh mép trái = đã báo cáo</b> (xanh xong hẳn · hổ phách chờ mình xem lại ảnh · tím phải làm lại), <b>đỏ = chưa vệ sinh mà phụ trách ' +
+               (homNay ? 'đang đi làm</b> (nhắc được ngay)' : 'CÓ đi làm hôm đó</b> (đi truy được)') +
+               ', xám xanh = chưa vệ sinh nhưng phụ trách nghỉ / chưa có người nhận' +
+               (soiPT ? '' : ' — <i>chưa đọc được chấm công của ngày này nên tạm chưa tách được hai nhóm đó</i>')
            : " — theo khoảng: xanh = mọi ngày đạt, tím = có ngày AI không đạt, đỏ = có ngày chưa vệ sinh") + '.</p>' +
     '</section>';
   fitMaps();
@@ -1903,7 +2040,7 @@ function openCanhBao(){
   locs.sort(function(a, b){ return alert[b] - alert[a] || (a < b ? -1 : 1); });
   var base = locs.map(function(loc){
     var rs = S.yc.rows.filter(function(r){ return khoaO(r.loc) === loc; }).sort(function(a, b){ return a.ngay < b.ngay ? 1 : -1; });
-    var r = rs[0] || { id: "", loc: loc, area: (areaOf(loc) || {}).k, ngay: "", stId: 1, st: "New", email: "", at: "", pt: "", ptName: "", anh: [] };
+    var r = rs[0] || { id: "", loc: loc, area: (areaOf(loc) || {}).k, ngay: "", stId: 1, st: "New", email: "", at: "", pt: "", ptCode: "", anh: [] };
     return Object.assign({}, r, { _streak: alert[loc] });
   });
   showModal(base, "Quá " + NGUONG_CANHBAO + " ngày chưa báo cáo vệ sinh" + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req");
@@ -1918,6 +2055,7 @@ function openViTri(loc){
   canCC();   // pop-up cần chấm công hôm nay của phụ trách — nguồn bậc 3, nạp lúc mở (buildCC vẽ lại)
   canLS();   // + lịch sử báo cáo 60 ngày của ô (bậc 3 — chỉ pop-up này dùng, buildLS vẽ lại)
   canCCN();  // + chấm công THEO NGÀY 60 ngày (thẻ Phụ trách cần giờ vào/ra của đúng ngày đang chọn)
+  canANH();  // + ảnh báo cáo (tab riêng từ 03/08 — buildANH tự vẽ lại pop-up khi về)
   renderVt();
   var m = $id("hpVtModal"); m.style.display = "flex";
   requestAnimationFrame(function(){ m.classList.add("show"); });
@@ -2120,7 +2258,7 @@ var FDEF_REQ = [
   { k: "area", lb: "Khu vực",   vals: function(r){ return [areaMeta(r.area).short]; } },
   { k: "bk",   lb: "Trạng thái", vals: function(r){ return [ycMeta(bkNgay(r)).lb]; } },
   { k: "ai",   lb: "AI xét duyệt", vals: function(r){ var a = aiOf(r); var m = a && aiMeta(a.kl); return m ? [m.lb] : []; } },
-  { k: "pt",   lb: "Phụ trách (dự kiến)", vals: function(r){ var n = r.ptName || r.pt; return n ? [n] : []; } }
+  { k: "pt",   lb: "Phụ trách (dự kiến)", vals: function(r){ var n = ptTen(r); return n ? [n] : []; } }
 ];
 var FDEF_MISS = [
   { k: "area", lb: "Khu vực",         vals: function(r){ return [areaMeta(r.area).short]; } },
@@ -2148,6 +2286,7 @@ function openThieu(){
 }
 function showModal(base, title, preset, mode){
   MODAL.base = base || []; MODAL.preset = preset || null; MODAL.mode = mode || "loc";
+  if (MODAL.mode === "req"){ canANH(); ganAnh(MODAL.base); }   // cột Ảnh của bảng yêu cầu (tab bậc 3)
   $id("hpMtitle").textContent = title;
   $id("hpMsub").textContent = nf(MODAL.base.length) + (MODAL.mode === "req" ? " yêu cầu" : " vị trí") + " — combo lọc sinh động, gõ để lọc, đếm số dòng";
   $id("hpMHead").innerHTML = THEADS[MODAL.mode] || THEAD_LOC;
@@ -2190,7 +2329,7 @@ function fstate(){
   });
 }
 function quickText(r){
-  if (MODAL.mode === "req") return r.loc + " " + r.email + " " + r.pt + " " + r.ptName + " " + r.ptCode + " " + r.st;
+  if (MODAL.mode === "req") return r.loc + " " + r.email + " " + r.pt + " " + ptTen(r) + " " + r.ptCode + " " + r.st;
   if (MODAL.mode === "miss") return r.loc + " " + areaMeta(r.area).short + " " + missMeta(r.kind).lb + " " + r.name + " " + r.email;
   return r.loc + " " + r.email + " " + r.code + " " + r.name;
 }
@@ -2265,7 +2404,7 @@ function mRender(){
         var a = areaMeta(r.area);
         var thuc = r.email ? ('<span title="' + esc(r.email) + '">' + esc(tenNm(r.email) || r.email) + '</span>') : '<span class="mut">—</span>';
         var ptTxt = r.pt
-          ? ('<span title="' + esc(r.pt) + '">' + esc(r.ptName || r.pt) + '</span><small>' + (r.ptDiLam ? ("đi làm" + (r.ptCi ? " · vào " + esc(r.ptCi) : "")) : "nghỉ / không chấm công") + '</small>')
+          ? ('<span title="' + esc(r.pt) + '">' + esc(ptTen(r)) + '</span><small>' + (r.ptDiLam ? ("đi làm" + (r.ptCi ? " · vào " + esc(r.ptCi) : "")) : "nghỉ / không chấm công") + '</small>')
           : '<span class="mut">chưa có người nhận</span>';
         var thumbs = r.anh.length
           ? ('<span class="hp-thumbs">' +
