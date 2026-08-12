@@ -359,7 +359,10 @@ var COLS_YC = {
 /* Status ID → tên trạng thái WMS. Đo trên toàn bộ 1.246 dòng đang chạy (03/08/2026):
    1 New ×174 · 3 Waiting For Approve ×154 · 4 Approved ×5 · 7 Not Performed ×913.
    Mã lạ ngoài bảng → hiện "#<id>"; sync-vesinh-all.js cũng log cảnh báo khi WMS đẻ mã mới. */
-var ST_TEN = { 1: "New", 3: "Waiting For Approve", 4: "Approved", 7: "Not Performed" };
+/* 2 = Processing: bộ sync đã cảnh báo "STATUS LẠ ngoài bảng tra" ngày 12/08/2026 (2 yêu cầu) —
+   thiếu nhãn thì badge in "#2". Chỉ là TÊN hiển thị: ycBucket phân nhóm theo stId 3/4 nên thêm
+   dòng này không dịch chuyển con số nào của KPI. */
+var ST_TEN = { 1: "New", 2: "Processing", 3: "Waiting For Approve", 4: "Approved", 7: "Not Performed" };
 /* Cột tab VESINH-ANH (ảnh báo cáo tách khỏi VESINH-YEUCAU) */
 var COLS_ANH = { id: ["request id", "request_id", "id"], ngay: ["ngày", "ngay"], anh: ["ảnh", "anh", "images"] };
 /* Cột tab VESINH-AI + nhãn kết luận AI */
