@@ -913,7 +913,27 @@ var THEAD_MISS = '<tr><th>Vị trí</th><th>Khu vực</th><th>Tình trạng lị
 var THEADS = { loc: THEAD_LOC, req: THEAD_REQ, miss: THEAD_MISS };
 var NCOL = { loc: 6, req: 8, miss: 6 };
 
-/* ===== TẢI DỮ LIỆU — ưu tiên GAS readTab (SHEET PRIVATE bí mật), fallback gviz (sheet public) ===== */
+/* ===== TẢI DỮ LIỆU — GAS readTab (SHEET PRIVATE) là đường DUY NHẤT của 9 tab vệ sinh =====
+ * VÌ SAO BỎ FALLBACK gviz cho nhóm tab này (sự cố 12/08/2026 "Chưa có dữ liệu vệ sinh"):
+ *   9 tab vệ sinh đã chuyển sang sheet PRIVATE rồi purge khỏi sheet public. gviz gọi một tên tab
+ *   KHÔNG TỒN TẠI thì KHÔNG báo lỗi — nó trả status:"ok" kèm TAB ĐẦU TIÊN của file (bảng quy định
+ *   5S: STT | QUY ĐỊNH CHI TIẾT | LỖI VI PHẠM…). Rác đó lọt qua mọi lớp kiểm: buildYC/buildMain chỉ
+ *   thấy "thiếu cột Location" → S.yc.ok = S.ok = false → màn hình in "Chưa có dữ liệu vệ sinh trong
+ *   Google Sheet" trong khi Sheet có đủ 1202 dòng, lại còn cacheSet 30' nên F5 vẫn hỏng nguyên.
+ *   NGÒI NỔ: readTab của Apps Script CHẬP CHỜN 404 (quá tải / redirect googleusercontent). Đo thật
+ *   12/08: cùng một URL, lượt này 404 lượt sau 200 — nên cách chữa là THỬ LẠI readTab, tuyệt đối
+ *   không mượn đường gviz. Thà thiếu dữ liệu (nói rõ vì sao) còn hơn có dữ liệu sai. */
+var TAB_PRIVATE = [TAB, TAB_CC, TAB_YC, TAB_ANH, TAB_NK_BO, TAB_LS, TAB_CCN, TAB_AI, TAB_PC];
+/* ĐO THẬT 12/08/2026 (đừng suy đoán lại): độ trễ nền của Apps Script đã rất cao và 404 rơi NGẪU
+ * NHIÊN, không theo kích thước — action=bridgeCaps chỉ trả 74 byte JSON tĩnh mà lượt này 404 ở giây
+ * 6,5 lượt sau 200 ở giây 7,4; action=lastSync (đọc 1 Script Property) 404 ở giây 47,7; readTab
+ * VESINH-YEUCAU 200 ở giây 39,2 — nghĩa là một lượt ĐANG CHẠY BÌNH THƯỜNG cũng vượt watchdog 25s.
+ * Vì thế watchdog không được kết luận theo đồng hồ, phải theo "còn lượt nào đang bay hay không". */
+var GAS_CHO = [700, 1800, 4000];   // backoff giữa các lượt thử lại readTab
+var GAS_KIEN_NHAN = 90000;         // trần chờ tuyệt đối (Apps Script có khi treo im, không bắn onerror)
+var LOI_NGUON = {};                // tab -> "gas" (Apps Script không trả được) | "rong" (Sheet không có dòng nào)
+var DANG_THU = {};                 // tab -> đang thử lại lượt thứ mấy (watchdog + màn hình đừng kết luận sớm)
+function laTabRieng(tab){ return TAB_PRIVATE.indexOf(tab) >= 0; }
 function injectJSONP(url, id, onerr){
   var old = $id(id); if (old) old.remove();
   var sc = document.createElement("script"); sc.id = id; sc.src = url;
@@ -922,16 +942,39 @@ function injectJSONP(url, id, onerr){
 }
 function gvizHeader(resp){ return ((resp.table && resp.table.cols) || []).map(function(c){ return (c && c.label) || ""; }); }
 function gvizRows(resp){ return ((resp.table && resp.table.rows) || []).map(function(r){ return (r.c || []).map(function(c){ return (c && c.v != null) ? c.v : ""; }); }); }
-/* nạp 1 tab: GAS readTab trước, hỏng thì gviz (cbBuild(header, rows2d, ts)) */
-function loadTab(tab, cbName, cbBuild, onFail){
+/* nạp 1 tab: GAS readTab, 404 chập chờn thì THỬ LẠI (cbBuild(header, rows2d, ts)) */
+function loadTab(tab, cbName, cbBuild, onFail, lan){
+  lan = lan || 0;
+  var rieng = laTabRieng(tab);
+  /* Hỏng đường truyền: tab riêng thì thử lại rồi mới chịu thua; tab còn nằm ở sheet public
+     (không có trong TAB_PRIVATE) vẫn dùng gviz làm đường dự phòng THẬT như trước. */
+  function thuLai(){
+    if (rieng && lan < GAS_CHO.length){
+      setTimeout(function(){ loadTab(tab, cbName, cbBuild, onFail, lan + 1); }, GAS_CHO[lan]);
+      return;   // DANG_THU giữ nguyên cho tới khi lượt sau tự đặt lại — watchdog vẫn thấy "còn đang chờ"
+    }
+    delete DANG_THU[tab];
+    LOI_NGUON[tab] = "gas";
+    if (rieng){ onFail && onFail(); return; }
+    loadTabGviz(tab, cbName, cbBuild, onFail);
+  }
   window[cbName] = function(j){
     if (j && j.status === "success" && j.header && j.header.length){
+      delete LOI_NGUON[tab]; delete DANG_THU[tab];
       cacheSet(tab, j.header, j.rows || [], Number(j.ts) || 0);
       cbBuild(j.header, j.rows || [], Number(j.ts) || 0);
+      return;
     }
-    else { loadTabGviz(tab, cbName, cbBuild, onFail); }
+    /* GAS trả success mà header rỗng = tab thật sự trống (hoặc chưa được tạo) → thử lại vô ích,
+       và đây KHÔNG phải lỗi mạng nên phải phân biệt để màn hình nói đúng nguyên nhân. */
+    if (j && j.status === "success" && rieng){ delete DANG_THU[tab]; LOI_NGUON[tab] = "rong"; onFail && onFail(); return; }
+    thuLai();
   };
-  injectJSONP(APPSCRIPT_URL + "?action=readTab&tab=" + encodeURIComponent(tab) + "&callback=" + cbName + "&_=" + Date.now(), "hp_sc_" + cbName, function(){ loadTabGviz(tab, cbName, cbBuild, onFail); });
+  /* Đánh dấu TRƯỚC KHI bắn: khe hở gây ra sự cố 12/08 là lượt ĐẦU chỉ đang chậm (chưa lỗi) —
+     DANG_THU rỗng nên watchdog 25s kết luận "Chưa có dữ liệu" trong khi request vẫn đang bay. */
+  if (rieng) DANG_THU[tab] = lan + 1;
+  injectJSONP(APPSCRIPT_URL + "?action=readTab&tab=" + encodeURIComponent(tab) + "&callback=" + cbName +
+    "&_=" + Date.now() + (lan ? "&thu=" + lan : ""), "hp_sc_" + cbName, thuLai);
 }
 
 /* ===== CACHE PHIÊN (sessionStorage) =====
@@ -939,7 +982,9 @@ function loadTab(tab, cbName, cbBuild, onFail){
  * DÙNG sessionStorage, KHÔNG localStorage: dữ liệu có email + tên nhân viên, chỉ nên sống
  * trong tab đang mở (đóng tab là mất), không để PII nằm lại trên đĩa máy dùng chung.
  * Nguồn chỉ đổi 1 lần/ngày (cụm 8h40) nên hạn 30' là thừa an toàn. */
-var CACHE_V = "hpc1:", CACHE_TTL = 30 * 60 * 1000;
+/* hpc2 (12/08/2026): đổi tiền tố để BỎ HẲN cache của bản cũ — máy nào đã kịp cache "tab đầu tiên
+   của file" do fallback gviz đầu độc thì F5 vẫn hỏng suốt 30' nếu còn đọc lại khoá hpc1. */
+var CACHE_V = "hpc2:", CACHE_TTL = 30 * 60 * 1000;
 function cacheGet(tab){
   try{ var o = JSON.parse(sessionStorage.getItem(CACHE_V + tab) || "null");
     return (o && o.H && Date.now() - o.at < CACHE_TTL) ? o : null; }catch(e){ return null; }
@@ -1023,6 +1068,9 @@ function canCCN(){ if (S.ccn.ok || S.ccn.dang) return; S.ccn.dang = true; tuCach
    mở danh sách yêu cầu. Cũng vẽ ngay từ cache phiên rồi mới gọi bản mới. */
 function canANH(){ if (S.anh.ok || S.anh.dang) return; S.anh.dang = true; tuCache(TAB_ANH); goiNguon(TAB_ANH); }
 function loadTabGviz(tab, cbName, cbBuild, onFail){
+  /* CHỐT AN TOÀN: tab private không có bản sao trên sheet public, mà gviz lại trả TAB ĐẦU TIÊN của
+     file thay vì báo lỗi → phải chặn ngay ở cửa, đừng để rác đi tiếp vào cache lẫn màn hình. */
+  if (laTabRieng(tab)){ LOI_NGUON[tab] = "gas"; onFail && onFail(); return; }
   var cb2 = cbName + "g";
   window[cb2] = function(resp){
     if (!resp || resp.status === "error"){ onFail && onFail(); }
@@ -1058,13 +1106,34 @@ function loadData(){
      dựng xong. Đợi tới lúc bấm mới gọi thì cú bấm ĐẦU TIÊN phải chờ Apps Script 4-8s (nó phục vụ
      NỐI ĐUÔI, đo 30/07) — thấy rõ dòng "đang tra chấm công…". Trễ 4s nên không tranh chỗ với 3
      nguồn dựng màn hình; lượt sau đã có cache phiên nên không gọi lại. */
+  /* SỬA 12/08/2026: mốc 4s cố định là đoán, và đoán sai khi Apps Script chậm — readTab đo được
+     7-40s/lượt, nên 2 request nạp trước này chen vào ĐÚNG lúc VESINH-YEUCAU còn đang xếp hàng,
+     làm chậm thêm chính tab quyết định màn hình có nội dung. Chờ bậc 1 về THẬT rồi mới nạp trước. */
   clearTimeout(_preTO);
-  _preTO = setTimeout(function(){ canLS(); canCCN(); }, 4000);
+  var thu0 = Date.now();
+  _preTO = setTimeout(function choNapTruoc(){
+    if (S.yc.ok){ canLS(); canCCN(); return; }
+    if (Date.now() - thu0 > 60000) return;   // bậc 1 hỏng hẳn thì thôi, đừng nạp trước làm gì
+    _preTO = setTimeout(choNapTruoc, 3000);
+  }, 4000);
   /* Watchdog: JSONP không phải lúc nào cũng bắn onerror (Apps Script quá tải có khi im luôn) —
      quá 25s chưa thấy YEUCAU thì thôi giữ skeleton, hiện thẳng thông báo để người dùng biết đường xử lý. */
   clearTimeout(_ycTO);
-  _ycTO = setTimeout(function(){
+  var t0 = Date.now();
+  _ycTO = setTimeout(function ktraYc(){
     if (!S.yc.dang) return;
+    /* Còn lượt đang bay thì CHỜ TIẾP (trong trần kiên nhẫn) — kết luận lúc này là in "không có dữ
+       liệu" trong khi request vẫn đang chạy và thường về đủ 1202 dòng ở giây 39 (sự cố 12/08).
+       Vẫn phải có TRẦN: Apps Script quá tải có khi im hẳn, không bắn onerror để mình biết. */
+    if (DANG_THU[TAB_YC] && Date.now() - t0 < GAS_KIEN_NHAN){
+      /* Ghi thẳng dòng chờ, KHÔNG gọi render(): lúc này S.yc.dang vẫn true nên render() sẽ đi
+         qua nhánh thông báo rồi vẽ panel rỗng — mất luôn spinner đang có. */
+      st.innerHTML = '<div class="hp-spin"></div>Apps Script đang trả lời chậm — chờ lượt ' +
+        DANG_THU[TAB_YC] + '/' + (GAS_CHO.length + 1) + '…';
+      st.style.display = "block";
+      _ycTO = setTimeout(ktraYc, 5000); return;
+    }
+    if (DANG_THU[TAB_YC]){ delete DANG_THU[TAB_YC]; LOI_NGUON[TAB_YC] = "gas"; }   // hết trần mà vẫn treo
     S.yc.dang = false; xongTai(); renderToday(); renderMap(); render();
   }, 25000);
 }
@@ -1627,10 +1696,20 @@ function render(){
     $id("hpWhBar").innerHTML = "";
     $id("hpMap").innerHTML = ""; $id("hpToday").innerHTML = "";   // dọn skeleton giữ chỗ
     st.style.display = "block";
+    /* NÓI ĐÚNG NGUYÊN NHÂN (12/08/2026): trước đây mọi kiểu hỏng đều in "Chưa có dữ liệu trong
+       Google Sheet" — trong khi Sheet vẫn đủ dòng, chỉ Apps Script không trả được. Chẩn đoán sai
+       như vậy đẩy người đọc đi kiểm bộ sync (vô can) thay vì bấm Làm mới là xong. */
+    var loiGas = [TAB_YC, TAB].filter(function(t){ return LOI_NGUON[t] === "gas"; });
     st.innerHTML = '<div style="max-width:720px;margin:0 auto;text-align:left;line-height:1.75;color:var(--muted,#6b7280)">' +
-      '<b style="color:var(--text,#1f2937)">Chưa có dữ liệu vệ sinh trong Google Sheet.</b><br>' +
-      'Tab này đọc từ các sheet <code>' + esc(TAB_YC) + '</code>, <code>' + esc(TAB) + '</code>… — bộ đồng bộ <code>sync-vesinh-all.js</code> (cụm 8h40) sẽ ghi dữ liệu ' +
-      'khu vực F0-A1 &amp; F0-A8 (kho SHOP - 170 QUOC LO 1A, nguồn planogram) vào đó.</div>';
+      (loiGas.length
+        ? '<b style="color:var(--text,#1f2937)">Không đọc được dữ liệu từ Apps Script.</b><br>' +
+          'Đã thử lại ' + (GAS_CHO.length + 1) + ' lượt cho <code>' + loiGas.map(esc).join('</code>, <code>') + '</code> mà vẫn không có phản hồi — ' +
+          'Apps Script hay trả 404 chập chờn lúc quá tải. <b>Dữ liệu trong Google Sheet không mất</b>; ' +
+          'bấm <b>Làm mới</b> một lượt nữa là thường có ngay.'
+        : '<b style="color:var(--text,#1f2937)">Chưa có dữ liệu vệ sinh trong Google Sheet.</b><br>' +
+          'Tab này đọc từ các sheet <code>' + esc(TAB_YC) + '</code>, <code>' + esc(TAB) + '</code>… — bộ đồng bộ <code>sync-vesinh-all.js</code> (cụm 8h40) sẽ ghi dữ liệu ' +
+          'khu vực F0-A1 &amp; F0-A8 (kho SHOP - 170 QUOC LO 1A, nguồn planogram) vào đó.') +
+      '</div>';
     capNhatInfo();
     return;
   }
