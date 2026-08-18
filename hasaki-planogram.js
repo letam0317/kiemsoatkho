@@ -783,6 +783,8 @@ var CSS = [
 ".hp-vtthumbs{display:flex;flex-wrap:wrap;gap:6px;}",
 ".hp-vtthumbs img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border,#e8ecf1);cursor:zoom-in;transition:transform .16s cubic-bezier(.32,.72,0,1);background:color-mix(in srgb, var(--muted,#9ca3af) 14%, transparent);}",
 ".hp-vtthumbs img:hover{transform:scale(1.1);}",
+  ".hp-vtmore{width:56px;height:56px;border-radius:8px;border:1px dashed var(--border,#e8ecf1);background:var(--surface,#fff);color:var(--accent,#326e51);font-size:12px;font-weight:650;cursor:pointer;transition:background .16s;}",
+  ".hp-vtmore:hover{background:color-mix(in srgb, var(--accent,#326e51) 10%, transparent);}",
   ".hp-lz{background:color-mix(in srgb, var(--muted,#9ca3af) 18%, transparent);}",   /* ô chờ ảnh — hoãn tải tới khi lọt khung nhìn */
 /* HAI THẺ SONG SONG trong pop-up vị trí: TRÁI Phụ trách (nhấn accent — đây là người phải chịu
    trách nhiệm) · PHẢI Báo cáo gần nhất (nền trung tính — chỉ để tham khảo/đối chiếu).
@@ -1273,6 +1275,7 @@ function buildYC(H, rows2d){
  * KHÔNG cần dựng kho ảnh riêng để "khỏi tải lại": đo thật, mở LẠI cùng ô = 0 lượt / 0 KB — WMS
  * trả 302 `immutable` (6 ngày) và CDN trả `max-age=604800` (7 ngày), trình duyệt giữ sẵn hết. */
 var ANH_TAI_NGAY = 2;
+var ANH_XEM_TRUOC = 4;   // số ô ảnh bày sẵn trong pop-up (còn lại giấu sau nút +N)
 var ANH_CHO = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
 function imgAnh(u, phu, taiNgay){
   return taiNgay
@@ -2221,7 +2224,7 @@ function openCanhBao(){
 }
 
 /* ===== POP-UP CHI TIẾT VỊ TRÍ (bấm ô trên sơ đồ) — báo cáo của ngày + lịch sử 7 ngày ===== */
-var VT = { loc: "", ngay: "" };
+var VT = { loc: "", ngay: "", moAnh: {} };   // moAnh[request id] = đã bấm "+N" trải hết lưới ảnh
 function bkCua(r, dd){ return r.bk === "da" ? "da" : (dd === isoToday() ? r.bk : "chua"); }
 function openViTri(loc){
   if (!loc) return;
@@ -2320,10 +2323,17 @@ function renderVt(){
     rows.push(["AI xét duyệt", aim
       ? '<span class="hp-badge" style="background:color-mix(in srgb,' + aim.c + ' 15%,transparent);color:' + aim.c + '">' + esc(aim.lb.replace("AI: ", "")) + (ai.diem ? " · " + ai.diem : "") + '</span> <span class="hp-hint">tin cậy ' + ai.tincay + '%</span><div style="margin-top:5px;line-height:1.55">' + esc(ai.lydo) + (ai.anhloi ? ' <span class="hp-hint">(' + esc(ai.anhloi) + ')</span>' : "") + '</div>'
       : '<span class="hp-hint">chưa chấm' + (r.stId === 3 ? " — sẽ chấm ở lượt kế tiếp" : "") + '</span>']);
+    /* ẢNH: mặc định chỉ bày ANH_XEM_TRUOC ô — mỗi ô là ẢNH GỐC ~520KB (CDN không có bản nhỏ), bày
+       cả 24 ô là 18,6MB/lượt mở. Muốn xem cả bộ thì bấm "+N": lúc đó mới trải hết lưới và ảnh vẫn
+       vào theo tầm nhìn. Người chỉ liếc qua không phải trả tiền băng thông cho 20 ảnh không xem. */
+    var moHet = !!VT.moAnh[String(r.id)], soBay = moHet ? r.anh.length : Math.min(ANH_XEM_TRUOC, r.anh.length);
     var thumbs = r.anh.length
-      ? '<div class="hp-vtthumbs">' + r.anh.map(function(u, i){
+      ? '<div class="hp-vtthumbs">' + r.anh.slice(0, soBay).map(function(u, i){
           return imgAnh(u, ' data-rid="' + esc(r.id) + '" data-idx="' + i + '" onclick="event.stopPropagation();HPLANOGRAM.openAnh(this.getAttribute(\'data-rid\'),+this.getAttribute(\'data-idx\'))"', i < ANH_TAI_NGAY);
-        }).join("") + '</div>'
+        }).join("") +
+        (soBay < r.anh.length
+          ? '<button class="hp-vtmore" data-rid="' + esc(r.id) + '" onclick="event.stopPropagation();HPLANOGRAM.moAnhHet(this.getAttribute(\'data-rid\'))" title="Trải hết lưới ảnh (mỗi ảnh ~0,5MB)">+' + (r.anh.length - soBay) + '</button>'
+          : '') + '</div>'
       : '<span class="hp-hint">' + (r.email ? "ảnh chỉ lưu trên dashboard 7 ngày gần nhất — bấm ↗ xem trên planogram" : "chưa có ảnh (chưa báo cáo)") + '</span>';
     rows.push(["Ảnh báo cáo (" + r.anh.length + ")", thumbs]);
   } else {
@@ -2634,6 +2644,8 @@ function mRender(){
   $id("hpMSum").textContent = sum + (nAct ? (" · " + nAct + " bộ lọc đang áp dụng") : "");
 }
 /* Ảnh báo cáo → LIGHTBOX CAROUSEL của host (openLB) */
+function moAnhHet(id){ VT.moAnh[String(id)] = 1; renderVt(); }
+
 function openAnh(id, i){
   var r = null;
   for (var j = 0; j < S.yc.rows.length; j++) if (String(S.yc.rows[j].id) === String(id)){ r = S.yc.rows[j]; break; }
@@ -2796,7 +2808,7 @@ window.HPLANOGRAM = {
   openAll: openAll, openArea: openArea, openStatus: openStatus, openName: openName, openYc: openYc, openYcAi: openYcAi, closeModal: closeModal,
   comboInput: comboInput, comboMenu: comboMenu, quick: quick, openAnh: openAnh,
   openNk: openNk, closeNk: closeNk, nkPick: nkPick, nkSearch: nkSearch,
-  openViTri: openViTri, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao, openThieu: openThieu, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
+  openViTri: openViTri, moAnhHet: moAnhHet, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao, openThieu: openThieu, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
   ccSetStatus: ccSetStatus, ccSearch: ccSearch, aiSetKl: aiSetKl, aiSearch: aiSearch, moMap: moMap
 };
 })();
