@@ -783,6 +783,7 @@ var CSS = [
 ".hp-vtthumbs{display:flex;flex-wrap:wrap;gap:6px;}",
 ".hp-vtthumbs img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border,#e8ecf1);cursor:zoom-in;transition:transform .16s cubic-bezier(.32,.72,0,1);background:color-mix(in srgb, var(--muted,#9ca3af) 14%, transparent);}",
 ".hp-vtthumbs img:hover{transform:scale(1.1);}",
+  ".hp-lz{background:color-mix(in srgb, var(--muted,#9ca3af) 18%, transparent);}",   /* ô chờ ảnh — hoãn tải tới khi lọt khung nhìn */
 /* HAI THẺ SONG SONG trong pop-up vị trí: TRÁI Phụ trách (nhấn accent — đây là người phải chịu
    trách nhiệm) · PHẢI Báo cáo gần nhất (nền trung tính — chỉ để tham khảo/đối chiếu).
    Tái dùng keyframes hp-in + easing/độ mượt sẵn có của module, không chế animation mới. */
@@ -1262,6 +1263,42 @@ function buildYC(H, rows2d){
   xongTai();
   renderWhBar(); renderToday(); renderList(); capNhatInfo();
 }
+/* ===== HOÃN TẢI ẢNH (18/08/2026) — ĐO THẬT TRƯỚC KHI LÀM, ĐỪNG TỐI ƯU LẠI THEO CẢM TÍNH =====
+ * Ảnh báo cáo là FILE GỐC chụp bằng điện thoại: đo 8 ảnh mẫu = 451–769 KB (trung bình ~520 KB).
+ * Mở MỘT pop-up ô đang kéo 36 ảnh ⇒ 18,6 MB / 16,8 giây, chỉ để vẽ mấy ô thumbnail 34px.
+ * CDN `cdn-media-wms.inshasaki.com` (Cloudflare) KHÔNG bật đường resize — `/cdn-cgi/image/...`
+ * trả 404, `?width=` bị bỏ qua, không thương lượng webp — nên không có bản nhỏ nào để xin.
+ * ⇒ Cách nhẹ duy nhất: ĐỪNG TẢI ẢNH CHƯA AI NHÌN. imgAnh() cho ANH_TAI_NGAY ảnh đầu tải ngay,
+ *   phần còn lại giữ data-src và chỉ đổi thành src khi lọt vào khung nhìn.
+ * KHÔNG cần dựng kho ảnh riêng để "khỏi tải lại": đo thật, mở LẠI cùng ô = 0 lượt / 0 KB — WMS
+ * trả 302 `immutable` (6 ngày) và CDN trả `max-age=604800` (7 ngày), trình duyệt giữ sẵn hết. */
+var ANH_TAI_NGAY = 2;
+var ANH_CHO = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+function imgAnh(u, phu, taiNgay){
+  return taiNgay
+    ? '<img loading="lazy" src="' + esc(u) + '" alt=""' + phu + '>'
+    : '<img class="hp-lz" loading="lazy" src="' + ANH_CHO + '" data-src="' + esc(u) + '" alt=""' + phu + '>';
+}
+/* Một observer dùng chung cho cả 3 chỗ vẽ ảnh (pop-up ô · danh sách · modal yêu cầu). Đệm 240px
+   để ảnh kịp về trước khi cuộn tới. Trình duyệt không có IntersectionObserver thì tải thẳng như cũ. */
+var _lzIO = null;
+function lazyQuet(){
+  var ds = document.querySelectorAll("img.hp-lz[data-src]");
+  if (!ds.length) return;
+  if (!window.IntersectionObserver){
+    [].forEach.call(ds, function(im){ im.src = im.getAttribute("data-src"); im.removeAttribute("data-src"); im.classList.remove("hp-lz"); });
+    return;
+  }
+  if (!_lzIO) _lzIO = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if (!e.isIntersecting) return;
+      var im = e.target, u = im.getAttribute("data-src");
+      if (u){ im.src = u; im.removeAttribute("data-src"); im.classList.remove("hp-lz"); }
+      _lzIO.unobserve(im);
+    });
+  }, { rootMargin: "240px" });
+  [].forEach.call(ds, function(im){ _lzIO.observe(im); });
+}
 /* ẢNH BÁO CÁO (tab VESINH-ANH, tách khỏi VESINH-YEUCAU 03/08/2026 — bậc 3).
  * Gắn thẳng vào r.anh của dòng yêu cầu để 4 chỗ vẽ ảnh (danh sách NV, pop-up ô, modal yêu cầu,
  * lightbox) không phải đổi gì. Tab chưa về = r.anh rỗng = không có thumbnail, không lỗi. */
@@ -1503,6 +1540,7 @@ function renderList(){
     '<h2>Danh sách theo dõi<span style="flex:1"></span>' + modes + '</h2>' +
     (S.listMode === "nv" ? htmlNhanVien() : htmlAiXetDuyet()) +
     '</section>';
+  lazyQuet();
 }
 function renderAI(){ renderList(); }
 function htmlAiXetDuyet(){
@@ -1537,7 +1575,7 @@ function htmlAiXetDuyet(){
     var nvName = tenNm(r.exec);
     var yc = S.yc.ok ? S.yc.rows.filter(function(y){ return String(y.id) === r.id; })[0] : null;
     var anh = (yc && yc.anh.length)
-      ? '<span class="hp-thumbs"><img loading="lazy" src="' + esc(yc.anh[0]) + '" alt="" data-rid="' + esc(r.id) + '" onclick="event.stopPropagation();HPLANOGRAM.openAnh(this.getAttribute(\'data-rid\'),0)" title="Xem ' + yc.anh.length + ' ảnh báo cáo">' + (yc.anh.length > 1 ? '<button class="more" data-rid="' + esc(r.id) + '" onclick="event.stopPropagation();HPLANOGRAM.openAnh(this.getAttribute(\'data-rid\'),0)">+' + (yc.anh.length - 1) + '</button>' : '') + '</span>'
+      ? '<span class="hp-thumbs">' + imgAnh(yc.anh[0], ' data-rid="' + esc(r.id) + '" onclick="event.stopPropagation();HPLANOGRAM.openAnh(this.getAttribute(\'data-rid\'),0)" title="Xem ' + yc.anh.length + ' ảnh báo cáo"', false) + (yc.anh.length > 1 ? '<button class="more" data-rid="' + esc(r.id) + '" onclick="event.stopPropagation();HPLANOGRAM.openAnh(this.getAttribute(\'data-rid\'),0)">+' + (yc.anh.length - 1) + '</button>' : '') + '</span>'
       : '<span class="mut">—</span>';
     return '<tr>' +
       '<td>' + ngayVN(r.ngay) + '</td>' +
@@ -2284,9 +2322,9 @@ function renderVt(){
       : '<span class="hp-hint">chưa chấm' + (r.stId === 3 ? " — sẽ chấm ở lượt kế tiếp" : "") + '</span>']);
     var thumbs = r.anh.length
       ? '<div class="hp-vtthumbs">' + r.anh.map(function(u, i){
-          return '<img loading="lazy" src="' + esc(u) + '" alt="" data-rid="' + esc(r.id) + '" data-idx="' + i + '" onclick="event.stopPropagation();HPLANOGRAM.openAnh(this.getAttribute(\'data-rid\'),+this.getAttribute(\'data-idx\'))">';
+          return imgAnh(u, ' data-rid="' + esc(r.id) + '" data-idx="' + i + '" onclick="event.stopPropagation();HPLANOGRAM.openAnh(this.getAttribute(\'data-rid\'),+this.getAttribute(\'data-idx\'))"', i < ANH_TAI_NGAY);
         }).join("") + '</div>'
-      : '<span class="hp-hint">' + (r.email ? "ảnh chỉ lưu trên dashboard 3 ngày gần nhất — bấm ↗ xem trên planogram" : "chưa có ảnh (chưa báo cáo)") + '</span>';
+      : '<span class="hp-hint">' + (r.email ? "ảnh chỉ lưu trên dashboard 7 ngày gần nhất — bấm ↗ xem trên planogram" : "chưa có ảnh (chưa báo cáo)") + '</span>';
     rows.push(["Ảnh báo cáo (" + r.anh.length + ")", thumbs]);
   } else {
     rows.push(["Trạng thái", '<span class="hp-hint">Ngày ' + ngayVN(d) + ' vị trí này KHÔNG có yêu cầu vệ sinh trên planogram.</span>']);
@@ -2382,6 +2420,7 @@ function renderVt(){
     '<div class="hp-vthistrow">' + hist + '</div>' +
     rows.map(function(x){ return '<div class="hp-vtrow"><label>' + x[0] + '</label><div>' + x[1] + '</div></div>'; }).join("") +
     '<div class="hp-vtduo">' + cardPt + cardBc + '</div>';
+  lazyQuet();
 }
 
 /* ===== MODAL DRILL-DOWN — combo chain-filter (2 chế độ: loc = vị trí phụ trách · req = yêu cầu hôm nay) ===== */
@@ -2544,7 +2583,7 @@ function mRender(){
           : '<span class="mut">chưa có người nhận</span>';
         var thumbs = r.anh.length
           ? ('<span class="hp-thumbs">' +
-              '<img loading="lazy" src="' + esc(r.anh[0]) + '" alt="" data-rid="' + esc(r.id) + '" onclick="event.stopPropagation();HPLANOGRAM.openAnh(this.getAttribute(\'data-rid\'),0)" title="Xem ' + r.anh.length + ' ảnh báo cáo">' +
+              imgAnh(r.anh[0], ' data-rid="' + esc(r.id) + '" onclick="event.stopPropagation();HPLANOGRAM.openAnh(this.getAttribute(\'data-rid\'),0)" title="Xem ' + r.anh.length + ' ảnh báo cáo"', false) +
               (r.anh.length > 1 ? '<button class="more" data-rid="' + esc(r.id) + '" onclick="event.stopPropagation();HPLANOGRAM.openAnh(this.getAttribute(\'data-rid\'),0)">+' + (r.anh.length - 1) + '</button>' : '') +
             '</span>')
           : '<span class="mut">—</span>';
@@ -2590,6 +2629,7 @@ function mRender(){
     if (!out.length) out.push('<tr><td colspan="6" class="empty">Không có dòng phù hợp</td></tr>');
   }
   $id("hpMBody").innerHTML = out.join("");
+  lazyQuet();
   var nAct = state.filter(function(f){ return f.v; }).length + (q ? 1 : 0);
   $id("hpMSum").textContent = sum + (nAct ? (" · " + nAct + " bộ lọc đang áp dụng") : "");
 }
