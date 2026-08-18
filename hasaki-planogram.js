@@ -63,6 +63,12 @@ var TAB_YC = "VESINH-YEUCAU";       // từng yêu cầu vệ sinh hôm nay (tr�
  * lúc nào màn hình có nội dung — mà không khối nào của màn hình đầu cần tới ảnh. Nạp BẬC 3
  * (mở pop-up ô / mở danh sách yêu cầu). Chưa về thì mọi chỗ chỉ đơn giản là không có thumbnail. */
 var TAB_ANH = "VESINH-ANH";
+/* ẢNH NGÀY CŨ (18/08/2026) — ảnh nay giữ đủ 7 ngày (bằng cửa sổ VESINH-YEUCAU) nhưng chia 2 tab.
+ * VÌ SAO KHÔNG DỒN 1 TAB: đo thật 18/08 readTab VESINH-ANH = 398KB/3,1s, 7 ngày sẽ là ~990KB —
+ * ai mở pop-up cũng phải gánh, trong khi gần như mọi lượt xem là NGÀY HÔM NAY. Nên tab nhanh giữ
+ * nguyên 3 ngày, phần ngày 4→7 nằm đây và CHỈ nạp khi người dùng soi đúng ngày không có trong tab
+ * nhanh (canAnhNgay). Chưa nạp = ô ngày cũ không có thumbnail, không lỗi. */
+var TAB_ANH_CU = "VESINH-ANH-CU";
 /* VESINH-NHATKY: sync vẫn ghi (tab cho người đọc trên Sheet) nhưng DASHBOARD KHÔNG ĐỌC NỮA
  * (01/08/2026). Đối chiếu thật: 272/272 dòng của nó dựng lại được y nguyên từ VESINH-LICHSU
  * (gom theo ngày|email|khu) — mà LICHSU phủ 60 ngày (rộng hơn 45) và đã được nạp trước sẵn cho
@@ -283,6 +289,9 @@ function setKhoang(tu, den){
      VESINH-CHAMCONG-NGAY. Bình thường loadData đã nạp trước ở giây thứ 4; gọi lại ở đây để người
      bấm ngày sớm hơn thế (hoặc lượt nạp trước hỏng) vẫn có, thay vì im lặng tụt về "chỉ Đã/Chưa". */
   if (tu === den && tu !== isoToday()) canCCN();
+  /* Ảnh: chỉ đi tìm khi người dùng ĐÃ từng cần ảnh trong phiên này (S.anh.ok) — canAnhNgay tự
+     đứng im nếu tab nhanh đã phủ khoảng ngày mới chọn. */
+  canAnhNgay();
   renderWhBar(); renderToday(); renderList();
 }
 function setPtHi(e){ S.ptHi = (S.ptHi === e || !e) ? "" : e; renderMap(); }
@@ -482,7 +491,8 @@ var S = { ok: false, dangPT: false, all: [], area: "", lastAt: 0, tsData: 0,
   yc: { ok: false, dang: false, rows: [], ts: 0, ngay: "" },
   ls: { ok: false, dang: false, by: {}, ev: [], ts: 0, n: 0 },   // by[khoá ô] = [lượt báo cáo] mới → cũ (60 ngày) — nguồn "báo cáo gần nhất" của pop-up
   ccn: { ok: false, dang: false, em: {}, code: {}, ts: 0, ngay: {} },   // chấm công theo ngày: em/code -> { ten, d:{ngày:{vao,ra}} } · ngay = tập ngày CÓ dữ liệu
-  anh: { ok: false, dang: false, by: {}, ts: 0 },   // ảnh báo cáo tách tab (bậc 3): by[request id] = [url…]
+  anh: { ok: false, dang: false, by: {}, ts: 0, ngay: {} },   // ảnh báo cáo tách tab (bậc 3): by[request id] = [url…] · ngay = tập NGÀY có trong tab nhanh
+  anhcu: { ok: false, dang: false, ts: 0 },   // ảnh ngày 4→7 (tab VESINH-ANH-CU) — nạp thêm khi soi ngày cũ, gộp thẳng vào anh.by
   ai: { ok: false, dang: false, by: {}, rows: [], ts: 0 }, aiKl: "", aiQ: "",
   pc: { ok: false, dang: false, by: {}, ts: 0 },   // by[khoá ô] = { em, code, ten, nguon, bc, gc }
   dTu: "", dDen: "", listMode: "ai", ptHi: "", ptOpen: false };   // dTu→dDen = KHOẢNG NGÀY đang xem; listMode = panel danh sách (ai | nv); ptHi = email NV đang SOI; ptOpen = panel cần-nhắc đang xổ
@@ -926,7 +936,7 @@ var NCOL = { loc: 6, req: 8, miss: 6 };
  *   NGÒI NỔ: readTab của Apps Script CHẬP CHỜN 404 (quá tải / redirect googleusercontent). Đo thật
  *   12/08: cùng một URL, lượt này 404 lượt sau 200 — nên cách chữa là THỬ LẠI readTab, tuyệt đối
  *   không mượn đường gviz. Thà thiếu dữ liệu (nói rõ vì sao) còn hơn có dữ liệu sai. */
-var TAB_PRIVATE = [TAB, TAB_CC, TAB_YC, TAB_ANH, TAB_NK_BO, TAB_LS, TAB_CCN, TAB_AI, TAB_PC];
+var TAB_PRIVATE = [TAB, TAB_CC, TAB_YC, TAB_ANH, TAB_ANH_CU, TAB_NK_BO, TAB_LS, TAB_CCN, TAB_AI, TAB_PC];
 /* ĐO THẬT 12/08/2026 (đừng suy đoán lại): độ trễ nền của Apps Script đã rất cao và 404 rơi NGẪU
  * NHIÊN, không theo kích thước — action=bridgeCaps chỉ trả 74 byte JSON tĩnh mà lượt này 404 ở giây
  * 6,5 lượt sau 200 ở giây 7,4; action=lastSync (đọc 1 Script Property) 404 ở giây 47,7; readTab
@@ -1031,7 +1041,10 @@ var NGUON = [
     fail: function(){ S.ccn.ok = false; S.ccn.dang = false; veLaiVt(); } },
   { tab: TAB_ANH, cb: "hpgv_anh",
     build: function(H, rows, ts){ if (ts > 0) S.anh.ts = ts; S.anh.dang = false; buildANH(H, rows); },
-    fail: function(){ S.anh.ok = false; S.anh.dang = false; } }
+    fail: function(){ S.anh.ok = false; S.anh.dang = false; } },
+  { tab: TAB_ANH_CU, cb: "hpgv_anhcu",
+    build: function(H, rows, ts){ if (ts > 0) S.anhcu.ts = ts; S.anhcu.dang = false; buildANHCU(H, rows); },
+    fail: function(){ S.anhcu.ok = false; S.anhcu.dang = false; } }
 ];
 var _daGoi = {}, _ycTO = null, _preTO = null;   // _daGoi: tab -> đã bắn request lượt này · _ycTO: watchdog VESINH-YEUCAU
 function nguonOf(tab){ for (var i = 0; i < NGUON.length; i++) if (NGUON[i].tab === tab) return NGUON[i]; return null; }
@@ -1055,6 +1068,7 @@ function bac1(){
     if (S.ls.ok || S.ls.dang) goiNguon(TAB_LS);
     if (S.ccn.ok || S.ccn.dang) goiNguon(TAB_CCN);
     if (S.anh.ok || S.anh.dang) goiNguon(TAB_ANH);
+    if (S.anhcu.ok || S.anhcu.dang) goiNguon(TAB_ANH_CU);
   }, 250);
 }
 /* bậc 3 — nạp theo yêu cầu, gọi từ chỗ người dùng thực sự cần dữ liệu đó */
@@ -1069,7 +1083,25 @@ function canLS(){ if (S.ls.ok || S.ls.dang) return; S.ls.dang = true; tuCache(TA
 function canCCN(){ if (S.ccn.ok || S.ccn.dang) return; S.ccn.dang = true; tuCache(TAB_CCN); goiNguon(TAB_CCN); }
 /* Ảnh báo cáo: nặng thứ nhì (44KB) mà chỉ cần khi người dùng THẬT SỰ nhìn ảnh — mở pop-up ô hoặc
    mở danh sách yêu cầu. Cũng vẽ ngay từ cache phiên rồi mới gọi bản mới. */
-function canANH(){ if (S.anh.ok || S.anh.dang) return; S.anh.dang = true; tuCache(TAB_ANH); goiNguon(TAB_ANH); }
+function canANH(){ if (!(S.anh.ok || S.anh.dang)){ S.anh.dang = true; tuCache(TAB_ANH); goiNguon(TAB_ANH); } canAnhNgay(); }
+/* Ảnh NGÀY CŨ: chỉ gọi khi khoảng ngày đang xem có ngày KHÔNG nằm trong tab nhanh. Nhận biết bằng
+ * chính cột "Ngày" của tab nhanh (S.anh.ngay) chứ không hard-code "3 ngày" — sync đổi VS_ANH_NGAY
+ * lúc nào dashboard cũng đi theo, không phải sửa 2 nơi. Tab nhanh chưa về thì chưa biết gì, để
+ * buildANH gọi lại sau khi nó về. Ngày cả kho không ai chụp ảnh cũng rơi vào đây: tốn đúng 1 lượt
+ * nạp, chấp nhận (rẻ hơn nhiều so với bắt mọi người tải kèm ảnh cũ mỗi lượt mở pop-up). */
+function canAnhNgay(){
+  if (!S.anh.ok || S.anhcu.ok || S.anhcu.dang) return;
+  var k = khoang(), tu = k[0], den = k[1]; if (!tu || !den) return;
+  /* Duyệt NGÀY CÓ THẬT trong dữ liệu yêu cầu (không cộng chuỗi ngày): khoảng đang xem mà không có
+     yêu cầu nào thì cũng chẳng có ảnh nào để đi tìm. */
+  var thieu = false, rs = S.yc.rows || [];
+  for (var i = 0; i < rs.length; i++){
+    var d = rs[i].ngay;
+    if (d >= tu && d <= den && !S.anh.ngay[d]){ thieu = true; break; }
+  }
+  if (!thieu) return;
+  S.anhcu.dang = true; tuCache(TAB_ANH_CU); goiNguon(TAB_ANH_CU);
+}
 function loadTabGviz(tab, cbName, cbBuild, onFail){
   /* CHỐT AN TOÀN: tab private không có bản sao trên sheet public, mà gviz lại trả TAB ĐẦU TIÊN của
      file thay vì báo lỗi → phải chặn ngay ở cửa, đừng để rác đi tiếp vào cache lẫn màn hình. */
@@ -1095,6 +1127,7 @@ function loadData(){
   if (S.ls.ok || S.ls.dang) tuCache(TAB_LS);
   if (S.ccn.ok || S.ccn.dang) tuCache(TAB_CCN);
   if (S.anh.ok || S.anh.dang) tuCache(TAB_ANH);
+  if (S.anhcu.ok || S.anhcu.dang) tuCache(TAB_ANH_CU);
   if (!coYc){
     animBat();   // dữ liệu mới thật → cho chạy animation vào 1 lượt
     st.style.display = "block";
@@ -1238,23 +1271,42 @@ function ganAnh(rows){
   rows.forEach(function(r){ var a = S.anh.by[String(r.id)]; if (a && a.length){ r.anh = a; n++; } });
   return n;
 }
-function buildANH(H, rows2d){
+function docANH(H, rows2d, by, ngay){
   var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
   var idx = {}; Object.keys(COLS_ANH).forEach(function(k){ idx[k] = idxOf(hl, COLS_ANH[k]); });
-  if (idx.id < 0 || idx.anh < 0){ S.anh.ok = false; S.anh.by = {}; return; }
-  var by = {};
+  if (idx.id < 0 || idx.anh < 0) return false;
   rows2d.forEach(function(row){
     function gv(i){ return (i >= 0 && row[i] != null) ? row[i] : ""; }
     var id = String(gv(idx.id)).replace(/\.0$/, "").trim(); if (!id) return;
+    var d = String(gv(idx.ngay) || "").slice(0, 10); if (d && ngay) ngay[d] = 1;
     var a = String(gv(idx.anh) || "").split(/\s*\|\s*/).filter(Boolean).map(urlAnh);
     if (a.length) by[id] = a;
   });
-  S.anh.ok = true; S.anh.by = by;
+  return true;
+}
+/* Vẽ lại 4 chỗ có ảnh sau khi một tab ảnh về (dùng chung cho tab nhanh lẫn tab ngày cũ). */
+function veLaiAnh(){
   if (!ganAnh(S.yc.rows)) return;   // chưa có dòng nào nhận ảnh → khỏi vẽ lại
   renderList();                     // cột thumbnail của danh sách nhân viên/AI
   veLaiVt();                        // pop-up ô đang mở
   var m = $id("hpModal");           // modal danh sách yêu cầu đang mở
   if (m && m.classList.contains("show")) mRender();
+}
+function buildANH(H, rows2d){
+  var by = {}, ngay = {};
+  if (!docANH(H, rows2d, by, ngay)){ S.anh.ok = false; S.anh.by = {}; S.anh.ngay = {}; return; }
+  /* Gộp phần ảnh ngày cũ đã nạp trước đó (nếu có) — lượt Làm mới nạp lại tab nhanh không được
+     xoá mất ảnh cũ đang hiển thị trong pop-up. */
+  if (S.anhcu.ok) for (var k in S.anh.by) if (!by[k]) by[k] = S.anh.by[k];
+  S.anh.ok = true; S.anh.by = by; S.anh.ngay = ngay;
+  canAnhNgay();   // tab nhanh về rồi mới biết nó phủ ngày nào → giờ mới quyết được có cần tab cũ không
+  veLaiAnh();
+}
+/* Ảnh ngày 4→7: GỘP vào chính S.anh.by (ganAnh chỉ đọc một sổ) chứ không giữ sổ riêng. */
+function buildANHCU(H, rows2d){
+  if (!docANH(H, rows2d, S.anh.by, null)){ S.anhcu.ok = false; return; }
+  S.anhcu.ok = true;
+  veLaiAnh();
 }
 /** Tên người phụ trách của 1 yêu cầu — cột "PT Name" đã bỏ, tra từ sổ tên chung (PHU-TRACH +
  *  VESINH-PHANCONG đều nạp ở bậc 1 và cả hai đều gọi ghiNhoNm). Chưa có tên thì hiện email. */
