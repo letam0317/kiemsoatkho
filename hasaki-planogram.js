@@ -1087,20 +1087,27 @@ function canCCN(){ if (S.ccn.ok || S.ccn.dang) return; S.ccn.dang = true; tuCach
 /* Ảnh báo cáo: nặng thứ nhì (44KB) mà chỉ cần khi người dùng THẬT SỰ nhìn ảnh — mở pop-up ô hoặc
    mở danh sách yêu cầu. Cũng vẽ ngay từ cache phiên rồi mới gọi bản mới. */
 function canANH(){ if (!(S.anh.ok || S.anh.dang)){ S.anh.dang = true; tuCache(TAB_ANH); goiNguon(TAB_ANH); } canAnhNgay(); }
-/* Ảnh NGÀY CŨ: chỉ gọi khi khoảng ngày đang xem có ngày KHÔNG nằm trong tab nhanh. Nhận biết bằng
- * chính cột "Ngày" của tab nhanh (S.anh.ngay) chứ không hard-code "3 ngày" — sync đổi VS_ANH_NGAY
- * lúc nào dashboard cũng đi theo, không phải sửa 2 nơi. Tab nhanh chưa về thì chưa biết gì, để
- * buildANH gọi lại sau khi nó về. Ngày cả kho không ai chụp ảnh cũng rơi vào đây: tốn đúng 1 lượt
- * nạp, chấp nhận (rẻ hơn nhiều so với bắt mọi người tải kèm ảnh cũ mỗi lượt mở pop-up). */
+/* Ảnh NGÀY CŨ: chỉ gọi khi ngày ĐANG XEM không nằm trong tab nhanh. Nhận biết bằng chính cột
+ * "Ngày" của tab nhanh (S.anh.ngay) chứ không hard-code "3 ngày" — sync đổi VS_ANH_NGAY lúc nào
+ * dashboard đi theo lúc đó. Tab nhanh chưa về thì chưa biết gì, buildANH gọi lại sau khi nó về.
+ * LỖI USER BẮT ĐƯỢC 18/08 (ô F0-A1-511-08-04-01, bấm ngày 14/8): "ngày đang xem" có HAI nguồn —
+ * khoảng ngày của màn hình (khoang()) VÀ ngày riêng của pop-up ô (VT.ngay, đổi bằng dải ô ngày
+ * trong chính pop-up). Bản đầu chỉ xét khoang() nên bấm ô ngày 14/8 trong pop-up thì tầng ảnh cũ
+ * KHÔNG BAO GIỜ được gọi — pop-up báo "Ảnh báo cáo (0)" trong khi Sheet có đủ 16 ảnh. */
 function canAnhNgay(){
   if (!S.anh.ok || S.anhcu.ok || S.anhcu.dang) return;
-  var k = khoang(), tu = k[0], den = k[1]; if (!tu || !den) return;
-  /* Duyệt NGÀY CÓ THẬT trong dữ liệu yêu cầu (không cộng chuỗi ngày): khoảng đang xem mà không có
-     yêu cầu nào thì cũng chẳng có ảnh nào để đi tìm. */
-  var thieu = false, rs = S.yc.rows || [];
-  for (var i = 0; i < rs.length; i++){
-    var d = rs[i].ngay;
-    if (d >= tu && d <= den && !S.anh.ngay[d]){ thieu = true; break; }
+  var k = khoang(), tu = k[0], den = k[1];
+  /* Ngày riêng của pop-up ô đang mở (nếu có) — xét trước vì đó là thứ người dùng đang nhìn. */
+  var mv = $id("hpVtModal"), dVt = (mv && mv.classList.contains("show") && VT.ngay) ? VT.ngay : "";
+  var thieu = !!(dVt && !S.anh.ngay[dVt]);
+  /* Rồi tới khoảng ngày của màn hình: duyệt NGÀY CÓ THẬT trong dữ liệu yêu cầu (không cộng chuỗi
+     ngày) — khoảng đang xem mà không có yêu cầu nào thì cũng chẳng có ảnh nào để đi tìm. */
+  if (!thieu && tu && den){
+    var rs = S.yc.rows || [];
+    for (var i = 0; i < rs.length; i++){
+      var d = rs[i].ngay;
+      if (d >= tu && d <= den && !S.anh.ngay[d]){ thieu = true; break; }
+    }
   }
   if (!thieu) return;
   S.anhcu.dang = true; tuCache(TAB_ANH_CU); goiNguon(TAB_ANH_CU);
@@ -2238,7 +2245,7 @@ function openViTri(loc){
   requestAnimationFrame(function(){ m.classList.add("show"); });
 }
 function closeVt(){ var m = $id("hpVtModal"); m.classList.remove("show"); setTimeout(function(){ m.style.display = "none"; $id("hpVtBody").innerHTML = ""; }, 240); }
-function vtNgay(d){ VT.ngay = d; renderVt(); }
+function vtNgay(d){ VT.ngay = d; canAnhNgay(); renderVt(); }   // đổi ngày NGAY TRONG pop-up cũng phải kéo tầng ảnh ngày cũ
 /* ===== CHẤM CÔNG THEO ĐÚNG NGÀY ĐANG CHỌN — cho thẻ "Phụ trách" (01/08/2026) ==================
  * Trả về cùng khuôn { c, lb, sub, subC } của ccTrangThai (+ sub2) để dùng lại y nguyên phần vẽ.
  * Tách hẳn 2 sự thật, vì hai cái này dẫn tới hai hành động khác nhau:
@@ -2334,7 +2341,12 @@ function renderVt(){
         (soBay < r.anh.length
           ? '<button class="hp-vtmore" data-rid="' + esc(r.id) + '" onclick="event.stopPropagation();HPLANOGRAM.moAnhHet(this.getAttribute(\'data-rid\'))" title="Trải hết lưới ảnh (mỗi ảnh ~0,5MB)">+' + (r.anh.length - soBay) + '</button>'
           : '') + '</div>'
-      : '<span class="hp-hint">' + (r.email ? "ảnh chỉ lưu trên dashboard 7 ngày gần nhất — bấm ↗ xem trên planogram" : "chưa có ảnh (chưa báo cáo)") + '</span>';
+      : '<span class="hp-hint">' + (!r.email ? "chưa có ảnh (chưa báo cáo)"
+          /* Ba tình huống KHÁC HẲN nhau, trước đây gộp làm một câu "chỉ lưu 7 ngày" nên báo sai
+             cho cả ngày nằm TRONG cửa sổ (user bắt được 14/8 khi hôm nay 18/8): */
+          : (S.anh.dang || S.anhcu.dang) ? "đang tải ảnh báo cáo…"
+          : (S.anh.ngay[d] || S.anhcu.ok) ? "yêu cầu này không kèm ảnh báo cáo"
+          : "ảnh chỉ lưu trên dashboard 7 ngày gần nhất — bấm ↗ xem trên planogram") + '</span>';
     rows.push(["Ảnh báo cáo (" + r.anh.length + ")", thumbs]);
   } else {
     rows.push(["Trạng thái", '<span class="hp-hint">Ngày ' + ngayVN(d) + ' vị trí này KHÔNG có yêu cầu vệ sinh trên planogram.</span>']);
