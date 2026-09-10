@@ -683,11 +683,11 @@ var CSS = [
 "#hpReload,#pane-planogram .hp-btn{background:var(--accent,#326e51);color:var(--accent-text,#fff);border:0;border-radius:9px;padding:8px 15px;font-size:12.5px;font-weight:650;cursor:pointer;min-height:36px;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .25s ease;}",
 "#pane-planogram .hp-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(16,24,40,.16);}",
 "#hpReload:disabled{background:color-mix(in srgb, var(--muted,#9ca3af) 42%, var(--surface,#fff));color:var(--muted,#9ca3af);cursor:not-allowed;}",
-"#pane-planogram .hp-whbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px;}",
-"#pane-planogram .hp-whtab{border:1px solid var(--border,#e8ecf1);background:var(--surface,#fff);color:var(--text,#374151);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;min-height:32px;display:inline-flex;align-items:center;gap:7px;transition:background .16s ease,border-color .16s ease;}",
-"#pane-planogram .hp-whtab:hover{background:color-mix(in srgb, var(--accent,#326e51) 8%, transparent);}",
-"#pane-planogram .hp-whtab.active{background:var(--accent,#326e51);color:var(--accent-text,#fff);border-color:var(--accent,#326e51);}",
-"#pane-planogram .hp-whtab b{font-variant-numeric:tabular-nums;}",
+"#pane-planogram .hp-whbar,.hp-modal .hp-whbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px;}",
+"#pane-planogram .hp-whtab,.hp-modal .hp-whtab{border:1px solid var(--border,#e8ecf1);background:var(--surface,#fff);color:var(--text,#374151);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;min-height:32px;display:inline-flex;align-items:center;gap:7px;transition:background .16s ease,border-color .16s ease;}",
+"#pane-planogram .hp-whtab:hover,.hp-modal .hp-whtab:hover{background:color-mix(in srgb, var(--accent,#326e51) 8%, transparent);}",
+"#pane-planogram .hp-whtab.active,.hp-modal .hp-whtab.active{background:var(--accent,#326e51);color:var(--accent-text,#fff);border-color:var(--accent,#326e51);}",
+"#pane-planogram .hp-whtab b,.hp-modal .hp-whtab b{font-variant-numeric:tabular-nums;}",
 "#pane-planogram .hp-datesel{border:1px solid var(--border,#d5dbe4);background:var(--surface,#fff);color:var(--text,#1f2937);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;min-height:32px;cursor:pointer;transition:border-color .16s ease;}",
 "#pane-planogram .hp-datesel:hover{border-color:var(--accent,#326e51);}",
 "#pane-planogram .hp-datesel:focus{outline:0;border-color:var(--accent,#326e51);}",
@@ -709,7 +709,7 @@ var CSS = [
 "#pane-planogram .hp-track.hp-herobar{height:6px;margin:8px 0 6px;}",
 /* chips AI xét duyệt thu nhỏ + neo đáy panel (cột phải giãn cao bằng cột trái) */
 "#pane-planogram .hp-aimini{margin:auto 0 0;padding-top:10px;gap:4px;}",
-"#pane-planogram .hp-aimini .hp-whtab{font-size:11px;padding:2px 8px;min-height:22px;gap:5px;}",
+"#pane-planogram .hp-aimini .hp-whtab,.hp-modal .hp-aimini .hp-whtab{font-size:11px;padding:2px 8px;min-height:22px;gap:5px;}",
 "@media(max-width:768px){#pane-planogram .hp-aimini .hp-whtab{min-height:36px;}}",
 "#pane-planogram .hp-aimini .hp-hint{font-size:10.5px;width:100%;}",
 "#pane-planogram .hp-grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:12px;margin-top:12px;}",
@@ -748,7 +748,7 @@ var CSS = [
 "#pane-planogram .hp-rv{text-align:right;font-variant-numeric:tabular-nums;font-size:12px;line-height:1.15;}",
 "#pane-planogram .hp-rv b{font-size:13px;color:var(--text,#1f2937);} #pane-planogram .hp-rv small{display:block;color:var(--muted,#9ca3af);font-size:10px;font-weight:500;}",
 "@media(max-width:640px){#pane-planogram .hp-row{grid-template-columns:1fr 84px;grid-template-areas:'l l' 't v';row-gap:5px;gap:8px;padding:7px 6px;}#pane-planogram .hp-rl{grid-area:l;}#pane-planogram .hp-track{grid-area:t;}#pane-planogram .hp-rv{grid-area:v;}}",
-"#pane-planogram .hp-empty{color:var(--muted,#9ca3af);font-size:12.5px;padding:18px 2px;text-align:center;}",
+"#pane-planogram .hp-empty,.hp-modal .hp-empty{color:var(--muted,#9ca3af);font-size:12.5px;padding:18px 2px;text-align:center;}",
 "#pane-planogram .hp-mini{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;}",
 /* segmented control (chuyển chế độ trong 1 panel) — cùng họ với hp-whtab nhưng dính liền */
 "#pane-planogram .hp-seg{display:inline-flex;border:1px solid var(--border,#e8ecf1);border-radius:999px;overflow:hidden;background:var(--surface,#fff);}",
@@ -867,21 +867,21 @@ var CSS = [
 "@media(max-width:760px){#pane-planogram .hp-mapc{grid-template-columns:48px 30px 48px;}}",   /* giữ nguyên gap tỷ lệ — sơ đồ rộng thì cuộn ngang trong .hp-mapscroll */
 /* panel đối chiếu chấm công */
 "#pane-planogram .hp-cc{margin-top:12px;}",
-"#pane-planogram .hp-ccsearch{width:100%;max-width:340px;padding:9px 11px;border:1px solid var(--border,#d5dbe4);border-radius:9px;font-size:12.5px;background:var(--surface,#fff);color:var(--text,#1f2937);min-height:36px;margin:2px 0 10px;}",
-"#pane-planogram .hp-ccsearch:focus{outline:0;border-color:var(--accent,#326e51);}",
-"#pane-planogram .hp-ccwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:520px;overflow-y:auto;border:1px solid var(--border,#e8ecf1);border-radius:12px;}",
-"#pane-planogram .hp-cctbl{width:100%;border-collapse:collapse;font-size:12.5px;color:var(--text,#1f2937);min-width:720px;}",
-"#pane-planogram .hp-cctbl thead th{position:sticky;top:0;background:var(--accent,#326e51);color:var(--accent-text,#fff);padding:9px 11px;text-align:left;font-weight:600;font-size:11px;z-index:1;white-space:nowrap;}",
-"#pane-planogram .hp-cctbl td{padding:8px 11px;border-bottom:1px solid var(--border,#f1f4f8);white-space:nowrap;}",
-"#pane-planogram .hp-cctbl tr[data-em]{cursor:pointer;}",
-"#pane-planogram .hp-cctbl tr:hover td{background:color-mix(in srgb, var(--accent,#326e51) 5%, transparent);}",
-"#pane-planogram .hp-cctbl .num{text-align:right;font-variant-numeric:tabular-nums;}",
-"#pane-planogram .hp-cctbl .mut{color:var(--muted,#9ca3af);}",
-"#pane-planogram .hp-cctbl .empty{text-align:center;color:var(--muted,#9ca3af);padding:26px;}",
-"#pane-planogram .hp-cctbl td.wrap{white-space:normal;min-width:280px;max-width:520px;line-height:1.5;}",
+"#pane-planogram .hp-ccsearch,.hp-modal .hp-ccsearch{width:100%;max-width:340px;padding:9px 11px;border:1px solid var(--border,#d5dbe4);border-radius:9px;font-size:12.5px;background:var(--surface,#fff);color:var(--text,#1f2937);min-height:36px;margin:2px 0 10px;}",
+"#pane-planogram .hp-ccsearch:focus,.hp-modal .hp-ccsearch:focus{outline:0;border-color:var(--accent,#326e51);}",
+"#pane-planogram .hp-ccwrap,.hp-modal .hp-ccwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:520px;overflow-y:auto;border:1px solid var(--border,#e8ecf1);border-radius:12px;}",
+"#pane-planogram .hp-cctbl,.hp-modal .hp-cctbl{width:100%;border-collapse:collapse;font-size:12.5px;color:var(--text,#1f2937);min-width:720px;}",
+"#pane-planogram .hp-cctbl thead th,.hp-modal .hp-cctbl thead th{position:sticky;top:0;background:var(--accent,#326e51);color:var(--accent-text,#fff);padding:9px 11px;text-align:left;font-weight:600;font-size:11px;z-index:1;white-space:nowrap;}",
+"#pane-planogram .hp-cctbl td,.hp-modal .hp-cctbl td{padding:8px 11px;border-bottom:1px solid var(--border,#f1f4f8);white-space:nowrap;}",
+"#pane-planogram .hp-cctbl tr[data-em],.hp-modal .hp-cctbl tr[data-em]{cursor:pointer;}",
+"#pane-planogram .hp-cctbl tr:hover td,.hp-modal .hp-cctbl tr:hover td{background:color-mix(in srgb, var(--accent,#326e51) 5%, transparent);}",
+"#pane-planogram .hp-cctbl .num,.hp-modal .hp-cctbl .num{text-align:right;font-variant-numeric:tabular-nums;}",
+"#pane-planogram .hp-cctbl .mut,.hp-modal .hp-cctbl .mut{color:var(--muted,#9ca3af);}",
+"#pane-planogram .hp-cctbl .empty,.hp-modal .hp-cctbl .empty{text-align:center;color:var(--muted,#9ca3af);padding:26px;}",
+"#pane-planogram .hp-cctbl td.wrap,.hp-modal .hp-cctbl td.wrap{white-space:normal;min-width:280px;max-width:520px;line-height:1.5;}",
 "#pane-planogram .hp-badge,.hp-modal .hp-badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:650;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;}",
 "#pane-planogram .hp-state{padding:56px 20px;text-align:center;color:var(--muted,#6b7280);}",
-"#pane-planogram .hp-spin{width:32px;height:32px;border:3px solid var(--border,#d5dbe4);border-top-color:var(--accent,#326e51);border-radius:50%;margin:0 auto 16px;animation:hp-sp .8s linear infinite;}",
+"#pane-planogram .hp-spin,.hp-modal .hp-spin{width:32px;height:32px;border:3px solid var(--border,#d5dbe4);border-top-color:var(--accent,#326e51);border-radius:50%;margin:0 auto 16px;animation:hp-sp .8s linear infinite;}",
 "@keyframes hp-sp{to{transform:rotate(360deg)}}",
 /* ANIMATION VÀO chỉ chạy khi pane mang class hp-anim (lần tải đầu / nút Làm mới — animBat()).
    Bấm lọc khu vực/ngày KHÔNG animate lại: tránh 3-4 khung trắng + panel trượt gây cảm giác giật. */
@@ -1039,10 +1039,10 @@ var CSS = [
 "@media(max-width:768px){",
 /* Cột Model là thông tin KỸ THUẬT (gemini-3.5-flash-lite) — dòng tổng kết dưới bảng đã liệt kê đủ
    các model đã dùng, nên trong thẻ nó chỉ là chữ lạ chiếm chỗ. Ẩn trên điện thoại, giữ ở máy tính. */
-"#pane-planogram table.mbcard td.ai-model{display:none;}",
+"#pane-planogram table.mbcard td.ai-model,.hp-modal table.mbcard td.ai-model{display:none;}",
 /* Khung bảng: bỏ cuộn-trong-cuộn. Ngón tay kéo trang mà trúng khung con là bẫy chạm kinh điển;
    thẻ chảy theo trang, số dòng đã bị chặn bằng CAP nên không có danh sách dài vô hạn. */
-"#pane-planogram .hp-ccwrap:has(table.mbcard){overflow:visible;max-height:none !important;border:0;border-radius:0;}",
+"#pane-planogram .hp-ccwrap:has(table.mbcard),.hp-modal .hp-ccwrap:has(table.mbcard){overflow:visible;max-height:none !important;border:0;border-radius:0;}",
 /* THANH ĐIỀU KHIỂN ĐẦU TAB (#hpWhBar) (10/09/2026 nén Cumulative Header Clutter):
    10/09 chiều — gom về ĐÚNG MỘT HÀNG bộ lọc: ô Ngày đứng cố định bên trái (ngoài dải cuộn, vì pop-up
    lịch position:absolute sẽ bị khung overflow-x cắt), dải chip Khu vực cuộn ngang bên phải. Hai nút
@@ -1062,9 +1062,9 @@ var CSS = [
 /* CHIP LỌC trong panel danh sách (Kết luận / Trạng thái): 1 HÀNG CUỘN NGANG — khuôn .toptabs của
    dự án. Không đi đường xếp dọc như #hpWhBar: ở đây mỗi chip là một GIÁ TRỊ cùng loại, xếp dọc
    thành 5 hàng thì mất luôn nghĩa "một dải để so sánh". */
-"#pane-planogram .hp-whbar.hp-chipbar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;min-width:0;padding-bottom:3px;gap:5px;margin:0 0 6px;}",
-"#pane-planogram .hp-whbar.hp-chipbar>*{flex:0 0 auto;}",
-"#pane-planogram .hp-ccsearch{max-width:none;min-height:36px;padding:6px 10px;font-size:12px;margin:2px 0 8px;}",
+"#pane-planogram .hp-whbar.hp-chipbar,.hp-modal .hp-whbar.hp-chipbar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;min-width:0;padding-bottom:3px;gap:5px;margin:0 0 6px;}",
+"#pane-planogram .hp-whbar.hp-chipbar>*,.hp-modal .hp-whbar.hp-chipbar>*{flex:0 0 auto;}",
+"#pane-planogram .hp-ccsearch,.hp-modal .hp-ccsearch{max-width:none;min-height:36px;padding:6px 10px;font-size:12px;margin:2px 0 8px;}",
 /* Nhãn dọc trong băng chuyền: 9px là dưới sàn đọc được (luật ⑥). Băng rộng 30px, chữ viết dọc nên
    nới cỡ không làm băng phình ngang. */
 "#pane-planogram .hp-mapbelt span{font-size:10.5px;}",
@@ -1075,8 +1075,8 @@ var CSS = [
 /* Chip "0" là bộ lọc dẫn tới danh sách rỗng — làm mờ để dải chip đọc ra ngay chỗ NÀO CÓ SỐ, thay vì
    7 viên nhìn như nhau (người dùng chỉ đúng chỗ này: "Đã vệ sinh 0 · Chưa vệ sinh 0" chen giữa dải).
    Vẫn bấm được: lọc ra 0 dòng là một câu trả lời hợp lệ. */
-"#pane-planogram .hp-whtab.hp-z0{opacity:.45;}",
-"#pane-planogram .hp-whtab.hp-z0:hover{opacity:.8;}",
+"#pane-planogram .hp-whtab.hp-z0,.hp-modal .hp-whtab.hp-z0{opacity:.45;}",
+"#pane-planogram .hp-whtab.hp-z0:hover,.hp-modal .hp-whtab.hp-z0:hover{opacity:.8;}",
 /* Khung `.hp-wb1` (dải chip Khu vực) chỉ để ĐIỆN THOẠI có chỗ cuộn ngang. Ở máy tính `display:contents`
    làm nó tan biến, các chip vẫn là con TRỰC TIẾP của `.hp-whbar` ⇒ thanh là một hàng phẳng
    [Ngày][Tất cả][A1][A8]. (Bẫy đã biết: `display:contents` phải TẮT ở điện thoại, không thì rule
