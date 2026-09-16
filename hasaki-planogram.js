@@ -606,8 +606,24 @@ function thuVN(iso){ var m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/)
  * (đo 30/07: 1000 ảnh × 154 ký tự). sync-vesinh-all.js ghi vào Sheet phần ĐUÔI, dashboard ghép
  * lại tiền tố → payload tab VESINH-YEUCAU nhẹ đi 74KB mỗi lượt tải mà không mất gì.
  * Vẫn nhận url đầy đủ để đọc được dòng cũ trong Sheet / bản sync chưa cập nhật. */
+/* ĐƯỜNG ẢNH (16/09/2026) — ĐI THẲNG CDN, bỏ hop gateway WMS.
+ * Đo thật 16/09: gateway wms-gw-external chỉ trả 302 sang cdn-media-wms.inshasaki.com/<CÙNG TÊN FILE>
+ * (12/12 ảnh hôm nay + 25/25 ảnh ngày 4→7 đều vậy); hop này tốn 0,25–1,5 s/ảnh và mỗi ảnh là 1 lượt gọi
+ * vào WMS. Đi thẳng CDN = ảnh về sớm 1 hop + bớt hàng nghìn lượt gọi WMS mỗi ngày (ràng buộc nhẹ tải upstream).
+ * Đường lùi: ảnh lỗi trên CDN → anhLui() đổi về URL gateway đúng 1 lần (onerror) — WMS đổi CDN cũng không mất ảnh. */
 var ANH_PREFIX = "https://wms-gw-external.hasaki.vn/api/v1/filesmanagement/planogram/standard/";
-function urlAnh(s){ s = String(s || ""); return (!s || /^https?:\/\//i.test(s)) ? s : ANH_PREFIX + s; }
+var ANH_CDN = "https://cdn-media-wms.inshasaki.com/";
+function urlAnh(s){
+  s = String(s || ""); if (!s) return s;
+  if (/^https?:\/\//i.test(s)) return s.indexOf(ANH_PREFIX) === 0 ? ANH_CDN + s.slice(ANH_PREFIX.length) : s;
+  return ANH_CDN + s;
+}
+function urlAnhGw(u){ u = String(u || ""); return u.indexOf(ANH_CDN) === 0 ? ANH_PREFIX + u.slice(ANH_CDN.length) : u; }
+function anhLui(im){
+  if (!im || im.__lui) return; im.__lui = 1;
+  var u = im.getAttribute("data-goc") || im.getAttribute("data-src") || im.src || "";
+  var g = urlAnhGw(u); if (g && g !== u) im.src = g;
+}
 /* Link planogram */
 function pgDetailUrl(id){ return PG_BASE + "/details/" + id; }
 function pgListUrl(isoNgay, areaK, stIds, isoNgayDen){
@@ -1274,6 +1290,16 @@ function loadTab(tab, cbName, cbBuild, onFail, lan){
   /* Đánh dấu TRƯỚC KHI bắn: khe hở gây ra sự cố 12/08 là lượt ĐẦU chỉ đang chậm (chưa lỗi) —
      DANG_THU rỗng nên watchdog 25s kết luận "Chưa có dữ liệu" trong khi request vẫn đang bay. */
   if (rieng) DANG_THU[tab] = lan + 1;
+  /* NẠP TRƯỚC TỪ <head> (16/09/2026): index.html bắn readTab cho 3 tab bậc 1 ngay khi trình duyệt đọc tới <head>
+     (sớm hơn ~1 s so với chờ tải module này rồi mới gọi). Kết quả / lượt đang bay nằm ở window.__HPT — dùng đúng
+     1 lần cho lượt đầu; Làm mới / tự làm mới / thử lại đi đường thường. null = <head> gọi lỗi → cùng handler → thuLai(). */
+  var T = window.__HPT;
+  if (!lan && T && T.dung && !T.dung[tab] && ((tab in T.kq) || T.dang[tab])){
+    T.dung[tab] = 1;
+    if (tab in T.kq){ window[cbName](T.kq[tab]); return; }
+    T.cho[tab] = function(j){ window[cbName](j); };
+    return;
+  }
   injectJSONP(APPSCRIPT_URL + "?action=readTab&tab=" + encodeURIComponent(tab) + "&callback=" + cbName +
     "&tb=" + encodeURIComponent(tbKhoa()) +   // khoá thiết bị (audit 23/08/2026) — GAS chưa siết thì vô hại
     "&_=" + Date.now() + (lan ? "&thu=" + lan : ""), "hp_sc_" + cbName, thuLai);
@@ -1324,8 +1350,8 @@ function cacheSet(tab, H, rows, ts){
  *           lại là 2 tab NẶNG (nhật ký 45 ngày) → chính chúng đẩy nhóm còn lại ra sau hàng đợi. */
 var NGUON = [
   { tab: TAB_YC, cb: "hpgv_yc",
-    build: function(H, rows, ts){ if (ts > 0){ S.yc.ts = ts; if (!S.tsData) S.tsData = ts; } clearTimeout(_ycTO); S.yc.dang = false; buildYC(H, rows); },
-    fail: function(){ clearTimeout(_ycTO); S.yc.ok = false; S.yc.dang = false; renderToday(); renderMap(); } },
+    build: function(H, rows, ts){ if (ts > 0){ S.yc.ts = ts; if (!S.tsData) S.tsData = ts; } clearTimeout(_ycTO); S.yc.dang = false; buildYC(H, rows); bac2(); },
+    fail: function(){ clearTimeout(_ycTO); S.yc.ok = false; S.yc.dang = false; renderToday(); renderMap(); bac2(); } },
   { tab: TAB_PC, cb: "hpgv_pc",
     build: function(H, rows, ts){ if (ts > 0) S.pc.ts = ts; S.pc.dang = false; buildPC(H, rows); },
     fail: function(){ S.pc.ok = false; S.pc.dang = false; } },
@@ -1368,7 +1394,10 @@ function bac1(){
   goiNguon(TAB_YC);
   setTimeout(function(){
     goiNguon(TAB_PC);   // nhẹ (~20KB) mà quyết định tên người phụ trách hiện ở tooltip + pop-up
-    goiNguon(TAB); goiNguon(TAB_AI);
+    goiNguon(TAB);
+    /* VESINH-AI (664 KB — nặng nhất, gấp 4 YEUCAU) KHÔNG còn bắn cùng lượt: đo 16/09 bằng curl 4 tab song song thì
+       YEUCAU về ở 3,2 s, bỏ AI ra còn 1,9 s (Apps Script chỉ cho ~3 request chạy song song). Màn hình đầu không cần
+       AI (chip AI + số trên nút "AI xét duyệt ảnh" tự vẽ lại khi về) → bac2() gọi ngay khi YEUCAU về (hoặc hỏng). */
     if (S.cc.ok || S.cc.dang) goiNguon(TAB_CC);   // đang mở sẵn danh sách NV / pop-up thì làm mới luôn
     if (S.ls.ok || S.ls.dang) goiNguon(TAB_LS);
     if (S.ccn.ok || S.ccn.dang) goiNguon(TAB_CCN);
@@ -1376,6 +1405,8 @@ function bac1(){
     if (S.anhcu.ok || S.anhcu.dang) goiNguon(TAB_ANH_CU);
   }, 250);
 }
+/* bậc 2 — VESINH-AI: gọi khi YEUCAU đã về (xem chú thích trong bac1) */
+function bac2(){ goiNguon(TAB_AI); }
 /* bậc 3 — nạp theo yêu cầu, gọi từ chỗ người dùng thực sự cần dữ liệu đó */
 /* Chấm công: vẽ NGAY từ cache nếu còn (pop-up vị trí mở ra là có luôn dòng "hôm nay có đi làm
    không", không phải chờ mạng) rồi vẫn gọi tab để lấy bản mới — đúng nhịp cache-rồi-tải của loadData. */
@@ -1490,7 +1521,7 @@ function loadData(){
       _ycTO = setTimeout(ktraYc, 5000); return;
     }
     if (DANG_THU[TAB_YC]){ delete DANG_THU[TAB_YC]; LOI_NGUON[TAB_YC] = "gas"; }   // hết trần mà vẫn treo
-    S.yc.dang = false; xongTai(); renderToday(); renderMap(); render();
+    S.yc.dang = false; xongTai(); renderToday(); renderMap(); render(); bac2();
   }, 25000);
 }
 /* Chip giờ dữ liệu: hỏi GAS lastSync (mốc apiAt lúc bộ sync ghi) — chỉ cần khi rơi về gviz */
@@ -1597,30 +1628,146 @@ function buildYC(H, rows2d){
 var ANH_TAI_NGAY = 2;
 var ANH_XEM_TRUOC = 4;   // số ô ảnh bày sẵn trong pop-up (còn lại giấu sau nút +N)
 var ANH_CHO = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+/* ===== ẢNH NHỎ TỰ THU + HÀNG ĐỢI (16/09/2026) — user báo "bể ảnh thumbnail, bấm xem ảnh load rất lâu" =====
+ * ĐO THẬT 16/09 trên live (Pixel-5 giả lập, mạng công ty): pop-up AI cuộn vài màn = 33 ảnh gốc = 16,4 MB;
+ * mỗi ảnh 1,7 s (p50) – 5,8 s (max) vì 6 ảnh 0,5 MB tranh nhau một đường mạng; pop-up ô: ảnh đầu 5,3 s.
+ * Mỗi ảnh gốc 1440×1920 giải mã chiếm ~11 MB RAM — điện thoại giữ vài chục ảnh như vậy là Chrome bỏ ảnh → ô vỡ.
+ * CDN không có bản nhỏ (đo 18/08) ⇒ TỰ THU tại trình duyệt:
+ *   1. mỗi lúc chỉ ANH_SONG_SONG ảnh bay, theo thứ tự ưu tiên (ảnh bày sẵn trong pop-up) rồi tầm nhìn;
+ *   2. fetch (CDN mở CORS *) → createImageBitmap thu về ANH_NHO_W px → JPEG data-URL ~8 KB gắn vào <img>;
+ *      ảnh gốc thả cho GC ngay (chỉ giữ ANH_GOC_GIU ảnh gần nhất để lightbox mở tức thì), RAM không phình theo số ô;
+ *   3. cất data-URL vào IndexedDB (không PII — chỉ ảnh kệ hàng) TTL ANH_NHO_TTL: mở lại / tab mới / F5 → hiện
+ *      tức thì, 0 lượt mạng; quá hạn thì dọn.
+ *   Trình duyệt thiếu API hoặc fetch lỗi → rớt về <img src=ảnh gốc> như trước, onerror → gateway (không mất ảnh). */
+var ANH_SONG_SONG = 3;
+var ANH_NHO_W = 176;               // 56 px × DPR 3 = 168 — đủ nét cho ô thumbnail lớn nhất
+var ANH_NHO_TTL = 9 * 86400000;    // ảnh chỉ giữ 7 ngày trên dashboard → dọn sau 9 ngày
+var ANH_GOC_GIU = 8;               // ảnh gốc gần nhất giữ trong RAM (~4 MB) cho lightbox
+var _anhQ = [], _anhDang = 0, _anhMemo = {}, _anhSan = {}, _anhGoc = {}, _anhGocTt = [];
 function imgAnh(u, phu, taiNgay){
-  return taiNgay
-    ? '<img loading="lazy" src="' + esc(u) + '" alt=""' + phu + '>'
-    : '<img class="hp-lz" loading="lazy" src="' + ANH_CHO + '" data-src="' + esc(u) + '" alt=""' + phu + '>';
+  var san = _anhSan[u];   // ảnh nhỏ đã có trong RAM → vẽ thẳng, không qua hàng đợi
+  return '<img class="' + (san ? '' : 'hp-lz') + '" src="' + (san || ANH_CHO) + '" data-goc="' + esc(u) + '"' +
+    (san ? '' : ' data-src="' + esc(u) + '"') + (taiNgay ? ' data-uutien="1"' : '') +
+    ' onerror="HPLANOGRAM.anhLui(this)" alt=""' + phu + '>';
 }
-/* Một observer dùng chung cho cả 3 chỗ vẽ ảnh (pop-up ô · danh sách · modal yêu cầu). Đệm 240px
-   để ảnh kịp về trước khi cuộn tới. Trình duyệt không có IntersectionObserver thì tải thẳng như cũ. */
+/* Một observer dùng chung cho mọi chỗ vẽ ảnh (pop-up ô · danh sách · pop-up AI · modal yêu cầu). Đệm 240px
+   để ảnh kịp về trước khi cuộn tới. Ảnh ưu tiên (data-uutien) và trình duyệt không có IO → xếp hàng ngay. */
 var _lzIO = null;
 function lazyQuet(){
   var ds = document.querySelectorAll("img.hp-lz[data-src]");
   if (!ds.length) return;
-  if (!window.IntersectionObserver){
-    [].forEach.call(ds, function(im){ im.src = im.getAttribute("data-src"); im.removeAttribute("data-src"); im.classList.remove("hp-lz"); });
-    return;
+  var io = window.IntersectionObserver ? (_lzIO || (_lzIO = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if (!e.isIntersecting) return; _lzIO.unobserve(e.target); anhXep(e.target, false); });
+  }, { rootMargin: "240px" }))) : null;
+  [].forEach.call(ds, function(im){
+    if (im.__lz) return; im.__lz = 1;
+    if (im.getAttribute("data-uutien") || !io) anhXep(im, true); else io.observe(im);
+  });
+}
+function anhXep(im, uuTien){
+  if (!im || !im.getAttribute("data-src")) return;
+  if (uuTien) _anhQ.unshift(im); else _anhQ.push(im);
+  anhChay();
+}
+function anhChay(){
+  while (_anhDang < ANH_SONG_SONG && _anhQ.length){
+    var im = _anhQ.shift(), u = im.getAttribute("data-src");
+    if (!u || !document.body.contains(im)) continue;   // ô đã bị vẽ lại — phần tử mới tự xếp hàng
+    im.removeAttribute("data-src");
+    _anhDang++;
+    (function(im, u){
+      anhNho(u).then(function(src){ im.src = src; im.classList.remove("hp-lz"); },
+                     function(){ im.src = u; im.classList.remove("hp-lz"); })   // rớt về ảnh gốc (onerror → gateway)
+        .then(function(){ _anhDang--; anhChay(); });
+    })(im, u);
   }
-  if (!_lzIO) _lzIO = new IntersectionObserver(function(es){
-    es.forEach(function(e){
-      if (!e.isIntersecting) return;
-      var im = e.target, u = im.getAttribute("data-src");
-      if (u){ im.src = u; im.removeAttribute("data-src"); im.classList.remove("hp-lz"); }
-      _lzIO.unobserve(im);
+}
+/* Ảnh nhỏ cho 1 URL — memo theo URL: nhiều ô cùng ảnh chỉ tải 1 lần; lỗi thì xoá memo để lần vẽ sau thử lại */
+function anhNho(u){
+  if (_anhMemo[u]) return _anhMemo[u];
+  var k = anhKhoa(u);
+  var p = idbLay(k).then(function(r){
+    if (r && r.d && Date.now() - (r.at || 0) < ANH_NHO_TTL) return r.d;
+    return anhThu(u).then(function(d){ idbGhi(k, { d: d, at: Date.now() }); return d; });
+  }).then(function(d){ _anhSan[u] = d; return d; });
+  p["catch"](function(){ delete _anhMemo[u]; });
+  _anhMemo[u] = p;
+  return p;
+}
+function anhKhoa(u){ return String(u).split("/").pop().split("?")[0]; }
+function anhThu(u){
+  if (!window.fetch) return Promise.reject(new Error("no-api"));
+  var opt = { mode: "cors", credentials: "omit" };
+  if (window.AbortSignal && AbortSignal.timeout) opt.signal = AbortSignal.timeout(25000);
+  return fetch(u, opt)
+    .then(function(r){ if (!r.ok) throw new Error("HTTP " + r.status); return r.blob(); })
+    .then(function(b){
+      anhGocGiu(u, b);
+      /* createImageBitmap + resizeWidth: giải mã đã thu nhỏ (nhẹ RAM nhất). Safari cũ không có → giải mã qua <img>. */
+      return window.createImageBitmap
+        ? createImageBitmap(b, { resizeWidth: ANH_NHO_W, resizeQuality: "medium" })
+        : new Promise(function(res, rej){
+            var ou = URL.createObjectURL(b), im = new Image();
+            im.onload = function(){ URL.revokeObjectURL(ou); res(im); };
+            im.onerror = function(){ URL.revokeObjectURL(ou); rej(new Error("decode")); };
+            im.src = ou;
+          });
+    })
+    .then(function(bm){
+      /* Luôn VẼ THU NHỎ theo ANH_NHO_W (trình duyệt bỏ qua resizeWidth thì bitmap vẫn 1440×1920 — không được
+         để lọt ảnh gốc vào data-URL/IndexedDB, mỗi cái ~400 KB). */
+      var w0 = bm.width || bm.naturalWidth, h0 = bm.height || bm.naturalHeight;
+      if (!w0 || !h0) throw new Error("size");
+      var w = Math.min(ANH_NHO_W, w0), h = Math.max(1, Math.round(h0 * w / w0));
+      var c = document.createElement("canvas"); c.width = w; c.height = h;
+      c.getContext("2d").drawImage(bm, 0, 0, w, h);
+      if (bm.close) bm.close();
+      var d = c.toDataURL("image/jpeg", 0.8);
+      if (!d || d.length < 200 || d.length > 120000) throw new Error("canvas");
+      return d;
     });
-  }, { rootMargin: "240px" });
-  [].forEach.call(ds, function(im){ _lzIO.observe(im); });
+}
+function anhGocGiu(u, blob){
+  try{
+    if (_anhGoc[u] || !window.URL || !URL.createObjectURL) return;
+    _anhGoc[u] = URL.createObjectURL(blob); _anhGocTt.push(u);
+    while (_anhGocTt.length > ANH_GOC_GIU){ var cu = _anhGocTt.shift(); try{ URL.revokeObjectURL(_anhGoc[cu]); }catch(e){} delete _anhGoc[cu]; }
+  }catch(e){}
+}
+/* IndexedDB tối giản (kho hp-anh / bảng thumb) — mọi lỗi nuốt êm, luồng chính không phụ thuộc */
+var _idb = null, _idbDaDon = false;
+function idbMo(){
+  if (_idb) return _idb;
+  _idb = new Promise(function(res, rej){
+    try{
+      if (!window.indexedDB) return rej(new Error("no-idb"));
+      var rq = indexedDB.open("hp-anh", 1);
+      rq.onupgradeneeded = function(){ var db = rq.result; if (!db.objectStoreNames.contains("thumb")) db.createObjectStore("thumb"); };
+      rq.onsuccess = function(){ res(rq.result); setTimeout(idbDon, 4000); };
+      rq.onerror = function(){ rej(rq.error || new Error("idb")); };
+      rq.onblocked = function(){ rej(new Error("blocked")); };
+    }catch(e){ rej(e); }
+  });
+  _idb["catch"](function(){});
+  return _idb;
+}
+function idbLay(k){
+  return idbMo().then(function(db){ return new Promise(function(res){
+    try{ var rq = db.transaction("thumb").objectStore("thumb").get(k); rq.onsuccess = function(){ res(rq.result || null); }; rq.onerror = function(){ res(null); }; }
+    catch(e){ res(null); }
+  }); })["catch"](function(){ return null; });
+}
+function idbGhi(k, v){
+  idbMo().then(function(db){ try{ db.transaction("thumb", "readwrite").objectStore("thumb").put(v, k); }catch(e){} })["catch"](function(){});
+}
+function idbDon(){   // dọn ảnh nhỏ quá hạn — 1 lần mỗi phiên
+  if (_idbDaDon) return; _idbDaDon = true;
+  idbMo().then(function(db){
+    try{
+      var st = db.transaction("thumb", "readwrite").objectStore("thumb"), han = Date.now() - ANH_NHO_TTL, rq = st.openCursor();
+      rq.onsuccess = function(){ var c = rq.result; if (!c) return; if (!c.value || (c.value.at || 0) < han) c["delete"](); c["continue"](); };
+    }catch(e){}
+  })["catch"](function(){});
 }
 /* ẢNH BÁO CÁO (tab VESINH-ANH, tách khỏi VESINH-YEUCAU 03/08/2026 — bậc 3).
  * Gắn thẳng vào r.anh của dòng yêu cầu để 4 chỗ vẽ ảnh (danh sách NV, pop-up ô, modal yêu cầu,
@@ -3216,9 +3363,12 @@ function openAnh(id, i){
     var subDesc = mA1Sub
       ? ("Kệ " + mA1Sub[2] + " · dãy " + mA1Sub[1] + " · Tầng " + mA1Sub[3] + " · Mâm " + mA1Sub[4])
       : locTitle(baseLoc);
+    var goc = _anhGoc[u];   // ảnh gốc còn trong RAM (vừa thu ảnh nhỏ) → lightbox mở tức thì, 0 lượt mạng
     return {
       type: "img",
-      url: u,
+      url: goc || u,
+      urlLui: goc ? u : urlAnhGw(u),   // blob hỏng → CDN; CDN hỏng → gateway
+      thumb: _anhSan[u] || "",         // ảnh nhỏ hiện mờ trong lúc chờ ảnh gốc
       title: childLoc,
       sub: subDesc,
       meta: metaText
@@ -3383,7 +3533,7 @@ window.HPLANOGRAM = {
   init: init, reload: loadData, setArea: setArea, setNgay: setNgay, setKhoang: setKhoang, chonNgay: chonNgay, moLocNgay: moLocNgay, dongLocNgay: dongLocNgay, setListMode: setListMode,
   openAll: openAll, openArea: openArea, openStatus: openStatus, openName: openName, openYc: openYc, openYcAi: openYcAi, closeModal: closeModal,
   openAiList: openAiList, closeAiModal: closeAiModal, renderAiModal: renderAiModal,
-  comboInput: comboInput, comboMenu: comboMenu, quick: quick, openAnh: openAnh,
+  comboInput: comboInput, comboMenu: comboMenu, quick: quick, openAnh: openAnh, anhLui: anhLui,
   openNk: openNk, closeNk: closeNk, nkPick: nkPick, nkSearch: nkSearch,
   openViTri: openViTri, moAnhHet: moAnhHet, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao, openThieu: openThieu, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
   toggleLegend: toggleLegend, closeLegend: closeLegend,
