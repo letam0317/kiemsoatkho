@@ -233,9 +233,9 @@ var AREAS = [
  * chưa có trong AREAS thì areaOf() tự đăng ký một khu mới (tên theo KHU_TEN, màu xoay vòng PAL). Khu không có
  * sơ đồ vẽ tay (map:false) được vẽ bằng lưới tự sinh theo mã vị trí (xem veKhuTuSinh). Bộ sync hiện vẫn chỉ
  * gửi A1/A8 (AREA_RE trong sync-vesinh-all.js) — mở thêm khu ở đó là đủ, dashboard không phải sửa nữa. */
-var KHU_TEN = { A2: "Quà tặng · hàng MTG", A3: "Kệ trữ VPP", A4: "Kho VPP · tái chế giấy", A5: "Bàn giao ĐVVC",
+var KHU_TEN = { A2: "Kệ lưu trữ WH", A3: "Kệ trữ VPP", A4: "Kho VPP · tái chế giấy", A5: "Bàn giao ĐVVC",
   A6: "Bàn quản lý · hàng hoàn", A7: "Xe soạn hàng", A9: "Đồng kiểm PO", A10: "Nhà vệ sinh", A11: "Hàng đổi trả · IT",
-  A12: "Kho Clinic", A13: "Phòng chụp Ortery", A14: "Kiểm nhập IT Shop", A15: "Xe nâng đứng", A16: "Kho hành chánh",
+  A12: "Kho Clinic", A13: "Phòng họp", A14: "Kiểm nhập IT Shop", A15: "Xe nâng đứng", A16: "Kho hành chánh",
   A17: "Bàn Logistic", A18: "Chờ xử lý · xe nâng ngồi", A19: "Băng chuyền xuất", A20: "Gia cố · đóng gói nội bộ",
   A21: "Bảo vệ · tủ khoá", A22: "Xe giao nhận nội bộ", A23: "Bãi xe nhân viên", A24: "Phòng giặt sấy",
   A25: "Bãi xe NCC · rác ngoài kho", CB: "Băng chuyền phân loại" };
@@ -815,6 +815,7 @@ var CSS = [
    30/07 chống layout-shift: cột phải chốt cứng 380px (bỏ minmax co theo nội dung) — bề rộng
    cột trái BẤT BIẾN từ 0ms, data/font về sau không làm sơ đồ bị "đá ngang" trái↔giữa. */
 "#pane-planogram .hp-main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:10px 12px;align-items:stretch;margin-top:10px;}",
+
 "#pane-planogram #hpToday > .hp-panel{height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:stretch;}",
 /* cột sơ đồ: căn giữa/giữ chỗ THUẦN CSS ngay khung hình đầu — flex dọc + min-height khi có ruột
    (skeleton lúc tải cũng tính), panel giãn hết cao; :empty (không có dữ liệu) thì xẹp tự nhiên */
@@ -859,6 +860,44 @@ var CSS = [
    Nét vẽ dùng vector-effect để luôn mảnh 1px dù SVG co giãn bao nhiêu. */
 "#pane-planogram .hp-mbwrap{margin:6px 0 2px;border-radius:10px;overflow:hidden;background:color-mix(in srgb, var(--panel,#fff) 92%, var(--text,#0f172a) 8%);}",
 "#pane-planogram .hp-mbsvg{display:block;width:100%;height:auto;max-height:min(62vh,560px);}",
+/* 29/09 (lượt 2): mặt bằng VỪA KHÍT bề ngang, KHÔNG kéo ngang — bỏ trần chiều cao cũ (62vh/560px làm ảnh bé); khung đã cắt sân bãi */
+"#pane-planogram .hp-mbtv .hp-mbsvg{width:100%;max-height:none;touch-action:pan-y;user-select:none;-webkit-user-select:none;}",
+"#pane-planogram .hp-mbtv{position:relative;margin-left:-8px;margin-right:-8px;background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);}",
+/* 02/10/2026 (user): mặt bằng nhỏ lại ~13 % cho thoáng, canh giữa khung Sơ đồ (máy tính; điện thoại giữ trọn bề ngang) */
+"@media(min-width:769px){#pane-planogram .hp-mbtv{width:87%;margin-left:auto;margin-right:auto;}}",
+/* BỎ NỀN (29/09 lượt 4): ảnh nền trắng hoà multiply ⇒ chỉ còn nét kệ/tường/đồ; nhà tô nền nhạt, khối ngoài nhà nền xám nhạt nét đứt */
+"#pane-planogram .hp-mbanh{mix-blend-mode:multiply;}",
+"#pane-planogram .hp-mbnha{fill:#f6f8fb;}",
+"#pane-planogram .hp-mbnhavien{fill:none;stroke:#475569;stroke-width:2;vector-effect:non-scaling-stroke;stroke-linejoin:round;}",
+"#pane-planogram .hp-mbngoai{fill:#eef2f6;stroke:#94a3b8;stroke-width:1.2;stroke-dasharray:4 3;vector-effect:non-scaling-stroke;}",
+"#pane-planogram .hp-mbtv.zoom .hp-mbsvg{touch-action:none;cursor:grab;}",
+"#pane-planogram .hp-mbtv.zoom .hp-mbsvg:active{cursor:grabbing;}",
+"#pane-planogram .hp-mbzoom{position:absolute;right:10px;top:10px;z-index:2;display:flex;flex-direction:column;gap:0;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(15,23,42,.18);border:1px solid var(--border,#e2e8f0);}",
+"#pane-planogram .hp-mbzoom button{width:34px;height:34px;border:0;border-top:1px solid var(--border,#e2e8f0);background:var(--surface,#fff);color:var(--text,#0f172a);font-size:18px;font-weight:700;line-height:1;cursor:pointer;transition:background .15s ease;}",
+"#pane-planogram .hp-mbzoom button:first-child{border-top:0;}",
+"#pane-planogram .hp-mbzoom button:hover{background:color-mix(in srgb, var(--accent,#2f7a55) 10%, var(--surface,#fff));}",
+"#pane-planogram .hp-mbzoom button:focus-visible{outline:2px solid var(--accent,#2f7a55);outline-offset:-2px;}",
+"@media(pointer:coarse){#pane-planogram .hp-mbzoom button{width:40px;height:40px;}}",
+/* VÙNG KHU — bình thường vô hình; trỏ vào: nền màu khu 16 % + viền nét đứt CHẠY LIÊN TỤC + thẻ tên trong khu; phần khác mờ đi */
+"#pane-planogram .hp-mbv .hp-mbvr{fill:var(--vc);fill-opacity:0;stroke:var(--vc);stroke-opacity:0;stroke-width:2.2;stroke-dasharray:9 6;vector-effect:non-scaling-stroke;pointer-events:all;transition:fill-opacity .2s ease,stroke-opacity .2s ease;}",
+"#pane-planogram .hp-mbv.co{cursor:pointer;}",
+"#pane-planogram .hp-mbv.co .hp-mbvr{stroke-opacity:.45;stroke-width:1.4;}",
+"#pane-planogram .hp-mbv:hover .hp-mbvr,#pane-planogram .hp-mbv:focus-visible .hp-mbvr{fill-opacity:.16;stroke-opacity:1;stroke-width:2.4;animation:hpKien .9s linear infinite;}",
+"@keyframes hpKien{to{stroke-dashoffset:-15;}}",
+"#pane-planogram .hp-mbv:focus{outline:none;}",
+/* thẻ tên: viên thuốc trắng bo tròn, mã khu nền màu khu, tên đậm + dòng phụ — hiện mượt khi trỏ vào */
+"#pane-planogram .hp-mbvtag{opacity:0;pointer-events:none;transition:opacity .18s ease;}",
+"#pane-planogram .hp-mbv:hover .hp-mbvtag,#pane-planogram .hp-mbv:focus-visible .hp-mbvtag{opacity:1;}",
+"#pane-planogram .hp-mbvtag .nen{fill:#fff;fill-opacity:.96;stroke:var(--vc);stroke-width:1.2;vector-effect:non-scaling-stroke;filter:drop-shadow(0 .25px .6px rgba(15,23,42,.35));}",
+"#pane-planogram .hp-mbvtag rect.ma{fill:var(--vc);}",
+"#pane-planogram .hp-mbvtag text{font-family:inherit;}",
+"#pane-planogram .hp-mbvtag text.ma{font-size:1.2px;font-weight:800;fill:#fff;text-anchor:middle;letter-spacing:.02em;}",
+"#pane-planogram .hp-mbvtag text.ten{font-size:1.2px;font-weight:700;fill:#0f172a;}",
+"#pane-planogram .hp-mbvtag text.phu{font-size:.9px;font-weight:500;fill:#475569;}",
+"#pane-planogram .hp-mbvb rect{fill:var(--vc);fill-opacity:.95;stroke:#fff;stroke-width:1.2;vector-effect:non-scaling-stroke;filter:drop-shadow(0 .2px .5px rgba(15,23,42,.35));}",
+"#pane-planogram .hp-mbvb text{font-size:1.15px;font-weight:700;fill:#fff;text-anchor:middle;pointer-events:none;}",
+"#pane-planogram .hp-mbtv .hp-mbo.o-pack{cursor:pointer;fill-opacity:.85;stroke:rgba(15,23,42,.35);}",
+"@media (prefers-reduced-motion:reduce){#pane-planogram .hp-mbv .hp-mbvr,#pane-planogram .hp-mbvtag{transition:none;}#pane-planogram .hp-mbv:hover .hp-mbvr{animation:none;}}",
 "#pane-planogram .hp-mbnet{fill:none;stroke:color-mix(in srgb, var(--muted,#94a3b8) 55%, transparent);stroke-width:1;vector-effect:non-scaling-stroke;}",
 "#pane-planogram .hp-mbo{stroke:color-mix(in srgb, var(--line,#cbd5e1) 80%, transparent);stroke-width:.5;vector-effect:non-scaling-stroke;}",
 "#pane-planogram .hp-mbo.o-ke{cursor:pointer;}",
@@ -1084,6 +1123,17 @@ var CSS = [
    Tái dùng keyframes hp-in + easing/độ mượt sẵn có của module, không chế animation mới. */
 ".hp-vtduo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 0;}",
 "@media(max-width:560px){.hp-vtduo{grid-template-columns:1fr;}}",
+".hp-vtts{margin-top:10px;}",
+".hp-vtts>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;}",
+".hp-vtts>summary::-webkit-details-marker{display:none;}",
+".hp-vtts>summary::after{content:'▾';margin-left:auto;opacity:.6;transition:transform .2s ease;}",
+".hp-vtts[open]>summary::after{transform:rotate(180deg);}",
+".hp-vttsn{font-size:12px;font-weight:700;color:var(--accent,#2f7a55);}",
+".hp-vtts ul{margin:4px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 12px;}",
+".hp-vtts li{display:flex;flex-direction:column;gap:1px;font-size:12.5px;padding:6px 8px;border-radius:8px;background:var(--surface,#fff);border:1px solid var(--border,#e8ecf1);}",
+".hp-vtts li .sl{font-weight:700;color:var(--accent,#2f7a55);}",
+".hp-vtts li small{font-size:11px;color:var(--muted,#6b7280);line-height:1.35;}",
+".hp-vtts li small.ma{font-family:ui-monospace,Consolas,monospace;font-size:10.5px;}",
 ".hp-vtcard{border:1px solid var(--border,#e8ecf1);border-radius:12px;padding:11px 12px;display:flex;flex-direction:column;gap:8px;background:color-mix(in srgb, var(--muted,#9ca3af) 6%, var(--surface,#fff));animation:hp-in .34s cubic-bezier(.32,.72,0,1) both;}",
 ".hp-vtcard.pt{border-color:color-mix(in srgb, var(--accent,#326e51) 32%, transparent);background:color-mix(in srgb, var(--accent,#326e51) 7%, var(--surface,#fff));}",
 ".hp-vtcard.ref{animation-delay:.06s;}",
@@ -2962,7 +3012,7 @@ function fitMaps(){
 /* 28/09/2026: mặt bằng = ẢNH TOP-VIEW TĨNH của mô phỏng 3D (user: "đổi Mặt bằng thật thành topview của mô phỏng 3D,
    không hoạt ảnh"). kho170-topview.js + .webp do hasaki/xuat-topview-kho170.mjs chụp từ kho170-3d.html; toạ độ ô lấy từ
    MÔ HÌNH 3D (A1 tách 2 mặt, A8 đã dời) nên ô tô màu nằm đúng trên ảnh. Chỉ ô A1 được tô + bấm; phần còn lại là ảnh. */
-var MB_SRC = "kho170-topview.js?v=20260928a";
+var MB_SRC = "kho170-topview.js?v=20261002a";
 function napMatBang(xong){
   if (window.KHO170_TOPVIEW) return xong(true);
   if (S.mbDang) return;
@@ -2981,15 +3031,123 @@ function toggleMatBang(){
 }
 /* veO(ô) do renderMap truyền vào — nó giữ trạng thái/màu/tooltip nên mặt bằng và lưới luôn cùng
    một sự thật, không có đường nào tự chế màu riêng. */
-function svgMatBang(veO){
+/* 29/09/2026 (user): bỏ nhãn chữ · to hơn 30 % (cắt sân bãi trống + phóng, kéo ngang nếu tràn) · ảnh không đổ bóng ·
+   CHIA VÙNG KHU 5S: trỏ vào khu = tô mờ + hiện tên khu · khu nào ĐÃ CÓ planogram thì hiện luôn: ô có toạ độ (kệ A1,
+   bàn A8) tô màu trạng thái như sơ đồ lưới; khu chưa có toạ độ từng ô thì hiện thẻ "số vị trí · đã vệ sinh" giữa vùng
+   (bấm = mở sơ đồ lưới của khu đó). demKhu[k] = {n, da} do renderMap đếm từ đúng danh mục dmChuan. */
+/* Tên khu đầy đủ — đúng theo g-sheet danh mục vị trí kho 170 (1dUFvmLM…, tab gid 1505594129 cột "Tên khu vực", 29/09/2026).
+   A1 không có trong tab đó ⇒ lấy tên nhóm planogram. Hiện trên mặt bằng dạng "A8 | Khu vực bàn đóng gói, băng chuyền". */
+var KHU_DAY = { A1: "Tủ quầy kệ", A2: "Khu vực kệ lưu trữ WH",
+  A3: "Kệ cao tầng trữ văn phòng phẩm, sóng nhựa xanh dương &thùng rác sinh hoạt trong kho",
+  A4: "Kho trữ văn phòng phẩm, tái chế giấy", A5: "Khu vực bàn giao đơn vị vận chuyển",
+  A6: "Bàn quản lý &khu vực hàng hoàn, văn phòng phẩm, SPKPH", A7: "Khu trữ xe soạn hàng",
+  A8: "Khu vực bàn đóng gói, băng chuyền", A9: "Khu vực đồng kiểm PO, bàn làm việc", A10: "Nhà vệ sinh &thiết bị vệ sinh",
+  A11: "Khu vực hàng đổi trả ngành hàng &thiết bị IT", A12: "Kho hàng CLINIC", A13: "Phòng họp",
+  A14: "Khu vực kiểm, nhập hàng IT SHOP", A15: "Khu vực xe nâng điện đứng", A16: "Khu vực kho hành chánh",
+  A17: "Bàn làm việc LOGISTIC", A18: "Khu chờ xử lý (pending zone) &xe nâng điện ngồi",
+  A19: "Khu vực băng chuyền xuất &bàn giao đơn vị vận chuyển", A20: "Khu vực gia cố, đóng gói để vận chuyển nội bộ",
+  A21: "Khu vực khai báo bảo vệ &tủ khóa cá nhân", A22: "Khu vực xe giao nhận nội bộ", A23: "Bãi xe nhân viên",
+  A24: "Phòng giặt sấy", A25: "Bãi xe nhà cung cấp, đối tác &thùng trữ rác sinh hoạt ngoài kho", A26: "Phòng ăn nhân viên",
+  CB: "Băng chuyền phân loại đầu vào &in nhãn đóng gói",
+  /* không có trong tab "Tên khu vực": kệ tường A1 (bản vẽ DCMTG1) + khối hầm nước ngoài nhà (DC HASAKI 6.6) */
+  "5L1": "Kệ sát tường trái khối A1 (24 ô pallet)", "5L2": "Kệ sát tường trên khối A1 (26 ô pallet)",
+  "5L3": "Kệ áp vách Re-IT · Ortery · SPA (27 ô pallet)", PCCC: "Phòng bơm PCCC · hầm nước (chưa xác minh)" };
+/* màu vùng: A1/A8 theo màu nhóm planogram; khu khác xoay vòng 1 bảng màu dịu, cố định theo mã (không đổi giữa các lần tải) */
+var MAU_VUNG = ["#7c3aed", "#db2777", "#ea580c", "#0d9488", "#4f46e5", "#16a34a", "#c026d3", "#0284c7", "#b45309", "#e11d48"];
+function mauVung(k){ var a = AREAS.filter(function(q){ return q.k === k; })[0]; if (a && a.map) return a.c;
+  var n = 0; for (var i = 0; i < k.length; i++) n = n * 31 + k.charCodeAt(i); return MAU_VUNG[Math.abs(n) % MAU_VUNG.length]; }
+/* 29/09/2026 (user, lượt 2): mặt bằng VỪA KHÍT bề ngang (không kéo ngang) · bỏ nhãn chữ · ảnh không đổ bóng ·
+   VÙNG KHU: trỏ vào = tô mờ + viền nét đứt CHẠY + thẻ tên khu NGAY TRONG khu (không tooltip ở con trỏ), phần còn lại mờ đi ·
+   BẤM vùng = mở SƠ ĐỒ LƯỚI của khu đó (như A1/A8) · khu đã có planogram: ô có toạ độ (kệ A1, bàn A8) tô màu trạng thái,
+   khu chưa có toạ độ ô thì thẻ "N vị trí · M đã VS" giữa vùng. demKhu[k] = {n, da} đếm từ dmChuan (cùng nguồn sơ đồ lưới). */
+function svgMatBang(veO, demKhu){
   var T = window.KHO170_TOPVIEW;
   if (!T) return '<div class="hp-mbload">' + (S.mbDang ? "Đang tải sơ đồ mặt bằng…" : "Không tải được sơ đồ mặt bằng.") + '</div>';
-  return '<div class="hp-mbwrap hp-mbtv"><svg class="hp-mbsvg" viewBox="0 0 ' + T.W + ' ' + T.H + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mặt bằng kho 170 (nhìn từ trên xuống, mô phỏng 3D)">' +
-    '<image href="' + T.anh + '?v=' + T.ngay + '" x="0" y="0" width="' + T.W + '" height="' + T.H + '" preserveAspectRatio="none"/>' +
-    T.o.filter(function(v){ return v.loc && v.loc.indexOf("F0-A1-") === 0; }).map(veO).join("") +
-    T.khu.map(function(t){ return '<text class="hp-mbkhu" x="' + t.x + '" y="' + t.y + '">' + esc(t.s) + '</text>'; }).join("") +
-    '</svg></div>';
+  demKhu = demKhu || {};
+  var K = T.khung || { x: 0, y: 0, w: T.W, h: T.H };
+  var coO = T.o.filter(function(v){ return v.loc && (v.loc.indexOf("F0-A1-") === 0 || v.loc.indexOf("F0-A8-") === 0); });
+  var daVe = {};
+  var FS = 1.25, CW = 0.58;                                   // cỡ chữ thẻ tên (m) · bề rộng ~1 ký tự
+  var vung = (T.vung || []).map(function(z){
+    var mau = mauVung(z.k), ten = KHU_DAY[z.k] || KHU_TEN[z.k] || z.ten, d = demKhu[z.k], co = !!(d && d.n);
+    /* phòng ăn A26 nằm trên tầng lửng NGAY TRÊN kho Clinic A12 — nhìn từ trên xuống là cùng 1 ô */
+    if (z.k === "A12") ten += " · tầng lửng: A26 " + KHU_DAY.A26;
+    var oTrong = coO.filter(function(v){ return v.loc.indexOf("F0-" + z.k + "-") === 0; });
+    oTrong.forEach(function(v){ daVe[v.loc] = 1; });
+    var cx = z.x + z.w / 2, cy = z.y + z.h / 2;
+    /* thẻ tên: [mã khu màu] tên đầy đủ · dòng phụ = số vị trí planogram. Neo trên-giữa vùng, không lọt khỏi khung ảnh */
+    var phu = co ? nf(d.n) + " vị trí planogram · " + nf(d.da) + " đã vệ sinh" + " — bấm xem sơ đồ" : "Chưa có vị trí planogram";
+    var wMa = (z.k.length * CW + 0.9) * FS, wTen = Math.max(ten.length, phu.length * 0.8) * CW * FS + 0.8, bw = wMa + wTen, bh = FS * 2.9;
+    var bx = Math.min(Math.max(cx - bw / 2, K.x + 0.3), K.x + K.w - bw - 0.3);
+    var by = Math.min(Math.max(z.y + 0.5, K.y + 0.3), K.y + K.h - bh - 0.3);
+    if (z.h < bh + 1) by = z.y - bh - 0.3 < K.y ? z.y + z.h + 0.3 : z.y - bh - 0.3;   // vùng thấp: thẻ nằm ngoài mép trên/dưới
+    var the = '<g class="hp-mbvtag" transform="translate(' + bx.toFixed(2) + ' ' + by.toFixed(2) + ')">' +
+      '<rect class="nen" width="' + bw.toFixed(2) + '" height="' + bh.toFixed(2) + '" rx="' + (FS * 0.55).toFixed(2) + '"/>' +
+      '<rect class="ma" x="' + (FS * 0.35).toFixed(2) + '" y="' + (FS * 0.35).toFixed(2) + '" width="' + (wMa - FS * 0.35).toFixed(2) + '" height="' + (bh - FS * 0.7).toFixed(2) + '" rx="' + (FS * 0.4).toFixed(2) + '"/>' +
+      '<text class="ma" x="' + ((wMa + FS * 0.35) / 2).toFixed(2) + '" y="' + (bh / 2 + FS * 0.36).toFixed(2) + '">' + esc(z.k) + '</text>' +
+      '<text class="ten" x="' + (wMa + FS * 0.45).toFixed(2) + '" y="' + (FS * 1.3).toFixed(2) + '">' + esc(ten) + '</text>' +
+      '<text class="phu" x="' + (wMa + FS * 0.45).toFixed(2) + '" y="' + (FS * 2.35).toFixed(2) + '">' + esc(phu) + '</text></g>';
+    /* khu chưa có ô toạ độ mà có planogram: chip số vị trí luôn hiện giữa vùng */
+    var chip = "";
+    if (co && !oTrong.length){
+      var chu = nf(d.n) + " vị trí · " + nf(d.da) + " đã VS", cwid = chu.length * 0.62 + 1.2;
+      chip = '<g class="hp-mbvb"><rect x="' + (cx - cwid / 2).toFixed(2) + '" y="' + (cy - 1.1).toFixed(2) + '" width="' + cwid.toFixed(2) + '" height="2.2" rx="1.1"/>' +
+        '<text x="' + cx.toFixed(2) + '" y="' + (cy + 0.45).toFixed(2) + '">' + esc(chu) + '</text></g>';
+    }
+    return '<g class="hp-mbv' + (co ? " co" : "") + '" style="--vc:' + mau + '"' +
+      (co ? ' role="button" tabindex="0" aria-label="' + esc(z.k + " | " + ten + " — " + phu) + '" onclick="HPLANOGRAM.moKhuMB(\'' + z.k + '\')" onkeydown="if(event.key===\'Enter\')HPLANOGRAM.moKhuMB(\'' + z.k + '\')"' : ' aria-label="' + esc(z.k + " | " + ten) + '"') + '>' +
+      (z.pts ? '<polygon class="hp-mbvr" points="' + z.pts.map(function(p){ return p[0] + "," + p[1]; }).join(" ") + '"/>'   // vùng không chữ nhật (A2 chữ L)
+        : '<rect class="hp-mbvr" x="' + z.x + '" y="' + z.y + '" width="' + z.w + '" height="' + z.h + '" rx="0.6"/>') +
+      oTrong.map(veO).join("") + chip + the + '</g>';
+  }).join("");
+  var le = coO.filter(function(v){ return !daVe[v.loc]; }).map(veO).join("");
+  return '<div class="hp-mbwrap hp-mbtv" id="hpMbWrap">' +
+    '<div class="hp-mbzoom" role="group" aria-label="Phóng mặt bằng"><button type="button" data-z="in" title="Phóng to (hoặc lăn chuột / chụm 2 ngón)" aria-label="Phóng to">+</button>' +
+    '<button type="button" data-z="out" title="Thu nhỏ" aria-label="Thu nhỏ">−</button><button type="button" data-z="fit" title="Vừa khung" aria-label="Vừa khung">⤢</button></div>' +
+    '<svg class="hp-mbsvg" viewBox="' + K.x + ' ' + K.y + ' ' + K.w + ' ' + K.h + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mặt bằng kho 170 (nhìn từ trên xuống, mô phỏng 3D) — trỏ vào khu để xem tên, bấm khu để mở sơ đồ lưới">' +
+    (T.nha ? '<polygon class="hp-mbnha" points="' + T.nha.map(function(p){ return p[0] + "," + p[1]; }).join(" ") + '"/>' : "") +
+    (T.vung || []).filter(function(z){ return z.ngoai; }).map(function(z){ return '<rect class="hp-mbngoai" x="' + z.x + '" y="' + z.y + '" width="' + z.w + '" height="' + z.h + '" rx="0.5"/>'; }).join("") +
+    '<image class="hp-mbanh" href="' + T.anh + '?v=' + (T.ver || T.ngay) + '" x="0" y="0" width="' + T.W + '" height="' + T.H + '" preserveAspectRatio="none"/>' +
+    (T.nha ? '<polygon class="hp-mbnhavien" points="' + T.nha.map(function(p){ return p[0] + "," + p[1]; }).join(" ") + '"/>' : "") +
+    vung + le + '</svg></div>';
 }
+/* PHÓNG / KÉO mặt bằng NGAY TRONG khung Sơ đồ (user 29/09: to hơn nhưng giữ nguyên khổ mục Sơ đồ, NV hôm nay đứng nguyên chỗ,
+   không thanh kéo ngang). Đổi viewBox — không đổi kích thước phần tử. Nút + − ⤢ · lăn chuột (khi đã phóng, hoặc giữ Ctrl) · kéo để
+   di chuyển · chụm 2 ngón · nhấp đúp phóng tại chỗ. Mức phóng giữ qua các lần vẽ lại (S.mbZ). Kéo xong KHÔNG tính là bấm khu/ô. */
+function ganZoomMB(){
+  var w = $id("hpMbWrap"), T = window.KHO170_TOPVIEW; if (!w || !T) return;
+  var svg = w.querySelector("svg"), K = T.khung || { x: 0, y: 0, w: T.W, h: T.H };
+  var Z = S.mbZ || (S.mbZ = { s: 1, cx: K.x + K.w / 2, cy: K.y + K.h / 2 });
+  function ap(){ Z.s = Math.min(6, Math.max(1, Z.s)); var vw = K.w / Z.s, vh = K.h / Z.s;
+    Z.cx = Math.min(K.x + K.w - vw / 2, Math.max(K.x + vw / 2, Z.cx)); Z.cy = Math.min(K.y + K.h - vh / 2, Math.max(K.y + vh / 2, Z.cy));
+    svg.setAttribute("viewBox", (Z.cx - vw / 2).toFixed(3) + " " + (Z.cy - vh / 2).toFixed(3) + " " + vw.toFixed(3) + " " + vh.toFixed(3));
+    w.classList.toggle("zoom", Z.s > 1.001); }
+  function diem(ex, ey){ var r = svg.getBoundingClientRect(), vw = K.w / Z.s, vh = K.h / Z.s;
+    return { x: Z.cx - vw / 2 + (ex - r.left) / r.width * vw, y: Z.cy - vh / 2 + (ey - r.top) / r.height * vh }; }
+  function phong(k, ex, ey){ var r = svg.getBoundingClientRect();
+    var p = ex == null ? { x: Z.cx, y: Z.cy } : diem(ex, ey), s0 = Z.s; Z.s = Math.min(6, Math.max(1, Z.s * k));
+    Z.cx = p.x - (p.x - Z.cx) * s0 / Z.s; Z.cy = p.y - (p.y - Z.cy) * s0 / Z.s; ap(); }
+  w.querySelectorAll(".hp-mbzoom button").forEach(function(b){ b.onclick = function(e){ e.stopPropagation();
+    var z = b.getAttribute("data-z"); if (z === "in") phong(1.4); else if (z === "out") phong(1 / 1.4); else { Z.s = 1; ap(); } }; });
+  svg.addEventListener("wheel", function(e){ if (Z.s <= 1.001 && !e.ctrlKey && e.deltaY > 0) return; if (Z.s <= 1.001 && !e.ctrlKey) return;
+    e.preventDefault(); phong(e.deltaY < 0 ? 1.18 : 1 / 1.18, e.clientX, e.clientY); }, { passive: false });
+  svg.addEventListener("dblclick", function(e){ e.preventDefault(); phong(1.6, e.clientX, e.clientY); });
+  var tro = {}, keo = null, hai = null, daKeo = false;
+  svg.addEventListener("pointerdown", function(e){ tro[e.pointerId] = { x: e.clientX, y: e.clientY }; var ids = Object.keys(tro);
+    if (ids.length === 2){ var a = tro[ids[0]], b = tro[ids[1]]; hai = { d: Math.hypot(a.x - b.x, a.y - b.y) }; keo = null; }
+    else { keo = { x: e.clientX, y: e.clientY }; daKeo = false; } });
+  svg.addEventListener("pointermove", function(e){ if (!tro[e.pointerId]) return; tro[e.pointerId] = { x: e.clientX, y: e.clientY }; var ids = Object.keys(tro);
+    if (hai && ids.length === 2){ var a = tro[ids[0]], b = tro[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y); if (hai.d > 0) phong(d / hai.d, (a.x + b.x) / 2, (a.y + b.y) / 2); hai.d = d; daKeo = true; return; }
+    if (!keo || Z.s <= 1.001) return; var dx = e.clientX - keo.x, dy = e.clientY - keo.y; if (!daKeo && Math.hypot(dx, dy) < 5) return;
+    if (!daKeo){ daKeo = true; try { svg.setPointerCapture(e.pointerId); } catch (x) {} }
+    var r = svg.getBoundingClientRect(); Z.cx -= dx / r.width * K.w / Z.s; Z.cy -= dy / r.height * K.h / Z.s; keo = { x: e.clientX, y: e.clientY }; ap(); });
+  function tha(e){ delete tro[e.pointerId]; if (Object.keys(tro).length < 2) hai = null; if (!Object.keys(tro).length) keo = null; }
+  svg.addEventListener("pointerup", tha); svg.addEventListener("pointercancel", tha);
+  svg.addEventListener("click", function(e){ if (daKeo){ e.stopPropagation(); e.preventDefault(); daKeo = false; } }, true);
+  ap();
+}
+/* thẻ số vị trí trên mặt bằng → sang sơ đồ lưới của đúng khu đó */
+function moKhuMB(k){ S.mb = false; if (S.area !== k) setArea(k); renderMap(); }
 
 function renderMap(){
   var box = $id("hpMap"); if (!box) return;
@@ -3150,15 +3308,19 @@ function renderMap(){
   var htmlMB = "";
   if (S.mb){
     var keMB = keA1();
+    /* đếm theo khu trên đúng danh mục ô (dmChuan) — thẻ số vị trí trên mặt bằng dùng chung lượt đếm với sơ đồ lưới */
+    var demKhu = {}, dmMB = dmChuan();
+    Object.keys(dmMB).forEach(function(kk){ var o = dmMB[kk], d = demKhu[o.area] || (demKhu[o.area] = { n: 0, da: 0 });
+      d.n++; var st = stateCua(byL[kk]); if (st === "done" || st === "review" || st === "rework") d.da++; });   // "đã VS" = mọi nhóm Đã VS (đạt · cần xem · làm lại)
     htmlMB = svgMatBang(function(v){
       var r = 'x="' + v.x + '" y="' + v.y + '" width="' + v.w + '" height="' + v.h + '"';
-      if (v.loc && v.loc.indexOf("F0-A1-") === 0){
-        var p = v.loc.split("-");                                   // F0-A1-<dãy>-<tủ>
-        var locThat = keMB[p[2] + "|" + p[3]] || (v.loc + "-01-01");  // mã thật (có alias) để tra đúng dữ liệu
+      if (v.loc && (v.loc.indexOf("F0-A1-") === 0 || v.loc.indexOf("F0-A8-") === 0)){
+        var p = v.loc.split("-");                                   // F0-A1-<dãy>-<tủ> · F0-A8-<dãy>-<bàn>-01-01 (đủ mã)
+        var locThat = v.loc.indexOf("F0-A8-") === 0 ? v.loc : (keMB[p[2] + "|" + p[3]] || (v.loc + "-01-01"));  // A1: mã thật (có alias)
         var kk = khoaO(locThat), list = byL[kk], st = stateCua(list), m = cellMeta(st);
         var cls = "hp-mbo o-ke" + cellCls(m) + (m.dashed ? " trong" : "") + (alert[kk] ? " canhbao" : "");
         return '<rect class="' + cls + '" ' + r + (m.dashed ? "" : ' fill="' + m.c + '"') +
-          ' data-l="' + esc(locThat) + '" onclick="HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))">' +
+          ' data-l="' + esc(locThat) + '" onclick="event.stopPropagation();HPLANOGRAM.openViTri(this.getAttribute(\'data-l\'))">' +
           '<title>' + esc(tinhTT(locThat, list)) + '</title></rect>';
       }
       var GHI = {
@@ -3171,7 +3333,7 @@ function renderMap(){
       if (v.k === "pack" || v.k === "pick") t += "\nBản vẽ không ghi dãy nào là 501/503… nên chưa gán mã vị trí";
       /* ô kệ A2 dùng lớp riêng o-ke2: cùng là "kệ" nhưng KHÔNG bấm được, không được có con trỏ tay */
       return '<rect class="hp-mbo o-' + (v.k === "ke" ? "ke2" : v.k) + '" ' + r + '><title>' + esc(t) + '</title></rect>';
-    });
+    }, demKhu);
   }
   /* --- KHU KHÔNG CÓ SƠ ĐỒ VẼ TAY (28/09/2026): lưới TỰ SINH theo mã vị trí F0-<khu>-<dãy>-<ô>-…
      Mỗi dãy 1 cột, ô xếp theo số. Kho mở thêm khu (WC, phòng Ortery, bãi xe…) là tự có sơ đồ, không
@@ -3237,6 +3399,7 @@ function renderMap(){
     legRow + (S.mb ? htmlMB : (htmlA1 + htmlA8 + htmlGen)) +
     '</section>';
   if (!S.mb) fitMaps();   // mặt bằng là SVG tự co theo viewBox, không cần (và không được) phóng bằng hệ số như lưới
+  else ganZoomMB();
 }
 /* ===== THẺ "CẦN XỬ LÝ" (28/09/2026) — gom 4 việc từng nằm rải rác thành 1 danh sách, mỗi dòng
  * = SỐ + VIỆC + nút mở: (1) người đi làm mà chưa báo cáo [xổ chip từng người, bấm tên = soi ô trên
@@ -3624,9 +3787,43 @@ function renderVt(){
   $id("hpVtBody").innerHTML =
     '<div class="hp-vthistrow">' + hist + '</div>' +
     rows.map(function(x){ return '<div class="hp-vtrow"><label>' + x[0] + '</label><div>' + x[1] + '</div></div>'; }).join("") +
-    '<div class="hp-vtduo">' + cardPt + cardBc + '</div>';
+    '<div class="hp-vtduo">' + cardPt + cardBc + '</div>' + theTaiSan(loc);
   capNhatNutGhi(loc, d, r, pc, lsAll);   // nút / dòng đếm luỹ tiến ở góc phải trên — cần pc + chấm công nên đặt cuối
   lazyQuet();
+}
+
+/* ===== TÀI SẢN TẠI VỊ TRÍ (29/09/2026 — user duyệt thử ở QC) =====================================
+ * Nguồn: sổ khai báo tài sản theo mã vị trí (g-sheet 1dUFvmLM…, gid 602603419, khai 11/07→12/09/2025) — chụp tĩnh thành
+ * taisan-vitri.js (117 KB), NẠP LƯỜI lần đầu mở pop-up, không gọi thêm nguồn nào. Gom theo tên thiết bị, bấm mở danh sách
+ * serial / mã QR. Mã vị trí trong sổ đã bỏ khoảng trắng (sổ gốc có mã dính dấu cách cuối). */
+var TS_SRC = "taisan-vitri.js?v=20260929a", TS = { dang: false, ok: false };
+function napTaiSan(){
+  if (window.TAISAN_VT){ TS.ok = true; return; }
+  if (TS.dang) return; TS.dang = true;
+  var sc = document.createElement("script"); sc.src = TS_SRC;
+  sc.onload = function(){ TS.dang = false; TS.ok = !!window.TAISAN_VT; if (VT.loc && $id("hpVtModal").style.display === "flex") renderVt(); };
+  sc.onerror = function(){ TS.dang = false; };
+  document.head.appendChild(sc);
+}
+function theTaiSan(loc){
+  napTaiSan();
+  var T = window.TAISAN_VT, key = String(loc || "").replace(/\s+/g, "").toUpperCase();
+  if (!T) return '<div class="hp-vtcard hp-vtts"><div class="hd">Tài sản tại vị trí</div><div class="ln mut">' + (TS.dang ? "đang tải sổ tài sản…" : "chưa tải được sổ tài sản") + '</div></div>';
+  var ds = T.by[key] || [];
+  if (!ds.length){ var kk = khoaO(key); Object.keys(T.by).forEach(function(k){ if (!ds.length && khoaO(k) === kk) ds = T.by[k]; }); }
+  var hd = '<div class="hd">Tài sản tại vị trí <span class="hp-hint" style="font-size:10.5px;text-transform:none;letter-spacing:0;font-weight:500">sổ khai báo ' +
+    esc(ngayVN(T.tu)) + '→' + esc(ngayVN(T.den)) + '/' + esc(String(T.den).slice(0, 4)) + '</span></div>';
+  if (!ds.length) return '<div class="hp-vtcard hp-vtts">' + hd + '<div class="ln mut">sổ tài sản chưa khai món nào cho vị trí này</div></div>';
+  var nhom = {}, thu = [];
+  ds.forEach(function(x){ var ten = String(x[0] || "").split("/")[0].trim() || x[0]; var g = nhom[ten];
+    if (!g){ g = nhom[ten] = { ten: ten, full: x[0], n: 0, ct: [] }; thu.push(g); } g.n += (+x[1] || 1); g.ct.push(x); });
+  var tong = thu.reduce(function(a, g){ return a + g.n; }, 0);
+  return '<details class="hp-vtcard hp-vtts"><summary>' + hd.replace('<div class="hd">', '<span class="hd">').replace(/<\/div>$/, '</span>') +
+    '<span class="hp-vttsn">' + nf(tong) + ' món · ' + thu.length + ' loại</span></summary><ul>' +
+    thu.map(function(g){ return '<li><b>' + esc(g.ten) + '</b>' + (g.n > 1 ? ' <span class="sl">×' + g.n + '</span>' : "") +
+      '<small>' + esc(g.full) + '</small>' +
+      g.ct.filter(function(x){ return x[2] || x[3]; }).map(function(x){ return '<small class="ma">' + (x[2] ? "S/N " + esc(x[2]) : "") + (x[2] && x[3] ? " · " : "") + (x[3] ? "QR " + esc(x[3]) : "") + '</small>'; }).join("") + '</li>'; }).join("") +
+    '</ul></details>';
 }
 
 /* ===== GHI NHẬN 5S TỪ POP-UP Ô (17/09/2026 — user yêu cầu) ======================================
@@ -4420,7 +4617,7 @@ function init(pane){
 }
 
 window.HPLANOGRAM = {
-  init: init, reload: loadData, setArea: setArea, setNgay: setNgay, setKhoang: setKhoang, chonNgay: chonNgay, moLocNgay: moLocNgay, dongLocNgay: dongLocNgay, setListMode: setListMode,
+  init: init, reload: loadData, setArea: setArea, moKhuMB: moKhuMB, setNgay: setNgay, setKhoang: setKhoang, chonNgay: chonNgay, moLocNgay: moLocNgay, dongLocNgay: dongLocNgay, setListMode: setListMode,
   openAll: openAll, openArea: openArea, openStatus: openStatus, openName: openName, openYc: openYc, openYcAi: openYcAi, closeModal: closeModal,
   openAiList: openAiList, closeAiModal: closeAiModal, renderAiModal: renderAiModal,
   comboInput: comboInput, comboMenu: comboMenu, quick: quick, openAnh: openAnh, anhLui: anhLui,
