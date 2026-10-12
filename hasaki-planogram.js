@@ -774,9 +774,9 @@ var CSS = [
    #pane-planogram — trước 31/07 hai class này trong pop-up vị trí không ăn style nào
    (chữ phụ to bằng chữ chính, badge mất viên thuốc), cùng khuôn với .hp-ext đã làm sẵn. */
 "#pane-planogram .hp-hint,.hp-modal .hp-hint{color:var(--muted,#9ca3af);font-size:11.5px;font-weight:400;}",
-"#hpReload,#pane-planogram .hp-btn{background:var(--accent,#326e51);color:var(--accent-text,#fff);border:0;border-radius:9px;padding:8px 15px;font-size:12.5px;font-weight:650;cursor:pointer;min-height:36px;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .25s ease;}",
+"#pane-planogram .hp-btn{background:var(--accent,#326e51);color:var(--accent-text,#fff);border:0;border-radius:9px;padding:8px 15px;font-size:12.5px;font-weight:650;cursor:pointer;min-height:36px;transition:transform .16s cubic-bezier(.32,.72,0,1),box-shadow .25s ease;}",
 "#pane-planogram .hp-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(16,24,40,.16);}",
-"#hpReload:disabled{background:color-mix(in srgb, var(--muted,#9ca3af) 42%, var(--surface,#fff));color:var(--muted,#9ca3af);cursor:not-allowed;}",
+"#pane-planogram .hp-btn:disabled{background:color-mix(in srgb, var(--muted,#9ca3af) 42%, var(--surface,#fff));color:var(--muted,#9ca3af);cursor:not-allowed;}",
 "#pane-planogram .hp-whbar,.hp-modal .hp-whbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px;}",
 "#pane-planogram .hp-whtab,.hp-modal .hp-whtab{border:1px solid var(--border,#e8ecf1);background:var(--surface,#fff);color:var(--text,#374151);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;min-height:32px;display:inline-flex;align-items:center;gap:7px;transition:background .16s ease,border-color .16s ease;}",
 "#pane-planogram .hp-whtab:hover,.hp-modal .hp-whtab:hover{background:color-mix(in srgb, var(--accent,#326e51) 8%, transparent);}",
@@ -1269,6 +1269,27 @@ var CSS = [
    [Ngày][Tất cả][A1][A8]. (Bẫy đã biết: `display:contents` phải TẮT ở điện thoại, không thì rule
    xếp hàng không bao giờ ăn — đúng thủ phạm của thanh lọc tab Kiểm kê 6 hàng.) */
 "#pane-planogram .hp-wb1{display:contents;}",
+/* 12/10 HÀNG TRÊN: [Bộ lọc] [Tiến độ] | [Cần xử lý] — nhãn h2 cùng khuôn "Cần xử lý". Bộ lọc xếp dọc: Ngày rồi Khu vực (ô xổ xuống).
+   Tiến độ: 2 cột BẰNG NHAU — trái vòng % to + câu "x / y vị trí", phải 3 ô xếp dọc. Điện thoại: mọi thứ 1 cột. */
+"#pane-planogram #hpToday{display:grid;grid-template-columns:minmax(190px,230px) minmax(0,1fr);gap:12px;align-items:stretch;}",
+"#pane-planogram #hpToday > .hp-panel{margin:0;}",
+"#pane-planogram .hp-progloc #hpWhBar{display:flex;flex-direction:column;align-items:stretch;flex-wrap:nowrap;gap:8px;margin:0;}",
+"#pane-planogram .hp-progloc #hpWhBar .hp-ngayloc{min-width:0;width:100%;}",
+"#pane-planogram .hp-progloc #hpWhBar .hp-ngayloc .date-btn{width:100%;}",
+"#pane-planogram .hp-khuloc{width:100%;min-width:0;}",
+"#pane-planogram .hp-khuloc .cs,#pane-planogram .hp-khuloc select{width:100%;}",
+"#pane-planogram .hp-tdo2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:stretch;flex:1;}",
+"#pane-planogram .hp-tdotrai{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;}",
+"#pane-planogram .hp-tdotrai .hp-ring{width:132px;height:132px;}",
+"#pane-planogram .hp-tdotrai .hp-ring b{font-size:30px;}",
+"#pane-planogram .hp-tdotrai .hp-progt{align-items:center;text-align:center;}",
+"#pane-planogram .hp-tdotrai .hp-progt b{font-size:20px;}",
+"#pane-planogram .hp-tiles.hp-tilesdoc{display:flex;flex-direction:column;gap:8px;margin:0;}",
+"#pane-planogram .hp-tiles.hp-tilesdoc .hp-tile{flex:1;min-height:0;flex-direction:row;align-items:baseline;gap:8px;flex-wrap:wrap;}",
+"#pane-planogram .hp-tiles.hp-tilesdoc .hp-tile .s{flex-basis:100%;}",
+"@media(max-width:768px){#pane-planogram #hpToday{grid-template-columns:minmax(0,1fr);}" +
+  "#pane-planogram .hp-tdo2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;}" +
+  "#pane-planogram .hp-tdotrai .hp-ring{width:104px;height:104px;}}",
 /* LÝ DO AI — tách 2 phần: câu kết luận + danh sách "ô nào lỗi gì". Trước đây nhồi cả hai vào một
    đoạn văn (phần chi tiết nằm trong ngoặc, ngăn bằng dấu |) nên máy tính đọc cũng mệt, điện thoại
    thì thành khối chữ đặc 11 dòng. Danh sách chi tiết THU sẵn, bấm ô mới trải ra. */
@@ -1432,10 +1453,8 @@ var KHUNG =
 '  <div class="hp-srcbar">' +
 '    <span id="hpToolBtns" class="hp-toolbtns"></span>' +
 '    <span class="hp-toolsp"></span>' +
-'    <span id="hpLoadinfo" class="hp-hint"></span>' +
-  (typeof tipMuc === "function" ? tipMuc(HP_TIP_NGUON) : "") +
+'    <span id="hpLoadinfo"></span>' +   /* 12/10: viên "Cập nhật" dùng chung (bấm = Làm mới); nguồn dữ liệu nằm trong tooltip của viên */
 (SHOW_SRC ? '    <a href="' + SHEET_URL + '" target="_blank" rel="noopener">Mở Google Sheet</a>' : '') +
-'    <button id="hpReload" onclick="HPLANOGRAM.reload()" title="Đọc lại dữ liệu mới nhất từ Google Sheet">Làm mới</button>' +
 '  </div>' +
 '</div>';
 /* Đoạn "Nguồn: planogram · cập nhật lúc 8h40…" ĐÃ RỜI KHỎI MÀN (21/08/2026) — dồn vào nút `i` cạnh
@@ -2476,7 +2495,9 @@ function capNhatInfo(){
   var el = $id("hpLoadinfo"); if (!el) return;
   var n = S.yc.rows.length || S.all.length;
   /* Chỉ giờ cập nhật: số "1.596 yêu cầu" (tổng 7 ngày) đứng cạnh 228 của hôm nay từng bị đọc nhầm (QC C3) */
-  el.textContent = S.tsData ? "Cập nhật " + fmtTime(S.tsData) : "";
+  var dang = !!($id("hpReload") && $id("hpReload").disabled);
+  el.innerHTML = window.hskCapNhat ? window.hskCapNhat(S.tsData, { id: "hpReload", onclick: "HPLANOGRAM.reload()", tip: HP_TIP_NGUON }) : "";
+  if (dang && $id("hpReload")) $id("hpReload").disabled = true;
 }
 
 /* ===== LỌC + RENDER ===== */
@@ -2490,49 +2511,30 @@ function setArea(a){ if (S.area === a) a = ""; S.area = a; S.ptHi = ""; S.stHi =
    971 AI) lặp/mâu thuẫn với số ở panel dưới; và trên điện thoại nhãn nút bị CSS ẩn cả hai bản (tx-full
    lẫn tx-short) nên hiện thành viên trống "[ ]" và "[· 231]" — đúng ảnh người dùng gửi. */
 function renderWhBar(){
+  /* 12/10 user: thẻ "Bộ lọc" — xuống hàng theo thứ tự: Ngày, rồi Khu vực DẠNG XỔ XUỐNG liệt kê MỌI khu trên mặt bằng thật
+     ("Tất cả / A1 | Quầy kệ / A8 | Khu vực đóng gói…"), gọn khít. Thay dải chip ≤2 khu + nút menu ≥3 khu cũ. Khu chưa có
+     yêu cầu vệ sinh vẫn chọn được (mặt bằng thật) — chọn vào thì thẻ Tiến độ báo "không có yêu cầu" chứ không ẩn khu. */
   var el = $id("hpWhBar"); if (!el) return;
-  /* NGÀY đứng trước và NGOÀI dải cuộn (pop-up lịch position:absolute sẽ bị khung overflow-x cắt);
-     KHU VỰC là dải chip trong `.hp-wb1` — điện thoại cuộn ngang, máy tính `display:contents` nên vẫn
-     là một hàng phẳng [Ngày][Tất cả][A1][A8]. */
   var ngay = ycDates().length ? '<div class="date-filter hp-ngayloc" id="hpNgayLoc"></div>' : "";
-  var html = "";
-  /* Đếm theo CẢ 2 nguồn: bậc 1 (VESINH-YEUCAU) về trước PHU-TRACH — chỉ dựa vào S.all thì
-     thanh lọc Khu vực trống trong giây đầu rồi mới bật ra (nhìn như giật). */
   var cnt = {};
   S.all.forEach(function(r){ cnt[r.area] = (cnt[r.area] || 0) + 1; });
   S.yc.rows.forEach(function(r){ cnt[r.area] = (cnt[r.area] || 0) + 1; });
-  var keys = AREAS.filter(function(a){ return cnt[a.k]; });
-  var menu = "";
-  /* ≤ 2 khu: dải chip TÊN NGẮN (chip "Không gian làm việc (F0-A8)" từng bị cắt mép phải trên điện thoại).
-     ≥ 3 khu (kho 170 có ~25 khu 5S): một nút chọn khu mở danh sách — 25 chip thì dải cuộn dài vô tận.
-     Menu đặt NGOÀI .hp-wb1: khung cuộn ngang sẽ cắt mất menu neo absolute (bẫy #hpWhBar đã ghi). */
-  if (keys.length && keys.length <= 2){
-    html += '<button class="hp-whtab' + (S.area ? "" : " active") + '" onclick="HPLANOGRAM.setArea(\'\')">Tất cả</button>' +
-      keys.map(function(a){
-        return '<button class="hp-whtab' + (S.area === a.k ? " active" : "") + '" data-a="' + a.k + '" title="' + esc(a.short) + '" ' +
-          'onclick="HPLANOGRAM.setArea(this.getAttribute(\'data-a\'))"><span class="hp-dot" style="background:' + a.c + '"></span>' + esc(a.ngan || a.short) + '</button>';
-      }).join("");
-  } else if (keys.length){
-    var cur = S.area ? areaMeta(S.area) : null;
-    menu = '<div class="hp-legwrap hp-khusel" id="hpKhuSel">' +
-      '<button type="button" class="hp-whtab active" onclick="HPLANOGRAM.moKhuMenu(event)">' +
-        (cur ? '<span class="hp-dot" style="background:' + cur.c + '"></span>' + esc(cur.ngan || cur.short) : 'Tất cả khu') +
-        (cur ? '' : ' <span class="hp-legcnt">' + keys.length + '</span>') + ' ▾</button>' +   /* số khu chỉ khi "Tất cả" — cạnh tên 1 khu thì "Nhà vệ sinh 25" đọc như 25 nhà vệ sinh */
-      '<div class="hp-legpop hp-khumenu" id="hpKhuMenu"><div class="hp-legpop-list">' +
-        '<button type="button" class="hp-legpop-it hp-khuit' + (S.area ? "" : " on") + '" onclick="HPLANOGRAM.setArea(\'\')"><span class="tx"><b>Tất cả khu</b></span></button>' +
-        keys.map(function(a){
-          return '<button type="button" class="hp-legpop-it hp-khuit' + (S.area === a.k ? " on" : "") + '" data-a="' + a.k + '" onclick="HPLANOGRAM.setArea(this.getAttribute(\'data-a\'))">' +
-            '<span class="hp-legpop-sw" style="background:' + a.c + '"></span><span class="tx"><b>' + esc(a.ngan || a.short) + '</b><small>F0-' + esc(a.k) + '</small></span></button>';
-        }).join("") +
-      '</div></div></div>';
-  }
-  /* Ô giữ chỗ Ngày — sau innerHTML thay bằng CHÍNH phần tử bộ lọc dùng chung (xem taoLocNgay) */
-  el.innerHTML = ngay + (html ? '<div class="hp-wb1">' + html + '</div>' : '') + menu;
+  var so = function(k){ return Number(String(k).replace(/\D/g, "")) || 99; };
+  var ma = {}; AREAS.forEach(function(a){ ma[a.k] = a.ngan || a.short; });
+  Object.keys(KHU_TEN).forEach(function(k){ if (!ma[k]) ma[k] = KHU_TEN[k]; });
+  Object.keys(cnt).forEach(function(k){ if (k && !ma[k]) ma[k] = (areaMeta(k).ngan || areaMeta(k).short || k); });
+  var keys = Object.keys(ma).sort(function(a, b){ return so(a) - so(b); });
+  var khu = '<select id="hpKhuSel2" aria-label="Khu vực"><option value="">Tất cả khu vực</option>' +
+    keys.map(function(k){ return '<option value="' + esc(k) + '"' + (S.area === k ? " selected" : "") + '>' + esc(k + " | " + ma[k]) + '</option>'; }).join("") + '</select>';
+  el.innerHTML = ngay + '<div class="hp-khuloc">' + khu + '</div>';
   var ph = $id("hpNgayLoc");
   if (ph){
     if (!S.locNgay) S.locNgay = taoLocNgay();
     if (S.locNgay){ ph.replaceWith(S.locNgay.el); var kn = khoang(); S.locNgay.dat(kn[0], kn[1]); }
   }
+  var sel = $id("hpKhuSel2");
+  sel.onchange = function(){ var v = sel.value; if (v !== S.area) setArea(v); };
+  if (typeof window.enhanceSelect === "function") window.enhanceSelect(sel);
 }
 /* Nút mở pop-up "Kết quả AI xét duyệt ảnh" đặt ở tiêu đề panel Vệ sinh (10/09/2026): kết quả AI là
    lời chấm cho chính các báo cáo vệ sinh nên ở cùng panel; số trên nút = mọi kết quả đã chấm trong
@@ -2567,8 +2569,11 @@ function renderToday(){
 
   /* Không có yêu cầu trong khoảng → empty-state gọn thay vì 4 thẻ số 0 */
   if (!nTot){
-    box.innerHTML = '<section class="hp-panel hp-fade hp-prog"><div class="hp-empty">Không có yêu cầu vệ sinh trong khoảng này' +
-      (S.area ? ' ở ' + esc(areaMeta(S.area).ngan || areaMeta(S.area).short) : '') + '.</div></section>';
+    var wb0 = $id("hpWhBar");   // giữ tham chiếu TRƯỚC khi innerHTML xoá chỗ cũ — vẫn phải đổi được ngày khi khoảng này trống
+    box.innerHTML = '<section class="hp-panel hp-fade hp-loc"><h2>Bộ lọc</h2><div class="hp-progloc" id="hpLocSlot"></div></section>' +
+      '<section class="hp-panel hp-fade hp-prog"><h2>Tiến độ</h2><div class="hp-empty">Không có yêu cầu vệ sinh trong khoảng này' +
+      (S.area ? ' ở ' + esc(areaMeta(S.area).ngan || areaMeta(S.area).short || S.area) : '') + '.</div></section>';
+    ganLocVaoThe(wb0);
     var todo1 = $id("hpTodo"); if (todo1) todo1.innerHTML = "";
     renderMap(); renderKhu(); return;
   }
@@ -2591,15 +2596,20 @@ function renderToday(){
   var p = pct(cnt.da, nTot), acc = 0;
   var vong = nhom.map(function(m){ var a0 = acc; acc += cnt[m.k] / nTot * 100; return m.c + " " + a0.toFixed(2) + "% " + acc.toFixed(2) + "%"; }).join(",");
   var khuTen = S.area ? (areaMeta(S.area).ngan || areaMeta(S.area).short) : "";
+  var wb = $id("hpWhBar");   // 12/10 user: đưa bộ lọc Ngày · Khu vực VÀO thẻ tiến độ, 1 bên lọc 1 bên dữ liệu — giữ tham chiếu trước innerHTML
+  /* 12/10 user: thẻ "Tiến độ" (nhãn như "Cần xử lý") — TRÁI khoá cứng: vòng % to + "x / y vị trí · đã báo cáo vệ sinh ngày …" ngay dưới;
+     PHẢI từ trên xuống: Đã vệ sinh · Chưa · đi làm · Chưa · nghỉ. Hai cột rộng bằng nhau. */
   box.innerHTML =
-    '<section class="hp-panel hp-fade hp-prog">' +
-    '<div class="hp-proghd">' +
+    '<section class="hp-panel hp-fade hp-loc"><h2>Bộ lọc</h2><div class="hp-progloc" id="hpLocSlot"></div></section>' +
+    '<section class="hp-panel hp-fade hp-prog hp-tdo"><h2>Tiến độ</h2><div class="hp-tdo2">' +
+    '<div class="hp-tdotrai">' +
       '<div class="hp-ring" style="background:conic-gradient(' + vong + ')" role="img" aria-label="Đã vệ sinh ' + p + '%"><span><b>' + p + '%</b><small>đã xong</small></span></div>' +
       '<button type="button" class="hp-progt" onclick="HPLANOGRAM.openYc(\'\')" title="Xem mọi yêu cầu vệ sinh trong khoảng đang xem">' +
         '<b>' + nf(cnt.da) + ' / ' + nf(nTot) + ' vị trí</b><span>đã báo cáo vệ sinh' + (la1Ngay() ? (homNay ? " hôm nay" : " ngày " + ngayVN(k[0])) : "") + (khuTen ? " · " + esc(khuTen) : "") + '</span></button>' +
     '</div>' +
-    '<div class="hp-tiles n' + nhom.length + '">' + tiles + '</div>' +
-    '</section>';
+    '<div class="hp-tiles hp-tilesdoc n' + nhom.length + '">' + tiles + '</div>' +
+    '</div></section>';
+  ganLocVaoThe(wb);
   /* THẺ CẦN XỬ LÝ: vỏ ở đây, các dòng do renderMap đổ vào #hpNhacSlot (nó đã có sẵn mọi số liệu ô). */
   var todo = $id("hpTodo");
   if (todo && !$id("hpNhacSlot")) todo.innerHTML = '<section class="hp-panel hp-fade hp-todo"><h2>Cần xử lý</h2><div id="hpNhacSlot"></div></section>';
@@ -2607,6 +2617,9 @@ function renderToday(){
   renderKhu();
   renderTools();
 }
+/* 12/10: dời CHÍNH phần tử #hpWhBar (ô Ngày dùng chung taoBoLocNgay + chip khu) vào cột trái thẻ tiến độ — không dựng lại nên
+   lịch, trạng thái và sự kiện còn nguyên; renderWhBar() vẫn tìm theo id như cũ. */
+function ganLocVaoThe(wb){ var slot = $id("hpLocSlot"); if (slot && wb && wb.parentNode !== slot) slot.appendChild(wb); }
 /* ===== KHU VỰC (tầng 1 khi kho có ≥3 khu) — mỗi khu 1 dòng: tên · x/y · thanh · số ô chưa làm.
  * Khu nhiều việc tồn nhất xếp lên đầu. Chỉ hiện khi đang xem "Tất cả" và có từ 3 khu — với 2 khu
  * (A1 + A8 hiện nay) thẻ Tiến độ + chip khu đã đủ, thêm bảng này chỉ là rác. Bấm dòng = lọc khu. */
