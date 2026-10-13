@@ -2,6 +2,7 @@
 <html lang="vi" data-theme="antd">
 <head>
 <meta charset="UTF-8" />
+<meta name="robots" content="noindex, nofollow">
 <script>/* 13/10 link theo tab (t4): mở thẳng link sâu /retail/tonkho/batthuong → mọi tệp tương đối phải tính từ GỐC app, không từ /tonkho/ */
 (function(){var m=/^\/(retail|kiemsoatkho|factory|stocklocationfactory)\//.exec(location.pathname);if(m)document.write('<base href="/'+m[1]+'/">');
 /* 13/10 tên miền audit-dc.pages.dev: số liệu summary/ + ảnh nhỏ thu/ đổi liên tục nên KHÔNG đẩy sang Cloudflare — đọc thẳng từ GitHub Pages (cho phép đọc chéo) */
@@ -1376,7 +1377,7 @@ body.side-anim{overflow-x:clip;}
 <style>body.hx-an .tab[data-tab="xacminh"]{display:none}</style>
 <!-- 12/10 giao diện Ant Design: LIVE mặc định (user "theo ant design chưa live"); nạp ĐỒNG BỘ ở head để khung hình đầu đã đúng kiểu, tắt trong Cài đặt -->
 <script>window.AD_TEN='Audit Retail'; window.AD_CHUYEN={ten:'Audit Factory', app:'factory'};</script>   <!-- 13/10 user: Audit Hasaki → Audit Retail + nút sang Factory cuối thanh bên -->
-<script src="hasaki-giaodien-antd.js?v=20261013vk1"></script>
+<script src="hasaki-giaodien-antd.js?v=20261013mt1"></script>
 </head>
 <body class="hx-an">
 <aside id="sideNav" aria-label="Điều hướng hạng mục"></aside>
@@ -1477,6 +1478,7 @@ body.side-anim{overflow-x:clip;}
   <section id="pane-fkiemke" class="pane hidden"></section>
   <!-- ===== TAB TỒN KHO BẤT THƯỜNG (Hasaki) — hasaki-tonbatthuong.js, LAZY; data tab stock-inventory-hasaki ===== -->
   <section id="pane-htonbat" class="pane hidden"></section>
+  <section id="pane-maytram" class="pane hidden"></section>
   <!-- ===== TAB PLANOGRAM (Hasaki) — hasaki-planogram.js, LAZY; data 6 tab: VESINH-YEUCAU (yêu cầu hôm nay + ảnh) / VESINH-NHATKY (NV theo ngày) / PHU-TRACH-QUAY-KE / CHAMCONG-VESINH / VESINH-PHANCONG (chủ vị trí) / VESINH-LICHSU (lịch sử báo cáo 60 ngày) / VESINH-CHAMCONG-NGAY (chấm công theo ngày 60 ngày — 2 tab này nạp khi mở pop-up ô) ===== -->
   <section id="pane-planogram" class="pane hidden"></section>
   <!-- ===== TAB XÁC MINH & CÒ CAMERA (Hasaki) — hasaki-xacminh.js, LAZY; dữ liệu từ máy chủ nội bộ bang-591.mjs trên máy quản lý ===== -->
@@ -1691,7 +1693,7 @@ body.side-anim{overflow-x:clip;}
    TUYỆT ĐỐI không gộp data 2 công ty vào 1 file — tách luồng ngay từ nguồn.
    Bổ sung công ty mới = thêm 1 entry ở đây (ten, thư mục summary, sheetId) — không sửa logic. */
 const CTY = {
-  hasaki:  { ten: "HASAKI",  summary: "summary",         sheetId: "1FWffWi75aATbokfqIcqjByEPzkJLQBngTXp5aPOIbLM", tabs: ["home","tong","task","xacminh","planogram","hangmuc","kk","htonbat"] },
+  hasaki:  { ten: "HASAKI",  summary: "summary",         sheetId: "1FWffWi75aATbokfqIcqjByEPzkJLQBngTXp5aPOIbLM", tabs: ["home","tong","task","xacminh","planogram","hangmuc","kk","htonbat","maytram"] },
   factory: { ten: "FACTORY", summary: "summary-factory", sheetId: "", tabs: ["fstock","fkiemke"] },   // 5S Factory chưa có nguồn; 2 tab chạy module riêng
 };
 /* Danh bạ TAB (Cấp 2 — Dynamic Contextual Tabs): khung tab render lại theo công ty đang chọn.
@@ -1707,6 +1709,7 @@ const TAB_DEFS = {
   fstock: { ten: "Trạng thái lưu trữ", module: true },   // module:true = tab TỰ LO dữ liệu (JSONP riêng),
   fkiemke:{ ten: "Kiểm kê",            module: true },   // KHÔNG đi qua pipeline 5S (summary/gviz 5S-TASKS) của host
   htonbat:{ ten: "Tồn kho bất thường", module: true },   // HASAKI · module hasaki-tonbatthuong.js (tab stock-inventory-hasaki)
+  maytram:{ ten: "Máy trạm", module: true },   // 13/10 HASAKI · module hasaki-maytram.js — PC chạy cò: nhịp tim, sức khoẻ, việc; xem ở MỌI máy (GAS pcBangTb), dừng/tiếp tục chỉ máy quản lý (8591)
 };
 const DEV_MODE = /[?&]dev=1/.test(location.search);   // ?dev=1: bản nháp local — CHỈ chặn sync ghi production, KHÔNG chặn init/read
 /* Công ty có dùng dữ liệu 5S không = có ít nhất 1 tab KHÔNG phải tab module.
@@ -3243,6 +3246,7 @@ function setTab(name){
   if(name==='fstock'){ moFactoryStock(); }   // LAZY: chỉ lúc này mới nạp module + fetch data Tồn kho
   if(name==='fkiemke'){ moFactoryKiemke(); } // LAZY: module Kiểm kê (tab kiemke-material riêng biệt)
   if(name==='htonbat'){ moHasakiTonbat(); }  // LAZY: module Tồn kho bất thường HASAKI (tab stock-inventory-hasaki)
+  if(name==='maytram'){ moHasakiMayTram(); } // LAZY: module Máy trạm
   if(name==='planogram'){ moHasakiPlanogram(); } // LAZY: module Planogram HASAKI (tab PHU-TRACH-QUAY-KE)
   if(name==='xacminh'){ moHasakiXacMinh(); }  // LAZY: module Xác minh & Cò camera (máy chủ nội bộ bang-591)
   if(name==='kk'){ moHasakiKiemke(); }       // LAZY: module Kiểm kê HASAKI (tab kiemke-sku-hasaki / kiemke-location-hasaki)
@@ -3314,6 +3318,19 @@ function moHasakiTonbat(){
   Promise.all([napHasakiPC(),_htNap]).then(()=>window.HTONBAT && window.HTONBAT.init(pane))
     .catch(e=>{ _htNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
 }
+let _mtNap=null;
+function moHasakiMayTram(){
+  const pane=$('pane-maytram');
+  if(!_mtNap){
+    _mtNap=new Promise((res,rej)=>{
+      const s=document.createElement('script'); s.src='hasaki-maytram.js?v=20261013mt1';
+      s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-maytram.js'));
+      document.body.appendChild(s);
+    });
+  }
+  _mtNap.then(()=>window.HMAYTRAM && window.HMAYTRAM.init(pane))
+    .catch(e=>{ _mtNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
+}
 let _hpNap=null;
 function moHasakiPlanogram(){
   const pane=$('pane-planogram');
@@ -3335,7 +3352,7 @@ function moHasakiXacMinh(){
   const pane=$('pane-xacminh');
   if(!_hxNap){
     _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261013pc1';
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261013mt1';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
       document.body.appendChild(s);
     });
@@ -3391,8 +3408,11 @@ var HOME_MUC = [
   { g: "Xác minh", hx: 1, mo: "Chỉ máy quản lý · cần đăng nhập", items: [
     { t: "xacminh", sub: "treo", ten: "Theo tác vụ", cc: "var(--accent)", mo: "Phiếu WF591 đang mở: bằng chứng camera, máy gợi ý là ai, việc tiếp theo.", muc: ["Bằng chứng", "Máy gợi ý", "Quyết định"] },
     { t: "xacminh", sub: "cam", ten: "Theo máy", cc: "var(--warn)", mo: "Sự việc máy tự bắt từ camera (bãi xe, khu phân loại) chờ quyết định.", muc: ["Clip", "Bộ chọn theo ảnh", "Lập phiếu"] },
-    { t: "xacminh", sub: "tg", ten: "Nhật ký", cc: "var(--muted)", mo: "Phiếu, bình luận, ảnh máy đã ghi lên work.hasaki.vn — lọc theo bộ, việc, ngày.", muc: ["Bộ nào làm", "Làm gì", "Ngày"] },
-    { t: "xacminh", sub: "pc", ten: "Máy trạm", cc: "var(--good)", mo: "Các PC chạy cò: nhịp tim, RAM · CPU · ổ C, việc đang làm; dừng hoặc cho chạy lại.", muc: ["Nhịp tim", "Sức khoẻ", "Dừng · tiếp tục"] }
+    { t: "xacminh", sub: "tg", ten: "Nhật ký", cc: "var(--muted)", mo: "Phiếu, bình luận, ảnh máy đã ghi lên work.hasaki.vn — lọc theo bộ, việc, ngày.", muc: ["Bộ nào làm", "Làm gì", "Ngày"] }
+  ]},
+  { g: "Hệ thống", mo: "Các PC nội bộ chạy cò tự động", items: [
+    { t: "maytram", ten: "Máy trạm", cc: "var(--good)", mo: "Các PC chạy cò: nhịp tim, RAM · CPU · ổ C, việc đang làm; dừng hoặc cho chạy lại trên máy quản lý.", muc: ["Nhịp tim", "Sức khoẻ", "Việc"],
+      so: function(){ var d=window.tqDoc&&tqDoc("mt"); return d&&d.tong?{ k: d.song+"/"+d.tong, l: "máy đang chạy" }:null; } }
   ]}
 ];
 function nf0(n){ return Number(n||0).toLocaleString("vi-VN"); }
@@ -4103,7 +4123,8 @@ document.addEventListener('click', ()=>csDongHet(null));
     { g: "Hạng mục 5S",   items: [["tong","Tổng kết"],["task","Vi phạm"],["hangmuc","Quy định"],["planogram","Planogram"]] },
     { g: "Tồn kho", items: [["kk","Kiểm kê"],["htonbat","Bất thường"]] },
     /* 05/10 user chọn kiểu A: mục con Xác minh nằm ở thanh bên (thay dải chip trong tab). Chỉ hiện trên máy có máy chủ 8591. */
-    { g: "Xác minh", hx: 1, items: [["xacminh","Theo tác vụ","treo"],["xacminh","Theo máy","cam"],["xacminh","Nhật ký","tg"],["xacminh","Máy trạm","pc"]] }   // 13/10 + Máy trạm (PC chạy cò)
+    { g: "Xác minh", hx: 1, items: [["xacminh","Theo tác vụ","treo"],["xacminh","Theo máy","cam"],["xacminh","Nhật ký","tg"]] },
+    { g: "Hệ thống", items: [["maytram","Máy trạm"]] }   // 13/10 tối: Máy trạm tách khỏi Xác minh để điện thoại xem được
   ];
   var nav = document.getElementById("sideNav"), tg = document.getElementById("sideToggle"), bd = document.getElementById("sideBackdrop");
   function tabActive(){ var el = document.querySelector(".tab.active"); return el ? el.getAttribute("data-tab") : null; }
@@ -4117,7 +4138,7 @@ document.addEventListener('click', ()=>csDongHet(null));
   function build(){
     var tabs = [];
     try{ if (typeof CTY !== "undefined" && typeof CTY_ID !== "undefined" && CTY[CTY_ID]) tabs = CTY[CTY_ID].tabs || []; }catch(e){}
-    if (!tabs.length) tabs = ["home","tong","task","xacminh","planogram","hangmuc","kk","htonbat"];   // dự phòng
+    if (!tabs.length) tabs = ["home","tong","task","xacminh","planogram","hangmuc","kk","htonbat","maytram"];   // dự phòng
     var html = "";   /* KHÔNG lặp brand — header đã có tiêu đề AUDIT HASAKI */
     /* 12/10 user: chưa đăng nhập Xác minh thì CHỈ 1 nút "Xác minh"; đăng nhập xong mới hiện 5 mục con (hasaki-xacminh.js bắn "hx-phien") */
     var daDN = false; try { daDN = !!localStorage.getItem("hx-phien"); } catch(e){}
