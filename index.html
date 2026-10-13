@@ -3323,7 +3323,7 @@ function moHasakiMayTram(){
   const pane=$('pane-maytram');
   if(!_mtNap){
     _mtNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-maytram.js?v=20261013mt1';
+      const s=document.createElement('script'); s.src='hasaki-maytram.js?v=20261013mt2';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-maytram.js'));
       document.body.appendChild(s);
     });
@@ -3352,7 +3352,7 @@ function moHasakiXacMinh(){
   const pane=$('pane-xacminh');
   if(!_hxNap){
     _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261013mt1';
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261013mt2';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
       document.body.appendChild(s);
     });
@@ -3408,9 +3408,7 @@ var HOME_MUC = [
   { g: "Xác minh", hx: 1, mo: "Chỉ máy quản lý · cần đăng nhập", items: [
     { t: "xacminh", sub: "treo", ten: "Theo tác vụ", cc: "var(--accent)", mo: "Phiếu WF591 đang mở: bằng chứng camera, máy gợi ý là ai, việc tiếp theo.", muc: ["Bằng chứng", "Máy gợi ý", "Quyết định"] },
     { t: "xacminh", sub: "cam", ten: "Theo máy", cc: "var(--warn)", mo: "Sự việc máy tự bắt từ camera (bãi xe, khu phân loại) chờ quyết định.", muc: ["Clip", "Bộ chọn theo ảnh", "Lập phiếu"] },
-    { t: "xacminh", sub: "tg", ten: "Nhật ký", cc: "var(--muted)", mo: "Phiếu, bình luận, ảnh máy đã ghi lên work.hasaki.vn — lọc theo bộ, việc, ngày.", muc: ["Bộ nào làm", "Làm gì", "Ngày"] }
-  ]},
-  { g: "Hệ thống", mo: "Các PC nội bộ chạy cò tự động", items: [
+    { t: "xacminh", sub: "tg", ten: "Nhật ký", cc: "var(--muted)", mo: "Phiếu, bình luận, ảnh máy đã ghi lên work.hasaki.vn — lọc theo bộ, việc, ngày.", muc: ["Bộ nào làm", "Làm gì", "Ngày"] },
     { t: "maytram", ten: "Máy trạm", cc: "var(--good)", mo: "Các PC chạy cò: nhịp tim, RAM · CPU · ổ C, việc đang làm; dừng hoặc cho chạy lại trên máy quản lý.", muc: ["Nhịp tim", "Sức khoẻ", "Việc"],
       so: function(){ var d=window.tqDoc&&tqDoc("mt"); return d&&d.tong?{ k: d.song+"/"+d.tong, l: "máy đang chạy" }:null; } }
   ]}
@@ -3441,8 +3439,10 @@ function homeRender(){
     kk&&kk.tong&&{ nhan: "Kiểm kê theo vị trí", so: pctVN(kk.dem,kk.tong)+"%", tien: kk.dem/kk.tong*100, mau: "var(--accent)", phu: nf0(kk.dem)+" / "+nf0(kk.tong)+(kk.eta?" · xong ≈ "+kk.eta:"") }
   ];
   var MAU={ task:"var(--warn)", htonbat:"var(--bad)" };
-  var nhom=HOME_MUC.filter(function(g){ return !g.hx||window.__HX_MAY_CHU; }).map(function(g){
-    return { ten: g.g, khoa: g.hx&&!daDN, muc: g.items.map(function(it){
+  var mtDN=false; try{ var mp=JSON.parse(localStorage.getItem("mt-phien")||"null"); mtDN=!!(mp&&mp.het>Date.now()); }catch(e){}
+  /* 13/10: máy không có 8591 (điện thoại) vẫn thấy nhóm Xác minh nhưng CHỈ thẻ Máy trạm (đăng nhập qua GAS) */
+  var nhom=HOME_MUC.map(function(g){ return (!g.hx||window.__HX_MAY_CHU)?g:{ g:g.g, hx:1, mo:g.mo, items:g.items.filter(function(it){ return it.t!=="xacminh"; }) }; }).filter(function(g){ return g.items.length; }).map(function(g){
+    return { ten: g.g, khoa: g.hx&&!(window.__HX_MAY_CHU?daDN:mtDN), muc: g.items.map(function(it){
       var s=so(it), m={ k: it.t+(it.sub?":"+it.sub:""), ten: it.ten, mo: it.mo, mauSo: MAU[it.t] };
       if(s){ m.so=s.k; m.dv=s.l.replace(/ tháng \d\d\/\d{4}$/,""); }
       else if(it.t==="planogram"&&plg&&plg.tong){ m.so=pctVN(plg.da,plg.tong)+"%"; m.dv="đã vệ sinh hôm nay"; m.tien=plg.da/plg.tong*100; }
@@ -4123,8 +4123,7 @@ document.addEventListener('click', ()=>csDongHet(null));
     { g: "Hạng mục 5S",   items: [["tong","Tổng kết"],["task","Vi phạm"],["hangmuc","Quy định"],["planogram","Planogram"]] },
     { g: "Tồn kho", items: [["kk","Kiểm kê"],["htonbat","Bất thường"]] },
     /* 05/10 user chọn kiểu A: mục con Xác minh nằm ở thanh bên (thay dải chip trong tab). Chỉ hiện trên máy có máy chủ 8591. */
-    { g: "Xác minh", hx: 1, items: [["xacminh","Theo tác vụ","treo"],["xacminh","Theo máy","cam"],["xacminh","Nhật ký","tg"]] },
-    { g: "Hệ thống", items: [["maytram","Máy trạm"]] }   // 13/10 tối: Máy trạm tách khỏi Xác minh để điện thoại xem được
+    { g: "Xác minh", hx: 1, items: [["xacminh","Theo tác vụ","treo"],["xacminh","Theo máy","cam"],["xacminh","Nhật ký","tg"],["maytram","Máy trạm"]] }   // 13/10 tối user: Máy trạm ở Xác minh, DƯỚI CÙNG, phải đăng nhập mới xem (điện thoại: nhóm chỉ còn mục này)
   ];
   var nav = document.getElementById("sideNav"), tg = document.getElementById("sideToggle"), bd = document.getElementById("sideBackdrop");
   function tabActive(){ var el = document.querySelector(".tab.active"); return el ? el.getAttribute("data-tab") : null; }
@@ -4145,7 +4144,7 @@ document.addEventListener('click', ()=>csDongHet(null));
     HM.forEach(function(grp){
       var its = grp.items.filter(function(x){ return tabs.indexOf(x[0]) >= 0 && (x[0] !== "xacminh" || window.__HX_MAY_CHU); });
       if (!its.length) return;
-      if (grp.hx && !daDN) { html += '<div class="s-sub s-mot"><div class="s-item" data-tab="xacminh"><span class="di"></span>Xác minh</div></div>'; return; }
+      if (grp.hx && !daDN && window.__HX_MAY_CHU) { html += '<div class="s-sub s-mot"><div class="s-item" data-tab="xacminh"><span class="di"></span>Xác minh</div></div>'; return; }
       if (!grp.g) { html += '<div class="s-sub s-mot s-dau">' + its.map(function(x){ return '<div class="s-item" data-tab="' + x[0] + '"><span class="di"></span>' + x[1] + '<span class="sn"></span></div>'; }).join("") + '</div>'; return; }
       html += '<div class="s-grp">' + grp.g + '</div><div class="s-sub">' +
         its.map(function(x){ return '<div class="s-item" data-tab="' + x[0] + '"' + (x[2] ? ' data-sub="' + x[2] + '"' : '') + '><span class="di"></span>' + x[1] + '<span class="sn"></span></div>'; }).join("") +
