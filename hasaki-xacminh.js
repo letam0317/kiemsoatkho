@@ -24,6 +24,7 @@
      (xacminh-dang-nhap.mjs). Gửi kèm MỌI yêu cầu: dữ liệu qua tiêu đề x-hx-phien, ảnh/clip qua tham số ?phien= (thẻ <img>/<video>
      không gửi được tiêu đề). Máy chủ trả 401 canDangNhap → về màn đăng nhập. */
   var PHIEN = (function () { try { return localStorage.getItem("hx-phien") || ""; } catch (e) { return ""; } })();
+  window.addEventListener("hx-phien", function () { try { PHIEN = localStorage.getItem("hx-phien") || ""; } catch (e) {} });   // 13/10: đăng nhập ở tab Máy trạm cũng mở Xác minh
   var datPhien = function (v) { PHIEN = v || ""; try { if (PHIEN) localStorage.setItem("hx-phien", PHIEN); else localStorage.removeItem("hx-phien"); } catch (e) {} try { window.dispatchEvent(new CustomEvent("hx-phien")); } catch (e) {} };
   var u_ = function (p) { return p && p.charAt(0) === "/" ? API + p + (/^\/(anh|video|bc|cs)\//.test(p) ? (p.indexOf("?") < 0 ? "?" : "&") + "phien=" + PHIEN : "") : p; };
   var QD = ["Lập phiếu (NV Hasaki)", "Không phải NV Hasaki", "Xe ra / không vi phạm", "Không rõ – bỏ qua"];
