@@ -44,7 +44,10 @@
       ".hx-mt-phu{padding:2px 16px 8px;font-size:12px;color:var(--muted)}",
       ".hx-mt-v{display:flex;align-items:center;gap:8px;min-height:44px;padding:6px 16px;border-top:1px solid var(--border)}.hx-mt-v .ten{flex:1;min-width:0;font-size:13.5px}.hx-mt-v .ten small{display:block;color:var(--muted);font-size:12px}",
       ".hx-mt-v .hx-nut{min-height:34px;padding:0 12px;font-size:13px;background:var(--surface);color:var(--text);border-color:var(--border)}.hx-mt-v .hx-nut:hover{border-color:var(--accent);color:var(--accent)}",
-      "@media(max-width:560px){.hx-mt-v .hx-nut,.hx-mt-dau .hx-nut{min-height:44px}#pane-maytram .panel-head{flex-direction:column;align-items:flex-start;gap:2px}}"
+      "@media(max-width:560px){.hx-mt-v .hx-nut,.hx-mt-dau .hx-nut,#mtDangXuat{min-height:44px}#pane-maytram .panel-head{flex-direction:column;align-items:flex-start;gap:2px}}",
+      /* form đăng nhập — cùng khuôn .hx-dn của Xác minh */
+      ".mt-dn{max-width:400px;margin:24px auto}.mt-dn form{display:flex;flex-direction:column;gap:12px;padding:16px}.mt-dn label{display:flex;flex-direction:column;gap:4px}.mt-dn input{min-height:44px;font-size:16px}",
+      ".mt-st.loi{margin-top:4px;font-size:13px;padding:8px 12px;border-radius:10px;background:color-mix(in srgb,var(--bad) 10%,transparent);color:var(--bad)}"
     ].join("\n");
     var st = document.createElement("style"); st.id = "mt-css"; st.textContent = c; document.head.appendChild(st);
   }
@@ -56,17 +59,14 @@
     return fetch(API + duong, Object.assign({ signal: ctl.signal }, opt)).then(function (r) { clearTimeout(h);
       return r.text().then(function (t) { var j = {}; try { j = JSON.parse(t); } catch (e) {} if (!r.ok) { var er = new Error(j.loi || ("HTTP " + r.status)); er.ma = r.status; throw er; } return j; }); });
   }
-  function goiGas() {   // JSONP — cùng khuôn readTab của dashboard (khoá thiết bị tb-khoa)
-    return new Promise(function (res, rej) {
-      var cb = "__mt_cb" + Date.now(), s = document.createElement("script"), xong = false;
-      var tb = ""; try { tb = localStorage.getItem("tb-khoa") || ""; } catch (e) {}
-      var dung = function () { xong = true; try { delete window[cb]; } catch (e) { window[cb] = undefined; } s.remove(); clearTimeout(h); };
-      var h = setTimeout(function () { if (!xong) { dung(); rej(new Error("Apps Script không trả lời sau 45 giây")); } }, 45000);
-      window[cb] = function (j) { if (xong) return; dung(); if (j && j.status === "success") res(j); else rej(new Error((j && j.message) || "Apps Script trả lỗi")); };
-      s.onerror = function () { if (!xong) { dung(); rej(new Error("Mất mạng — bấm thử lại")); } };
-      s.src = GAS + "?action=pcBangTb&callback=" + cb + "&tb=" + encodeURIComponent(tb) + "&_=" + Date.now();
-      document.head.appendChild(s);
-    });
+  // 13/10 tối user: «buộc phải có mật khẩu mới xem được». Máy không có 8591 (điện thoại) đăng nhập qua GAS bằng CÙNG mật khẩu Xác minh
+  // (bang-591 đồng bộ băm lên GAS mỗi lần đăng nhập Xác minh) → phiên 12 giờ lưu ở localStorage «mt-phien».
+  function mtPhien() { try { var o = JSON.parse(localStorage.getItem("mt-phien") || "null"); return o && o.ph && o.het > Date.now() ? o : null; } catch (e) { return null; } }
+  function postGas(body) {   // POST text/plain (không preflight) — cùng khuôn hasaki-pc.js; GAS lỗi trả HTML → kiểm '{' (bộ chuẩn mục 3)
+    var ctl = new AbortController(), h = setTimeout(function () { ctl.abort(); }, 45000);
+    return fetch(GAS, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body), signal: ctl.signal })
+      .then(function (r) { return r.text(); }).then(function (t) { clearTimeout(h); if (t.trim()[0] !== "{") throw new Error("Apps Script trả lỗi — thử lại"); return JSON.parse(t); })
+      .catch(function (e) { clearTimeout(h); throw e.name === "AbortError" ? new Error("Apps Script không trả lời sau 45 giây") : e; });
   }
   // dữ liệu GAS (thô) → cùng hình với /api/may-tram: may[{…, song, tuoiGiay, viecGiao}], viec[{ten, may}], chuyen
   function chuanGas(j) {
@@ -78,26 +78,56 @@
     return { srvNow: now, may: may, viec: tatCa.map(function (t) { return { ten: t, may: chu[t] || null, canKhoa: [] }; }), chuyen: j.chuyen || [] };
   }
   // Máy quản lý? Thanh bên dò 8591 bất đồng bộ (~1,5 s) — mở thẳng ?tab=maytram thì module chạy TRƯỚC ⇒ tự dò, đừng chờ.
+  var MAY_CHU = false, CAN_DN = false;
   function dongMayChu() {
-    if (!phien()) return Promise.resolve(false);
     if (window.__HX_MAY_CHU) return Promise.resolve(true);
     var ctl = new AbortController(), h = setTimeout(function () { ctl.abort(); }, 1500);
     return fetch(API + "/api/ping", { signal: ctl.signal }).then(function (r) { clearTimeout(h); return r.ok; }).catch(function () { return false; });
   }
-  function tai() { return dongMayChu().then(taiTheo); }
-  function taiTheo(coMayChu) {
-    var p = coMayChu ? goi591("/api/may-tram").then(function (j) { DIEU_KHIEN = true; return j; })
-      .catch(function (e) { if (e.ma === 401) { DIEU_KHIEN = false; return goiGas().then(chuanGas); } throw e; })   // phiên Xác minh hết → vẫn xem được qua GAS
-      : goiGas().then(function (j) { DIEU_KHIEN = false; return chuanGas(j); });
-    return p.then(function (d) { MTD = d; MT_LOI = "";
-      if (window.tqGhi) tqGhi("mt", { song: d.may.filter(function (m) { return m.song && !m.dung; }).length, tong: d.may.length }); })
+  function tai() {
+    return dongMayChu().then(function (co) {
+      MAY_CHU = co;
+      if (co) {   // máy quản lý: cần phiên Xác minh (8591) — đầy đủ + nút điều khiển
+        if (!phien()) { CAN_DN = true; return null; }
+        return goi591("/api/may-tram").then(function (j) { DIEU_KHIEN = true; CAN_DN = false; return j; })
+          .catch(function (e) { if (e.ma === 401) { try { localStorage.removeItem("hx-phien"); } catch (x) {} CAN_DN = true; return null; } throw e; });
+      }
+      var mp = mtPhien(); if (!mp) { CAN_DN = true; return null; }
+      return postGas({ action: "pcBangPh", ph: mp.ph }).then(function (j) {
+        if (j.status !== "success") { if (j.code === 401) { try { localStorage.removeItem("mt-phien"); } catch (x) {} CAN_DN = true; return null; } throw new Error(j.message || "Apps Script trả lỗi"); }
+        DIEU_KHIEN = false; CAN_DN = false; return chuanGas(j); });
+    }).then(function (d) { MTD = d; MT_LOI = "";
+      if (d && window.tqGhi) tqGhi("mt", { song: d.may.filter(function (m) { return m.song && !m.dung; }).length, tong: d.may.length }); })
       .catch(function (e) { MT_LOI = e.name === "AbortError" ? "Máy chủ không trả lời sau 45 giây" : e.message; });
+  }
+  function veDangNhap(thongBao) {
+    var em = ""; try { em = localStorage.getItem("hx-email") || ""; } catch (e) {}
+    PANE.innerHTML = '<div class="panel mt-dn"><div class="panel-head"><span>Đăng nhập để xem Máy trạm</span></div>' +
+      '<form id="mtDnForm" autocomplete="on"><label><span class="lbl">Email</span><input id="mtDnEm" type="email" autocomplete="username" required value="' + e_(em) + '"></label>' +
+      '<label><span class="lbl">Mật khẩu</span><input id="mtDnMk" type="password" autocomplete="current-password" required></label>' +
+      '<button type="submit" class="hx-nut" id="mtDnNut">Đăng nhập</button><div id="mtDnSt"' + (thongBao ? ' class="mt-st loi">' + e_(thongBao) : ">") + "</div></form></div>";
+    var f = document.getElementById("mtDnForm");
+    f.onsubmit = function (ev) {
+      ev.preventDefault(); var nut = document.getElementById("mtDnNut"), st = document.getElementById("mtDnSt");
+      var email = document.getElementById("mtDnEm").value.trim(), mk = document.getElementById("mtDnMk").value;
+      nut.disabled = true; st.className = ""; st.textContent = "Đang kiểm tra…";
+      var p = MAY_CHU
+        ? goi591("/api/dang-nhap", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: email, matKhau: mk }) })
+            .then(function (j) { if (!j.phien) throw new Error(j.loi || "Đăng nhập lỗi"); try { localStorage.setItem("hx-phien", j.phien); } catch (e) {} try { window.dispatchEvent(new CustomEvent("hx-phien")); } catch (e) {} })
+        : postGas({ action: "pcDangNhap", email: email, mk: mk })
+            .then(function (j) { if (j.status !== "success") throw new Error(j.message || "Đăng nhập lỗi"); try { localStorage.setItem("mt-phien", JSON.stringify({ ph: j.ph, het: j.het, email: j.email })); } catch (e) {} });
+      p.then(function () { try { localStorage.setItem("hx-email", email); } catch (e) {} PANE.innerHTML = ""; return tai().then(ve); })
+        .catch(function (e) { st.className = "mt-st loi"; st.textContent = e.message; var m = document.getElementById("mtDnMk"); if (m) m.select(); })
+        .finally(function () { if (document.body.contains(nut)) nut.disabled = false; });
+    };
+    (em ? document.getElementById("mtDnMk") : document.getElementById("mtDnEm")).focus();
   }
 
   /* ---------- vẽ ---------- */
   function tuoiChu(s) { if (s == null || isNaN(s)) return "—"; if (s < 60) return s + " giây trước"; if (s < 3600) return Math.round(s / 60) + " phút trước"; if (s < 86400) return Math.round(s / 3600) + " giờ trước"; return Math.round(s / 86400) + " ngày trước"; }
   function ve() {
     if (!PANE) return;
+    if (CAN_DN) { if (!document.getElementById("mtDnForm")) veDangNhap(); return; }   // đang gõ thì không vẽ đè form
     if (!MTD) { PANE.innerHTML = '<div class="panel" style="margin-top:4px"><div class="hx-trong">Chưa đọc được bảng máy trạm: ' + e_(MT_LOI || "không rõ lỗi") + " — tự thử lại sau 30 giây.</div></div>"; return; }
     var dangChuyen = {}; (MTD.chuyen || []).forEach(function (c) { dangChuyen[c.viec] = c; });
     var mayCua = {}; (MTD.viec || []).forEach(function (v) { mayCua[v.ten] = v.may; });
@@ -128,7 +158,11 @@
     if (chuaCo.length) h += '<div class="panel" style="margin-top:14px"><div class="panel-head"><span>Việc chưa có máy nhận</span><span>' + chuaCo.length + "</span></div>" +
       chuaCo.map(function (v) { var c = dangChuyen[v.ten]; return '<div class="hx-mt-v"><div class="ten"><b>' + e_(tenV(v.ten)) + "</b><small>" +
         (c ? "Bị dừng giữa chừng ở " + e_(c.tu) + " · chờ máy khác chạy bù" : v.nang && (v.canKhoa || []).length ? "Cần máy còn sống, không bị dừng, có khoá " + e_(v.canKhoa.join(", ")) : "Cần máy còn sống, không bị dừng") + "</small></div></div>"; }).join("") + "</div>";
+    if (!MAY_CHU && mtPhien()) h += '<div style="text-align:center;margin:14px 0"><button type="button" class="hx-nut phu" id="mtDangXuat">Đăng xuất</button></div>';
     PANE.innerHTML = h;
+    var dx = document.getElementById("mtDangXuat");
+    if (dx) dx.onclick = function () { var mp = mtPhien(); try { localStorage.removeItem("mt-phien"); } catch (e) {} MTD = null; CAN_DN = true;
+      if (mp) postGas({ action: "pcDangXuat", ph: mp.ph }).catch(function () {}); veDangNhap(); };
     if (!DIEU_KHIEN) return;
     PANE.querySelectorAll("button[data-may]").forEach(function (n) {
       n.onclick = function () {
@@ -147,11 +181,14 @@
 
   function init(pane) {
     PANE = pane; napCss();
-    if (!MTD) pane.innerHTML = '<div class="hx-mt">' + '<div class="panel"><div style="padding:18px 16px"><div class="sk sk-line" style="width:60%"></div><div class="sk sk-line" style="width:86%"></div><div class="sk sk-line" style="width:70%"></div></div></div>'.repeat(2) + "</div>";
+    if (!MTD || CAN_DN) pane.innerHTML = '<div class="hx-mt">' + '<div class="panel"><div style="padding:18px 16px"><div class="sk sk-line" style="width:60%"></div><div class="sk sk-line" style="width:86%"></div><div class="sk sk-line" style="width:70%"></div></div></div>'.repeat(2) + "</div>";
     else ve();
     tai().then(ve);
     clearInterval(H);
     H = setInterval(function () { if (!PANE || PANE.classList.contains("hidden")) { clearInterval(H); return; } if (!document.hidden) tai().then(ve); }, 30e3);
   }
+  window.addEventListener("hx-phien", function () {   // đăng xuất Xác minh trên máy quản lý → khoá lại ngay
+    if (MAY_CHU && !phien()) { MTD = null; CAN_DN = true; DIEU_KHIEN = false; if (PANE && !PANE.classList.contains("hidden")) ve(); }
+  });
   window.HMAYTRAM = { init: init, coDuLieu: function () { return !!MTD; } };
 })();
