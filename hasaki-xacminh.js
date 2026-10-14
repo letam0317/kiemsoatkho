@@ -1092,7 +1092,7 @@
     if (!PANE) return; datNutDX(false);
     var em = ""; try { em = localStorage.getItem("hx-email") || ""; } catch (e) {}
     PANE.innerHTML = '<div class="panel hx-dn"><div class="panel-head"><span>Đăng nhập phần Xác minh</span></div>' +
-      '<form id="hxDnForm" autocomplete="on"><label><span class="lbl">Email</span><input id="hxDnEm" type="email" autocomplete="username" required value="' + e_(em) + '"></label>' +
+      '<form id="hxDnForm" autocomplete="on"><label><span class="lbl">Tài khoản</span><input id="hxDnEm" type="text" autocomplete="username" required placeholder="vd: tamlc" value="' + e_(em.replace(/@.*$/, "")) + '"></label>' +
       '<label><span class="lbl">Mật khẩu</span><input id="hxDnMk" type="password" autocomplete="current-password" required></label>' +
       '<button type="submit" class="hx-nut" id="hxDnNut">Đăng nhập</button><div id="hxDnSt"' + (thongBao ? ' class="hx-st loi">' + e_(thongBao) : '>') + '</div></form></div>';
     var f = $id("hxDnForm"); (em ? $id("hxDnMk") : $id("hxDnEm")).focus();
@@ -1100,8 +1100,15 @@
       ev.preventDefault(); var nut = $id("hxDnNut"), st = $id("hxDnSt"), email = $id("hxDnEm").value.trim();
       nut.disabled = true; st.className = ""; st.textContent = "Đang kiểm tra…";
       var ctl = new AbortController(), hh = setTimeout(function () { ctl.abort(); }, 15000);
-      fetch(API + "/api/dang-nhap", { method: "POST", headers: { "content-type": "application/json" }, signal: ctl.signal, body: JSON.stringify({ email: email, matKhau: $id("hxDnMk").value }) })
-        .then(function (r) { return r.json().then(function (j) { if (!r.ok || !j.phien) throw new Error(j.loi || ("HTTP " + r.status)); return j; }); })
+      /* 14/10: đăng nhập bằng TÀI KHOẢN CHUNG audit-dc (tai-khoan.js → Apps Script) rồi đổi sang phiên máy chủ; Apps Script không gọi được
+         thì rơi về tài khoản nội bộ của máy chủ 8591 như cũ. */
+      var mk = $id("hxDnMk").value;
+      var noiBo = function () { return fetch(API + "/api/dang-nhap", { method: "POST", headers: { "content-type": "application/json" }, signal: ctl.signal, body: JSON.stringify({ email: email, matKhau: mk }) })
+        .then(function (r) { return r.json().then(function (j) { if (!r.ok || !j.phien) throw new Error(j.loi || ("HTTP " + r.status)); return j; }); }); };
+      (typeof window.tkDangNhap === "function"
+        ? window.tkDangNhap(email, mk).then(function () { return window.tkDoiPhienXm(); }, function (e) { if (e.code) throw e; return noiBo(); })
+            .then(function (x) { if (x && x.phien) return x; var ph = ""; try { ph = localStorage.getItem("hx-phien") || ""; } catch (e2) {} if (!ph) throw new Error("Tài khoản chưa được cấp quyền Xác minh, hoặc máy chủ Xác minh chưa chạy"); return { phien: ph }; })
+        : noiBo())
         .then(function (j) { datPhien(j.phien); try { localStorage.setItem("hx-email", email); } catch (e) {} D = null; init(PANE); })
         .catch(function (e) { st.className = "hx-st loi"; st.textContent = e.name === "AbortError" ? "Máy chủ Xác minh không trả lời — thử lại." : e.message; $id("hxDnMk").select(); })
         .finally(function () { clearTimeout(hh); nut.disabled = false; });
