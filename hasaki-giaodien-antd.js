@@ -286,6 +286,7 @@
     ".tq-o .p{margin-top:6px;padding-top:6px;border-top:1px solid var(--ad-chia);font-size:12px;line-height:18px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
     ".tq-bar{height:6px;margin-top:8px;border-radius:100px;background:var(--ad-ray);overflow:hidden}.tq-bar i{display:block;height:100%;border-radius:100px;background:var(--accent)}",
     ".tq-g{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:15px;line-height:22px;font-weight:600;color:var(--text)}",
+    ".tq-gkhoa{width:100%;border:1px solid var(--ad-chia);border-radius:8px;background:var(--surface);padding:12px 16px;margin:0 0 16px;cursor:pointer;font:inherit;font-size:16px;font-weight:600;color:var(--text);text-align:left}.tq-gkhoa:hover{border-color:var(--accent)}",
     ".tq-khoa{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:400;color:var(--muted)}.tq-khoa svg{width:14px;height:14px;fill:currentColor}",
     ".tq-luoi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px}",
     ".tq-the{display:flex;flex-direction:column;align-items:stretch;min-width:0;padding:12px 16px;border:1px solid var(--ad-chia);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;text-align:left;cursor:pointer;transition:box-shadow .2s,border-color .2s}",
@@ -436,13 +437,18 @@
   /* cfg = { chiSo:[{nhan, so, phu, tien, mau}|null], nhom:[{ten, khoa, muc:[{k (khoá icon), ten, mo, so, dv, mauSo, tien, bam:fn}]}] } */
   window.tqVe = function (el, cfg) {
     if (!el) return;
-    var cs = (cfg.chiSo || []).filter(Boolean);
+    /* 14/10 phân quyền (tai-khoan.js): thẻ / ô chỉ số của tab bị «Không» thì không hiện; nhóm hết mục thì bỏ cả nhóm */
+    var coQ = function (k) { return typeof window.tkCo !== "function" || !k || k === "home" || window.tkCo((TQ_APP === "factory" ? "f." : "r.") + String(k).split(":")[0]); };
+    var cs = (cfg.chiSo || []).filter(function (c) { return c && (!c.tab || coQ(c.tab)); });
+    cfg = { chiSo: cfg.chiSo, nhom: (cfg.nhom || []).map(function (g) { var g2 = {}; for (var k in g) g2[k] = g[k]; g2.muc = (g.muc || []).filter(function (m) { return coQ(m.k); }); return g2; }).filter(function (g) { return g.muc.length; }) };
     var h = cs.length ? '<div class="tq-cs n' + cs.length + '">' + cs.map(function (c) {
       return '<div class="tq-o"><div class="n">' + escT(c.nhan) + '</div><div class="v"' + (c.tien == null && c.mau ? ' style="color:' + c.mau + '"' : "") + ">" + escT(c.so) + "</div>" +
         (c.tien != null ? thanh(c.tien, c.mau) : "") + (c.phu ? '<div class="p">' + escT(c.phu) + "</div>" : "") + "</div>"; }).join("") + "</div>" : "";
     var ds = [];
     (cfg.nhom || []).forEach(function (g) {
-      h += '<h3 class="tq-g">' + escT(g.ten) + (g.khoa ? ' <span class="tq-khoa">' + svgIcon("mdiLockOutline") + "Cần đăng nhập</span>" : "") + '</h3><div class="tq-luoi">';
+      /* 14/10 user: nhóm KHOÁ (Xác minh chưa đăng nhập) chỉ hiện 1 dòng tên nhóm — không bày các mục con; bấm dòng = mở mục đầu (ra màn đăng nhập) */
+      if (g.khoa) { if (g.muc[0]) ds.push(g.muc[0]); h += '<button type="button" class="tq-g tq-gkhoa"' + (g.muc[0] ? ' data-i="' + (ds.length - 1) + '"' : "") + ' title="Đăng nhập để xem ' + escT(g.ten) + '">' + escT(g.ten) + ' <span class="tq-khoa">' + svgIcon("mdiLockOutline") + "Cần đăng nhập</span></button>"; return; }
+      h += '<h3 class="tq-g">' + escT(g.ten) + '</h3><div class="tq-luoi">';
       g.muc.forEach(function (m) {
         ds.push(m);
         h += '<button type="button" class="tq-the" data-i="' + (ds.length - 1) + '" title="Mở ' + escT(m.ten) + '"><span class="h"><span class="av">' + window.adIconTab(m.k) + '</span><span class="t">' + escT(m.ten) + "</span></span>" +
@@ -452,7 +458,7 @@
       h += "</div>";
     });
     el.innerHTML = '<div class="tq" data-bac="1">' + h + "</div>";
-    [].slice.call(el.querySelectorAll(".tq-the")).forEach(function (b) { b.onclick = function () { var m = ds[+b.dataset.i]; if (m && m.bam) m.bam(); window.scrollTo({ top: 0 }); }; });
+    [].slice.call(el.querySelectorAll(".tq-the,.tq-gkhoa[data-i]")).forEach(function (b) { b.onclick = function () { var m = ds[+b.dataset.i]; if (m && m.bam) m.bam(); window.scrollTo({ top: 0 }); }; });
     tqVuaKhung();
   };
 
