@@ -4146,7 +4146,11 @@ document.addEventListener('click', ()=>csDongHet(null));
       if (!its.length) return;
       if (grp.hx && !daDN && window.__HX_MAY_CHU) { html += '<div class="s-sub s-mot"><div class="s-item" data-tab="xacminh"><span class="di"></span>Xác minh</div></div>'; return; }
       if (!grp.g) { html += '<div class="s-sub s-mot s-dau">' + its.map(function(x){ return '<div class="s-item" data-tab="' + x[0] + '"><span class="di"></span>' + x[1] + '<span class="sn"></span></div>'; }).join("") + '</div>'; return; }
-      html += '<div class="s-grp">' + grp.g + '</div><div class="s-sub">' +
+      /* 14/10 user «ô Xác minh không thấy Theo tác vụ, Theo máy, Nhật ký»: Edge chặn trang gọi 127.0.0.1 (quyền «mạng cục bộ») ⇒ laptop bị coi
+         như điện thoại. Máy đã từng đăng nhập Xác minh (chỉ laptop) mà dò 8591 hỏng → thêm mục «Kết nối máy chủ Xác minh»: bấm = dò lại
+         bằng cú bấm của người dùng ⇒ Edge hiện hộp hỏi quyền. */
+      var ketNoi = grp.hx && window.__HX_CHAN && !window.__HX_MAY_CHU ? '<div class="s-item s-ketnoi" data-ketnoi="1" title="Edge đang chặn trang gọi máy chủ Xác minh trên máy này — bấm để cho phép"><span class="di"></span>Kết nối máy chủ Xác minh</div>' : '';
+      html += '<div class="s-grp">' + grp.g + '</div><div class="s-sub">' + ketNoi +
         its.map(function(x){ return '<div class="s-item" data-tab="' + x[0] + '"' + (x[2] ? ' data-sub="' + x[2] + '"' : '') + '><span class="di"></span>' + x[1] + '<span class="sn"></span></div>'; }).join("") +
         '</div>';
     });
@@ -4155,9 +4159,14 @@ document.addEventListener('click', ()=>csDongHet(null));
        máy người khác không thấy cả nút tab. Dữ liệu vốn chỉ nằm trên máy quản lý, đây chỉ là giấu lối vào. */
     if (!window.__HX_MAY_CHU && !build._do) { build._do = 1;
       var ctl = new AbortController(); setTimeout(function(){ ctl.abort(); }, 1500);
-      fetch("http://127.0.0.1:8591/api/ping", { signal: ctl.signal }).then(function(r){ if (r.ok) { window.__HX_MAY_CHU = 1; document.body.classList.remove("hx-an"); build(); } }).catch(function(){}); }
+      fetch("http://127.0.0.1:8591/api/ping", { signal: ctl.signal }).then(function(r){ if (r.ok) { window.__HX_MAY_CHU = 1; document.body.classList.remove("hx-an"); build(); } })
+        .catch(function(){ var ph = ""; try { ph = localStorage.getItem("hx-phien") || ""; } catch(e){} if (ph && !window.__HX_CHAN) { window.__HX_CHAN = 1; build(); } }); }
     nav.querySelectorAll(".s-item").forEach(function(el){
       /* Chọn tab KHÔNG tự đóng sidebar — sidebar ghim cố định tới khi bấm ‹ hoặc nền mờ (mobile) */
+      if (el.dataset.ketnoi) { el.addEventListener("click", function(){
+          fetch("http://127.0.0.1:8591/api/ping").then(function(r){ if (!r.ok) throw 0; window.__HX_MAY_CHU = 1; window.__HX_CHAN = 0; document.body.classList.remove("hx-an"); build(); if (typeof toast === "function") toast("Đã kết nối máy chủ Xác minh", "ok"); })
+            .catch(function(){ if (typeof toast === "function") toast("Edge vẫn chặn: bấm biểu tượng bên trái ô địa chỉ → Quyền cho trang web → «Truy cập mạng cục bộ» = Cho phép, rồi tải lại trang. (Máy chủ Xác minh phải đang chạy trên máy này.)", "loi"); });
+        }); return; }
       el.addEventListener("click", function(){ var s = el.getAttribute("data-sub");
         if (s) { if (window.HXACMINH) { setTab("xacminh"); window.HXACMINH.sub(s); }
           else { try { var o = JSON.parse(localStorage.getItem("hx-loc") || "null") || {}; o.SUB = s; localStorage.setItem("hx-loc", JSON.stringify(o)); } catch(e){} setTab("xacminh"); }
