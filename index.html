@@ -4098,7 +4098,9 @@ document.addEventListener('click', ()=>csDongHet(null));
   var a=document.getElementById("btnTaiBoCai"); if(!a) return;
   a.addEventListener("click",function(ev){
     var ph=""; try{ ph=localStorage.getItem("hx-phien")||""; }catch(e){}
-    if(!window.__HX_MAY_CHU||!ph) return;   // không phải máy quản lý → tải bản công khai (href mặc định)
+    if(!ph) return;   // máy chưa từng đăng nhập Xác minh (không phải máy quản lý) → tải bản công khai (href mặc định)
+    /* 14/10: KHÔNG chờ __HX_MAY_CHU — Edge chặn «mạng cục bộ» thì cờ đó sai ⇒ trước đây laptop lặng lẽ tải bản THIẾU KHOÁ. Thử thẳng
+       bằng chính cú bấm (Edge hỏi quyền); hỏng thì BÁO, không tải bản thiếu khoá. */
     ev.preventDefault(); var lb=a.querySelector(".act"), cu=lb?lb.textContent:"";
     if(lb) lb.textContent="Đang dựng bộ cài có khoá…";
     var ctl=new AbortController(), h=setTimeout(function(){ ctl.abort(); },15000);
@@ -4107,7 +4109,9 @@ document.addEventListener('click', ()=>csDongHet(null));
       .then(function(b){ var u=URL.createObjectURL(b), t=document.createElement("a"); t.href=u; t.download="CAI-PC-1LAN.bat"; document.body.appendChild(t); t.click(); t.remove();
         setTimeout(function(){ URL.revokeObjectURL(u); },5000);
         if(typeof toast==="function") toast("Đã tải bộ cài CÓ SẴN KHOÁ — chép sang PC bằng USB/thư mục mạng, không gửi qua chat/email","ok"); })
-      .catch(function(e){ if(typeof toast==="function") toast("Không dựng được bản có khoá ("+e.message+") — tải bản thường","loi"); location.href=a.getAttribute("href"); })
+      .catch(function(e){ if(typeof toast==="function") toast(/HTTP 401/.test(e.message)
+          ? "Phiên Xác minh đã hết — đăng nhập lại Xác minh rồi bấm tải lại."
+          : "Không lấy được bộ cài CÓ KHOÁ: Edge đang chặn trang gọi máy chủ trên máy này. Bấm biểu tượng trái ô địa chỉ → «Truy cập mạng cục bộ» = Cho phép, tải lại trang rồi bấm lại.","loi"); })
       .finally(function(){ clearTimeout(h); if(lb) lb.textContent=cu; });
   });
 })();
