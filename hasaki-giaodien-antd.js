@@ -282,6 +282,11 @@
        tqVuaKhung() nâng .tq[data-bac] 2 → 3 rồi mới zoom tới khi trang không còn cuộn. */
     ".tq-cs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 16px}",
     ".tq-o{padding:12px 16px;border:1px solid var(--ad-chia);border-radius:8px;background:var(--surface);min-width:0}",
+    /* 14/10 user: «làm nổi bật các ô chỉ số so với các thẻ còn lại ở Tổng quan» — nền + viền nhạt theo MÀU NGHĨA của ô (--cc), nhãn đậm 500,
+       số 28/600. Không bóng thường trực, không viền nhấn trái (luật AD). Thẻ chức năng bên dưới giữ nền trắng ⇒ hàng chỉ số tách hẳn. */
+    ".tq-o{--cc:var(--accent);background:color-mix(in srgb,var(--cc) 7%,var(--surface))!important;border-color:color-mix(in srgb,var(--cc) 32%,var(--surface))!important}",
+    ".tq-o .n{font-weight:500;color:color-mix(in srgb,var(--cc) 55%,var(--text))!important}.tq-o .v{font-size:28px;line-height:36px}",
+    ".tq-o .p{border-top-color:color-mix(in srgb,var(--cc) 22%,var(--surface))!important}",
     ".tq-o .n{font-size:13px;line-height:20px;color:var(--muted)}.tq-o .v{font-size:24px;line-height:32px;font-weight:600;margin-top:2px;color:var(--text);font-variant-numeric:tabular-nums}",
     ".tq-o .p{margin-top:6px;padding-top:6px;border-top:1px solid var(--ad-chia);font-size:12px;line-height:18px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
     ".tq-bar{height:6px;margin-top:8px;border-radius:100px;background:var(--ad-ray);overflow:hidden}.tq-bar i{display:block;height:100%;border-radius:100px;background:var(--accent)}",
@@ -440,25 +445,25 @@
     /* 14/10 phân quyền (tai-khoan.js): thẻ / ô chỉ số của tab bị «Không» thì không hiện; nhóm hết mục thì bỏ cả nhóm */
     var coQ = function (k) { return typeof window.tkCo !== "function" || !k || k === "home" || window.tkCo((TQ_APP === "factory" ? "f." : "r.") + String(k).split(":")[0]); };
     var cs = (cfg.chiSo || []).filter(function (c) { return c && (!c.tab || coQ(c.tab)); });
-    cfg = { chiSo: cfg.chiSo, nhom: (cfg.nhom || []).map(function (g) { var g2 = {}; for (var k in g) g2[k] = g[k]; g2.muc = (g.muc || []).filter(function (m) { return coQ(m.k); }); return g2; }).filter(function (g) { return g.muc.length; }) };
+    cfg = { chiSo: cfg.chiSo, nhom: (cfg.nhom || []).map(function (g) { var g2 = {}; for (var k in g) g2[k] = g[k]; g2.muc = g.khoa && !(window.TK && window.TK.nguoi) ? (g.muc || []) : (g.muc || []).filter(function (m) { return coQ(m.k); }); return g2; }).filter(function (g) { return g.muc.length; }) };
     var h = cs.length ? '<div class="tq-cs n' + cs.length + '">' + cs.map(function (c) {
-      return '<div class="tq-o"><div class="n">' + escT(c.nhan) + '</div><div class="v"' + (c.tien == null && c.mau ? ' style="color:' + c.mau + '"' : "") + ">" + escT(c.so) + "</div>" +
+      return '<div class="tq-o"' + (c.mau ? ' style="--cc:' + c.mau + '"' : '') + '><div class="n">' + escT(c.nhan) + '</div><div class="v"' + (c.tien == null && c.mau ? ' style="color:' + c.mau + '"' : "") + ">" + escT(c.so) + "</div>" +
         (c.tien != null ? thanh(c.tien, c.mau) : "") + (c.phu ? '<div class="p">' + escT(c.phu) + "</div>" : "") + "</div>"; }).join("") + "</div>" : "";
     var ds = [];
     (cfg.nhom || []).forEach(function (g) {
       /* 14/10 user: nhóm KHOÁ (Xác minh chưa đăng nhập) chỉ hiện 1 dòng tên nhóm — không bày các mục con; bấm dòng = mở mục đầu (ra màn đăng nhập) */
-      if (g.khoa) { if (g.muc[0]) ds.push(g.muc[0]); h += '<button type="button" class="tq-g tq-gkhoa"' + (g.muc[0] ? ' data-i="' + (ds.length - 1) + '"' : "") + ' title="Đăng nhập để xem ' + escT(g.ten) + '">' + escT(g.ten) + ' <span class="tq-khoa">' + svgIcon("mdiLockOutline") + "Cần đăng nhập</span></button>"; return; }
+      if (g.khoa) { if (g.muc[0]) ds.push(g.muc[0]); h += '<button type="button" class="tq-g tq-gkhoa"' + (g.muc[0] ? ' data-tqi="' + (ds.length - 1) + '"' : "") + ' title="Đăng nhập để xem ' + escT(g.ten) + '">' + escT(g.ten) + ' <span class="tq-khoa">' + svgIcon("mdiLockOutline") + "Cần đăng nhập</span></button>"; return; }
       h += '<h3 class="tq-g">' + escT(g.ten) + '</h3><div class="tq-luoi">';
       g.muc.forEach(function (m) {
         ds.push(m);
-        h += '<button type="button" class="tq-the" data-i="' + (ds.length - 1) + '" title="Mở ' + escT(m.ten) + '"><span class="h"><span class="av">' + window.adIconTab(m.k) + '</span><span class="t">' + escT(m.ten) + "</span></span>" +
+        h += '<button type="button" class="tq-the" data-tqi="' + (ds.length - 1) + '" title="Mở ' + escT(m.ten) + '"><span class="h"><span class="av">' + window.adIconTab(m.k) + '</span><span class="t">' + escT(m.ten) + "</span></span>" +
           '<span class="m">' + escT(m.mo) + "</span>" +
           '<span class="ft"><span class="sv">' + (m.so != null && m.so !== "" ? '<b' + (m.mauSo ? ' style="color:' + m.mauSo + '"' : "") + ">" + escT(m.so) + "</b>" + (m.dv ? "<small>" + escT(m.dv) + "</small>" : "") + (m.tien != null ? thanh(m.tien) : "") : "") + '</span><span class="mo">Mở →</span></span></button>';
       });
       h += "</div>";
     });
     el.innerHTML = '<div class="tq" data-bac="1">' + h + "</div>";
-    [].slice.call(el.querySelectorAll(".tq-the,.tq-gkhoa[data-i]")).forEach(function (b) { b.onclick = function () { var m = ds[+b.dataset.i]; if (m && m.bam) m.bam(); window.scrollTo({ top: 0 }); }; });
+    [].slice.call(el.querySelectorAll(".tq-the,.tq-gkhoa[data-tqi]")).forEach(function (b) { b.onclick = function () { var m = ds[+b.dataset.tqi]; if (m && m.bam) m.bam(); window.scrollTo({ top: 0 }); }; });
     tqVuaKhung();
   };
 
