@@ -38,13 +38,14 @@
       ".hx-nut{min-height:40px;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-text,#fff);font-weight:650;padding:0 14px;cursor:pointer}.hx-nut[disabled]{opacity:.55;cursor:not-allowed}",
       ".hx-nut.phu{background:var(--surface);color:var(--text);border-color:var(--border)}.hx-nut.phu:hover{border-color:var(--bad,#dc2626);color:var(--bad,#dc2626)}",
       ".hx-mt{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;align-items:start;margin-top:4px}@media(max-width:560px){.hx-mt{grid-template-columns:minmax(0,1fr)}}",
-      ".hx-mt .panel{margin:0}.hx-mt .panel-head{display:block}.hx-mt-cu .hx-mt-sk{opacity:.45}.hx-mt-dau{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%}.hx-mt-dau b{font-size:15px}.hx-mt-dau .hx-nut{margin-left:auto}",
+      ".hx-mt .panel{margin:0}.hx-mt .panel-head{display:block}.hx-mt-cu .hx-mt-sk{opacity:.45}.hx-mt-dau{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;width:100%}.hx-mt-dau b{font-size:15px;min-width:0;flex:0 1 auto;overflow-wrap:anywhere;line-height:20px}.hx-mt-dau .hx-tag{flex:none;margin:0}.hx-mt-dau .hx-nut{margin-left:auto;flex:none}",   // 14/10: tên máy dài từng đẩy nút xuống dòng 2
       ".hx-mt-sk{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px 16px 4px}.hx-mt-sk .lbl{font-size:12px;color:var(--muted)}.hx-mt-sk .so{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}",
       ".hx-mt-thanh{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;margin-top:4px}.hx-mt-thanh i{display:block;height:100%;background:var(--good)}.hx-mt-thanh i.warn{background:var(--warn)}.hx-mt-thanh i.bad{background:var(--bad,#dc2626)}",
       ".hx-mt-phu{padding:2px 16px 8px;font-size:12px;color:var(--muted)}",
+      ".hx-mt-ly{padding:10px 16px;border-top:1px solid var(--border)}.hx-mt-ly .ly{font-size:13px;color:var(--muted);margin-bottom:6px}.hx-mt-ly .ds{display:flex;flex-wrap:wrap;gap:6px}.hx-mt-ly .hx-tag{margin:0;font-weight:600;font-size:12px;color:var(--text)}",
       ".hx-mt-v{display:flex;align-items:center;gap:8px;min-height:44px;padding:6px 16px;border-top:1px solid var(--border)}.hx-mt-v .ten{flex:1;min-width:0;font-size:13.5px}.hx-mt-v .ten small{display:block;color:var(--muted);font-size:12px}",
       ".hx-mt-v .hx-nut{min-height:34px;padding:0 12px;font-size:13px;background:var(--surface);color:var(--text);border-color:var(--border)}.hx-mt-v .hx-nut:hover{border-color:var(--accent);color:var(--accent)}",
-      "@media(max-width:560px){.hx-mt-v .hx-nut,.hx-mt-dau .hx-nut,#mtDangXuat{min-height:44px}#pane-maytram .panel-head{flex-direction:column;align-items:flex-start;gap:2px}}",
+      "@media(max-width:560px){.hx-mt-v .hx-nut,.hx-mt-dau .hx-nut,#mtDangXuat{min-height:44px}}",   // 14/10: bỏ xếp dọc panel-head (số «13» rơi xuống dòng riêng, phí chỗ)
       /* form đăng nhập — cùng khuôn .hx-dn của Xác minh */
       ".mt-dn{max-width:400px;margin:24px auto}.mt-dn form{display:flex;flex-direction:column;gap:12px;padding:16px}.mt-dn label{display:flex;flex-direction:column;gap:4px}.mt-dn input{min-height:44px;font-size:16px}",
       ".mt-st.loi{margin-top:4px;font-size:13px;padding:8px 12px;border-radius:10px;background:color-mix(in srgb,var(--bad) 10%,transparent);color:var(--bad)}"
@@ -133,6 +134,8 @@
     var mayCua = {}; (MTD.viec || []).forEach(function (v) { mayCua[v.ten] = v.may; });
     var mucDo = function (pct, vang, doo) { return pct >= doo ? "bad" : pct >= vang ? "warn" : ""; };
     var o = function (lbl, so, pct, lop) { return '<div><div class="lbl">' + lbl + '</div><div class="so">' + so + '</div><div class="hx-mt-thanh"><i class="' + lop + '" style="width:' + Math.max(0, Math.min(100, pct)) + '%"></i></div></div>'; };
+    var coMayKhac = function (m) { return MTD.may.some(function (x) { return x.may !== m.may && x.song && !x.dung; }); };
+    var tenBoi = function (b) { return /^bo cai/.test(b) ? "bộ cài (máy quản lý)" : b; };   // nhãn ASCII do bộ cài gửi → tiếng Việt
     var nut = function (attr, chu, phu) { return DIEU_KHIEN ? '<button class="hx-nut' + (phu ? " phu" : "") + '" ' + attr + ">" + chu + "</button>" : ""; };
     var the = function (m) {
       var tt = !m.song ? ["Mất nhịp", "bad"] : m.dung ? ["Đã dừng", "warn"] : m.yeu ? ["Đang chạy · yếu", "warn"] : ["Đang chạy", "good"];
@@ -144,20 +147,30 @@
           : chay ? '<span class="hx-tag good">Đang chạy</span>' : (m.viecGiao || []).indexOf(t) >= 0 ? '<span class="hx-tag info">Được giao · chờ lịch</span>' : '<span class="hx-tag">Đang chạy dở (đã giao máy khác)</span>';
         return '<div class="hx-mt-v"><div class="ten"><b>' + e_(tenV(t)) + "</b><small>" + trang + "</small></div>" +
           (m.dung ? "" : nut('data-may="' + e_(m.may) + '" data-viec="' + e_(t) + '" data-dung="' + (dung ? "0" : "1") + '"', dung ? "Tiếp tục" : "Dừng")) + "</div>";
-      }).join("") || '<div class="hx-mt-v"><div class="ten muted">' + (m.dung ? "Máy đang dừng — việc đã chuyển sang máy khác." : m.song ? "Chưa được giao việc nào (máy khác mạnh hơn hoặc máy này thiếu khoá)." : "Máy không gửi nhịp — việc của nó đã tự chuyển sang máy còn sống.") + "</div></div>";
-      return '<div class="panel' + (m.song ? "" : " hx-mt-cu") + '"><div class="panel-head"><div class="hx-mt-dau"><b>' + e_(m.may) + '</b><span class="hx-tag ' + tt[1] + '">' + tt[0] + "</span>" +
+      }).join("") || '<div class="hx-mt-v"><div class="ten muted">' + (m.dung ? (coMayKhac(m) ? "Đang dừng — việc do máy khác làm." : "Đang dừng — không nhận việc.")   // 14/10 user: câu cũ nói «đã chuyển sang máy khác» khi không có máy nào khác
+        : m.song ? "Chưa được giao việc (máy khác mạnh hơn hoặc máy này thiếu khoá)." : (coMayKhac(m) ? "Không gửi nhịp — việc đã chuyển sang máy khác." : "Không gửi nhịp.")) + "</div></div>";
+      return '<div class="panel' + (m.song ? "" : " hx-mt-cu") + '"><div class="panel-head"><div class="hx-mt-dau"><b title="' + e_(m.may) + '">' + e_(m.may) + '</b><span class="hx-tag ' + tt[1] + '">' + tt[0] + "</span>" +
         (!m.song && !m.dung ? nut('data-may="' + e_(m.may) + '" data-xoa="1"', "Gỡ khỏi danh sách", 1)   // máy im: dừng vô nghĩa (việc đã tự chuyển), chỉ còn gỡ
           : nut('data-may="' + e_(m.may) + '" data-dung="' + (m.dung ? "0" : "1") + '"', m.dung ? "Cho chạy lại" : "Dừng máy", !m.dung)) + "</div></div>" +
         '<div class="hx-mt-sk">' + o("RAM đang dùng", ramDung + "%", ramDung, mucDo(ramDung, 70, 85)) + o("CPU", cpu + "%", cpu, mucDo(cpu, 70, 90)) +
         o("Ổ C còn trống", dia == null ? "—" : dia + " GB", dia == null ? 0 : Math.min(100, dia / 0.5), dia == null ? "" : dia < 3 ? "bad" : dia < 10 ? "warn" : "") + "</div>" +
-        '<div class="hx-mt-phu">Nhịp tim ' + e_(tuoiChu(m.tuoiGiay)) + " · " + (m.nhan || "?") + " nhân, " + (m.ramTongGB || "?") + " GB RAM · điểm " + (m.diem || 0) + (m.ban ? " · bản " + e_(m.ban) : "") +
-        ((m.coKhoa || []).indexOf("TOPREVIEW_USER") < 0 ? " · không có khoá camera" : "") + (m.dung && m.lenhBoi ? " · dừng bởi " + e_(m.lenhBoi) : "") + "</div>" + dongViec + "</div>";
+        /* 14/10 user «rối, dài dòng»: dòng phụ chỉ giữ thứ cần đọc; cấu hình máy (nhân · RAM · điểm xếp hạng) vào chú thích rê chuột */
+        '<div class="hx-mt-phu" title="' + e_((m.nhan || "?") + " nhân · " + (m.ramTongGB || "?") + " GB RAM · điểm xếp hạng " + (m.diem || 0)) + '">Nhịp tim ' + e_(tuoiChu(m.tuoiGiay)) + (m.ban ? " · bản " + e_(m.ban) : "") +
+        ((m.coKhoa || []).indexOf("TOPREVIEW_USER") < 0 ? " · không có khoá camera" : "") + (m.dung && m.lenhBoi ? " · dừng bởi " + e_(tenBoi(m.lenhBoi)) : "") + "</div>" + dongViec + "</div>";
     };
     var chuaCo = (MTD.viec || []).filter(function (v) { return !v.may; });
     var h = '<div class="hx-mt">' + (MTD.may.length ? MTD.may.map(the).join("") : '<div class="panel"><div class="hx-trong">Chưa PC nào gửi nhịp tim. Cài bằng nút «Tải bộ cài PC» ở trang Tổng quan; PC gửi nhịp mỗi phút.</div></div>') + "</div>";
-    if (chuaCo.length) h += '<div class="panel" style="margin-top:14px"><div class="panel-head"><span>Việc chưa có máy nhận</span><span>' + chuaCo.length + "</span></div>" +
-      chuaCo.map(function (v) { var c = dangChuyen[v.ten]; return '<div class="hx-mt-v"><div class="ten"><b>' + e_(tenV(v.ten)) + "</b><small>" +
-        (c ? "Bị dừng giữa chừng ở " + e_(c.tu) + " · chờ máy khác chạy bù" : v.nang && (v.canKhoa || []).length ? "Cần máy còn sống, không bị dừng, có khoá " + e_(v.canKhoa.join(", ")) : "Cần máy còn sống, không bị dừng") + "</small></div></div>"; }).join("") + "</div>";
+    /* 14/10 user «hiển thị rối, dài dòng»: 13 dòng lặp cùng 1 câu lý do + tên khoá kỹ thuật ⇒ GOM THEO LÝ DO (luật không lặp thông tin):
+       mỗi lý do 1 dòng lời thường, tên việc xếp gọn dưới. Không còn PC nào chạy thì chỉ 1 lý do chung. */
+    if (chuaCo.length) {
+      var conMay = MTD.may.some(function (m) { return m.song && !m.dung; }), nhom = [], theo = {};
+      chuaCo.forEach(function (v) { var c = dangChuyen[v.ten], k = (v.canKhoa || []);
+        var ly = c ? "Bị dừng giữa chừng ở " + c.tu + " — chờ máy khác chạy bù" : !conMay ? "Chưa có PC nào đang chạy"
+          : k.indexOf("TOPREVIEW_USER") >= 0 ? "Cần PC có khoá camera" + (k.indexOf("GEMINI_API_KEY") >= 0 ? " và khoá AI" : "") : "Cần PC đang chạy";
+        if (!theo[ly]) { theo[ly] = []; nhom.push(ly); } theo[ly].push(tenV(v.ten)); });
+      h += '<div class="panel" style="margin-top:14px"><div class="panel-head"><span>Việc chưa có máy nhận</span><span>' + chuaCo.length + "</span></div>" +
+        nhom.map(function (ly) { return '<div class="hx-mt-ly"><div class="ly">' + e_(ly) + '</div><div class="ds">' + theo[ly].map(function (t) { return '<span class="hx-tag">' + e_(t) + "</span>"; }).join("") + "</div></div>"; }).join("") + "</div>";
+    }
     if (!MAY_CHU && mtPhien()) h += '<div style="text-align:center;margin:14px 0"><button type="button" class="hx-nut phu" id="mtDangXuat">Đăng xuất</button></div>';
     PANE.innerHTML = h;
     var dx = document.getElementById("mtDangXuat");
