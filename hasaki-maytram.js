@@ -42,6 +42,7 @@
       ".hx-mt-sk{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px 16px 4px}.hx-mt-sk .lbl{font-size:12px;color:var(--muted)}.hx-mt-sk .so{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}",
       ".hx-mt-thanh{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;margin-top:4px}.hx-mt-thanh i{display:block;height:100%;background:var(--good)}.hx-mt-thanh i.warn{background:var(--warn)}.hx-mt-thanh i.bad{background:var(--bad,#dc2626)}",
       ".hx-mt-phu{padding:2px 16px 8px;font-size:12px;color:var(--muted)}",
+      ".hx-mt-xin{margin:4px 0 14px;border-color:color-mix(in srgb,var(--warn) 55%,var(--border))}.hx-mt-xin .ma{font-family:ui-monospace,Consolas,monospace;font-size:14px;letter-spacing:2px;color:var(--text)}",
       ".hx-mt-ly{padding:10px 16px;border-top:1px solid var(--border)}.hx-mt-ly .ly{font-size:13px;color:var(--muted);margin-bottom:6px}.hx-mt-ly .ds{display:flex;flex-wrap:wrap;gap:6px}.hx-mt-ly .hx-tag{margin:0;font-weight:600;font-size:12px;color:var(--text)}",
       ".hx-mt-v{display:flex;align-items:center;gap:8px;min-height:44px;padding:6px 16px;border-top:1px solid var(--border)}.hx-mt-v .ten{flex:1;min-width:0;font-size:13.5px}.hx-mt-v .ten small{display:block;color:var(--muted);font-size:12px}",
       ".hx-mt-v .hx-nut{min-height:34px;padding:0 12px;font-size:13px;background:var(--surface);color:var(--text);border-color:var(--border)}.hx-mt-v .hx-nut:hover{border-color:var(--accent);color:var(--accent)}",
@@ -159,7 +160,13 @@
         ((m.coKhoa || []).indexOf("TOPREVIEW_USER") < 0 ? " · không có khoá camera" : "") + (m.dung && m.lenhBoi ? " · dừng bởi " + e_(tenBoi(m.lenhBoi)) : "") + "</div>" + dongViec + "</div>";
     };
     var chuaCo = (MTD.viec || []).filter(function (v) { return !v.may; });
-    var h = '<div class="hx-mt">' + (MTD.may.length ? MTD.may.map(the).join("") : '<div class="panel"><div class="hx-trong">Chưa PC nào gửi nhịp tim. Cài bằng nút «Tải bộ cài PC» ở trang Tổng quan; PC gửi nhịp mỗi phút.</div></div>') + "</div>";
+    /* 14/10: PC cài bằng bộ cài tải NGAY TRÊN PC (không khoá) gửi yêu cầu xin khoá + hiện MÃ XÁC NHẬN trên màn PC. Chỉ máy quản lý duyệt.
+       So mã trên màn PC với mã ở đây — khác nhau là có máy giả tên, bấm Từ chối. */
+    var xin = (MTD.xin || []).filter(function (x) { return !x.daDuyet; });
+    var hXin = DIEU_KHIEN && xin.length ? '<div class="panel hx-mt-xin"><div class="panel-head"><span>PC xin khoá</span><span>' + xin.length + "</span></div>" +
+      xin.map(function (x) { return '<div class="hx-mt-v"><div class="ten"><b>' + e_(x.may) + "</b><small>Mã xác nhận <b class=\"ma\">" + e_(x.maXN) + "</b> · xin " + e_(tuoiChu(Math.round((Date.now() - x.luc) / 1000))) + " · so với mã trên màn hình PC</small></div>" +
+        '<button class="hx-nut phu" data-xin="' + e_(x.may) + '" data-dongy="0">Từ chối</button><button class="hx-nut" data-xin="' + e_(x.may) + '" data-dongy="1">Duyệt</button></div>'; }).join("") + "</div>" : "";
+    var h = hXin + '<div class="hx-mt">' + (MTD.may.length ? MTD.may.map(the).join("") : '<div class="panel"><div class="hx-trong">Chưa PC nào gửi nhịp tim. Cài bằng nút «Tải bộ cài PC» ở trang Tổng quan; PC gửi nhịp mỗi phút.</div></div>') + "</div>";
     /* 14/10 user «hiển thị rối, dài dòng»: 13 dòng lặp cùng 1 câu lý do + tên khoá kỹ thuật ⇒ GOM THEO LÝ DO (luật không lặp thông tin):
        mỗi lý do 1 dòng lời thường, tên việc xếp gọn dưới. Không còn PC nào chạy thì chỉ 1 lý do chung. */
     if (chuaCo.length) {
@@ -177,6 +184,15 @@
     if (dx) dx.onclick = function () { var mp = mtPhien(); try { localStorage.removeItem("mt-phien"); } catch (e) {} MTD = null; CAN_DN = true;
       if (mp) postGas({ action: "pcDangXuat", ph: mp.ph }).catch(function () {}); veDangNhap(); };
     if (!DIEU_KHIEN) return;
+    PANE.querySelectorAll("button[data-xin]").forEach(function (n) {
+      n.onclick = function () {
+        var dongY = n.dataset.dongy === "1", cu = n.textContent; n.disabled = true; n.textContent = "Đang gửi…";
+        goi591("/api/may-tram/duyet-khoa", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ may: n.dataset.xin, dongY: dongY }) })
+          .then(function () { if (typeof toast === "function") toast(dongY ? "Đã duyệt — " + n.dataset.xin + " tự nhận khoá trong ~10 giây rồi cài tiếp" : "Đã từ chối " + n.dataset.xin, "ok"); return tai().then(ve); })
+          .catch(function (e) { if (typeof toast === "function") toast("Không gửi được: " + e.message, "loi"); })
+          .finally(function () { if (document.body.contains(n)) { n.disabled = false; n.textContent = cu; } });
+      };
+    });
     PANE.querySelectorAll("button[data-may]").forEach(function (n) {
       n.onclick = function () {
         var dung = n.dataset.dung === "1", xoa = n.dataset.xoa === "1", viec = n.dataset.viec || "", cu = n.textContent;
