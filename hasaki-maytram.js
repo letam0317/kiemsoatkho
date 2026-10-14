@@ -57,6 +57,7 @@
       ".mt-nut{margin-top:auto}.mt-nut .hx-nut{width:100%;min-height:28px;font-size:12px;padding:0 8px;border-radius:6px}",
       ".mt-viec summary{cursor:pointer;list-style:none;font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:3px;flex-wrap:wrap}.mt-viec summary::-webkit-details-marker{display:none}.mt-viec summary b{color:var(--text)}",
       ".mt-viec summary::after{content:'▾';margin-left:auto;color:var(--muted)}.mt-viec[open] summary::after{content:'▴'}.mt-viec .ds{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}",
+      ".mt-gan{order:2;flex-basis:100%;font-size:11px;color:var(--muted)}" +
       ".mt-viec i.d{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:2px}.mt-viec i.d.chay{background:var(--good)}.mt-viec i.d.dung{background:var(--warn)}.mt-viec i.d.cho{background:var(--info,var(--accent))}",
       "@media(max-width:560px){.mt-hang{gap:6px}.mt-o{padding:7px 6px}.mt-dau{flex-direction:column;gap:3px}.mt-dau b{overflow-wrap:normal;word-break:break-word}.mt-sk .r{grid-template-columns:24px minmax(0,1fr) auto;gap:4px}button.mt-c{min-height:40px}.mt-nut .hx-nut,.mt-viec summary{min-height:40px}}",
       ".hx-mt-xin{margin:4px 0 14px;border-color:color-mix(in srgb,var(--warn) 55%,var(--border))}.hx-mt-xin .ma{font-family:ui-monospace,Consolas,monospace;font-size:14px;letter-spacing:2px;color:var(--text)}",
@@ -178,8 +179,13 @@
     var tenBoi = function (b) { return /^bo cai/.test(b) ? "bộ cài (máy quản lý)" : b; };   // nhãn ASCII do bộ cài gửi → tiếng Việt
     var tomTat = function (m, viec) {
       var chay = viec.filter(function (t) { return (m.dangChay || []).indexOf(t) >= 0; }).length, dung = viec.filter(function (t) { return (m.dungViec || []).indexOf(t) >= 0; }).length;
-      return "<b>" + viec.length + " việc</b>" + (chay ? ' · <i class="d chay"></i>' + chay + " chạy" : "") + (dung ? ' · <i class="d dung"></i>' + dung + " dừng" : "") + (viec.length - chay - dung ? ' · <i class="d cho"></i>' + (viec.length - chay - dung) + " chờ" : "");
+      /* 14/10 user «13 chờ chứ chưa chạy» + «không thấy phân loại nặng nhẹ»: tóm tắt ghi số nặng/nhẹ + giờ chạy gần nhất (chayLuc do cổng gác PC ghi) */
+      var nNang = viec.filter(function (t) { return nangCua[t] === true; }).length, nNhe = viec.length - nNang;
+      var gan = 0; viec.forEach(function (t) { var x = Date.parse((m.chayLuc || {})[t] || ""); if (x > gan) gan = x; });
+      return "<b>" + viec.length + " việc</b>" + (chay ? ' · <i class="d chay"></i>' + chay + " chạy" : "") + (dung ? ' · <i class="d dung"></i>' + dung + " dừng" : "") + (viec.length - chay - dung ? ' · <i class="d cho"></i>' + (viec.length - chay - dung) + " chờ" : "") +
+        '<span class="mt-gan">' + [nNang ? nNang + " nặng" : "", nNhe ? nNhe + " nhẹ" : "", gan ? "chạy gần nhất " + gioPhut(gan) : m.chayLuc ? "chưa chạy việc nào" : ""].filter(Boolean).join(" · ") + "</span>";
     };
+    var gioPhut = function (ms) { var d = new Date(ms); return (d.getHours() < 10 ? "0" : "") + d.getHours() + ":" + (d.getMinutes() < 10 ? "0" : "") + d.getMinutes() + (Date.now() - ms > 864e5 ? " " + d.getDate() + "/" + (d.getMonth() + 1) : ""); };
     var the = function (m) {
       var tt = !m.song ? ["Mất nhịp", "bad"] : m.dung ? ["Đã dừng", "warn"] : m.yeu ? ["Yếu", "warn"] : ["Đang chạy", "good"];
       var ramDung = Math.round(100 - (m.ramTrongPct || 0)), cpu = Math.round(m.cpuPct || 0), dia = m.diaTrongGB;
@@ -187,7 +193,7 @@
       var veChip = function (t) {
         var dung = (m.dungViec || []).indexOf(t) >= 0, chay = (m.dangChay || []).indexOf(t) >= 0, sang = mayCua[t];
         var lop = dung ? "dung" : chay ? "chay" : (m.viecGiao || []).indexOf(t) >= 0 ? "cho" : "do";
-        var nghia = dung ? "Đã dừng ở máy này" + (sang && sang !== m.may ? " → " + sang + " làm thay" : "") : chay ? "Đang chạy" : lop === "cho" ? "Được giao · chờ lịch" : "Đang chạy dở (đã giao máy khác)";
+        var nghia = dung ? "Đã dừng ở máy này" + (sang && sang !== m.may ? " → " + sang + " làm thay" : "") : chay ? "Đang chạy" : lop === "cho" ? "Được giao · chờ tới giờ" + ((m.chayLuc || {})[t] ? " · chạy gần nhất " + gioPhut(Date.parse(m.chayLuc[t])) : " · chưa chạy lần nào trên máy này") : "Đang chạy dở (đã giao máy khác)";
         var tip = nghia + (DIEU_KHIEN && !m.dung ? (dung ? " — bấm để cho chạy lại" : " — bấm để dừng việc này") : "");
         return DIEU_KHIEN && !m.dung ? '<button class="mt-c ' + lop + '" title="' + e_(tip) + '" data-may="' + e_(m.may) + '" data-viec="' + e_(t) + '" data-dung="' + (dung ? "0" : "1") + '">' + e_(tenV(t)) + "</button>"
           : '<span class="mt-c ' + lop + '" title="' + e_(tip) + '">' + e_(tenV(t)) + "</span>";
