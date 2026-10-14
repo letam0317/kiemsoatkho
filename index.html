@@ -3325,7 +3325,7 @@ function moHasakiMayTram(){
   const pane=$('pane-maytram');
   if(!_mtNap){
     _mtNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-maytram.js?v=20261014mt3';
+      const s=document.createElement('script'); s.src='hasaki-maytram.js?v=20261014mt4';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-maytram.js'));
       document.body.appendChild(s);
     });
@@ -4104,38 +4104,20 @@ document.addEventListener('click', ()=>csDongHet(null));
      Laptop (có 8591 + phiên Xác minh) vẫn lấy thẳng từ 8591; 8591 hỏng / bị Edge chặn thì rơi xuống đường Apps Script. */
   var gasPost=function(o){ return fetch(APPSCRIPT_URL,{ method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(o), signal:AbortSignal.timeout(45000) })
     .then(function(r){ return r.text(); }).then(function(t){ if(t.trim()[0]!=="{") throw new Error("Apps Script trả lỗi — thử lại"); return JSON.parse(t); }); };
-  var mtPhien=function(){ try{ var o=JSON.parse(localStorage.getItem("mt-phien")||"null"); return o&&o.ph&&o.het>Date.now()?o:null; }catch(e){ return null; } };
   var taiVe=function(txt){ var u=URL.createObjectURL(new Blob([txt],{type:"application/octet-stream"})), t=document.createElement("a"); t.href=u; t.download="CAI-PC-1LAN.bat"; document.body.appendChild(t); t.click(); t.remove(); setTimeout(function(){ URL.revokeObjectURL(u); },5000);
     if(typeof toast==="function") toast("Đã tải bộ cài CÓ SẴN KHOÁ — chuột phải → Run as administrator, chạy 1 lần là xong. Không gửi file này qua chat/email.","ok"); };
-  var quaGas=function(){   // phiên GAS → gói khoá → chèn vào .bat công khai
-    var mp=mtPhien(); if(!mp) return Promise.reject(Object.assign(new Error("chưa đăng nhập"),{canDN:1}));
-    return gasPost({ action:"pcBoCai", ph:mp.ph }).then(function(j){
-      if(j.status!=="success"){ if(j.code===401){ try{ localStorage.removeItem("mt-phien"); }catch(e){} throw Object.assign(new Error(j.message),{canDN:1}); } throw new Error(j.message||"Apps Script trả lỗi"); }
+  /* 14/10 user CHỌN «bỏ hẳn đăng nhập cho mọi máy» (đã nêu rủi ro: lộ link = lộ khoá) — lấy gói khoá thẳng, không hỏi gì. */
+  var quaGas=function(){   // gói khoá → chèn vào .bat công khai
+    return gasPost({ action:"pcBoCai" }).then(function(j){
+      if(j.status!=="success") throw new Error(j.message||"Apps Script trả lỗi");
       return fetch(a.getAttribute("href")+"?t="+Date.now()).then(function(r){ if(!r.ok) throw new Error("Không tải được bộ cài gốc"); return r.text(); }).then(function(bat){
         bat=bat.replace(/\r?\n/g,"\r\n"); var moc='set "REPO='; if(bat.indexOf(moc)<0) throw new Error("Bộ cài gốc đổi khuôn — báo quản trị");
         return bat.replace(moc,'rem --- KHOA NHUNG SAN (tai qua dang nhap) - KHONG gui qua chat/email ---\r\nset "HSK_KHOA_B64='+j.goi+'"\r\n'+moc); }); }); };
-  var hoiDangNhap=function(){ return new Promise(function(xong,huy){
-    var em=""; try{ em=localStorage.getItem("hx-email")||""; }catch(e){}
-    $('mTitle').textContent="Đăng nhập để tải bộ cài";
-    $('mBody').innerHTML='<form id="bcDn" style="display:flex;flex-direction:column;gap:12px;padding:16px 24px 24px;max-width:420px">'+
-      '<label style="display:flex;flex-direction:column;gap:4px"><span class="lbl">Email</span><input id="bcEm" type="email" autocomplete="username" required style="min-height:44px;font-size:16px" value="'+esc(em)+'"></label>'+
-      '<label style="display:flex;flex-direction:column;gap:4px"><span class="lbl">Mật khẩu (mật khẩu Xác minh)</span><input id="bcMk" type="password" autocomplete="current-password" required style="min-height:44px;font-size:16px"></label>'+
-      '<button type="submit" class="btn-primary" id="bcNut" style="min-height:44px">Đăng nhập và tải</button><div id="bcSt" style="font-size:13px;color:var(--bad)"></div></form>';
-    hienModal("modal"); (em?$('bcMk'):$('bcEm')).focus();
-    var huyCho=function(){ if(!$('modal').classList.contains('show')){ clearInterval(hc); huy(new Error("đã đóng")); } }, hc=setInterval(huyCho,500);
-    $('bcDn').onsubmit=function(e){ e.preventDefault(); var n=$('bcNut'), st=$('bcSt'), email=$('bcEm').value.trim(); n.disabled=true; st.textContent="Đang kiểm tra…";
-      gasPost({ action:"pcDangNhap", email:email, mk:$('bcMk').value }).then(function(j){
-        if(j.status!=="success") throw new Error(j.message||"Đăng nhập lỗi");
-        try{ localStorage.setItem("mt-phien",JSON.stringify({ ph:j.ph, het:j.het, email:j.email })); localStorage.setItem("hx-email",email); }catch(x){}
-        clearInterval(hc); dongModal(); xong(); })
-      .catch(function(x){ st.textContent=x.message; })
-      .finally(function(){ n.disabled=false; }); };
-  }); };
   a.addEventListener("click",function(ev){
     ev.preventDefault(); var lb=a.querySelector(".act"), cu=lb?lb.textContent:"";
     var ph=""; try{ ph=localStorage.getItem("hx-phien")||""; }catch(e){}
     var dat=function(t){ if(lb) lb.textContent=t; };
-    var gas=function(){ dat("Đang dựng bộ cài có khoá…"); return quaGas().catch(function(e){ if(!e.canDN) throw e; dat(cu); return hoiDangNhap().then(function(){ dat("Đang dựng bộ cài có khoá…"); return quaGas(); }); }); };
+    var gas=function(){ dat("Đang dựng bộ cài có khoá…"); return quaGas(); };
     var p = ph ? fetch("http://127.0.0.1:8591/api/bo-cai-pc",{ headers:{ "x-hx-phien": ph }, signal: AbortSignal.timeout(8000) }).then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); }).catch(gas) : gas();
     dat("Đang dựng bộ cài có khoá…");
     p.then(taiVe).catch(function(e){ if(e.message!=="đã đóng" && typeof toast==="function") toast("Không tải được bộ cài có khoá: "+e.message,"loi"); }).finally(function(){ dat(cu); });
