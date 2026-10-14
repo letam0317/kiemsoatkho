@@ -1170,6 +1170,17 @@ body.side-open #sideNav{transform:none;}
 body.side-open #sideToggle{translate:186px 0;}
 /* 10/10 QC tab Xác minh: nút mở thanh bên (z 61) đè góc MỌI pop-up (z 50) trên điện thoại → ẩn khi có pop-up/ảnh phóng mở */
 body:has(#modal.show,#statModal.show,#hmModal.show,#ghiModal.show,#pinModal.show,#lightbox.show) #sideToggle{opacity:0;pointer-events:none;}
+/* 14/10 user: «pop-up mở lên chỉ hiển thị trong khung sub-tab, không che thanh bên — kể cả khi ẩn hay hiện thanh bên; tất cả các loại pop-up».
+   MỌI lớp phủ toàn màn (pop-up chung, ảnh phóng, pop-up riêng từng tab) bắt đầu SAU mép thanh bên:
+   · máy tính: thanh bên mở → chừa 186px + 44px (nút ‹ nằm ngay mép, không đè góc pop-up); thanh bên ẩn → chừa 44px cho nút mở.
+   · điện thoại: thanh bên là ngăn kéo phủ → pop-up chừa 52px phía trên cho nút mở; ngăn kéo + nút nổi TRÊN mọi pop-up.
+   Nút mở/thu thanh bên LUÔN bấm được (bỏ luật 10/10 ẩn nút khi có pop-up — nay nút không còn đè pop-up). */
+body{--pop-trai:44px;--pop-tren:0px}
+body.side-open{--pop-trai:230px}
+#modal,#statModal,#hmModal,#ghiModal,#pinModal,#lightbox,.hx-gcp,.hk-modal,.hp-modal,.ht-modal,.hpc-modal,.fk-modal,.fk-scope .fk-scrim,.fs-modal{left:var(--pop-trai)!important;top:var(--pop-tren)!important;transition:left .32s var(--ez-apple)}
+body:has(#modal.show,#statModal.show,#hmModal.show,#ghiModal.show,#pinModal.show,#lightbox.show) #sideToggle{opacity:1;pointer-events:auto;}
+#sideNav{z-index:1300} #sideToggle{z-index:1301} #sideBackdrop{z-index:1299}
+@media(max-width:768px){ body,body.side-open{--pop-trai:0px;--pop-tren:52px} }
 @supports not (translate:1px 0){   /* trình duyệt cũ: quay về `left` (có giật nhẹ nhưng không lệch chỗ) */
   #sideToggle{transition:left .32s var(--ez-apple),background-color .2s var(--ez-apple),box-shadow .2s var(--ez-apple);}
   body.side-open #sideToggle{left:193px;}
@@ -3339,7 +3350,7 @@ function moHasakiMayTram(){
   const pane=$('pane-maytram');
   if(!_mtNap){
     _mtNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-maytram.js?v=20261014mt11';
+      const s=document.createElement('script'); s.src='hasaki-maytram.js?v=20261014mt12';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-maytram.js'));
       document.body.appendChild(s);
     });
