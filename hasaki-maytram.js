@@ -105,20 +105,33 @@
   function tai() {
     return dongMayChu().then(function (co) {
       MAY_CHU = co;
+      // 14/10: trang có HỆ TÀI KHOẢN → bắt buộc đăng nhập ở đó (phiên Xác minh cũ hx-phien còn sót trên laptop KHÔNG đủ)
+      if (window.TK && !phienTk()) { CAN_DN = true; DIEU_KHIEN = false; return null; }
       if (co) {   // máy quản lý: cần phiên Xác minh (8591) — đầy đủ + nút điều khiển
         if (!phien()) { CAN_DN = true; return null; }
         return goi591("/api/may-tram").then(function (j) { DIEU_KHIEN = true; CAN_DN = false; return j; })
           .catch(function (e) { if (e.ma === 401) { try { localStorage.removeItem("hx-phien"); } catch (x) {} CAN_DN = true; return null; } throw e; });
       }
-      var mp = mtPhien(); if (!mp) { CAN_DN = true; return null; }
-      return postGas({ action: "pcBangPh", ph: mp.ph }).then(function (j) {
-        if (j.status !== "success") { if (j.code === 401) { try { localStorage.removeItem("mt-phien"); } catch (x) {} CAN_DN = true; return null; } throw new Error(j.message || "Apps Script trả lỗi"); }
+      /* 14/10 trưa: dùng phiên HỆ TÀI KHOẢN MỚI (tai-khoan.js, nút «Đăng nhập» thanh bên) nếu có quyền Xác minh — 1 lần đăng nhập */
+      var tkPh = phienTk(), mp = mtPhien(), ph = tkPh || (mp && mp.ph);
+      if (!ph) { CAN_DN = true; return null; }
+      return postGas({ action: "pcBangPh", ph: ph }).then(function (j) {
+        if (j.status !== "success") { if (j.code === 401) { if (!tkPh) try { localStorage.removeItem("mt-phien"); } catch (x) {} CAN_DN = true; return null; } throw new Error(j.message || "Apps Script trả lỗi"); }
         DIEU_KHIEN = false; CAN_DN = false; return chuanGas(j); });
     }).then(function (d) { MTD = d; MT_LOI = "";
-      if (d && window.tqGhi) tqGhi("mt", { song: d.may.filter(function (m) { return m.song && !m.dung; }).length, tong: d.may.length }); })
+      if (d && window.tqGhi) tqGhi("mt", { song: d.may.filter(function (m) { return m.song && !m.dung; }).length, tong: d.may.length });
+      if (d && typeof window.soThanhBen === "function") window.soThanhBen(); })   // 14/10: thanh bên từng giữ số cũ (0/1 khi đã có 2 máy)
       .catch(function (e) { MT_LOI = e.name === "AbortError" ? "Máy chủ không trả lời sau 45 giây" : e.message; });
   }
+  function phienTk() { var T = window.TK; return T && T.nguoi && T.phien && (typeof window.tkCo !== "function" || window.tkCo("r.xacminh")) ? T.phien : ""; }
   function veDangNhap(thongBao) {
+    if (typeof window.tkMoDangNhap === "function") {   // có hệ tài khoản chung → dùng ĐÚNG ô đăng nhập của nó, không ô riêng
+      PANE.innerHTML = '<div class="panel mt-dn"><div class="panel-head"><span>Đăng nhập để xem Máy trạm</span></div><div style="padding:16px;display:flex;flex-direction:column;gap:12px">' +
+        (window.TK && window.TK.nguoi ? '<div class="mt-st loi">Tài khoản «' + e_(window.TK.nguoi.ten || window.TK.nguoi.id) + '» chưa có quyền Xác minh.</div>' : "") +
+        '<button type="button" class="hx-nut" id="mtMoTk">Đăng nhập</button></div></div>';
+      document.getElementById("mtMoTk").onclick = function () { window.tkMoDangNhap(); };
+      return;
+    }
     var em = ""; try { em = localStorage.getItem("hx-email") || ""; } catch (e) {}
     PANE.innerHTML = '<div class="panel mt-dn"><div class="panel-head"><span>Đăng nhập để xem Máy trạm</span></div>' +
       '<form id="mtDnForm" autocomplete="on"><label><span class="lbl">Email</span><input id="mtDnEm" type="email" autocomplete="username" required value="' + e_(em) + '"></label>' +
@@ -200,7 +213,7 @@
         nhom.map(function (ly) { return '<div class="hx-mt-ly"><div class="ly">' + e_(ly) + '</div><div class="ds">' + theo[ly].map(function (t) { return '<span class="hx-tag">' + e_(t) + "</span>"; }).join("") + "</div></div>"; }).join("") + "</div>";
     }
     h += MTD.may.length ? '<div class="mt-hang" style="grid-template-columns:repeat(' + MTD.may.length + ',minmax(0,240px))">' + MTD.may.map(the).join("") + "</div>"
-      : '<div class="panel"><div class="hx-trong">Chưa PC nào gửi nhịp tim. Cài bằng nút «Tải bộ cài PC» ở trang Tổng quan; PC gửi nhịp mỗi phút.</div></div>';    if (!MAY_CHU && mtPhien()) h += '<div style="text-align:center;margin:14px 0"><button type="button" class="hx-nut phu" id="mtDangXuat">Đăng xuất</button></div>';
+      : '<div class="panel"><div class="hx-trong">Chưa PC nào gửi nhịp tim. Cài bằng nút «Tải bộ cài PC» ở trang Tổng quan; PC gửi nhịp mỗi phút.</div></div>';    if (!MAY_CHU && !phienTk() && mtPhien()) h += '<div style="text-align:center;margin:14px 0"><button type="button" class="hx-nut phu" id="mtDangXuat">Đăng xuất</button></div>';
     PANE.innerHTML = h;
     var dx = document.getElementById("mtDangXuat");
     if (dx) dx.onclick = function () { var mp = mtPhien(); try { localStorage.removeItem("mt-phien"); } catch (e) {} MTD = null; CAN_DN = true;
@@ -239,6 +252,7 @@
     clearInterval(H);
     H = setInterval(function () { if (!PANE || PANE.classList.contains("hidden")) { clearInterval(H); return; } if (!document.hidden) tai().then(ve); }, 30e3);
   }
+  document.addEventListener("tk-doi", function () { MTD = null; CAN_DN = false; if (PANE && !PANE.classList.contains("hidden")) { PANE.innerHTML = ""; tai().then(ve); } });   // đăng nhập / đăng xuất hệ tài khoản
   window.addEventListener("hx-phien", function () {   // đăng xuất Xác minh trên máy quản lý → khoá lại ngay
     if (MAY_CHU && !phien()) { MTD = null; CAN_DN = true; DIEU_KHIEN = false; if (PANE && !PANE.classList.contains("hidden")) ve(); }
   });
