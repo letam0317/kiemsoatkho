@@ -3229,7 +3229,7 @@ function nutDauTrang(name){
   name=name||(document.querySelector('.tab.active')||{dataset:{}}).dataset.tab;
   const g=$('btnGhiNhan'), d=$('hdrDangXuat');
   if(g) g.classList.toggle('an-hdr', name!=='home');
-  const nt=$('btnNghiemThu'); if(nt) nt.classList.toggle('an-hdr', name!=='home' || !/^(localhost|127\.0\.0\.1)$/.test(location.hostname));   // NÚT TẠM 14/10 nghiệm thu checklist — CHƯA DUYỆT: chỉ hiện ở bản nội bộ; duyệt thì bỏ vế localhost
+  const nt=$('btnNghiemThu'); if(nt) nt.classList.toggle('an-hdr', name!=='home');   // NÚT TẠM 14/10 nghiệm thu checklist (user duyệt 14/10)
   if(d) d.classList.toggle('an-hdr', !(name==='xacminh' && document.body.dataset.hxPhien==='1'));
 }
 window.nutDauTrang=nutDauTrang;
