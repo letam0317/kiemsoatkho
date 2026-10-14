@@ -53,6 +53,7 @@
       ".mt-viec{display:flex;flex-wrap:wrap;gap:4px}.mt-c{font:inherit;font-size:11px;line-height:16px;padding:2px 7px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);max-width:100%;overflow-wrap:anywhere;text-align:left}",
       ".mt-c.chay{border-color:color-mix(in srgb,var(--good) 45%,transparent);background:color-mix(in srgb,var(--good) 12%,transparent)}.mt-c.cho{border-color:color-mix(in srgb,var(--info,var(--accent)) 40%,transparent);background:color-mix(in srgb,var(--info,var(--accent)) 9%,transparent)}",
       ".mt-c.dung{border-color:color-mix(in srgb,var(--warn) 50%,transparent);background:color-mix(in srgb,var(--warn) 12%,transparent);text-decoration:line-through}button.mt-c{cursor:pointer}button.mt-c:hover{border-color:var(--accent)}",
+      ".mt-nh{font-size:11px;font-weight:600;color:var(--muted);align-self:center;min-width:34px}.mt-nh.nang{color:var(--bad,#dc2626)}.hx-mt-ly .ds+.ds,.mt-viec .ds+.ds{margin-top:4px}",
       ".mt-nut{margin-top:auto}.mt-nut .hx-nut{width:100%;min-height:28px;font-size:12px;padding:0 8px;border-radius:6px}",
       ".mt-viec summary{cursor:pointer;list-style:none;font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:3px;flex-wrap:wrap}.mt-viec summary::-webkit-details-marker{display:none}.mt-viec summary b{color:var(--text)}",
       ".mt-viec summary::after{content:'▾';margin-left:auto;color:var(--muted)}.mt-viec[open] summary::after{content:'▴'}.mt-viec .ds{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}",
@@ -167,6 +168,12 @@
        máy cũng vừa ngang màn hình» ⇒ 1 hàng N cột đều nhau (grid repeat(N)); thẻ gọn: tên · trạng thái · RAM/CPU/ổ C 3 dòng nhỏ · nhịp tim ·
        việc = CHIP màu (bấm chip = dừng/tiếp tục việc đó, hỏi lại trước khi gửi). */
     var dong = function (lbl, so, pct, lop) { return '<div class="r"><span>' + lbl + '</span><i><b class="' + lop + '" style="width:' + Math.max(0, Math.min(100, pct)) + '%"></b></i><em>' + so + "</em></div>"; };
+    var nangCua = {}; (MTD.viec || []).forEach(function (v) { if (v.nang != null) nangCua[v.ten] = !!v.nang; });
+    MTD.may.forEach(function (m) { (m.viecNang || []).forEach(function (t) { nangCua[t] = true; }); (m.tatCaViec || []).forEach(function (t) { if (!(t in nangCua)) nangCua[t] = false; }); });
+    /* 14/10 «thêm nhãn nặng nhẹ»: chia việc thành hàng «Nặng:» / «Nhẹ:» — nhãn ghi 1 LẦN mỗi hàng, không gắn vào từng việc (luật không lặp) */
+    var chiaNang = function (ds, ve1) { var n = ds.filter(function (t) { return nangCua[t] === true; }), h = ds.filter(function (t) { return nangCua[t] === false; }), k = ds.filter(function (t) { return !(t in nangCua); });
+      return [[n, "Nặng", " nang"], [h, "Nhẹ", ""], [k, "", ""]].filter(function (x) { return x[0].length; })
+        .map(function (x) { return '<div class="ds">' + (x[1] ? '<span class="mt-nh' + x[2] + '">' + x[1] + ":</span>" : "") + x[0].map(ve1).join("") + "</div>"; }).join(""); };
     var coMayKhac = function (m) { return MTD.may.some(function (x) { return x.may !== m.may && x.song && !x.dung; }); };
     var tenBoi = function (b) { return /^bo cai/.test(b) ? "bộ cài (máy quản lý)" : b; };   // nhãn ASCII do bộ cài gửi → tiếng Việt
     var tomTat = function (m, viec) {
@@ -177,23 +184,27 @@
       var tt = !m.song ? ["Mất nhịp", "bad"] : m.dung ? ["Đã dừng", "warn"] : m.yeu ? ["Yếu", "warn"] : ["Đang chạy", "good"];
       var ramDung = Math.round(100 - (m.ramTrongPct || 0)), cpu = Math.round(m.cpuPct || 0), dia = m.diaTrongGB;
       var viec = []; (m.viecGiao || []).concat(m.dangChay || [], m.dungViec || []).forEach(function (t) { if (viec.indexOf(t) < 0) viec.push(t); });
-      var chip = viec.map(function (t) {
+      var veChip = function (t) {
         var dung = (m.dungViec || []).indexOf(t) >= 0, chay = (m.dangChay || []).indexOf(t) >= 0, sang = mayCua[t];
         var lop = dung ? "dung" : chay ? "chay" : (m.viecGiao || []).indexOf(t) >= 0 ? "cho" : "do";
         var nghia = dung ? "Đã dừng ở máy này" + (sang && sang !== m.may ? " → " + sang + " làm thay" : "") : chay ? "Đang chạy" : lop === "cho" ? "Được giao · chờ lịch" : "Đang chạy dở (đã giao máy khác)";
         var tip = nghia + (DIEU_KHIEN && !m.dung ? (dung ? " — bấm để cho chạy lại" : " — bấm để dừng việc này") : "");
         return DIEU_KHIEN && !m.dung ? '<button class="mt-c ' + lop + '" title="' + e_(tip) + '" data-may="' + e_(m.may) + '" data-viec="' + e_(t) + '" data-dung="' + (dung ? "0" : "1") + '">' + e_(tenV(t)) + "</button>"
           : '<span class="mt-c ' + lop + '" title="' + e_(tip) + '">' + e_(tenV(t)) + "</span>";
-      }).join("") || '<div class="mt-trong">' + (m.dung ? (coMayKhac(m) ? "Đang dừng — việc do máy khác làm." : "Đang dừng — không nhận việc.")
+      };
+      var chip = (viec.length ? chiaNang(viec, veChip) : "") || '<div class="mt-trong">' + (m.dung ? (coMayKhac(m) ? "Đang dừng — việc do máy khác làm." : "Đang dừng — không nhận việc.")
         : m.song ? "Chưa được giao việc." : (coMayKhac(m) ? "Mất nhịp — việc đã sang máy khác." : "Mất nhịp.")) + "</div>";
       var nutMay = !DIEU_KHIEN ? "" : !m.song && !m.dung ? '<button class="hx-nut phu" data-may="' + e_(m.may) + '" data-xoa="1">Gỡ</button>'   // máy im: chỉ còn gỡ
         : '<button class="hx-nut' + (m.dung ? "" : " phu") + '" data-may="' + e_(m.may) + '" data-dung="' + (m.dung ? "0" : "1") + '">' + (m.dung ? "Cho chạy lại" : "Dừng máy") + "</button>";
       return '<div class="mt-o' + (m.song ? "" : " cu") + '"><div class="mt-dau"><b title="' + e_(m.may) + '">' + e_(m.may) + '</b><span class="hx-tag ' + tt[1] + '">' + tt[0] + "</span></div>" +
         '<div class="mt-sk">' + dong("RAM", ramDung + "%", ramDung, mucDo(ramDung, 70, 85)) + dong("CPU", cpu + "%", cpu, mucDo(cpu, 70, 90)) +
-        dong("Ổ C", dia == null ? "—" : Math.round(dia) + " GB", dia == null ? 0 : Math.min(100, dia / 0.5), dia == null ? "" : dia < 3 ? "bad" : dia < 10 ? "warn" : "") + "</div>" +
+        /* 14/10 user «ổ C ít quá, cần liệt kê thêm ổ mà máy trạm có»: mỗi ổ 1 dòng — thanh = phần ĐÃ DÙNG, số = còn trống. PC bản cũ (chưa gửi oDia) → ổ C như trước */
+        ((m.oDia && m.oDia.length) ? m.oDia.map(function (x) { var dung = x.tong ? Math.round((x.tong - x.trong) / x.tong * 100) : 0;
+            return '<div class="r" title="' + e_("Ổ " + x.o + ": còn " + x.trong + " / " + x.tong + " GB") + '"><span>' + e_(x.o) + ':</span><i><b class="' + (x.trong < 3 || dung >= 95 ? "bad" : x.trong < 10 || dung >= 85 ? "warn" : "") + '" style="width:' + dung + '%"></b></i><em>' + Math.round(x.trong) + " GB</em></div>"; }).join("")
+          : dong("Ổ C", dia == null ? "—" : Math.round(dia) + " GB", dia == null ? 0 : Math.min(100, dia / 0.5), dia == null ? "" : dia < 3 ? "bad" : dia < 10 ? "warn" : "")) + "</div>" +
         '<div class="mt-phu" title="' + e_((m.nhan || "?") + " nhân · " + (m.ramTongGB || "?") + " GB RAM · điểm xếp hạng " + (m.diem || 0) + (m.ban ? " · bản " + m.ban : "") + (m.dung && m.lenhBoi ? " · dừng bởi " + tenBoi(m.lenhBoi) : "")) + '">' +
           e_(tuoiChu(m.tuoiGiay)) + ((m.coKhoa || []).indexOf("TOPREVIEW_USER") < 0 ? " · không khoá camera" : "") + "</div>" +
-        (viec.length ? '<details class="mt-viec"><summary>' + tomTat(m, viec) + "</summary><div class=\"ds\">" + chip + "</div></details>" : '<div class="mt-viec">' + chip + "</div>") +   // 14/10 «chip máy gọn»: việc thu 1 dòng, bấm mới bung
+        (viec.length ? '<details class="mt-viec"><summary>' + tomTat(m, viec) + "</summary>" + chip + "</details>" : '<div class="mt-viec">' + chip + "</div>") +   // 14/10 «chip máy gọn»: việc thu 1 dòng, bấm mới bung
         (nutMay ? '<div class="mt-nut">' + nutMay + "</div>" : "") + "</div>";
     };
     var chuaCo = (MTD.viec || []).filter(function (v) { return !v.may; });
@@ -208,9 +219,9 @@
       chuaCo.forEach(function (v) { var c = dangChuyen[v.ten], k = (v.canKhoa || []);
         var ly = c ? "Bị dừng giữa chừng ở " + c.tu + " — chờ máy khác chạy bù" : !conMay ? "Chưa có PC nào đang chạy"
           : k.indexOf("TOPREVIEW_USER") >= 0 ? "Cần PC có khoá camera" + (k.indexOf("GEMINI_API_KEY") >= 0 ? " và khoá AI" : "") : "Cần PC đang chạy";
-        if (!theo[ly]) { theo[ly] = []; nhom.push(ly); } theo[ly].push(tenV(v.ten)); });
+        if (!theo[ly]) { theo[ly] = []; nhom.push(ly); } theo[ly].push(v.ten); });
       h += '<div class="panel mt-chua"><div class="panel-head"><span>Việc chưa có máy nhận</span><span>' + chuaCo.length + "</span></div>" +
-        nhom.map(function (ly) { return '<div class="hx-mt-ly"><div class="ly">' + e_(ly) + '</div><div class="ds">' + theo[ly].map(function (t) { return '<span class="hx-tag">' + e_(t) + "</span>"; }).join("") + "</div></div>"; }).join("") + "</div>";
+        nhom.map(function (ly) { return '<div class="hx-mt-ly"><div class="ly">' + e_(ly) + "</div>" + chiaNang(theo[ly], function (t) { return '<span class="hx-tag">' + e_(tenV(t)) + "</span>"; }) + "</div>"; }).join("") + "</div>";
     }
     h += MTD.may.length ? '<div class="mt-hang" style="grid-template-columns:repeat(' + MTD.may.length + ',minmax(0,240px))">' + MTD.may.map(the).join("") + "</div>"
       : '<div class="panel"><div class="hx-trong">Chưa PC nào gửi nhịp tim. Cài bằng nút «Tải bộ cài PC» ở trang Tổng quan; PC gửi nhịp mỗi phút.</div></div>';    if (!MAY_CHU && !phienTk() && mtPhien()) h += '<div style="text-align:center;margin:14px 0"><button type="button" class="hx-nut phu" id="mtDangXuat">Đăng xuất</button></div>';
