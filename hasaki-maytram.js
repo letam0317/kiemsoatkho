@@ -43,8 +43,8 @@
       ".hx-mt-thanh{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;margin-top:4px}.hx-mt-thanh i{display:block;height:100%;background:var(--good)}.hx-mt-thanh i.warn{background:var(--warn)}.hx-mt-thanh i.bad{background:var(--bad,#dc2626)}",
       ".hx-mt-phu{padding:2px 16px 8px;font-size:12px;color:var(--muted)}",
       /* 14/10 hàng thẻ máy gọn */
-      ".mt-chua{margin:4px 0 12px}.mt-hang{display:grid;gap:8px;align-items:stretch}",
-      ".mt-o{display:flex;flex-direction:column;gap:6px;min-width:0;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}.mt-o.cu .mt-sk{opacity:.45}",
+      ".mt-chua{margin:4px 0 12px}.mt-hang{display:grid;gap:8px;align-items:start}",   // mỗi chip cao đúng nội dung (không kéo theo chip bên cạnh)
+      ".mt-o{display:flex;flex-direction:column;gap:5px;min-width:0;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}.mt-o.cu .mt-sk{opacity:.45}",
       ".mt-dau{display:flex;align-items:flex-start;gap:6px;justify-content:space-between}.mt-dau b{font-size:13px;line-height:17px;min-width:0;overflow-wrap:anywhere}.mt-dau .hx-tag{flex:none;margin:0}",
       ".mt-sk{display:flex;flex-direction:column;gap:3px}.mt-sk .r{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:6px;align-items:center;font-size:11px;color:var(--muted)}",
       ".mt-sk .r i{height:5px;border-radius:3px;background:var(--surface2);overflow:hidden}.mt-sk .r i b{display:block;height:100%;background:var(--good)}.mt-sk .r i b.warn{background:var(--warn)}.mt-sk .r i b.bad{background:var(--bad,#dc2626)}",
@@ -53,8 +53,11 @@
       ".mt-viec{display:flex;flex-wrap:wrap;gap:4px}.mt-c{font:inherit;font-size:11px;line-height:16px;padding:2px 7px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);max-width:100%;overflow-wrap:anywhere;text-align:left}",
       ".mt-c.chay{border-color:color-mix(in srgb,var(--good) 45%,transparent);background:color-mix(in srgb,var(--good) 12%,transparent)}.mt-c.cho{border-color:color-mix(in srgb,var(--info,var(--accent)) 40%,transparent);background:color-mix(in srgb,var(--info,var(--accent)) 9%,transparent)}",
       ".mt-c.dung{border-color:color-mix(in srgb,var(--warn) 50%,transparent);background:color-mix(in srgb,var(--warn) 12%,transparent);text-decoration:line-through}button.mt-c{cursor:pointer}button.mt-c:hover{border-color:var(--accent)}",
-      ".mt-nut{margin-top:auto}.mt-nut .hx-nut{width:100%;min-height:32px;font-size:12px;padding:0 8px}",
-      "@media(max-width:560px){.mt-hang{gap:6px}.mt-o{padding:8px 6px}.mt-sk .r{grid-template-columns:24px minmax(0,1fr) auto;gap:4px}button.mt-c{min-height:40px}.mt-nut .hx-nut{min-height:40px}}",
+      ".mt-nut{margin-top:auto}.mt-nut .hx-nut{width:100%;min-height:28px;font-size:12px;padding:0 8px;border-radius:6px}",
+      ".mt-viec summary{cursor:pointer;list-style:none;font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:3px;flex-wrap:wrap}.mt-viec summary::-webkit-details-marker{display:none}.mt-viec summary b{color:var(--text)}",
+      ".mt-viec summary::after{content:'▾';margin-left:auto;color:var(--muted)}.mt-viec[open] summary::after{content:'▴'}.mt-viec .ds{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}",
+      ".mt-viec i.d{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:2px}.mt-viec i.d.chay{background:var(--good)}.mt-viec i.d.dung{background:var(--warn)}.mt-viec i.d.cho{background:var(--info,var(--accent))}",
+      "@media(max-width:560px){.mt-hang{gap:6px}.mt-o{padding:7px 6px}.mt-dau{flex-direction:column;gap:3px}.mt-dau b{overflow-wrap:normal;word-break:break-word}.mt-sk .r{grid-template-columns:24px minmax(0,1fr) auto;gap:4px}button.mt-c{min-height:40px}.mt-nut .hx-nut,.mt-viec summary{min-height:40px}}",
       ".hx-mt-xin{margin:4px 0 14px;border-color:color-mix(in srgb,var(--warn) 55%,var(--border))}.hx-mt-xin .ma{font-family:ui-monospace,Consolas,monospace;font-size:14px;letter-spacing:2px;color:var(--text)}",
       ".hx-mt-ly{padding:10px 16px;border-top:1px solid var(--border)}.hx-mt-ly .ly{font-size:13px;color:var(--muted);margin-bottom:6px}.hx-mt-ly .ds{display:flex;flex-wrap:wrap;gap:6px}.hx-mt-ly .hx-tag{margin:0;font-weight:600;font-size:12px;color:var(--text)}",
       ".hx-mt-v{display:flex;align-items:center;gap:8px;min-height:44px;padding:6px 16px;border-top:1px solid var(--border)}.hx-mt-v .ten{flex:1;min-width:0;font-size:13.5px}.hx-mt-v .ten small{display:block;color:var(--muted);font-size:12px}",
@@ -153,6 +156,10 @@
     var dong = function (lbl, so, pct, lop) { return '<div class="r"><span>' + lbl + '</span><i><b class="' + lop + '" style="width:' + Math.max(0, Math.min(100, pct)) + '%"></b></i><em>' + so + "</em></div>"; };
     var coMayKhac = function (m) { return MTD.may.some(function (x) { return x.may !== m.may && x.song && !x.dung; }); };
     var tenBoi = function (b) { return /^bo cai/.test(b) ? "bộ cài (máy quản lý)" : b; };   // nhãn ASCII do bộ cài gửi → tiếng Việt
+    var tomTat = function (m, viec) {
+      var chay = viec.filter(function (t) { return (m.dangChay || []).indexOf(t) >= 0; }).length, dung = viec.filter(function (t) { return (m.dungViec || []).indexOf(t) >= 0; }).length;
+      return "<b>" + viec.length + " việc</b>" + (chay ? ' · <i class="d chay"></i>' + chay + " chạy" : "") + (dung ? ' · <i class="d dung"></i>' + dung + " dừng" : "") + (viec.length - chay - dung ? ' · <i class="d cho"></i>' + (viec.length - chay - dung) + " chờ" : "");
+    };
     var the = function (m) {
       var tt = !m.song ? ["Mất nhịp", "bad"] : m.dung ? ["Đã dừng", "warn"] : m.yeu ? ["Yếu", "warn"] : ["Đang chạy", "good"];
       var ramDung = Math.round(100 - (m.ramTrongPct || 0)), cpu = Math.round(m.cpuPct || 0), dia = m.diaTrongGB;
@@ -173,7 +180,8 @@
         dong("Ổ C", dia == null ? "—" : Math.round(dia) + " GB", dia == null ? 0 : Math.min(100, dia / 0.5), dia == null ? "" : dia < 3 ? "bad" : dia < 10 ? "warn" : "") + "</div>" +
         '<div class="mt-phu" title="' + e_((m.nhan || "?") + " nhân · " + (m.ramTongGB || "?") + " GB RAM · điểm xếp hạng " + (m.diem || 0) + (m.ban ? " · bản " + m.ban : "") + (m.dung && m.lenhBoi ? " · dừng bởi " + tenBoi(m.lenhBoi) : "")) + '">' +
           e_(tuoiChu(m.tuoiGiay)) + ((m.coKhoa || []).indexOf("TOPREVIEW_USER") < 0 ? " · không khoá camera" : "") + "</div>" +
-        '<div class="mt-viec">' + chip + "</div>" + (nutMay ? '<div class="mt-nut">' + nutMay + "</div>" : "") + "</div>";
+        (viec.length ? '<details class="mt-viec"><summary>' + tomTat(m, viec) + "</summary><div class=\"ds\">" + chip + "</div></details>" : '<div class="mt-viec">' + chip + "</div>") +   // 14/10 «chip máy gọn»: việc thu 1 dòng, bấm mới bung
+        (nutMay ? '<div class="mt-nut">' + nutMay + "</div>" : "") + "</div>";
     };
     var chuaCo = (MTD.viec || []).filter(function (v) { return !v.may; });
     /* 14/10: PC cài bằng bộ cài không khoá xin khoá + MÃ XÁC NHẬN trên màn PC — chỉ máy quản lý duyệt (so mã trước khi bấm). */
@@ -191,7 +199,7 @@
       h += '<div class="panel mt-chua"><div class="panel-head"><span>Việc chưa có máy nhận</span><span>' + chuaCo.length + "</span></div>" +
         nhom.map(function (ly) { return '<div class="hx-mt-ly"><div class="ly">' + e_(ly) + '</div><div class="ds">' + theo[ly].map(function (t) { return '<span class="hx-tag">' + e_(t) + "</span>"; }).join("") + "</div></div>"; }).join("") + "</div>";
     }
-    h += MTD.may.length ? '<div class="mt-hang" style="grid-template-columns:repeat(' + MTD.may.length + ',minmax(0,1fr))">' + MTD.may.map(the).join("") + "</div>"
+    h += MTD.may.length ? '<div class="mt-hang" style="grid-template-columns:repeat(' + MTD.may.length + ',minmax(0,240px))">' + MTD.may.map(the).join("") + "</div>"
       : '<div class="panel"><div class="hx-trong">Chưa PC nào gửi nhịp tim. Cài bằng nút «Tải bộ cài PC» ở trang Tổng quan; PC gửi nhịp mỗi phút.</div></div>';    if (!MAY_CHU && mtPhien()) h += '<div style="text-align:center;margin:14px 0"><button type="button" class="hx-nut phu" id="mtDangXuat">Đăng xuất</button></div>';
     PANE.innerHTML = h;
     var dx = document.getElementById("mtDangXuat");
