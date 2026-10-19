@@ -358,7 +358,9 @@
     lan = lan || 0;
     /* 19/10: đã đăng nhập tài khoản audit-dc (điện thoại qua đường hầm) mà chưa có phiên máy chủ → đổi phiên trước, khỏi hiện ô đăng nhập riêng */
     if (!PHIEN && window.TK && window.TK.phien && typeof window.tkDoiPhienXm === "function" && !tai._doi) { tai._doi = 1;
-      return window.tkDoiPhienXm().then(function (ok) { if (ok) { PHIEN = localStorage.getItem("hx-phien") || ""; return tai(im, lan); } veDangNhap(); }); }
+      return window.tkDoiPhienXm().then(function (ok) { if (ok) { PHIEN = localStorage.getItem("hx-phien") || ""; return tai(im, lan); }
+        if (window.__HX_KHONG_MAY && typeof setTab === "function") { tai._doi = 0; if (typeof toast === "function") toast("Chưa mở được Xác minh cho tài khoản này — thử đăng xuất rồi đăng nhập lại.", "loi"); setTab("maytram"); return; }   // điện thoại: không bày ô đăng nhập riêng (lặp 17/10)
+        veDangNhap(); }); }
     if (!PHIEN) { veDangNhap(); return Promise.resolve(); }
     if (lan < 2) return taiMot(im).catch(function (e) { if (e && e.dangNhap) return; return new Promise(function (r) { setTimeout(r, 3000 * (lan + 1)); }).then(function () { return tai(im, lan + 1); }); });
     return taiMot(im, true);
@@ -1530,7 +1532,7 @@
 
   function init(pane) {
     PANE = pane; napCss();
-    if (!PHIEN) { veDangNhap(); return; }
+    if (!PHIEN && !(window.TK && window.TK.phien && typeof window.tkDoiPhienXm === "function")) { veDangNhap(); return; }   // 19/10: có tài khoản audit-dc → tai() đổi phiên trước
     if (!D) pane.innerHTML = '<div class="kpi-band">' + '<div class="kb-tile"><div class="sk sk-line" style="width:60%"></div></div>'.repeat(4) + '</div><div class="panel" style="margin-top:14px"><div style="padding:18px 16px"><div class="sk sk-line" style="width:86%"></div><div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:78%"></div></div></div>';
     tai(); clearInterval(init._h); init._h = setInterval(function () { if (!document.hidden && PANE && !PANE.classList.contains("hidden") && !document.querySelector("#modal.show")) tai(); }, 120e3);
   }
