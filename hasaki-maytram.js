@@ -14,14 +14,14 @@
 (function () {
   var MT_MO = {};   // 17/10 điện thoại: máy nào đang xổ «Việc đảm nhận» (giữ qua lượt vẽ lại 30 s)
   "use strict";
-  var API = "http://127.0.0.1:8591";
+  var API = window.HX_API || "http://127.0.0.1:8591";   // 19/10: dongMayChu cập nhật theo hxDoMayChu (laptop hoặc đường hầm)
   var GAS = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec";
   var HET_HAN_GIAY = 180;   // = hetHanPhut 3' của cai-pc/dieu-phoi.json: nhịp cũ hơn ⇒ máy coi như im
   var PANE = null, MTD = null, MT_LOI = "", DIEU_KHIEN = false, H = null;
   var TEN_VIEC = { "canh-b11": "Cò canh B1.1", "canh-xac-minh-b1": "Cò xác minh B1", "tim-bang-chung-b1": "Tìm bằng chứng B1",
     "canh-bai-xe-sang": "Canh bãi xe sáng", "canh-bai-xe-chieu": "Canh bãi xe chiều", "canh-bai-xe-toi": "Canh bãi xe tối", "xac-minh-camera": "Xác minh camera tối",
     "co-canh-planogram": "Cò canh planogram", "dong-bo-dashboard": "Đồng bộ dashboard", "packer-a8-sang": "Packer A8 sáng", "packer-a8-chieu": "Packer A8 chiều",
-    "cham-cong": "Chấm công", "watchdog-ton-kho": "Canh tồn kho" };
+    "cham-cong": "Chấm công", "watchdog-ton-kho": "Canh tồn kho", "lam-tuoi-vesinh": "Làm tươi vệ sinh 15'" };   // 19/10 nhịp sync-poller sang PC
   var tenV = function (t) { return TEN_VIEC[t] || t; };
   var e_ = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
   var phien = function () { try { return localStorage.getItem("hx-phien") || ""; } catch (e) { return ""; } };
@@ -132,6 +132,10 @@
   // Máy quản lý? Thanh bên dò 8591 bất đồng bộ (~1,5 s) — mở thẳng ?tab=maytram thì module chạy TRƯỚC ⇒ tự dò, đừng chờ.
   var MAY_CHU = false, CAN_DN = false;
   function dongMayChu() {
+    if (typeof window.hxDoMayChu === "function") return window.hxDoMayChu().then(function (co) { if (co) API = window.HX_API;
+      /* 19/10 điện thoại qua đường hầm: chưa đổi được phiên 8591 thì đi đường Apps Script cũ (không bày ô đăng nhập riêng) */
+      if (!co || !window.__HX_QUA_HAM || phien() || typeof window.tkDoiPhienXm !== "function") return co;
+      return window.tkDoiPhienXm().then(function () { return !!phien(); }); });
     if (window.__HX_MAY_CHU) return Promise.resolve(true);
     if (window.__HX_KHONG_MAY) return Promise.resolve(false);   // 15/10: điện thoại → chỉ đọc qua Apps Script, không gọi 127.0.0.1
     var ctl = new AbortController(), h = setTimeout(function () { ctl.abort(); }, 1500);
