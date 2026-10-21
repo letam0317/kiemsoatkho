@@ -1,8 +1,8 @@
 /* dash-bocuc.js — BỐ CỤC dashboard Audit Retail (tab thanh bên + khối trong tab).
  * Ghi bởi bộ Chỉnh bố cục ở bản QC (xem-noi-bo.mjs → /api/dash/retail/bocuc). Đừng sửa tay. Áp bởi dash-bocuc-ap.js. */
 window.DASH_BOCUC = {
- "ver": 4,
- "ngay": "2026-10-13T08:19:30.905Z",
+ "ver": 6,
+ "ngay": "2026-10-16T10:59:45.277Z",
  "tab": [
   {
    "k": "home",
