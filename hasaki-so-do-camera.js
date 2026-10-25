@@ -326,6 +326,33 @@
   function datThe(t) { THE_MEM = t || ""; try { if (t) sessionStorage.setItem(THE_K, t); else sessionStorage.removeItem(THE_K); } catch (e) {} }
   var THE_MEM = "";
   function tieuDe() { var h = { "x-hx-phien": CTX.phien() }, t = layThe(); if (t) h["x-cctv"] = t; return h; }
+  /* ---------- CCTV khi LAPTOP TẮT (25/10 tối) — máy dự phòng chỉ có BẢN MÃ (khoá CCTV riêng Kc) + «hộp khoá» bọc Kc bằng mật khẩu CCTV.
+     Mật khẩu vừa nhập (MK_TAM, chỉ trong bộ nhớ) → PBKDF2 → mở hộp → Kc → giải dữ liệu / khung hình đã lưu (giai-ma-guong.js dùng chung với gương
+     Xác minh). Tải lại trang = mất Kc ⇒ hỏi lại mật khẩu. Máy dự phòng không bao giờ thấy Kc hay mật khẩu rõ. ---------- */
+  var GM = null, MK_TAM = "";
+  function napGiaiMa() {
+    if (window.hxGiaiMa) return Promise.resolve(window.hxGiaiMa);
+    return new Promise(function (ok, hong) { var s = document.createElement("script"); s.src = "giai-ma-guong.js?v=20261022a"; s.onload = function () { ok(window.hxGiaiMa); }; s.onerror = function () { hong(new Error("Không tải được bộ giải mã")); }; document.head.appendChild(s); });
+  }
+  var tuB64 = function (x) { var b = atob(x), r = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) r[i] = b.charCodeAt(i); return r; };
+  function moDuPhong(j) {
+    if (GM) return taiMa("cctv:du-lieu", "application/json").then(function (b) { return b.text(); }).then(JSON.parse);
+    if (!MK_TAM) { setTimeout(function () { khoaLai("Laptop đang tắt — đang xem bản mã hoá trên máy dự phòng: nhập lại mật khẩu CCTV để mở."); }, 0); var e0 = new Error("cần mật khẩu"); e0.code = 428; return Promise.reject(e0); }
+    var b = j.boc || {}, mk = MK_TAM; MK_TAM = "";
+    if (!window.crypto || !crypto.subtle) return Promise.reject(new Error("Trình duyệt này không giải mã được (cần trang https)."));
+    return crypto.subtle.importKey("raw", new TextEncoder().encode(mk), "PBKDF2", false, ["deriveKey"])
+      .then(function (km) { return crypto.subtle.deriveKey({ name: "PBKDF2", salt: tuB64(b.salt), iterations: b.vong, hash: "SHA-256" }, km, { name: "AES-GCM", length: 256 }, false, ["decrypt"]); })
+      .then(function (w) { return crypto.subtle.decrypt({ name: "AES-GCM", iv: tuB64(b.iv) }, w, tuB64(b.ct)); })
+      .catch(function () { var e = new Error("Không mở được hộp khoá — mật khẩu CCTV đã đổi trên laptop? Bật laptop 1 lần để cập nhật."); e.code = 409; throw e; })
+      .then(function (kc) { return napGiaiMa().then(function (G) { return G.nhapKhoa(new Uint8Array(kc)); }); })
+      .then(function (kk) { GM = { kk: kk }; return moDuPhong(j); });
+  }
+  function taiMa(khoa, loai) {
+    var G = window.hxGiaiMa;
+    return G.tenAn(GM.kk, khoa).then(function (ten) { return fetch(CTX.API() + "/ma/" + ten, { headers: { "x-hx-phien": CTX.phien() }, cache: "no-store", signal: AbortSignal.timeout(60000) }); })
+      .then(function (r) { if (!r.ok) { var e = new Error(r.status === 404 ? "chưa có" : "HTTP " + r.status); e.code = r.status; throw e; } return G.docTron(r, khoa, GM.kk); })
+      .then(function (x) { return new Blob(x.phan, { type: loai }); });
+  }
   function het428(r) { if (r.status === 428) setTimeout(function () { khoaLai("Đã khoá lại CCTV (lâu không dùng) — nhập lại mật khẩu."); }, 0); }
   function goi(p, o) {
     o = o || {}; var h = tieuDe(); if (o.body) h["Content-Type"] = "application/json";
@@ -335,6 +362,7 @@
   }
   function napAnh(k, moi) {
     if (ANH[k] && !moi) return Promise.resolve(ANH[k]);
+    if (GM) return taiMa("cctv:anh:" + k, "image/jpeg").then(function (b) { if (ANH[k]) URL.revokeObjectURL(ANH[k]); ANH[k] = URL.createObjectURL(b); return ANH[k]; });
     return fetch(CTX.API() + "/api/so-do-camera/anh?cam=" + encodeURIComponent(k), { headers: tieuDe(), signal: AbortSignal.timeout(45000) })
       .then(function (r) { het428(r); if (!r.ok) throw new Error(r.status === 404 ? "chưa có" : "HTTP " + r.status); return r.blob(); })
       .then(function (b) { if (ANH[k]) URL.revokeObjectURL(ANH[k]); ANH[k] = URL.createObjectURL(b); return ANH[k]; });
@@ -456,10 +484,11 @@
     if (!layThe()) return veKhoa(host);   // chưa mở khoá ⇒ chỉ màn mật khẩu, KHÔNG tải dữ liệu camera
     henKhoa();
     if (!D) host.innerHTML = '<div class="sdc-3d"><div class="sdc-3dtt">Đang tải…</div></div>';
-    if (!NAP) NAP = Promise.all([goi("/api/so-do-camera"), napSoDo()]).then(function (kq) { D = kq[0]; SD = kq[1]; dungO(); DS = D.cams.map(tinh); })
+    if (!NAP) NAP = Promise.all([goi("/api/so-do-camera").then(function (j) { return j.duPhong ? moDuPhong(j) : (GM = null, j); }), napSoDo()]).then(function (kq) { D = kq[0]; SD = kq[1]; dungO(); DS = D.cams.map(tinh); })
       .catch(function (e) { NAP = null; throw e; });
     NAP.then(function () { if (HOST === host) veMan(); }).catch(function (e) {
       if (e.code === 428) return;   // het428 đã đưa về màn mật khẩu
+      if (e.code === 409) return khoaLai(e.message);   // máy dự phòng: mật khẩu không mở được hộp khoá
       /* 410 = bản dự phòng mã hoá (laptop tắt) chặn bản rõ · 503 = bản dự phòng thường · 403 = không phải tamlc */
       host.innerHTML = '<div class="panel"><div class="empty-row" style="padding:24px 16px">' + e_(e.code === 403 || e.code === 503 ? e.message : e.code === 410 ? "Laptop đang tắt — sơ đồ camera chỉ xem được khi laptop bật (dữ liệu chỉ nằm trên laptop)." : "Không tải được sơ đồ camera: " + e.message) +
         (e.code === 403 ? "" : ' <button type="button" class="hx-nut nho" data-sdc="lai">Thử lại</button>') + "</div></div>";
@@ -497,7 +526,7 @@
         var duong = ch === "mo" ? "/api/so-do-camera/mo-khoa" : "/api/so-do-camera/dat-mk", than = ch === "mo" ? { mk: v("sdcMk") } : { cu: v("sdcCu"), moi: v("sdcMoi"), tk: v("sdcTk") };
         nut.disabled = true; tt("Đang kiểm tra…");
         goi(duong, { method: "POST", body: than, khongKhoa: 1, ms: 30000 })
-          .then(function (j) { datThe(j.the); ve(host, CTX); })
+          .then(function (j) { datThe(j.the); MK_TAM = ch === "doi" ? v("sdcMoi") : ch === "mo" ? v("sdcMk") : v("sdcMoi"); GM = null; ve(host, CTX); })
           .catch(function (e) { nut.disabled = false; tt(e.name === "TimeoutError" || e.name === "AbortError" ? "Máy chủ không trả lời — thử lại." : e.message, true);
             var x = f.querySelector("input[type=password]"); if (x) x.select(); });
       };
@@ -511,7 +540,7 @@
   function khoaLai(tb) {
     var t = layThe(); datThe("");
     if (t && CTX) fetch(CTX.API() + "/api/so-do-camera/khoa-lai", { method: "POST", headers: { "x-hx-phien": CTX.phien(), "x-cctv": t } }).catch(function () {});
-    dungLive(); D = null; DS = []; NAP = null; Object.keys(ANH).forEach(function (k) { URL.revokeObjectURL(ANH[k]); delete ANH[k]; });
+    dungLive(); D = null; DS = []; NAP = null; GM = null; MK_TAM = ""; Object.keys(ANH).forEach(function (k) { URL.revokeObjectURL(ANH[k]); delete ANH[k]; });
     var m = $id("modal"); if ((S.chon || S.hc) && m && m.classList.contains("hx-ben") && typeof window.dongModal === "function") window.dongModal();
     S.chon = ""; S.hc = null; dongChon();
     if (F) { window.removeEventListener("resize", F.vua); if (F.ro) F.ro.disconnect(); F = null; }
