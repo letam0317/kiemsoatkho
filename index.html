@@ -809,6 +809,10 @@ thead th.c-freq, tbody td.c-freq{width:12ch; min-width:12ch;}   /* 21/10 «Lần
 tbody td.c-freq{white-space:normal;} .freq-lan{white-space:nowrap;}   /* «Lần 1/tháng» liền 1 hàng, % KPI xuống hàng dưới */
 thead th.c-status, tbody td.c-status{width:118px; white-space:normal;}   /* 21/10 chip trên, nút «Mở ↗» xuống hàng dưới — cột hẹp */
 tbody td.c-status .vp-mo{margin-top:4px;}
+/* 25/10 nút «Theo tác vụ ›» (phiếu đang chờ xác minh ở Xác minh) — khuôn nút gọn sẵn có, bấm mở thẳng thanh bên của phiếu đó */
+tbody td.c-status .xm-tv{margin-top:4px;}
+.cl-hang1 .cl-tt:has(.xm-tv){flex-wrap:wrap; gap:6px;}
+.cl-hang1 .cl-tt .xm-tv{min-height:28px!important; height:28px; padding:0 10px!important; font-size:12px!important; white-space:nowrap;}
 .rm-vid{background:var(--surface2);}
 /* watermark hasaki tách layer riêng -> không vẽ lại khi cuộn */
 #hskMark{transform:translateZ(0);}
@@ -2959,6 +2963,7 @@ function moTKQ(key){
 let rafId=null, curD=[];
 function render(){ if(rafId) cancelAnimationFrame(rafId); rafId=requestAnimationFrame(_render); }
 function _render(){
+  xmTvNap();                                     // 25/10 chip «Theo tác vụ»: hỏi nền 1 lần khi máy vào được Xác minh
   const dTable=loc().sort(cmpNgayDesc);          // Task vi phạm: theo BỘ LỌC của tab này
   const dAll=ROWS.slice().sort(cmpNgayDesc);     // Tổng quan: TOÀN BỘ (KHÔNG chịu ảnh hưởng bộ lọc tab Task)
   curD=dAll; rowGal={};
@@ -2984,7 +2989,7 @@ function _render(){
       <td class="c-flex"></td>
       <td class="c-anh">${anh}</td>
       <td class="c-freq">${freqCell(gi,r)}</td>
-      <td class="c-status">${statusCell(r)}</td>
+      <td class="c-status">${statusCell(r)}${xmTvChip(r)}</td>
       <td class="c-bb">${bbCell(r)}</td></tr>`;
   }).join('') || '<tr><td colspan="9"><div class="empty-row">Không có task khớp bộ lọc.</div></td></tr>';
 
@@ -2995,7 +3000,7 @@ function _render(){
     const anh=thumbCell(r,gi,'cl');
     /* 21/10 user (ảnh 12:18): hàng 1 = ảnh · chip trạng thái · 2 nút gọn (Mở task / + Biên bản) vừa chiều cao ảnh; hàng 2 = dữ liệu sát lề trái, mỗi dòng 1 hàng không gãy; số ảnh ở góc ảnh */
     return `<div class="cl-item vp" data-i="${gi}">
-      <div class="cl-hang1">${anh}<span class="cl-tt">${chipStatus(r)}</span><span class="cl-nut">${moTaskNut(r)}${bbCell(r, false)}</span></div>
+      <div class="cl-hang1">${anh}<span class="cl-tt">${chipStatus(r)}${xmTvChip(r)}</span><span class="cl-nut">${moTaskNut(r)}${bbCell(r, false)}</span></div>
       <div class="cl-data">
         <div class="cl-loi" title="${esc(r[iLoi]||'')}">${esc(r[iLoi]||'')}</div>
         ${kv('Vị trí',r[iViTri])}
@@ -3274,6 +3279,43 @@ window.hskThanhBen=(function(){
     hienModal('modal'); toDam(); }
   function boc(){ clearTimeout(hT); M().classList.remove('hx-ben'); }
   return {mo, xong, boc, toDam, khoa:()=>khoa};
+})();
+
+/* 25/10 user «xem ở điện thoại, vào 1 mục mà cần thoát ra thì lướt qua phải → về giao diện trước đó 1 BƯỚC, chứ không phải thoát luôn ra trang chính
+   mà pop-up/thanh bên phải vẫn còn». Vuốt lùi = nút Back của trình duyệt ⇒ mỗi LỚP mở ra (pop-up, thanh bên phải, ảnh phóng to, ngăn kéo menu
+   điện thoại, lượt nhảy Vi phạm → Theo tác vụ) ghi 1 nấc lịch sử; Back đóng ĐÚNG lớp trên cùng. Đóng bằng nút (Đóng/✕/nền) thì tự rút nấc của nó.
+   Tự dò mọi pop-up có lớp .show (host + mô-đun) — mô-đun mới không phải gọi gì. Máy tính cũng theo (Back = đóng pop-up). */
+window.hskLop=(function(){
+  const SEL='#modal,#statModal,#hmModal,#ghiModal,#pinModal,#lightbox,.hp-modal,.hk-modal,.ht-modal';
+  const ds=[];   // [{k, el|null, dong}]
+  let nuot=0;
+  const dongEl=el=>{ el.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} });
+    if(el.id==='lightbox') dongLB(); else if(el.id==='modal') dongModal(); else el.classList.remove('show');
+    if(!document.querySelector('#modal.show,#statModal.show,#hmModal.show,#ghiModal.show,#pinModal.show')) document.body.classList.remove('modal-open'); };
+  const laDT=()=>matchMedia('(max-width:768px)').matches;
+  function day(k, dong, el){ if(ds.some(x=>x.k===k)) return; ds.push({k, el:el||null, dong}); try{ history.pushState(Object.assign({}, history.state||{}, {hskLop:ds.length}), ''); }catch(e){} }
+  function rut(k){ const i=ds.findIndex(x=>x.k===k); if(i<0) return; ds.splice(i,1);
+    /* nấc của lớp này còn nằm trên cùng lịch sử → lùi 1 nấc (nuốt sự kiện). Đã có trang khác đẩy nấc lên trên (đổi tab) thì để nguyên */
+    if(history.state && history.state.hskLop){ nuot++; history.back(); } }
+  window.addEventListener('popstate', e=>{
+    if(nuot){ nuot--; e.stopImmediatePropagation(); return; }
+    const x=ds.pop(); if(!x) return;
+    e.stopImmediatePropagation();   // nấc này chỉ là lớp — bộ «link theo tab» không đổi tab
+    try{ x.dong(); }catch(er){}
+  }, true);
+  /* dò lớp mở/đóng: pop-up có .show · ngăn kéo menu điện thoại (body.side-open) */
+  const dang=new Set();
+  function quet(){
+    document.querySelectorAll(SEL).forEach(el=>{ const mo=el.classList.contains('show'), k='el:'+(el.id||el.className.split(' ')[0]);
+      if(mo && !dang.has(el)){ dang.add(el); el.__lopK=k+':'+Date.now(); day(el.__lopK, ()=>{ dang.delete(el); dongEl(el); }, el); } });
+    dang.forEach(el=>{ if(!el.isConnected || !el.classList.contains('show')){ dang.delete(el); rut(el.__lopK); } });
+    const side=document.body.classList.contains('side-open') && laDT();
+    if(side && !dang.has('side')){ dang.add('side'); day('side', ()=>{ dang.delete('side'); if(document.body.classList.contains('side-open') && $('sideToggle')) $('sideToggle').click(); }); }
+    else if(!side && dang.has('side')){ dang.delete('side'); rut('side'); }
+  }
+  let hen=0; new MutationObserver(ms=>{ if(hen) return; if(!ms.some(m=>m.target===document.body || (m.target.matches && m.target.matches(SEL)))) return;
+    hen=requestAnimationFrame(()=>{ hen=0; quet(); }); }).observe(document.body,{attributes:true,attributeFilter:['class'],subtree:true});
+  return {day, rut, ds:()=>ds.map(x=>x.k)};
 })();
 
 /* ===== LIGHTBOX CAROUSEL (Next/Previous) ===== */
@@ -3591,6 +3633,44 @@ function xmDoiPhien(){ var a = document.querySelector(".tab.active"), t = a && a
   if (t === "xacminh") moHasakiXacMinh(); else if (t === "maytram") moHasakiMayTram(); }
 document.addEventListener("tk-doi", xmDoiPhien); window.addEventListener("hx-phien", xmDoiPhien);
 let _hxNap=null;
+function napXm(){
+  if(!_hxNap){
+    _hxNap=new Promise((res,rej)=>{
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261025z';
+      s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
+      document.body.appendChild(s);
+    });
+  }
+  return _hxNap;
+}
+/* 25/10 user «các mục ở Vi phạm đã có ở Theo tác vụ thì cần nút/chip để t biết — nhấn vào trỏ thẳng thanh bên phải như ở Theo tác vụ».
+   Chỉ khi máy này vào được Xác minh (đã nối máy chủ + có phiên): nạp module ở NỀN, lấy danh sách phiếu Theo tác vụ, vẽ lại bảng.
+   Bấm chip = bấm mục «Theo tác vụ» ở thanh bên (đổi tab + đường dẫn như người bấm) rồi mở phiếu; vuốt lùi 1 lần = về lại Vi phạm (hskLop). */
+let XM_TV=new Set(), _xmTvHoi=0;
+function xmTvNap(){
+  if(_xmTvHoi || window.__HX_MA_HOA || typeof xmDuocXem!=='function' || !xmDuocXem()) return;
+  /* máy chủ chưa dò xong lúc bảng vẽ lần đầu (điện thoại qua đường hầm chậm) → dò 1 lần, xong thì hỏi lại */
+  const thuLai=()=>setTimeout(()=>{ xmTvNap._do=0; xmTvNap(); },20000);   // máy bận / mạng chập: hỏi lại sau 20 s (không chờ bảng vẽ lại)
+  if(!window.__HX_MAY_CHU){ if(!xmTvNap._do && window.hxDoMayChu){ xmTvNap._do=1; window.hxDoMayChu().then(co=>{ if(co) xmTvNap(); else thuLai(); }, thuLai); } return; }
+  let ph=''; try{ ph=localStorage.getItem('hx-phien')||''; }catch(e){} if(!ph) return;
+  _xmTvHoi=1; napXm().then(()=>window.HXACMINH && window.HXACMINH.taiNen && window.HXACMINH.taiNen()).catch(()=>{ _hxNap=null; })
+    .then(co=>{ _xmTvHoi=0; xmTvCapNhat(); if(!co && !XM_TV.size) thuLai(); });
+}
+function xmTvCapNhat(){
+  const moi=new Set(window.HXACMINH && window.HXACMINH.idTacVu ? window.HXACMINH.idTacVu() : []);
+  if(moi.size===XM_TV.size && [...moi].every(x=>XM_TV.has(x))) return; XM_TV=moi; render(); }
+window.addEventListener('hx-du-lieu', xmTvCapNhat);
+function idTaskVP(r){ return (String(r[iLink]||'').match(/task_id=(\d+)/)||[])[1]||''; }
+function xmTvChip(r){ const id=idTaskVP(r); if(!id || !XM_TV.has(id)) return '';   // nút gọn cùng khuôn «Mở task ↗» (hsk-nut phu nho)
+  return `<button type="button" class="hsk-nut phu nho xm-tv" data-xmtv="${esc(id)}"
+    title="Phiếu này đang chờ xác minh ở Theo tác vụ — bấm để mở thanh bên">Theo tác vụ ›</button>`; }
+function moTheoTacVu(id){
+  const tabCu=(document.querySelector('.tab.active')||{}).dataset?.tab||'task';
+  const it=document.querySelector('#sideNav .s-item[data-sub="treo"]'); if(!it) return;
+  window.hskLop && hskLop.day('ve-tab', ()=>{ const v=document.querySelector(`#sideNav .s-item[data-tab="${tabCu}"]:not([data-sub])`); if(v) v.click(); else setTab(tabCu); });
+  it.click();
+  napXm().then(()=>{ let lan=0; const thu=()=>{ if(window.HXACMINH && window.HXACMINH.coDuLieu() && window.HXACMINH.moPhieuId(id)) return; if(++lan<40) setTimeout(thu,150); }; thu(); });
+}
 function moHasakiXacMinh(){
   const pane=$('pane-xacminh');
   if(!xmDuocXem()){ xmKhoaPane(pane); return; } xmMoKhoa(pane);
@@ -3601,14 +3681,7 @@ function moHasakiXacMinh(){
       pane.innerHTML = '<div class="panel xm-khoa"><div class="xm-khoa-s"><b>Chưa nối được máy chủ Xác minh.</b><br>Laptop đang tắt hoặc đường hầm chưa lên — Theo tác vụ / Theo máy / Nhật ký cần máy chủ này. Máy trạm vẫn xem được.</div>' +
         '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px"><button type="button" class="xm-khoa-nut" onclick="moHasakiXacMinh()">Thử lại</button><button type="button" class="xm-khoa-nut xm-khoa-phu" onclick="setTab(\'maytram\')">Mở Máy trạm</button></div></div>';
     }); return; }   // 19/10: chờ dò máy chủ (laptop hoặc đường hầm); không có thì về Máy trạm (tránh ô đăng nhập lặp)
-  if(!_hxNap){
-    _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261023f';
-      s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
-      document.body.appendChild(s);
-    });
-  }
-  _hxNap.then(()=>{ window.HXACMINH && window.HXACMINH.init(pane); })
+  napXm().then(()=>{ window.HXACMINH && window.HXACMINH.init(pane); })
     .catch(e=>{ _hxNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
 }
 let _hkNap=null;
@@ -4146,6 +4219,8 @@ document.addEventListener('click', e=>{
   if(tl){ moLoiThang(); return; }
   const tq=e.target.closest('[data-tkq]');
   if(tq){ moTKQ(tq.dataset.tkq); return; }
+  const xt=e.target.closest('[data-xmtv]');   // 25/10 chip «Theo tác vụ» trên dòng Vi phạm → mở thẳng phiếu ở Xác minh (không mở thanh Vi phạm)
+  if(xt){ moTheoTacVu(xt.dataset.xmtv); return; }
   const row=e.target.closest('[data-i]');
   if(row && !e.target.closest('.thumb') && !e.target.closest('a')){ moChiTiet(+row.dataset.i); return; }
   // Thumb trong modal -> lightbox carousel

@@ -486,14 +486,16 @@
     if (!cuoi) return Promise.all([goi("/api/du-lieu"), napQD()]).then(function (k) { taiXong(k[0], im); });
     /* 10/10 GIẬT LAG: nhịp 2' trước đây dựng lại CẢ tab dù dữ liệu y nguyên (capNhat đổi mỗi lần gọi) → chỉ vẽ khi nội dung đổi */
     return goi("/api/du-lieu").then(function (j) { taiXong(j, im); })
-      .catch(function (e) { if (e && e.dangNhap) return; try { console.error("[xác minh] tải/vẽ lỗi:", e && e.stack || e); } catch (x) {} if (D && PANE.querySelector("#hxBody")) return;   /* đang có dữ liệu cũ (lượt tự tải lại hỏng) → giữ màn, không xoá trắng */
+      .catch(function (e) { if (e && e.dangNhap) return; try { console.error("[xác minh] tải/vẽ lỗi:", e && e.stack || e); } catch (x) {} if (!PANE || D && PANE.querySelector("#hxBody")) return;   // tải nền (chưa mở tab) hỏng: không có khung để báo   /* đang có dữ liệu cũ (lượt tự tải lại hỏng) → giữ màn, không xoá trắng */
         D = null;
         if (maHoa_()) { PANE.innerHTML = '<div class="panel" style="margin-top:14px"><div class="hx-trong"><b>Không mở được bản dự phòng mã hoá.</b><br>' + e_((e && e.message) || "Lỗi giải mã") +
           '<br>Laptop đang tắt — thử đăng xuất rồi đăng nhập lại, hoặc chờ laptop bật.</div></div>'; return; }
         PANE.innerHTML = '<div class="panel" style="margin-top:14px"><div class="hx-trong"><b>Tab này chỉ mở được trên máy quản lý.</b><br>Dữ liệu xác minh có hình người và ảnh cổng bảo vệ nên không đưa lên mạng — máy chủ nội bộ chưa chạy hoặc bạn đang mở từ máy khác.</div></div>'; });
   }
   function taiXong(j, im) { var ky = ""; try { ky = JSON.stringify(Object.assign({}, j, { capNhat: 0 })); } catch (e) {}
-    if (D && ky && ky === tai._ky) { D.capNhat = j.capNhat; return; } tai._ky = ky; D = j; GIU = {}; if (!im) ve(); }
+    if (D && ky && ky === tai._ky) { D.capNhat = j.capNhat; return; } tai._ky = ky; D = j; GIU = {};
+    try { window.dispatchEvent(new CustomEvent("hx-du-lieu")); } catch (e) {}   // 25/10 Vi phạm vẽ lại chip «Theo tác vụ»
+    if (!im) ve(); }
   function taiQD() { return QDL ? Promise.resolve(QDL) : goi("/api/quy-dinh").then(function (j) { QDL = j || []; return QDL; }).catch(function () { QDL = []; return QDL; }); }
 
   /* ---------- khung tab ---------- */
@@ -2181,7 +2183,8 @@
   function init(pane) {
     PANE = pane; napCss();
     if (!PHIEN && !(window.TK && window.TK.phien && typeof window.tkDoiPhienXm === "function")) { veDangNhap(); return; }   // 19/10: có tài khoản audit-dc → tai() đổi phiên trước
-    if (!D) pane.innerHTML = '<div class="kpi-band">' + '<div class="kb-tile"><div class="sk sk-line" style="width:60%"></div></div>'.repeat(4) + '</div><div class="panel" style="margin-top:14px"><div style="padding:18px 16px"><div class="sk sk-line" style="width:86%"></div><div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:78%"></div></div></div>';
+    if (D) ve();   // 25/10 (phiên CCTV bắt): dữ liệu đã tải NỀN cho chip Vi phạm → tai() thấy trùng không vẽ ⇒ vẽ ngay ở đây, khỏi khung trống
+    else pane.innerHTML = '<div class="kpi-band">' + '<div class="kb-tile"><div class="sk sk-line" style="width:60%"></div></div>'.repeat(4) + '</div><div class="panel" style="margin-top:14px"><div style="padding:18px 16px"><div class="sk sk-line" style="width:86%"></div><div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:78%"></div></div></div>';
     tai(); clearInterval(init._h); init._h = setInterval(function () { if (!document.hidden && PANE && !PANE.classList.contains("hidden") && !document.querySelector("#modal.show")) tai(); }, 120e3);
   }
   // bộ đo qc-mobile-toan-du-an gọi các hàm này để mở đúng màn (mục 7 bộ chuẩn: phạm vi đo = phạm vi lời hứa)
@@ -2190,6 +2193,12 @@
       if (PANE && window.nhipTab) window.nhipTab(PANE);   // 16/10 đổi mục con = cùng nhịp chuyển tab (paneIn), không bật thô
       return true; },
     moLuotDau: function () { var l = D && (D.luot.find(function (x) { return (x.buocAnh || []).some(function (b) { return (b.hop || []).length; }); }) || D.luot[0]); if (!l) return false; moLuot(l); return true; },
+    /* 25/10 user «các mục ở Vi phạm đã có ở Theo tác vụ thì cần chip … bấm vào trỏ thẳng thanh bên phải»: Vi phạm tải nền dữ liệu (không vẽ)
+       rồi hỏi danh sách phiếu đang ở Theo tác vụ (cùng luật pB1 — phiếu còn ở B1) */
+    taiNen: function () { if (D) return Promise.resolve(true); if (!PHIEN) return Promise.resolve(false);   // chưa có phiên: KHÔNG đổi phiên ở nền (nhánh hỏng tự chuyển tab Máy trạm)
+      if (tai._nen) return tai._nen;
+      tai._nen = Promise.resolve(tai(true)).then(function () { tai._nen = null; return !!D; }, function () { tai._nen = null; return false; }); return tai._nen; },
+    idTacVu: function () { return D ? D.phieu.filter(function (p) { return p.buoc === "B1"; }).map(function (p) { return String(p.id); }) : []; },
     moPhieuId: function (id) { var p = D && D.phieu.find(function (x) { return String(x.id) === String(id); }); if (!p) return false; moQD(p); return true; },
     moLuotId: function (id) { var l = D && D.luot.find(function (x) { return x.id === id; }); if (!l) return false; moLuot(l); return true; },
     moNVDau: function () { var x = D && D.nhanVien.find(function (y) { return y.viec.some(function (v) { return v.loai !== "dang-giu"; }); }); if (!x) return false; moNV(x, false); return true; } };
