@@ -1591,7 +1591,7 @@ body.side-anim{overflow-x:clip;}
 <!-- 12/10 giao diện Ant Design: LIVE mặc định (user "theo ant design chưa live"); nạp ĐỒNG BỘ ở head để khung hình đầu đã đúng kiểu, tắt trong Cài đặt -->
 <script>window.AD_BI_DANH={"tonkho/kiemke":"kk","tonkho/batthuong":"kk#pane-htonbat"};   /* 15/10 link cũ → mục gộp «Tồn kho chính xác» */ window.AD_TEN='Audit Retail'; window.AD_CHUYEN={ten:'Audit Factory', app:'factory'};</script>   <!-- 13/10 user: Audit Hasaki → Audit Retail + nút sang Factory cuối thanh bên -->
 <script src="tien-ich.js?v=20261020a"></script><!-- 20/10 tiện ích chung: esc/$id/hm/ngayVN — nạp TRƯỚC mọi mô-đun -->
-<script src="hasaki-giaodien-antd.js?v=20261022f"></script>
+<script src="hasaki-giaodien-antd.js?v=20261025c"></script>
 <script src="tai-khoan.js?v=20261023a"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
 <script src="tat-loc.js?v=20261023d" defer></script>   <!-- 22/10 nút «✕ Tắt lọc» · 23/10 dời vào TRONG nút «Bộ lọc», đỏ khi đang lọc, ẩn khi không lọc (dùng chung Retail/Factory) -->
 <link rel="stylesheet" href="thanh-phan.css?v=20261021a"><!-- 21/10 chip trạng thái + nút dùng chung mọi tab (Mẫu 1 đánh giá 20/10) -->
@@ -3759,7 +3759,11 @@ var HOME_MUC = [
     { t: "xacminh", sub: "cam", ten: "Theo máy", cc: "var(--warn)", mo: "Sự việc máy tự bắt từ camera (bãi xe, khu phân loại) chờ quyết định.", muc: ["Clip", "Bộ chọn theo ảnh", "Lập phiếu"] },
     { t: "maytram", ten: "Máy trạm", cc: "var(--good)", mo: "Các PC chạy cò: nhịp tim, RAM · CPU · ổ C, việc đang làm; dừng hoặc cho chạy lại trên máy quản lý.", muc: ["Nhịp tim", "Sức khoẻ", "Việc"],
       so: function(){ var d=window.tqDoc&&tqDoc("mt"); return d&&d.tong?{ k: d.tong, l: d.song+" đang chạy / "+d.tong+" máy" }:null; } },   // 14/10 user: «máy trạm là 2 mà thanh bên 0/1» → số = tổng máy
-    { t: "xacminh", sub: "tg", ten: "Nhật ký", cc: "var(--muted)", mo: "Phiếu, bình luận, ảnh máy đã ghi lên work.hasaki.vn — lọc theo bộ, việc, ngày.", muc: ["Bộ nào làm", "Làm gì", "Ngày"] }
+    { t: "xacminh", sub: "tg", ten: "Nhật ký", cc: "var(--muted)", mo: "Phiếu, bình luận, ảnh máy đã ghi lên work.hasaki.vn — lọc theo bộ, việc, ngày.", muc: ["Bộ nào làm", "Làm gì", "Ngày"] },
+    /* 25/10 user «thêm mục sơ đồ camera vào Tổng quan»: CHỈ tài khoản tamlc (chu — lọc ở homeRender; máy chủ 8591 cũng chặn). Số = camera đã đặt
+       lên mặt bằng / tổng kênh, do hasaki-so-do-camera.js ghi (tqGhi «sdc») khi vẽ xong — Tổng quan không tự tải */
+    { t: "xacminh", sub: "sodo", chu: "tamlc", ten: "CCTV", cc: "var(--info,var(--accent))", mo: "Mỗi kênh camera đặt đúng chỗ lắp trên mặt bằng kho 170: hướng nhìn, vùng sàn thấy, xem trực tiếp.", muc: ["Mặt bằng", "Vùng nhìn", "Trực tiếp"],
+      so: function(){ var d=window.tqDoc&&tqDoc("sdc"); return d&&d.tong?{ k: d.dat+"/"+d.tong, l: "kênh đã đặt lên mặt bằng" }:null; } }
   ]}
 ];
 function nf0(n){ return Number(n||0).toLocaleString("vi-VN"); }
@@ -3793,7 +3797,11 @@ function homeRender(){
   var MAU={ task:"var(--warn)", htonbat:"var(--bad)" };
   var mtDN=false; try{ var mp=JSON.parse(localStorage.getItem("mt-phien")||"null"); mtDN=!!(mp&&mp.het>Date.now()); }catch(e){}
   /* 13/10: máy không có 8591 (điện thoại) vẫn thấy nhóm Xác minh nhưng CHỈ thẻ Máy trạm (đăng nhập qua GAS) */
-  var nhom=HOME_MUC.map(function(g){ return (!g.hx||window.__HX_MAY_CHU)?g:{ g:g.g, hx:1, mo:g.mo, items:g.items.filter(function(it){ return it.t!=="xacminh"; }) }; }).filter(function(g){ return g.items.length; }).map(function(g){
+  var laChu=function(it){ return !it.chu||!!(window.TK&&TK.nguoi&&TK.nguoi.id===it.chu); };   // 25/10 thẻ riêng 1 tài khoản (Sơ đồ camera → tamlc)
+  var nhom=HOME_MUC.map(function(g){ var its=g.items.filter(laChu);
+      if(g.hx&&!window.__HX_MAY_CHU) its=its.filter(function(it){ return it.t!=="xacminh"; });
+      return { g:g.g, hx:g.hx, mo:g.mo, items:its }; })
+    .filter(function(g){ return g.items.length; }).map(function(g){
     /* 20/10 user «chưa đăng nhập không thấy nhóm Xác minh»: khoá theo ĐĂNG NHẬP TÀI KHOẢN (TK.nguoi) — trước đây theo hx-phien/mt-phien còn sót trong máy
        ⇒ khoa=false trong khi chưa đăng nhập ⇒ tqVe lọc theo quyền khách (r.xacminh=khong) ⇒ nhóm rỗng bị bỏ hẳn */
     return { ten: g.g, khoa: g.hx&&!(window.TK&&window.TK.nguoi), muc: g.items.map(function(it){
@@ -4475,7 +4483,7 @@ document.addEventListener('click', ()=>csDongHet(null));
     { g: "Hạng mục 5S",   items: [["tong","Tổng kết"],["task","Vi phạm"],["hangmuc","Quy định"],["planogram","Planogram"]] },
     { g: "Tồn kho", items: [["kk","Tồn kho chính xác"]] },   // 15/10 user: gộp Kiểm kê + Bất thường thành 1 mục (trong trang Kiểm kê trên, Bất thường dưới)
     /* 05/10 user chọn kiểu A: mục con Xác minh nằm ở thanh bên (thay dải chip trong tab). Chỉ hiện trên máy có máy chủ 8591. */
-    { g: "Xác minh", hx: 1, items: [["xacminh","Theo tác vụ","treo"],["xacminh","Theo máy","cam"],["maytram","Máy trạm"],["xacminh","Nhật ký","tg"]] }   // 15/10 user: Nhật ký xuống dưới Máy trạm   // 13/10 tối user: Máy trạm ở Xác minh, DƯỚI CÙNG, phải đăng nhập mới xem (điện thoại: nhóm chỉ còn mục này)
+    { g: "Xác minh", hx: 1, items: [["xacminh","Theo tác vụ","treo"],["xacminh","Theo máy","cam"],["maytram","Máy trạm"],["xacminh","Nhật ký","tg"],["xacminh","CCTV","sodo"]] }   // 24/10 Sơ đồ camera: CHỈ tài khoản tamlc (lọc ở build, máy chủ cũng chặn)   // 15/10 user: Nhật ký xuống dưới Máy trạm   // 13/10 tối user: Máy trạm ở Xác minh, DƯỚI CÙNG, phải đăng nhập mới xem (điện thoại: nhóm chỉ còn mục này)
   ];
   var nav = document.getElementById("sideNav"), tg = document.getElementById("sideToggle"), bd = document.getElementById("sideBackdrop");
   function tabActive(){ var el = document.querySelector(".tab.active"); return el ? el.getAttribute("data-tab") : null; }
@@ -4498,7 +4506,8 @@ document.addEventListener('click', ()=>csDongHet(null));
        sót trên laptop. Nay có hệ tài khoản (tai-khoan.js) thì theo nó: đã đăng nhập + có quyền Xác minh mới hiện mục con (kể cả Máy trạm). */
     var daDN = xmDuocXem();
     HM.forEach(function(grp){
-      var its = grp.items.filter(function(x){ return tabs.indexOf(x[0]) >= 0 && (x[0] !== "xacminh" || window.__HX_MAY_CHU); });
+      var its = grp.items.filter(function(x){ return tabs.indexOf(x[0]) >= 0 && (x[0] !== "xacminh" || window.__HX_MAY_CHU)
+        && (x[2] !== "sodo" || !!(window.TK && window.TK.nguoi && String(window.TK.nguoi.id || "").toLowerCase() === "tamlc")); });
       if (!its.length) return;
       /* 15/10 user: chưa đăng nhập thì «Xác minh» là TIÊU ĐỀ NHÓM như Tồn kho / Hạng mục 5S + biểu tượng khoá sau chữ (không phải 1 mục con); bấm = đăng nhập */
       if (grp.hx && !daDN) { html += '<div class="s-grp s-khoa" role="button" tabindex="0" title="' + (window.TK && window.TK.nguoi ? 'Tài khoản chưa có quyền Xác minh' : 'Đăng nhập để xem Xác minh') + '">Xác minh<span class="khoa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12,17C10.89,17 10,16.1 10,15C10,13.89 10.89,13 12,13A2,2 0 0,1 14,15A2,2 0 0,1 12,17M18,20V10H6V20H18M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V10C4,8.89 4.89,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z"/></svg></span></div>'; return; }

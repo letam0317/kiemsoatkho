@@ -16,7 +16,9 @@
   var API = (function () { try { return localStorage.getItem("hx-api") || window.HX_API || "http://127.0.0.1:8591"; } catch (e) { return window.HX_API || "http://127.0.0.1:8591"; } })();   // 19/10 HX_API = laptop hoặc đường hầm (index.html hxDoMayChu)
   var D = null, QDL = null, PANE = null, SUB = "nv", TIM = "", LOC = { khu: "", tt: "cho", ngay: "", buoc: "", treo: "" }, EV = null;
   try { var l0 = JSON.parse(localStorage.getItem("hx-loc") || "null"); if (l0) { SUB = l0.SUB || SUB; Object.assign(LOC, l0.LOC || {}); } } catch (e) {}
-  if (!/^(treo|cam|tg)$/.test(SUB)) SUB = "treo";   // 12/10 user bỏ Khu giấy · rác, Nhắc QLTT, Nhân viên — máy còn nhớ mục cũ thì về Theo tác vụ
+  /* 24/10 «Sơ đồ camera» (sodo) CHỈ tài khoản tamlc — máy chủ cũng chặn (so-do-camera.mjs); người khác còn nhớ mục này thì về Theo tác vụ */
+  var laChuSoDo = function () { return !!(window.TK && window.TK.nguoi && String(window.TK.nguoi.id || "").toLowerCase() === "tamlc"); };
+  if (!/^(treo|cam|tg|sodo)$/.test(SUB) || (SUB === "sodo" && !laChuSoDo())) SUB = "treo";   // 12/10 user bỏ Khu giấy · rác, Nhắc QLTT, Nhân viên — máy còn nhớ mục cũ thì về Theo tác vụ
   function luu() { try { localStorage.setItem("hx-loc", JSON.stringify({ SUB: SUB, LOC: LOC })); } catch (e) {} }
   var $id = window.hskTienIch.$id;
   var e_ = window.hskTienIch.esc;
@@ -495,7 +497,7 @@
   function taiXong(j, im) { var ky = ""; try { ky = JSON.stringify(Object.assign({}, j, { capNhat: 0 })); } catch (e) {}
     if (D && ky && ky === tai._ky) { D.capNhat = j.capNhat; return; } tai._ky = ky; D = j; GIU = {};
     try { window.dispatchEvent(new CustomEvent("hx-du-lieu")); } catch (e) {}   // 25/10 Vi phạm vẽ lại chip «Theo tác vụ»
-    if (!im) ve(); }
+    if (!im) { var bS = $id("hxBody"); if (SUB === "sodo" && bS && bS.__sdc) return; ve(); } }   // 24/10 đang ở Sơ đồ camera: dữ liệu WF591 đổi KHÔNG dựng lại sơ đồ (đang kéo / gắn điểm)
   function taiQD() { return QDL ? Promise.resolve(QDL) : goi("/api/quy-dinh").then(function (j) { QDL = j || []; return QDL; }).catch(function () { QDL = []; return QDL; }); }
 
   /* ---------- khung tab ---------- */
@@ -520,6 +522,7 @@
     var MUC = [["treo", "Theo tác vụ", pB1.length, pB1.length + " phiếu WF591 chờ xác minh B1, " + qua48 + " phiếu treo quá 48 giờ"],
       ["cam", "Theo máy", choCam, choCam + " sự việc chờ bạn quyết · đã lập " + daLap + " phiếu trong 14 ngày"],
       ["tg", "Nhật ký", tgHomNay(), "Phiếu, bình luận, ảnh do máy tạo bằng tài khoản của bạn trong 14 ngày: bộ nào làm, chạy từ đâu. Chỉ máy này xem được, không ghi lên phiếu"]];
+    if (laChuSoDo()) MUC.push(["sodo", "CCTV", "", "Kênh camera đặt lên mặt bằng kho thật — chỉ tài khoản tamlc"]);   // 24/10 không số ở thanh bên (không phải việc chờ người)
     window.__HX_MUC = { cur: SUB, ds: MUC.map(function (x) { return { k: x[0], ten: x[1], n: x[2] }; }) };
     try { window.dispatchEvent(new CustomEvent("hx-muc")); } catch (e) {}
     var m = MUC.find(function (x) { return x[0] === SUB; }) || MUC[0];
@@ -532,10 +535,24 @@
     if (g && vuaRoi !== SUB && g.k === khoaGiu()) { var bm = $id("hxBody"); bm.parentNode.replaceChild(g.n, bm); return; }
     delete GIU[SUB];
 
+    if (SUB === "sodo") return veSoDo();
     if (SUB === "cam") veCam(); else if (SUB === "treo") veTreo(); else if (SUB === "nhac") veNhac(); else if (SUB === "khu") veKhu(); else if (SUB === "tg") veTG(); else veNV();
   }
   /* 19/10 user: «bộ lọc ngày ở Planogram làm CHUẨN toàn dự án» — trường {ngay:1} trong boLoc dựng 1 bản taoBoLocNgay (bo-loc-ngay.js)
      thay ô chọn "Ngày" kiểu danh sách; giá trị = [từ, đến] ISO ("" = không lọc). Cấu hình giữ ở NGAY_CFG cho ganLoc dựng sau. */
+  /* 24/10 «Sơ đồ camera» — mô-đun riêng hasaki-so-do-camera.js (nạp lười; tệp công khai KHÔNG chứa dữ liệu — mọi thứ tải từ 8591, chỉ tamlc) */
+  var _sdcNap = null;
+  function veSoDo() {
+    var b = $id("hxBody"); if (!b) return; b.__sdc = 1;
+    if (!laChuSoDo()) { SUB = "treo"; luu(); return ve(); }
+    var ctx = { API: function () { return API; }, phien: function () { return PHIEN; }, moThanhBen: moThanhBen };
+    if (window.HXSODO) return window.HXSODO.ve(b, ctx);
+    b.innerHTML = '<div class="panel"><div class="hx-trong">Đang tải sơ đồ camera…</div></div>';
+    _sdcNap = _sdcNap || new Promise(function (ok, loi) { var s = document.createElement("script"); s.src = "hasaki-so-do-camera.js?v=20261025j"; s.onload = ok; s.onerror = function () { _sdcNap = null; loi(); }; document.head.appendChild(s); });
+    _sdcNap.then(function () { if ($id("hxBody") === b) window.HXSODO.ve(b, ctx); }).catch(function () {
+      b.innerHTML = '<div class="panel"><div class="hx-trong">Không tải được mô-đun sơ đồ camera (mất mạng?). <button type="button" class="hx-nut nho" id="sdcThuLai">Thử lại</button></div></div>';
+      var t = $id("sdcThuLai"); if (t) t.onclick = veSoDo; });
+  }
   var NGAY_CFG = {};
   var trongKhoang = function (iso, v) { if (typeof v === "string") v = v ? [v, v] : ""; return !v || !v[0] || (iso >= v[0] && iso <= (v[1] || v[0])); };
   function boLoc(o) {   // .filters + label.lbl + select → enhanceSelect (khuôn host)
@@ -2189,7 +2206,7 @@
   }
   // bộ đo qc-mobile-toan-du-an gọi các hàm này để mở đúng màn (mục 7 bộ chuẩn: phạm vi đo = phạm vi lời hứa)
   window.HXACMINH = { init: init, coDuLieu: function () { return !!D; },
-    sub: function (k) { if (!/^(treo|cam|tg)$/.test(k)) k = "treo"; if (typeof dongMoiPopup === "function") dongMoiPopup(); SUB = k; TIM = ""; if (k === "cam") LOC.tt = "cho"; luu(); ve();
+    sub: function (k) { if (!/^(treo|cam|tg|sodo)$/.test(k) || (k === "sodo" && !laChuSoDo())) k = "treo"; if (typeof dongMoiPopup === "function") dongMoiPopup(); SUB = k; TIM = ""; if (k === "cam") LOC.tt = "cho"; luu(); ve();
       if (PANE && window.nhipTab) window.nhipTab(PANE);   // 16/10 đổi mục con = cùng nhịp chuyển tab (paneIn), không bật thô
       return true; },
     moLuotDau: function () { var l = D && (D.luot.find(function (x) { return (x.buocAnh || []).some(function (b) { return (b.hop || []).length; }); }) || D.luot[0]); if (!l) return false; moLuot(l); return true; },
