@@ -691,10 +691,18 @@ function thuVN(iso){ var m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/)
  * vào WMS. Đi thẳng CDN = ảnh về sớm 1 hop + bớt hàng nghìn lượt gọi WMS mỗi ngày (ràng buộc nhẹ tải upstream).
  * Đường lùi: ảnh lỗi trên CDN → anhLui() đổi về URL gateway đúng 1 lần (onerror) — WMS đổi CDN cũng không mất ảnh. */
 var ANH_PREFIX = "https://wms-gw-external.hasaki.vn/api/v1/filesmanagement/planogram/standard/";
-var ANH_CDN = "https://cdn-media-wms.inshasaki.com/";
+/* 25/10/2026 user «ảnh planogram tải chậm / bể thumbnail»: WMS đã dời ảnh sang thư mục planogram/standard/ trên CDN — đường cũ
+   (gốc CDN) trả 404 cho MỌI ảnh (đo 25/10: 300/300) ⇒ ảnh nào cũng hỏng 1 lượt rồi vòng qua gateway 2–4 s/ảnh, mỗi lúc 3 ảnh.
+   Gateway nay 302 sang đúng cdn-media-wms.inshasaki.com/planogram/standard/<tên tệp>. URL đầy đủ cũ (gốc CDN) cũng đổi về đường mới. */
+var ANH_CDN_GOC = "https://cdn-media-wms.inshasaki.com/";
+var ANH_CDN = ANH_CDN_GOC + "planogram/standard/";
 function urlAnh(s){
   s = String(s || ""); if (!s) return s;
-  if (/^https?:\/\//i.test(s)) return s.indexOf(ANH_PREFIX) === 0 ? ANH_CDN + s.slice(ANH_PREFIX.length) : s;
+  if (/^https?:\/\//i.test(s)) {
+    if (s.indexOf(ANH_PREFIX) === 0) return ANH_CDN + s.slice(ANH_PREFIX.length);
+    if (s.indexOf(ANH_CDN_GOC) === 0 && s.indexOf(ANH_CDN) !== 0 && s.slice(ANH_CDN_GOC.length).indexOf("/") < 0) return ANH_CDN + s.slice(ANH_CDN_GOC.length);
+    return s;
+  }
   return ANH_CDN + s;
 }
 function urlAnhGw(u){ u = String(u || ""); return u.indexOf(ANH_CDN) === 0 ? ANH_PREFIX + u.slice(ANH_CDN.length) : u; }
@@ -2008,7 +2016,7 @@ var ANH_CHO = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAI
  *   3. cất data-URL vào IndexedDB (không PII — chỉ ảnh kệ hàng) TTL ANH_NHO_TTL: mở lại / tab mới / F5 → hiện
  *      tức thì, 0 lượt mạng; quá hạn thì dọn.
  *   Trình duyệt thiếu API hoặc fetch lỗi → rớt về <img src=ảnh gốc> như trước, onerror → gateway (không mất ảnh). */
-var ANH_SONG_SONG = 3;
+var ANH_SONG_SONG = 6;   // 25/10: 3 → 6 — CDN Cloudflare HTTP/2 dồn chung 1 kết nối; đường ảnh đúng (không còn 404 + vòng gateway) nên 6 lượt không nghẽn
 var ANH_NHO_W = 176;               // 56 px × DPR 3 = 168 — đủ nét cho ô thumbnail lớn nhất
 var ANH_NHO_TTL = 9 * 86400000;    // ảnh chỉ giữ 7 ngày trên dashboard → dọn sau 9 ngày
 var ANH_GOC_GIU = 8;               // ảnh gốc gần nhất giữ trong RAM (~4 MB) cho lightbox
@@ -2064,7 +2072,29 @@ function anhNho(u){
   return p;
 }
 function anhKhoa(u){ return String(u).split("/").pop().split("?")[0]; }
+/* 25/10/2026 user «ảnh planogram tải chậm / lag giật, ép 2 s»: đo điện thoại CPU ×4 + 4G — mỗi ô tải ảnh gốc ~475 KB rồi tự thu nhỏ
+   ⇒ danh sách AI 15 s mới hiện 3/300 ảnh. Máy chủ Xác minh (laptop / bản dự phòng BANGCHUYEN-2, anh-plg.mjs) làm sẵn ảnh 240 px webp
+   ~8 KB, tải gốc 1 lần cho mọi người xem. Không nối được máy chủ / ảnh lỗi → tự thu như cũ (anhThuGoc). */
+var _mayChuAnh = null;
+function mayChuAnh(){
+  if (_mayChuAnh) return _mayChuAnh;
+  _mayChuAnh = (typeof window.hxDoMayChu === "function" ? Promise.resolve(window.hxDoMayChu()) : Promise.resolve(false))
+    .then(function(co){ return co && window.HX_API ? String(window.HX_API).replace(/\/$/, "") : ""; }, function(){ return ""; });
+  return _mayChuAnh;
+}
 function anhThu(u){
+  if (!window.fetch || !/cdn-media-wms\.inshasaki\.com\/|wms-gw-external\.hasaki\.vn\/.*\/planogram\//.test(String(u))) return anhThuGoc(u);
+  return mayChuAnh().then(function(api){
+    if (!api) return anhThuGoc(u);
+    var opt = { mode: "cors", credentials: "omit" };
+    if (window.AbortSignal && AbortSignal.timeout) opt.signal = AbortSignal.timeout(10000);
+    return fetch(api + "/anh-plg/" + encodeURIComponent(anhKhoa(u)), opt)
+      .then(function(r){ if (!r.ok) throw new Error("HTTP " + r.status); return r.blob(); })
+      .then(function(b){ return new Promise(function(res, rej){ var fr = new FileReader(); fr.onload = function(){ res(fr.result); }; fr.onerror = rej; fr.readAsDataURL(b); }); })
+      ["catch"](function(){ return anhThuGoc(u); });
+  });
+}
+function anhThuGoc(u){
   if (!window.fetch) return Promise.reject(new Error("no-api"));
   var opt = { mode: "cors", credentials: "omit" };
   if (window.AbortSignal && AbortSignal.timeout) opt.signal = AbortSignal.timeout(25000);
@@ -2831,7 +2861,7 @@ function render(){
           '#hpOtpQ .nl{flex:1 1 160px;font-size:12.5px;min-width:0}</style>' +
           '<div id="hpXinQ"><input id="hpXinTen" maxlength="60" placeholder="Bạn là ai? (tên · bộ phận)">' +
           '<button id="hpXinBtn" type="button">Xin mã OTP</button><div id="hpXinTT"></div></div>' +
-          /* 23/10 user «đã cấp quyền cho người dùng thì bỏ OTP»: có tài khoản → đăng nhập là đủ (đăng nhập xong trang tự tải lại dữ liệu) */
+          /* 22/10 user «đã cấp quyền cho người dùng thì bỏ OTP»: có tài khoản → đăng nhập là đủ (đăng nhập xong trang tự tải lại dữ liệu) */
           (window.tkMoDangNhap ? '<div style="margin-top:12px;font-size:13px">Đã được cấp tài khoản? <button type="button" onclick="window.tkMoDangNhap()" ' +
             'style="border:0;background:none;padding:0;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline">Đăng nhập</button> — không cần OTP.</div>' : "") +
           '<div id="hpOtpQ"><input id="hpOtpMa" inputmode="numeric" autocomplete="one-time-code" maxlength="4" ' +
@@ -3033,13 +3063,17 @@ function fitMaps(){
   /* Quyết theo BỀ RỘNG KHUNG SƠ ĐỒ, không theo innerWidth: trên điện thoại, chỉ cần một phần tử tràn là
      innerWidth phình theo nội dung (đo được 1.361px trên iPhone SE) → không bao giờ vào nhánh thu vừa màn. */
   var hepMap = scs[0].clientWidth < 680;
+  /* 25/10 user «lag giật, đứng cả trang» — đo CPU ×4: fitMaps 482 ms vì GHI zoom rồi ĐỌC offsetWidth xen kẽ từng sơ đồ (mỗi lượt đọc
+     bắt trình duyệt dựng lại bố cục cả trang). Nay theo lô: bỏ zoom hết → đọc hết (1 lần dựng) → ghi hết. */
+  if (!(hepMap && !S.mapTo)){ box.classList.remove("hp-mini"); box.classList.toggle("hp-to", hepMap); }   // lớp đổi cỡ ô phải gắn TRƯỚC khi đo (như bản cũ)
+  var dsMp = [], rongKhung = [], rongMp = [], caoMp = [];
+  for (i = 0; i < scs.length; i++){ mp = scs[i].firstElementChild; if (mp){ mp.style.zoom = ""; dsMp.push(mp); rongKhung.push(scs[i].clientWidth); } }
+  for (i = 0; i < dsMp.length; i++){ rongMp.push(dsMp[i].offsetWidth); caoMp.push(dsMp[i].offsetHeight); }
   if (hepMap && !S.mapTo){
     var zMin = 1.3;
-    for (i = 0; i < scs.length; i++){
-      mp = scs[i].firstElementChild; if (!mp) continue;
-      mp.style.zoom = "";
-      var zi = Math.max(0.3, Math.min(1.3, Math.floor((scs[i].clientWidth - 2) / Math.max(1, mp.offsetWidth) * 100) / 100));
-      mp.style.zoom = zi; zMin = Math.min(zMin, zi);
+    for (i = 0; i < dsMp.length; i++){
+      var zi = Math.max(0.3, Math.min(1.3, Math.floor((rongKhung[i] - 2) / Math.max(1, rongMp[i]) * 100) / 100));
+      dsMp[i].style.zoom = zi; zMin = Math.min(zMin, zi);
     }
     box.classList.toggle("hp-mini", zMin < 0.8);
     box.classList.remove("hp-to");
@@ -3048,11 +3082,9 @@ function fitMaps(){
   }
   box.classList.remove("hp-mini");
   box.classList.toggle("hp-to", hepMap);
-  for (i = 0; i < scs.length; i++){
-    mp = scs[i].firstElementChild; if (!mp) continue;
-    mp.style.zoom = "";
-    z = Math.min(z, (scs[i].clientWidth - 2) / Math.max(1, mp.offsetWidth));
-    mapsH += mp.offsetHeight;
+  for (i = 0; i < dsMp.length; i++){
+    z = Math.min(z, (rongKhung[i] - 2) / Math.max(1, rongMp[i]));
+    mapsH += caoMp[i];
   }
   if (mapsH > 0 && window.innerWidth > 1150){
     var sec = box.firstElementChild;
