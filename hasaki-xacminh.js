@@ -2199,7 +2199,10 @@
       if (tai._nen) return tai._nen;
       tai._nen = Promise.resolve(tai(true)).then(function () { tai._nen = null; return !!D; }, function () { tai._nen = null; return false; }); return tai._nen; },
     idTacVu: function () { return D ? D.phieu.filter(function (p) { return p.buoc === "B1"; }).map(function (p) { return String(p.id); }) : []; },
-    moPhieuId: function (id) { var p = D && D.phieu.find(function (x) { return String(x.id) === String(id); }); if (!p) return false; moQD(p); return true; },
-    moLuotId: function (id) { var l = D && D.luot.find(function (x) { return x.id === id; }); if (!l) return false; moLuot(l); return true; },
+    /* 25/10 (2) phiếu do Theo máy lập (lượt camera → máy ghi phiếu): { task_id: id lượt } */
+    idTheoMay: function () { var m = {}; (D ? D.luot : []).forEach(function (l) { var t = l.may && (l.may.phieu || l.may.taskId); if (t) m[String(t)] = l.id; }); return m; },
+    /* mở thanh bên ở NGAY tab đang đứng (Vi phạm gọi — user «đóng thanh bên thì vẫn về giao diện Vi phạm»): CSS Xác minh nạp trước */
+    moPhieuId: function (id) { var p = D && D.phieu.find(function (x) { return String(x.id) === String(id); }); if (!p) return false; napCss(); moQD(p); return true; },
+    moLuotId: function (id) { var l = D && D.luot.find(function (x) { return x.id === id; }); if (!l) return false; napCss(); moLuot(l); return true; },
     moNVDau: function () { var x = D && D.nhanVien.find(function (y) { return y.viec.some(function (v) { return v.loai !== "dang-giu"; }); }); if (!x) return false; moNV(x, false); return true; } };
 })();

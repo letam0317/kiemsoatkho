@@ -387,6 +387,16 @@ label{display:flex; flex-direction:column; gap:4px;}
   display:grid; grid-template-columns:1.4fr 1fr 1fr 1.2fr; gap:10px; align-items:end;}
 .filters label{min-width:0;}
 .filters input,.filters select{width:100%; min-width:0;}
+/* 25/10 Vi phạm thêm ô «Xác minh» (ẩn khi máy không vào được Xác minh) + «Loại phiếu» → 1 hàng trên máy tính */
+/* lớp .co-xm do xmTvCapNhat gắn khi ô «Xác minh» hiện (không dùng :has(#fXmO[hidden]) — Edge không tính lại khi bỏ hidden) */
+#filterGrid{grid-template-columns:1.3fr 1fr 1.2fr .8fr 1.2fr;}
+#filterGrid > label[hidden]{display:none!important;}   /* nhãn lọc có display riêng ⇒ thuộc tính hidden không tự ẩn */
+#filterGrid.co-xm{grid-template-columns:1.3fr 1fr 1.2fr 1fr .8fr 1.2fr;}
+@media (max-width:820px){
+  /* điện thoại: ô chọn 2 ô ngang nhau cho gọn (Trạng thái | Lỗi · Xác minh | Loại phiếu); Ngày + Tìm trọn hàng */
+  #filterGrid,#filterGrid.co-xm{grid-template-columns:1fr 1fr;}
+  #filterGrid > .date-filter, #filterGrid > label:has(#fTim), #filterGrid:not(.co-xm) > label:has(#fLoai){grid-column:1/-1;}
+}
 .btn-filter{display:none;}
 html body .panel > .panel-head:has(.btn-filter){display:flex!important; align-items:center!important; justify-content:space-between!important;
   gap:8px!important; flex-wrap:nowrap!important; height:40px!important; min-height:40px!important; padding:0 16px!important;
@@ -1805,6 +1815,11 @@ window.hxDoMayChu = function(){
         </div>
         <label><span class="lbl">Trạng thái</span><select id="fStatus"><option value="">Tất cả</option></select></label>
         <label><span class="lbl">Lỗi vi phạm</span><select id="fLoi"><option value="">Tất cả</option></select></label>
+        <!-- 25/10 user: lọc phiếu đã có ở Theo tác vụ / Theo máy chưa (chỉ hiện khi máy này vào được Xác minh) + loại phiếu 5S / ĐG / NF -->
+        <label id="fXmO" hidden><span class="lbl">Xác minh</span><select id="fXm"><option value="">Tất cả</option>
+          <option value="tv">Có ở Theo tác vụ</option><option value="tm">Có ở Theo máy</option><option value="chua">Chưa có ở Xác minh</option></select></label>
+        <label><span class="lbl">Loại phiếu</span><select id="fLoai"><option value="">Tất cả</option>
+          <option value="5S">5S</option><option value="ĐG">ĐG — Đóng gói</option><option value="NF">NF</option></select></label>
         <label><span class="lbl">Tìm (vị trí / mã)</span><input type="search" id="fTim" autocomplete="off" placeholder="F0-A1 / HSK-..."></label>
       </div>
       <div class="table-wrap">
@@ -2553,10 +2568,14 @@ function napLoc(){
 /* ===== LỌC LIÊN HOÀN (chain-filtering): Data gốc -> Ngày -> Trạng thái -> Lỗi -> Search -> Bảng.
    Mỗi bước ở giá trị mặc định ("Tất cả"/rỗng) thì return true (bỏ qua bước đó).
    Search: case-insensitive + đa trường (vị trí, mã task, lỗi, mã/tên NV, QL trực tiếp, TRẠNG THÁI). ===== */
+/* 25/10 loại phiếu theo tiền tố tên task: [ĐG] hoặc tên «Đóng gói / Đóng sai / Đóng thiếu» (phiếu cũ chưa có tiền tố) = ĐG · [NF] = NF · còn lại 5S */
+function loaiPhieu(r){ const t=String(r[iName]||'');
+  return /^\s*\[ĐG\]|^\s*(Đóng gói|Đóng sai|Đóng thiếu)|đóng gói sai/i.test(t) ? 'ĐG' : /^\s*\[NF\]/i.test(t) ? 'NF' : '5S'; }
 function loc(){
   const st =$('fStatus').value.trim();
   const lo =$('fLoi').value.trim();
   const tim=$('fTim').value.toLowerCase().trim();
+  const xm=$('fXm').value, loai=$('fLoai').value;
 
   // Bước 1 — Ngày (gFrom/gTo do date-picker chốt)
   const locNgay = r => {
@@ -2580,7 +2599,10 @@ function loc(){
     return hay.includes(tim);
   };
 
-  return ROWS.filter(r => locNgay(r) && locStatus(r) && locLoi(r) && locTim(r));
+  // Bước 5 — 25/10 Xác minh (Theo tác vụ / Theo máy / chưa có) · Loại phiếu (5S / ĐG / NF theo tiền tố tên task)
+  const locXm = r => !xm || (xm==='chua' ? !xmCho(r) : xmCho(r)===xm);
+  const locLoai = r => !loai || loaiPhieu(r)===loai;
+  return ROWS.filter(r => locNgay(r) && locStatus(r) && locLoi(r) && locTim(r) && locXm(r) && locLoai(r));
 }
 
 const the=(cap,num,cls,stat)=>`<div class="card clickable" data-stat="${stat}" title="Bấm để xem chi tiết"><div class="num" ${cls?`style="color:${cls}"`:''}>${num}</div><div class="cap">${cap}</div></div>`;
@@ -2970,7 +2992,7 @@ function _render(){
   /* 21/10 đánh giá: «190 task» đầu bảng ≠ «111» thanh bên, không ai biết số nào là gì → nói rõ cả hai */
   { const cho=dTable.filter(r=>/^(Chưa xử lý|Mới|Đang xử lý|Quá hạn)$/.test(statusHienThi(r))).length;
     $('dem').textContent=dTable.length+" phiếu · "+cho+" chờ xử lý";
-    const coLoc=!!(gFrom||$('fStatus').value||$('fLoi').value||$('fTim').value.trim()), dong=$('filterGrid').classList.contains('collapsed');
+    const coLoc=!!(gFrom||$('fStatus').value||$('fLoi').value||$('fXm').value||$('fLoai').value||$('fTim').value.trim()), dong=$('filterGrid').classList.contains('collapsed');
     $('btnFilter').textContent=coLoc?'Bộ lọc · đang lọc':'Bộ lọc';
     $('btnFilter').classList.toggle('dang-loc',coLoc);
     $('btnFilter').classList.toggle('mo',!dong); }
@@ -3645,8 +3667,9 @@ function napXm(){
 }
 /* 25/10 user «các mục ở Vi phạm đã có ở Theo tác vụ thì cần nút/chip để t biết — nhấn vào trỏ thẳng thanh bên phải như ở Theo tác vụ».
    Chỉ khi máy này vào được Xác minh (đã nối máy chủ + có phiên): nạp module ở NỀN, lấy danh sách phiếu Theo tác vụ, vẽ lại bảng.
-   Bấm chip = bấm mục «Theo tác vụ» ở thanh bên (đổi tab + đường dẫn như người bấm) rồi mở phiếu; vuốt lùi 1 lần = về lại Vi phạm (hskLop). */
-let XM_TV=new Set(), _xmTvHoi=0;
+   25/10 (2) user «đi từ nút Theo tác vụ/Theo máy ở Vi phạm thì hiện thanh bên phải, nhưng vuốt phải / đóng thanh bên thì VẪN về giao diện Vi phạm»
+   ⇒ KHÔNG chuyển tab nữa: mở thanh bên Xác minh ngay trên Vi phạm (đóng/vuốt lùi = 1 lớp, hskLop). Thêm nút «Theo máy ›» (phiếu do lượt camera lập). */
+let XM_TV=new Set(), XM_TM={}, _xmTvHoi=0;
 function xmTvNap(){
   if(_xmTvHoi || window.__HX_MA_HOA || typeof xmDuocXem!=='function' || !xmDuocXem()) return;
   /* máy chủ chưa dò xong lúc bảng vẽ lần đầu (điện thoại qua đường hầm chậm) → dò 1 lần, xong thì hỏi lại */
@@ -3657,19 +3680,23 @@ function xmTvNap(){
     .then(co=>{ _xmTvHoi=0; xmTvCapNhat(); if(!co && !XM_TV.size) thuLai(); });
 }
 function xmTvCapNhat(){
-  const moi=new Set(window.HXACMINH && window.HXACMINH.idTacVu ? window.HXACMINH.idTacVu() : []);
-  if(moi.size===XM_TV.size && [...moi].every(x=>XM_TV.has(x))) return; XM_TV=moi; render(); }
+  const H=window.HXACMINH, moi=new Set(H && H.idTacVu ? H.idTacVu() : []), tm=H && H.idTheoMay ? H.idTheoMay() : {};
+  const ky=JSON.stringify(tm), giong=moi.size===XM_TV.size && [...moi].every(x=>XM_TV.has(x)) && ky===xmTvCapNhat._ky;
+  XM_TV=moi; XM_TM=tm; xmTvCapNhat._ky=ky; const coXm=!!(moi.size || Object.keys(tm).length); $('fXmO').hidden=!coXm; $('filterGrid').classList.toggle('co-xm',coXm); if(!giong) render(); }
 window.addEventListener('hx-du-lieu', xmTvCapNhat);
 function idTaskVP(r){ return (String(r[iLink]||'').match(/task_id=(\d+)/)||[])[1]||''; }
-function xmTvChip(r){ const id=idTaskVP(r); if(!id || !XM_TV.has(id)) return '';   // nút gọn cùng khuôn «Mở task ↗» (hsk-nut phu nho)
-  return `<button type="button" class="hsk-nut phu nho xm-tv" data-xmtv="${esc(id)}"
-    title="Phiếu này đang chờ xác minh ở Theo tác vụ — bấm để mở thanh bên">Theo tác vụ ›</button>`; }
-function moTheoTacVu(id){
-  const tabCu=(document.querySelector('.tab.active')||{}).dataset?.tab||'task';
-  const it=document.querySelector('#sideNav .s-item[data-sub="treo"]'); if(!it) return;
-  window.hskLop && hskLop.day('ve-tab', ()=>{ const v=document.querySelector(`#sideNav .s-item[data-tab="${tabCu}"]:not([data-sub])`); if(v) v.click(); else setTab(tabCu); });
-  it.click();
-  napXm().then(()=>{ let lan=0; const thu=()=>{ if(window.HXACMINH && window.HXACMINH.coDuLieu() && window.HXACMINH.moPhieuId(id)) return; if(++lan<40) setTimeout(thu,150); }; thu(); });
+/* chỗ của phiếu bên Xác minh: 'tv' Theo tác vụ (còn ở B1) · 'tm' Theo máy (lượt camera đã lập phiếu) · '' chưa có */
+function xmCho(r){ const id=idTaskVP(r); return !id ? '' : XM_TV.has(id) ? 'tv' : XM_TM[id] ? 'tm' : ''; }
+function xmTvChip(r){ const id=idTaskVP(r), c=xmCho(r); if(!c) return '';   // nút gọn cùng khuôn «Mở task ↗» (hsk-nut phu nho)
+  return c==='tv' ? `<button type="button" class="hsk-nut phu nho xm-tv" data-xmtv="${esc(id)}"
+    title="Phiếu này đang chờ xác minh ở Theo tác vụ — bấm để mở thanh bên">Theo tác vụ ›</button>`
+    : `<button type="button" class="hsk-nut phu nho xm-tv" data-xmtm="${esc(XM_TM[id])}"
+    title="Phiếu này do lượt camera ở Theo máy lập — bấm để mở thanh bên">Theo máy ›</button>`; }
+/* mở thanh bên Xác minh NGAY trên Vi phạm; dòng Vi phạm được tô như đang xem (hskThanhBen bỏ tô khi đóng) */
+function moXmTaiCho(mo, nut){
+  const dong=nut && nut.closest('[data-i]'), gi=dong && dong.dataset.i;
+  napXm().then(()=>window.HXACMINH.taiNen()).then(()=>{ if(!mo(window.HXACMINH)){ if(typeof toast==='function') toast('Phiếu này vừa rời Xác minh — tải lại trang để cập nhật.','loi'); return; }
+    if(gi!=null) document.querySelectorAll(`#tbody [data-i="${gi}"], #cardList [data-i="${gi}"]`).forEach(e=>e.classList.add('tb-dangxem')); });
 }
 function moHasakiXacMinh(){
   const pane=$('pane-xacminh');
@@ -4220,7 +4247,9 @@ document.addEventListener('click', e=>{
   const tq=e.target.closest('[data-tkq]');
   if(tq){ moTKQ(tq.dataset.tkq); return; }
   const xt=e.target.closest('[data-xmtv]');   // 25/10 chip «Theo tác vụ» trên dòng Vi phạm → mở thẳng phiếu ở Xác minh (không mở thanh Vi phạm)
-  if(xt){ moTheoTacVu(xt.dataset.xmtv); return; }
+  if(xt){ moXmTaiCho(H=>H.moPhieuId(xt.dataset.xmtv), xt); return; }
+  const xm=e.target.closest('[data-xmtm]');
+  if(xm){ moXmTaiCho(H=>H.moLuotId(xm.dataset.xmtm), xm); return; }
   const row=e.target.closest('[data-i]');
   if(row && !e.target.closest('.thumb') && !e.target.closest('a')){ moChiTiet(+row.dataset.i); return; }
   // Thumb trong modal -> lightbox carousel
@@ -4271,7 +4300,7 @@ document.addEventListener('keydown', e=>{
 
 // Bộ lọc Task vi phạm: nghe CẢ 'input' lẫn 'change' — custom dropdown (enhanceSelect) bắn 'change',
 // gõ phím bắn 'input'; render() debounce qua rAF nên trùng event không vẽ 2 lần.
-['fStatus','fLoi','fTim'].forEach(id=>{
+['fStatus','fLoi','fXm','fLoai','fTim'].forEach(id=>{
   const el=$(id);
   ['input','change'].forEach(ev=>el.addEventListener(ev,render));
 });
@@ -4314,7 +4343,7 @@ document.addEventListener('click', e=>{ if(!$('settingsPop').classList.contains(
 $('tabsNav').addEventListener('click',e=>{ const b=e.target.closest('.tab'); if(b) setTab(b.dataset.tab); });
 $('btnFilter').addEventListener('click',()=>{
   const g=$('filterGrid'), dong=g.classList.toggle('collapsed');
-  const coLoc=!!(gFrom||$('fStatus').value||$('fLoi').value||$('fTim').value.trim());
+  const coLoc=!!(gFrom||$('fStatus').value||$('fLoi').value||$('fXm').value||$('fLoai').value||$('fTim').value.trim());
   $('btnFilter').textContent = coLoc ? 'Bộ lọc · đang lọc' : 'Bộ lọc';   // 13/10 luật 7: bỏ «— chạm để mở/đóng» (chỉ dẫn thao tác), mũi tên ::after tự xoay
   $('btnFilter').classList.toggle('mo', !dong);
 });
@@ -4383,7 +4412,7 @@ document.addEventListener('click', ()=>csDongHet(null));
   /* 12/10: mở link trần → trang Tổng quan (màn hình đầu như Audit Factory); ?tab= (F5 / link chia sẻ) vẫn giữ đúng tab */
   setTab(tb || tabMacDinh());
   // Nâng cấp các <select> thành dropdown tuỳ biến animate được (sau khi theme/title đã set giá trị)
-  ['themeSel','titleSel','kpiThang','fStatus','fLoi'].forEach(id=>{ const el=$(id); if(el) enhanceSelect(el); });
+  ['themeSel','titleSel','kpiThang','fStatus','fLoi','fXm','fLoai'].forEach(id=>{ const el=$(id); if(el) enhanceSelect(el); });
   // LAZY THEO CÔNG TY: chỉ công ty có tab 5S mới kéo dữ liệu 5S; Factory để module fstock tự lo
   if(co5S()){
     // TĂNG TỐC: hiện trang NGAY từ file tĩnh CDN; lỗi -> gviz; chưa có nguồn -> trống
