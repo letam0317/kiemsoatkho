@@ -495,7 +495,9 @@
         PANE.innerHTML = '<div class="panel" style="margin-top:14px"><div class="hx-trong"><b>Tab này chỉ mở được trên máy quản lý.</b><br>Dữ liệu xác minh có hình người và ảnh cổng bảo vệ nên không đưa lên mạng — máy chủ nội bộ chưa chạy hoặc bạn đang mở từ máy khác.</div></div>'; });
   }
   function taiXong(j, im) { var ky = ""; try { ky = JSON.stringify(Object.assign({}, j, { capNhat: 0 })); } catch (e) {}
-    if (D && ky && ky === tai._ky) { D.capNhat = j.capNhat; return; } tai._ky = ky; D = j; GIU = {};
+    /* 25/10 (phiên CCTV bắt, chập chờn): lượt tải NỀN của Vi phạm đặt tai._ky trước, init() lúc đó chưa có D nên vẽ khung chờ ⇒ lượt tai()
+       của init thấy trùng ky mà khung chưa có #hxBody → trước đây return, khung trống mãi. Trùng ky nhưng khung chưa vẽ thì vẫn ve(). */
+    if (D && ky && ky === tai._ky) { D.capNhat = j.capNhat; if (!im && PANE && !PANE.querySelector("#hxBody")) ve(); return; } tai._ky = ky; D = j; GIU = {};
     try { window.dispatchEvent(new CustomEvent("hx-du-lieu")); } catch (e) {}   // 25/10 Vi phạm vẽ lại chip «Theo tác vụ»
     if (!im) { var bS = $id("hxBody"); if (SUB === "sodo" && bS && bS.__sdc) return; ve(); } }   // 24/10 đang ở Sơ đồ camera: dữ liệu WF591 đổi KHÔNG dựng lại sơ đồ (đang kéo / gắn điểm)
   function taiQD() { return QDL ? Promise.resolve(QDL) : goi("/api/quy-dinh").then(function (j) { QDL = j || []; return QDL; }).catch(function () { QDL = []; return QDL; }); }
