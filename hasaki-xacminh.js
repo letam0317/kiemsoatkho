@@ -1707,6 +1707,8 @@
     /* 23/10 «Cắt thêm clip camera» không có lượt WMS: góc camera khác cùng mốc — nút riêng, tên đã là cờ «Cắt thêm · kênh N» */
     ((p.bc && p.bc.clipThem) || []).concat((p.bcChup && p.bcChup.clipThem) || []).forEach(function (z, i) {
       nguon.push({ k: "them" + i, ten: "Cắt thêm · " + z.kenh, url: u_(z.url), video: 1, info: bc.clip ? bc.clipInfo : bc.chupInfo }); });
+    /* 25/10 phiếu loại xm có thêm clip máy tìm đồ vật (tim-vat-xuat-hien) — nút riêng, phụ đề theo giờ máy tìm */
+    if (p.bc && p.bc.clipTim) nguon.push({ k: "tim", ten: p.bc.clipTim.ten, url: u_(p.bc.clipTim.url), video: 1, info: p.bc.clipTim.info });
     /* 12/10 user: lịch sử châm vào ô (WMS) gần giờ ghi nhận nhất trước, mỗi lượt 1 clip — KHÔNG thành nút trên thanh nguồn (8 nút làm răng cưa),
        bấm ở danh sách bên phải để phát */
     var lanIdx = (LS ? LS.ds : []).map(function (x) { if (!x.clip) return -1;
