@@ -3350,7 +3350,7 @@ window.hskLop=(function(){
   const ds=[];   // [{k, el|null, dong}]
   let nuot=0;
   const dongEl=el=>{ el.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} });
-    if(el.id==='lightbox') dongLB(); else if(el.id==='modal') dongModal(); else if(/(^|s)(hp|hk|ht)-modal(s|$)/.test(el.className)) anModalModule(el); else el.classList.remove('show');
+    if(el.id==='lightbox') dongLB(); else if(el.id==='modal') dongModal(); else if(el.matches('.hp-modal,.hk-modal,.ht-modal')) anModalModule(el);   /* 26/10: bản regex mất dấu \ trước s ⇒ «hp-modal show» không khớp → chỉ gỡ .show → lớp phủ vô hình (đo trên điện thoại user) */ else el.classList.remove('show');
     if(!document.querySelector('#modal.show,#statModal.show,#hmModal.show,#ghiModal.show,#pinModal.show')) document.body.classList.remove('modal-open'); };
   const laDT=()=>matchMedia('(max-width:768px)').matches;
   function day(k, dong, el){ if(ds.some(x=>x.k===k)) return; ds.push({k, el:el||null, dong}); try{ history.pushState(Object.assign({}, history.state||{}, {hskLop:ds.length}), ''); }catch(e){} }
