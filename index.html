@@ -1625,11 +1625,22 @@ window.hxDoMayChu = function(){
     .then(function(j){ if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(j.url || "")) throw 0; return ping(j.url, 8000); }); };
   /* 19/10 user «laptop tắt thì điện thoại phải xem được»: laptop không trả lời → hỏi Apps Script (pcBangPh, cần phiên tài khoản) địa chỉ
      máy chủ DỰ PHÒNG trên PC (may-chu-du-phong.mjs, gửi kèm nhịp tim) — bản đó CHỈ CHO XEM. Không nhớ địa chỉ dự phòng (laptop bật lại thì về laptop). */
+  /* 26/10 user «lặp lại lỗi: điện thoại không hiển thị Theo tác vụ/Nhật ký/Theo máy/CCTV kể cả khi đã đăng nhập»: sáng 26/10 08:41–08:47 Apps Script
+     trả bất thường (mọi máy trạm cùng ghi) đúng lúc laptop vừa bật ⇒ 1 lượt pcBangPh hỏng = mất máy chủ. Nay: thử lại 3 lần; được thì nhớ địa chỉ
+     các máy (hx-ham-ds); cả 3 lần hỏng thì ping thẳng các địa chỉ đã nhớ (đường hầm máy dự phòng thường sống qua đêm). */
+  var GAS_PH = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec";
+  var layDsHam = function(ph){ var lan = function(k){
+      return fetch(GAS_PH, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "pcBangPh", ph: ph }) })
+        .then(function(r){ return r.text(); }).then(function(t){ var j = JSON.parse(t); if (!j || !Array.isArray(j.may)) throw 0; var now = j.srvNow || Date.now();
+          var ds = j.may.filter(function(m){ return m.xmHam && now - Date.parse(m.luc) < 6 * 60e3; });
+          try { localStorage.setItem("hx-ham-ds", JSON.stringify(ds.map(function(m){ return m.xmHam; }).slice(0, 6))); } catch(e){}
+          return ds; })
+        .catch(function(){ if (k < 2) return new Promise(function(ok){ setTimeout(ok, 1500 * (k + 1)); }).then(function(){ return lan(k + 1); });
+          var nho = []; try { nho = JSON.parse(localStorage.getItem("hx-ham-ds") || "[]"); } catch(e){}
+          return (Array.isArray(nho) ? nho : []).filter(function(u){ return /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(u); }).map(function(u){ return { xmHam: u }; }); }); };
+    return lan(0); };
   var duPhong = function(){ var T = window.TK, ph = T && T.phien; if (!ph) return Promise.reject(0);
-    return fetch("https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec",
-      { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "pcBangPh", ph: ph }) })
-      .then(function(r){ return r.json(); }).then(function(j){ var now = j.srvNow || Date.now();
-        var ds = (j.may || []).filter(function(m){ return m.xmHam && now - Date.parse(m.luc) < 6 * 60e3; });
+    return layDsHam(ph).then(function(ds){
         if (!ds.length) throw 0;
         /* 21/10 (Theo máy điện thoại «0 sự việc»): laptop thật + PC dự phòng chỉ xem cùng báo đường hầm → ping hết,
            máy KHÔNG dự phòng trả lời là lấy ngay; chỉ khi laptop im mới chịu bản chỉ xem (thiếu dữ liệu bãi xe, Theo máy trống) */
@@ -4516,7 +4527,10 @@ document.addEventListener('click', ()=>csDongHet(null));
     var M = window.__HX_MUC; if (M) M.ds.forEach(function(x){ var b = nav.querySelector('.s-item[data-sub="' + x.k + '"] .sn'); if (b) b.textContent = x.k === "tg" ? "" : (x.n || ""); }); }
   window.addEventListener("hx-muc", function(){ sync(); });
   window.addEventListener("hx-phien", function(){ build(); if (window.homeVeLai) homeVeLai(); });
-  document.addEventListener("tk-doi", function(){ build(); if (window.homeVeLai) homeVeLai(); });   // đăng nhập / đăng xuất hệ tài khoản   // đăng nhập / đăng xuất Xác minh → dựng lại thanh bên + thẻ Tổng quan
+  document.addEventListener("tk-doi", function(){ build(); if (window.homeVeLai) homeVeLai(); });
+  /* 26/10: điện thoại quay lại trang (mở lại trình duyệt / đổi ứng dụng) mà chưa nối máy chủ Xác minh → dò lại ngay */
+  document.addEventListener("visibilitychange", function(){
+    if (document.visibilityState === "visible" && !window.__HX_MAY_CHU && xmDuocXem()) { build._lai = 0; build._do = null; build(); } });   // đăng nhập / đăng xuất hệ tài khoản   // đăng nhập / đăng xuất Xác minh → dựng lại thanh bên + thẻ Tổng quan
   function build(){
     var tabs = [];
     try{ if (typeof CTY !== "undefined" && typeof CTY_ID !== "undefined" && CTY[CTY_ID]) tabs = CTY[CTY_ID].tabs || []; }catch(e){}
@@ -4527,7 +4541,10 @@ document.addEventListener('click', ()=>csDongHet(null));
        sót trên laptop. Nay có hệ tài khoản (tai-khoan.js) thì theo nó: đã đăng nhập + có quyền Xác minh mới hiện mục con (kể cả Máy trạm). */
     var daDN = xmDuocXem();
     HM.forEach(function(grp){
-      var its = grp.items.filter(function(x){ return tabs.indexOf(x[0]) >= 0 && (x[0] !== "xacminh" || window.__HX_MAY_CHU)
+      /* 26/10 (lặp lỗi «điện thoại đã đăng nhập mà mất Theo tác vụ/Theo máy/Nhật ký/CCTV»): trước ẩn mục con khi CHƯA dò ra máy chủ ⇒ laptop tắt /
+         Apps Script chập chờn là mục biến mất không lời. Nay tài khoản có quyền thì LUÔN hiện; bấm vào mà chưa nối được → khung «Chưa nối được máy chủ
+         Xác minh» + Thử lại (moHasakiXacMinh), trang tự dò lại (hẹn giờ + khi quay lại trang). */
+      var its = grp.items.filter(function(x){ return tabs.indexOf(x[0]) >= 0 && (x[0] !== "xacminh" || window.__HX_MAY_CHU || daDN)
         && (x[2] !== "sodo" || !!(window.TK && window.TK.nguoi && String(window.TK.nguoi.id || "").toLowerCase() === "tamlc")); });
       if (!its.length) return;
       /* 15/10 user: chưa đăng nhập thì «Xác minh» là TIÊU ĐỀ NHÓM như Tồn kho / Hạng mục 5S + biểu tượng khoá sau chữ (không phải 1 mục con); bấm = đăng nhập */
@@ -4549,7 +4566,11 @@ document.addEventListener('click', ()=>csDongHet(null));
        Nay chốt theo PHIÊN: phiên đổi (đăng nhập / đăng xuất / đổi tài khoản) là dò lại; dò hỏng thì hxDoMayChu không nhớ kết quả hỏng. */
     var phNay = ""; try { phNay = (window.TK && window.TK.phien) || localStorage.getItem("hx-phien") || ""; } catch(e){}
     if (!window.__HX_MAY_CHU && build._do !== phNay) { build._do = phNay;   // 19/10: dò 127.0.0.1 (laptop) rồi tới đường hầm — điện thoại cũng thấy mục con khi đã đăng nhập
-      window.hxDoMayChu().then(function(co){ if (co || window.__HX_CHAN) build(); if (co && window.homeVeLai) homeVeLai(); }); }
+      window.hxDoMayChu().then(function(co){ if (co || window.__HX_CHAN) build(); if (co && window.homeVeLai) homeVeLai();
+        if (co) { build._lai = 0; return; }
+        /* 26/10: đã đăng nhập mà chưa nối được → tự dò lại 30 s/lần, tối đa 10 lần (laptop vừa bật / đường hầm vừa lên / Apps Script hết chập chờn) */
+        if (xmDuocXem() && (build._lai || 0) < 10) { build._lai = (build._lai || 0) + 1; clearTimeout(build._hen);
+          build._hen = setTimeout(function(){ if (!window.__HX_MAY_CHU) { build._do = null; build(); } }, 30000); } }); }
     nav.querySelectorAll(".s-khoa").forEach(function(el){ el.addEventListener("click", xmMoDangNhap);
       el.addEventListener("keydown", function(e){ if (e.key === "Enter" || e.key === " ") { e.preventDefault(); xmMoDangNhap(); } }); });
     nav.querySelectorAll(".s-item").forEach(function(el){
