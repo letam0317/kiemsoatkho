@@ -1592,7 +1592,7 @@ body.side-anim{overflow-x:clip;}
 <script>window.AD_BI_DANH={"tonkho/kiemke":"kk","tonkho/batthuong":"kk#pane-htonbat"};   /* 15/10 link cũ → mục gộp «Tồn kho chính xác» */ window.AD_TEN='Audit Retail'; window.AD_CHUYEN={ten:'Audit Factory', app:'factory'};</script>   <!-- 13/10 user: Audit Hasaki → Audit Retail + nút sang Factory cuối thanh bên -->
 <script src="tien-ich.js?v=20261020a"></script><!-- 20/10 tiện ích chung: esc/$id/hm/ngayVN — nạp TRƯỚC mọi mô-đun -->
 <script src="hasaki-giaodien-antd.js?v=20261025c"></script>
-<script src="tai-khoan.js?v=20261023a"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
+<script src="tai-khoan.js?v=20261026b"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
 <script src="tat-loc.js?v=20261023d" defer></script>   <!-- 22/10 nút «✕ Tắt lọc» · 23/10 dời vào TRONG nút «Bộ lọc», đỏ khi đang lọc, ẩn khi không lọc (dùng chung Retail/Factory) -->
 <link rel="stylesheet" href="thanh-phan.css?v=20261021a"><!-- 21/10 chip trạng thái + nút dùng chung mọi tab (Mẫu 1 đánh giá 20/10) -->
 <link rel="stylesheet" href="thanh-cuon.css?v=20261022a"><!-- 17/10 thanh cuộn chung theo theme (bản gốc hasaki/kiemsoatkho/thanh-cuon.css) -->
@@ -1631,7 +1631,10 @@ window.hxDoMayChu = function(){
   var GAS_PH = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec";
   var layDsHam = function(ph){ var lan = function(k){
       return fetch(GAS_PH, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "pcBangPh", ph: ph }) })
-        .then(function(r){ return r.text(); }).then(function(t){ var j = JSON.parse(t); if (!j || !Array.isArray(j.may)) throw 0; var now = j.srvNow || Date.now();
+        .then(function(r){ return r.text(); }).then(function(t){ var j = JSON.parse(t);
+          /* 26/10 gốc lỗi tối 25/10: phiên tài khoản Apps Script sống 6 giờ (bộ nhớ đệm) — hết hạn thì pcBangPh trả 401 mà trang vẫn hiện «đã đăng nhập» */
+          if (j && j.code === 401) { if (window.tkKiemLai) window.tkKiemLai(); k = 2; throw 0; }
+          if (!j || !Array.isArray(j.may)) throw 0; var now = j.srvNow || Date.now();
           var ds = j.may.filter(function(m){ return m.xmHam && now - Date.parse(m.luc) < 6 * 60e3; });
           try { localStorage.setItem("hx-ham-ds", JSON.stringify(ds.map(function(m){ return m.xmHam; }).slice(0, 6))); } catch(e){}
           return ds; })
@@ -1660,7 +1663,7 @@ window.hxDoMayChu = function(){
       .then(function(u){ if (!window.__HX_DU_PHONG) try { localStorage.setItem("hx-ham", u); } catch(e){} return u; }, duPhong)
       .then(function(u){ window.__HX_QUA_HAM = 1;
         var tb = "Laptop đang tắt — đang xem bản dự phòng" + (window.__HX_MA_HOA ? " mã hoá" : "") + " (chỉ xem, quyết định làm khi laptop bật)";
-        if (window.__HX_DU_PHONG && typeof toast === "function") setTimeout(function(){ toast(tb, "loi"); }, 600);
+        if (window.__HX_DU_PHONG && typeof toast === "function") setTimeout(function(){ if (window.TK && window.TK.nguoi) toast(tb, "loi"); }, 600);   // 26/10: phiên vừa hết hạn → chỉ báo «hết hạn», không báo thêm
         return u; }); };
   var p = window.__HX_KHONG_MAY ? ham() : ping("http://127.0.0.1:8591", 1500).catch(function(){ return ham(); });
   return window.__HX_DO = p.then(function(u){ window.HX_API = u; window.__HX_MAY_CHU = 1; if (window.hxGuongMa) window.hxGuongMa.capNhat(); document.body.classList.remove("hx-an"); if (typeof homeVeLai === "function") setTimeout(homeVeLai, 0); return true; },   /* 20/10 dò máy chủ/đường hầm xong → vẽ lại Tổng quan (thẻ Xác minh) */
@@ -3660,7 +3663,9 @@ function xmMoDangNhap(){
   if (window.TK && window.TK.nguoi) { if (typeof toast === "function") toast("Tài khoản " + window.TK.nguoi.id + " chưa có quyền Xác minh — nhờ quản trị cấp quyền.", "loi"); return; }
   /* 17/10 user «đăng nhập ở pop-up xong lại chuyển sang màn hình đăng nhập»: điện thoại không có máy chủ Xác minh (8591) → tab xacminh rơi vào ô
      đăng nhập riêng của nó. Máy không có máy chủ: đăng nhập xong mở Máy trạm (mục Xác minh duy nhất xem được ở đó). */
-  if (typeof window.tkMoDangNhap === "function") window.tkMoDangNhap(function(){ if (xmDuocXem()) window.hxDoMayChu().then(function(co){ setTab(co ? "xacminh" : "maytram"); }); });
+  /* 26/10 user «đăng nhập xong máy trỏ vào Máy trạm, vài giây sau mới nhảy»: trước đây chờ dò máy chủ (vài giây) rồi setTab xacminh/maytram ĐÈ lên
+     Tổng quan ⇒ nhảy 2 lần. Luật trỏ: đăng nhập xong LUÔN về Tổng quan 1 lần (moDangNhap), dò máy chủ chạy ngầm, không đổi tab. */
+  if (typeof window.tkMoDangNhap === "function") window.tkMoDangNhap(function(){ if (xmDuocXem()) window.hxDoMayChu(); });
 }
 function xmKhoaPane(pane){
   pane.classList.add("xm-khoa-on");
@@ -3679,7 +3684,7 @@ let _hxNap=null;
 function napXm(){
   if(!_hxNap){
     _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261026a';
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261026b';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
       document.body.appendChild(s);
     });
@@ -4530,7 +4535,16 @@ document.addEventListener('click', ()=>csDongHet(null));
   document.addEventListener("tk-doi", function(){ build(); if (window.homeVeLai) homeVeLai(); });
   /* 26/10: điện thoại quay lại trang (mở lại trình duyệt / đổi ứng dụng) mà chưa nối máy chủ Xác minh → dò lại ngay */
   document.addEventListener("visibilitychange", function(){
-    if (document.visibilityState === "visible" && !window.__HX_MAY_CHU && xmDuocXem()) { build._lai = 0; build._do = null; build(); } });   // đăng nhập / đăng xuất hệ tài khoản   // đăng nhập / đăng xuất Xác minh → dựng lại thanh bên + thẻ Tổng quan
+    if (document.visibilityState !== "visible" || !xmDuocXem()) return;
+    var doLai = function(){ build._lai = 0; build._do = null; build(); };
+    if (!window.__HX_MAY_CHU) return doLai();
+    /* 26/10: trang để mở từ lúc laptop bật, laptop tắt sau đó ⇒ HX_API trỏ máy chết → dò lại từ đầu (module Xác minh đọc lại HX_API mỗi lượt tải) */
+    var c = new AbortController(); setTimeout(function(){ c.abort(); }, 5000);
+    fetch(window.HX_API + "/api/ping", { signal: c.signal }).then(function(r){ if (!r.ok) throw 0; }).catch(function(){
+      window.__HX_MAY_CHU = 0; window.__HX_DO = null; window.__HX_DU_PHONG = 0; window.HX_API = "http://127.0.0.1:8591";
+      try { localStorage.removeItem("hx-ham"); } catch(e){}
+      doLai(); window.hxDoMayChu().then(function(co){ var p = document.getElementById("pane-xacminh");
+        if (co && p && !p.classList.contains("hidden") && typeof moHasakiXacMinh === "function") moHasakiXacMinh(); }); }); });   // đăng nhập / đăng xuất hệ tài khoản   // đăng nhập / đăng xuất Xác minh → dựng lại thanh bên + thẻ Tổng quan
   function build(){
     var tabs = [];
     try{ if (typeof CTY !== "undefined" && typeof CTY_ID !== "undefined" && CTY[CTY_ID]) tabs = CTY[CTY_ID].tabs || []; }catch(e){}

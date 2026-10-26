@@ -13,7 +13,8 @@
  */
 (function () {
   "use strict";
-  var API = (function () { try { return localStorage.getItem("hx-api") || window.HX_API || "http://127.0.0.1:8591"; } catch (e) { return window.HX_API || "http://127.0.0.1:8591"; } })();   // 19/10 HX_API = laptop hoặc đường hầm (index.html hxDoMayChu)
+  var docApi = function () { try { return localStorage.getItem("hx-api") || window.HX_API || "http://127.0.0.1:8591"; } catch (e) { return window.HX_API || "http://127.0.0.1:8591"; } };
+  var API = docApi();   // 26/10: đọc lại ở mỗi lượt tải (tai) — trang mở sẵn lúc laptop bật, laptop tắt thì index.html dò ra máy dự phòng, module phải theo   // 19/10 HX_API = laptop hoặc đường hầm (index.html hxDoMayChu)
   var D = null, QDL = null, PANE = null, SUB = "nv", TIM = "", LOC = { khu: "", tt: "cho", ngay: "", buoc: "", treo: "" }, EV = null;
   try { var l0 = JSON.parse(localStorage.getItem("hx-loc") || "null"); if (l0) { SUB = l0.SUB || SUB; Object.assign(LOC, l0.LOC || {}); } } catch (e) {}
   /* 24/10 «Sơ đồ camera» (sodo) CHỈ tài khoản tamlc — máy chủ cũng chặn (so-do-camera.mjs); người khác còn nhớ mục này thì về Theo tác vụ */
@@ -472,11 +473,11 @@
   }
   /* 10/10 QC: máy bận → gói 420 KB quá 8 s → báo nhầm «chỉ mở được trên máy quản lý». Thử lại 2 lần (3 s, 6 s) trước khi báo. */
   function tai(im, lan) {
-    lan = lan || 0;
+    lan = lan || 0; API = docApi();
     /* 19/10: đã đăng nhập tài khoản audit-dc (điện thoại qua đường hầm) mà chưa có phiên máy chủ → đổi phiên trước, khỏi hiện ô đăng nhập riêng */
     if (!PHIEN && window.TK && window.TK.phien && typeof window.tkDoiPhienXm === "function" && !tai._doi) { tai._doi = 1;
       return window.tkDoiPhienXm().then(function (ok) { if (ok) { PHIEN = localStorage.getItem("hx-phien") || ""; return tai(im, lan); }
-        if (window.__HX_KHONG_MAY && typeof setTab === "function") { tai._doi = 0; if (typeof toast === "function") toast("Chưa mở được Xác minh cho tài khoản này — thử đăng xuất rồi đăng nhập lại.", "loi"); setTab("maytram"); return; }   // điện thoại: không bày ô đăng nhập riêng (lặp 17/10)
+        if (window.__HX_KHONG_MAY) { tai._doi = 0; veHetPhienTk(); return; }   /* 26/10 user «đăng nhập xong trỏ vào Máy trạm vài giây sau mới nhảy»: tải NỀN (chip Vi phạm) đổi phiên hỏng từng setTab("maytram") giật người dùng khỏi trang đang xem ⇒ không bao giờ đổi tab ở đây */   // điện thoại: không bày ô đăng nhập riêng (lặp 17/10)
         veDangNhap(); }); }
     if (!PHIEN) { veDangNhap(); return Promise.resolve(); }
     if (lan < 2) return taiMot(im).catch(function (e) { if (e && e.dangNhap) return; return new Promise(function (r) { setTimeout(r, 3000 * (lan + 1)); }).then(function () { return tai(im, lan + 1); }); });
@@ -2163,6 +2164,14 @@
 
   /* ---------- đăng nhập (12/10) ---------- */
   function datNutDX(co) { document.body.dataset.hxPhien = co ? "1" : ""; if (typeof window.nutDauTrang === "function") window.nutDauTrang(); }
+  /* 26/10: điện thoại đổi phiên máy chủ hỏng (phiên tài khoản Apps Script hết hạn 6 giờ / bị xoá) → báo ngay trong khung, không đổi tab */
+  function veHetPhienTk() {
+    if (!PANE || !document.body.contains(PANE)) return;
+    PANE.innerHTML = '<div class="panel" style="margin-top:14px;padding:24px;text-align:center"><div><b>Chưa mở được Xác minh cho tài khoản này.</b><br>Phiên đăng nhập có thể đã hết hạn — đăng nhập lại để xem tiếp.</div>' +
+      '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px"><button type="button" class="hx-nut" data-a="dn">Đăng nhập lại</button><button type="button" class="hx-nut nho" data-a="lai">Thử lại</button></div></div>';
+    PANE.querySelector('[data-a="dn"]').onclick = function () { if (typeof window.tkMoDangNhap === "function") window.tkMoDangNhap(function () { tai._doi = 0; if (PANE) init(PANE); }); };
+    PANE.querySelector('[data-a="lai"]').onclick = function () { tai._doi = 0; init(PANE); };
+  }
   function veDangNhap(thongBao) {
     if (!PANE) return; datNutDX(false);
     var em = ""; try { em = localStorage.getItem("hx-email") || ""; } catch (e) {}
