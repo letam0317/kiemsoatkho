@@ -1598,7 +1598,9 @@ body.side-anim{overflow-x:clip;}
 <script src="hasaki-giaodien-antd.js?v=20261025c"></script>
 <script src="tai-khoan.js?v=20261026e"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
 <script src="tat-loc.js?v=20261026a" defer></script>
-<script src="loc-popup.js?v=20261026a" defer></script>   <!-- 26/10 điện thoại: khối lọc trong pop-up gập sau nút «Bộ lọc» (cùng mẫu nút trang) -->   <!-- 22/10 nút «✕ Tắt lọc» · 23/10 dời vào TRONG nút «Bộ lọc», đỏ khi đang lọc, ẩn khi không lọc (dùng chung Retail/Factory) -->
+<script src="loc-popup.js?v=20261026a" defer></script>
+<!-- 26/10 điện thoại: khối lọc trong pop-up gập sau nút «Bộ lọc» (cùng mẫu nút trang) -->
+<!-- 22/10 nút «✕ Tắt lọc» · 23/10 dời vào TRONG nút «Bộ lọc», đỏ khi đang lọc, ẩn khi không lọc (dùng chung Retail/Factory) -->
 <link rel="stylesheet" href="thanh-phan.css?v=20261021a"><!-- 21/10 chip trạng thái + nút dùng chung mọi tab (Mẫu 1 đánh giá 20/10) -->
 <link rel="stylesheet" href="thanh-cuon.css?v=20261022a"><!-- 17/10 thanh cuộn chung theo theme (bản gốc hasaki/kiemsoatkho/thanh-cuon.css) -->
 <link rel="stylesheet" href="bo-loc-ngay.css?v=20261019a"><script src="bo-loc-ngay.js?v=20261023a"></script><!-- 19/10 BỘ LỌC NGÀY CHUẨN toàn dự án (taoBoLocNgay) -->
@@ -3352,7 +3354,8 @@ window.hskLop=(function(){
   const ds=[];   // [{k, el|null, dong}]
   let nuot=0;
   const dongEl=el=>{ el.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} });
-    if(el.id==='lightbox') dongLB(); else if(el.id==='modal') dongModal(); else if(el.matches('.hp-modal,.hk-modal,.ht-modal')) anModalModule(el);   /* 26/10: bản regex mất dấu \ trước s ⇒ «hp-modal show» không khớp → chỉ gỡ .show → lớp phủ vô hình (đo trên điện thoại user) */ else el.classList.remove('show');
+    /* 26/10: bản regex mất dấu \ trước s ⇒ «hp-modal show» không khớp → chỉ gỡ .show → lớp phủ vô hình (đo trên điện thoại user) */
+    if(el.id==='lightbox') dongLB(); else if(el.id==='modal') dongModal(); else if(el.matches('.hp-modal,.hk-modal,.ht-modal')) anModalModule(el); else el.classList.remove('show');
     if(!document.querySelector('#modal.show,#statModal.show,#hmModal.show,#ghiModal.show,#pinModal.show')) document.body.classList.remove('modal-open'); };
   const laDT=()=>matchMedia('(max-width:768px)').matches;
   function day(k, dong, el){ if(ds.some(x=>x.k===k)) return; ds.push({k, el:el||null, dong}); try{ history.pushState(Object.assign({}, history.state||{}, {hskLop:ds.length}), ''); }catch(e){} }
@@ -3899,6 +3902,15 @@ window.hskCapNhat=function(ms, o){ o=o||{};
 };
 /* ===== TAB HẠNG MỤC 5S — đọc tab QUY-DINH trực tiếp (gviz), đồng bộ thời gian thực ===== */
 const TAB_QD="QUY-DINH"; let QD=[];
+/* 26/10 — hạng mục QUY-DINH để TRỐNG % nhưng HR vẫn trừ thật: lấy mức đo từ Staff History → bảng KPI tháng.
+   «Đóng gói sai quy định» (B3.3) → bản ghi reason 5 → COS-KPI-003-P01 Customer_Feedback_Order, trừ 2 điểm/lượt,
+   không tăng theo lần (T9: 12/14 NV khớp đúng 2×số lượt; T10 phiếu ĐG 24/10 của NV 18242 đã ăn −2).
+   Chỉ lấp ô trống — ô nào sheet có số thì sheet thắng. */
+const KPI_HR_BU={"đóng gói sai quy định":["2","2","2"]};
+function boSungKpiHR(){
+  QD.forEach(r=>{ const bu=KPI_HR_BU[_chuan(r[1])]; if(!bu) return;
+    [3,6,9].forEach((c,i)=>{ if(String(r[c]??'').trim()==='') r[c]=bu[i]; }); });
+}
 function taiQuyDinh(){
   if(!SHEET_ID){ QD=[]; $('hmDem').textContent='0 hạng mục';
     $('hmWrap').innerHTML='<div class="empty-row">Chưa cấu hình Google Sheet QUY-DINH cho '+CTY[CTY_ID].ten+'.</div>';
@@ -3907,6 +3919,7 @@ function taiQuyDinh(){
   window[cb]=resp=>{ try{
     const rows=((resp.table&&resp.table.rows)||[]).map(r=>(r.c||[]).map(c=>c?(c.v==null?"":c.v):""));
     QD=rows.filter(r=>/^\d+$/.test(String(r[0]).trim()));   // chỉ giữ dòng có STT là số (bỏ header phụ)
+    boSungKpiHR();
     renderQuyDinh();
     if(ROWS.length){ render(); renderKpi(); }   // QD về sau dữ liệu task -> vẽ lại Tần suất + bảng luỹ kế KPI
     homeVeLai();
