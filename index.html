@@ -2515,10 +2515,23 @@ async function taiTuTinh(){
     $('kpiThang').value = thangHienTai; csDongBo('kpiThang');
     gopChunkVaNap();
     if(j.apiAt) hienGioDuLieu(Number(j.apiAt), true);
+    kiemChunkCu(j);
     // Task sống cũ: tải SAU lần vẽ đầu (không chen vào đường tới màn đầu), có dòng mới thì gộp + vẽ lại 1 lần
     taiSongCu().then(ok=>{ if(ok && SONG_CU && SONG_CU.rows.length) gopChunkVaNap(); }).catch(()=>{});
     return true;
   }catch(e){ return false; }
+}
+/* 26/10 user «sao k thấy làm tươi wf»: 22–26/10 tệp tóm tắt không lên được github.io (khoá GitHub chết) mà index cũ vẫn còn
+   ⇒ trang hiện số 4 ngày trước. Máy trạm (chạy đồng bộ khi laptop tắt) không có khoá GitHub nên lỗi này sẽ lặp lại.
+   Nay: vẽ nhanh từ tệp tóm tắt, rồi hỏi máy chủ giờ GHI 5S-TASKS gần nhất; sheet mới hơn tệp > 30 phút → đọc thẳng sheet (gviz). */
+function kiemChunkCu(j){
+  if(CTY_ID!=='hasaki') return;
+  const tai=Date.parse(j&&j.taiLuc)||0; if(!tai) return;
+  const cb="lsc_"+Date.now(); let s=null; const to=setTimeout(xong,8000);
+  function xong(){ clearTimeout(to); delete window[cb]; if(s&&s.parentNode) s.remove(); }
+  window[cb]=resp=>{ xong(); const ts=resp&&resp.status==='success'?Number(resp.ts||0):0;
+    if(ts && ts-tai>30*60e3){ console.warn('Tệp tóm tắt cũ hơn sheet '+Math.round((ts-tai)/60e3)+' phút — đọc thẳng sheet'); SUMMARY_INDEX=null; CHUNK.clear(); taiDuLieu(); } };
+  s=document.createElement('script'); s.src=APPSCRIPT_URL+"?action=lastSync&callback="+cb; s.onerror=xong; document.body.appendChild(s);
 }
 // Người dùng chọn 1 tháng ở dropdown -> tải chunk tháng đó (+ tháng trước) rồi vẽ lại, KHÔNG reload trang
 async function chonThang(th){
