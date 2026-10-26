@@ -18,7 +18,7 @@
   var D = null, QDL = null, PANE = null, SUB = "nv", TIM = "", LOC = { khu: "", tt: "cho", ngay: "", buoc: "", treo: "" }, EV = null;
   try { var l0 = JSON.parse(localStorage.getItem("hx-loc") || "null"); if (l0) { SUB = l0.SUB || SUB; Object.assign(LOC, l0.LOC || {}); } } catch (e) {}
   /* 24/10 «Sơ đồ camera» (sodo) CHỈ tài khoản tamlc — máy chủ cũng chặn (so-do-camera.mjs); người khác còn nhớ mục này thì về Theo tác vụ */
-  var laChuSoDo = function () { return !!(window.TK && window.TK.nguoi && String(window.TK.nguoi.id || "").toLowerCase() === "tamlc"); };
+  var laChuSoDo = function () { return window.tkCoCctv ? window.tkCoCctv() : !!(window.TK && window.TK.nguoi && String(window.TK.nguoi.id || "").toLowerCase() === "tamlc"); };   // 26/10 CCTV theo quyền r.xm.sodo
   if (!/^(treo|cam|tg|sodo)$/.test(SUB) || (SUB === "sodo" && !laChuSoDo())) SUB = "treo";   // 12/10 user bỏ Khu giấy · rác, Nhắc QLTT, Nhân viên — máy còn nhớ mục cũ thì về Theo tác vụ
   function luu() { try { localStorage.setItem("hx-loc", JSON.stringify({ SUB: SUB, LOC: LOC })); } catch (e) {} }
   var $id = window.hskTienIch.$id;
@@ -1926,6 +1926,9 @@
     if (typeof enhanceSelect === "function") enhanceSelect($id("qdSel"));
     if (!co) { $id("qdLuu").disabled = true; $id("qdLuu").textContent = "Chưa đủ bằng chứng để quyết"; }
     $id("qdLuu").onclick = function () {
+      /* 26/10: «Gán người khác (chọn ở ô bên dưới)» bắt buộc có người ở ô Gán người khác */
+      var gcGiaTri = gcNv ? gcNv.giaTri() : $id("qdGc").value;
+      if (/^Gán người khác/.test($id("qdSel").value) && !/d{6}/.test(gcGiaTri)) { $id("qdMsg").textContent = "Chọn người ở ô «Gán người khác» rồi bấm Lưu."; var oGc = $id("qdGc"); if (oGc) oGc.focus(); return; }
       var b = $id("qdLuu"); b.disabled = true; $id("qdMsg").textContent = "Đang lưu…";
       goi("/api/quyet-dinh-b1", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: p.id, qd: $id("qdSel").value, gc: gcNv ? gcNv.giaTri() : $id("qdGc").value }) })
         .then(function () { $id("qdMsg").textContent = "Đã lưu — máy làm ở lượt cò kế (mỗi 2 giờ)."; return tai(true).then(function () { if (SUB === "treo") veTreo(); }); })

@@ -961,6 +961,9 @@ html.ad .hm-tim input{flex:1; min-width:0; border:0!important; outline:0; box-sh
 /* ===== CỘT BIÊN BẢN ===== */
 thead th.c-bb{width:104px; white-space:nowrap;}
 tbody td.c-bb{width:104px; white-space:normal;}
+/* 26/10 user «dời Ảnh · Tần suất vi phạm · Trạng thái · Biên bản sang trái 2cm (về phía Nhân viên · Quản lý)»: lề phải cột Biên bản nở thêm
+   ≤ 2cm, lấy đúng từ cột đệm (bbLui đo) ⇒ màn hẹp thiếu chỗ thì dời ít hơn, không tràn ngang */
+#pane-task table.bb-lui thead th.c-bb, #pane-task table.bb-lui tbody td.c-bb{padding-right:var(--bb-pr)!important;}
 .bb-cell{display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap;}
 /* thumbnail biên bản: cùng cỡ/kiểu với thumbnail cột Hình ảnh */
 .bb-thumb{width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid var(--border); background:var(--surface2); cursor:zoom-in;}
@@ -1592,7 +1595,7 @@ body.side-anim{overflow-x:clip;}
 <script>window.AD_BI_DANH={"tonkho/kiemke":"kk","tonkho/batthuong":"kk#pane-htonbat"};   /* 15/10 link cũ → mục gộp «Tồn kho chính xác» */ window.AD_TEN='Audit Retail'; window.AD_CHUYEN={ten:'Audit Factory', app:'factory'};</script>   <!-- 13/10 user: Audit Hasaki → Audit Retail + nút sang Factory cuối thanh bên -->
 <script src="tien-ich.js?v=20261020a"></script><!-- 20/10 tiện ích chung: esc/$id/hm/ngayVN — nạp TRƯỚC mọi mô-đun -->
 <script src="hasaki-giaodien-antd.js?v=20261025c"></script>
-<script src="tai-khoan.js?v=20261026d"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
+<script src="tai-khoan.js?v=20261026e"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
 <script src="tat-loc.js?v=20261023d" defer></script>   <!-- 22/10 nút «✕ Tắt lọc» · 23/10 dời vào TRONG nút «Bộ lọc», đỏ khi đang lọc, ẩn khi không lọc (dùng chung Retail/Factory) -->
 <link rel="stylesheet" href="thanh-phan.css?v=20261021a"><!-- 21/10 chip trạng thái + nút dùng chung mọi tab (Mẫu 1 đánh giá 20/10) -->
 <link rel="stylesheet" href="thanh-cuon.css?v=20261022a"><!-- 17/10 thanh cuộn chung theo theme (bản gốc hasaki/kiemsoatkho/thanh-cuon.css) -->
@@ -3334,7 +3337,7 @@ window.hskLop=(function(){
   const ds=[];   // [{k, el|null, dong}]
   let nuot=0;
   const dongEl=el=>{ el.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} });
-    if(el.id==='lightbox') dongLB(); else if(el.id==='modal') dongModal(); else el.classList.remove('show');
+    if(el.id==='lightbox') dongLB(); else if(el.id==='modal') dongModal(); else if(/(^|s)(hp|hk|ht)-modal(s|$)/.test(el.className)) anModalModule(el); else el.classList.remove('show');
     if(!document.querySelector('#modal.show,#statModal.show,#hmModal.show,#ghiModal.show,#pinModal.show')) document.body.classList.remove('modal-open'); };
   const laDT=()=>matchMedia('(max-width:768px)').matches;
   function day(k, dong, el){ if(ds.some(x=>x.k===k)) return; ds.push({k, el:el||null, dong}); try{ history.pushState(Object.assign({}, history.state||{}, {hskLop:ds.length}), ''); }catch(e){} }
@@ -3499,10 +3502,18 @@ function renderTabs(){
 }
 /* 12/10 user: "chọn sub-tab Theo máy mà pop-up ở Vi phạm vẫn còn hiển thị" — đổi tab/mục con thì ĐÓNG mọi pop-up đang mở
    (host + module), dừng clip đang phát. */
+/* 26/10 user «Planogram / Tồn kho chính xác: bấm pop-up / thanh bên thì đứng trang, bấm-trỏ các mục khác không ăn»: pop-up module
+   (.hp-modal / .hk-modal / .ht-modal) mở bằng display:flex + .show; đóng GIÁN TIẾP (đổi mục ở thanh bên, vuốt lùi) trước đây chỉ gỡ .show
+   ⇒ pop-up mờ về opacity 0 nhưng VẪN phủ kín vùng nội dung và nuốt mọi cú bấm (đo: #hpVtModal, #hkKkModal còn bắt chuột sau khi đóng).
+   Nay đóng nào cũng trả display:none sau nhịp mờ (240 ms) — trừ khi pop-up vừa được mở lại. */
+function anModalModule(m){
+  m.classList.remove('show');
+  clearTimeout(m.__anHen); m.__anHen=setTimeout(function(){ if(!m.classList.contains('show')) m.style.display='none'; },240);
+}
 function dongMoiPopup(){
   ['modal','statModal','hmModal','ghiModal','pinModal','lightbox'].forEach(id=>{ const m=$(id); if(m && m.classList.contains('show')){
     m.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} }); m.classList.remove('show'); } });
-  document.querySelectorAll('.hp-modal.show,.hk-modal.show,.ht-modal.show').forEach(m=>{ m.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} }); m.classList.remove('show'); });
+  document.querySelectorAll('.hp-modal.show,.hk-modal.show,.ht-modal.show').forEach(m=>{ m.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} }); anModalModule(m); });
   document.body.classList.remove('modal-open');
 }
 /* ===== 12/10 LUẬT 14 TỰ ĐỘNG — "GHÉT NHẤT LÀ LẶP LẠI THÔNG TIN ĐÃ CÓ" (user) =====
@@ -3684,7 +3695,7 @@ let _hxNap=null;
 function napXm(){
   if(!_hxNap){
     _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261026b';
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261026c';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
       document.body.appendChild(s);
     });
@@ -3831,7 +3842,7 @@ function homeRender(){
   var MAU={ task:"var(--warn)", htonbat:"var(--bad)" };
   var mtDN=false; try{ var mp=JSON.parse(localStorage.getItem("mt-phien")||"null"); mtDN=!!(mp&&mp.het>Date.now()); }catch(e){}
   /* 13/10: máy không có 8591 (điện thoại) vẫn thấy nhóm Xác minh nhưng CHỈ thẻ Máy trạm (đăng nhập qua GAS) */
-  var laChu=function(it){ return !it.chu||!!(window.TK&&TK.nguoi&&TK.nguoi.id===it.chu); };   // 25/10 thẻ riêng 1 tài khoản (Sơ đồ camera → tamlc)
+  var laChu=function(it){ return !it.chu||!!(window.TK&&TK.nguoi&&TK.nguoi.id===it.chu)||(it.sub==='sodo'&&!!(window.tkCoCctv&&window.tkCoCctv())); };   // 26/10 CCTV theo quyền r.xm.sodo   // 25/10 thẻ riêng 1 tài khoản (Sơ đồ camera → tamlc)
   var nhom=HOME_MUC.map(function(g){ var its=g.items.filter(laChu);
       if(g.hx&&!window.__HX_MAY_CHU) its=its.filter(function(it){ return it.t!=="xacminh"; });
       return { g:g.g, hx:g.hx, mo:g.mo, items:its }; })
@@ -4219,6 +4230,22 @@ let bbLocal={}, bbCode='';   // bbLocal: overlay hiện ngay sau khi tải (shee
 const bbDriveId=u=>{const m=String(u).match(/[?&]id=([\w-]+)/)||String(u).match(/\/d\/([\w-]+)/);return m?m[1]:null;};
 const bbThumb=u=>{const id=bbDriveId(u);return id?`https://drive.google.com/thumbnail?id=${id}&sz=w160`:u;};
 const bbFull =u=>{const id=bbDriveId(u);return id?`https://drive.google.com/thumbnail?id=${id}&sz=w1600`:u;};
+/* 26/10: dời 4 cột phải sang trái 2 cm — đo cột đệm (c-flex), nở lề phải cột Biên bản = min(2cm, phần đệm còn) */
+(function(){
+  var CM2 = 2 * 96 / 2.54, hen = 0;
+  function canh(){ var t = document.querySelector('#pane-task .table-wrap table'); if(!t) return;
+    var dem = t.querySelector('thead th.c-flex'), bb = t.querySelector('thead th.c-bb'); if(!dem || !bb || !dem.offsetWidth) return;
+    t.classList.remove('bb-lui');
+    var goc = parseFloat(getComputedStyle(bb).paddingRight) || 12, lui = Math.max(0, Math.min(CM2, dem.getBoundingClientRect().width - 1));
+    var w = t.closest('.table-wrap'), tran0 = w.scrollWidth - w.clientWidth;   // tràn sẵn (không do dời) — giữ nguyên, không dời
+    if(lui < 4 || tran0 > 0) return; t.style.setProperty('--bb-pr', (goc + lui).toFixed(1) + 'px'); t.classList.add('bb-lui');
+    var tran = w.scrollWidth - w.clientWidth; if(tran > 0){ lui -= tran; if(lui < 4) t.classList.remove('bb-lui'); else t.style.setProperty('--bb-pr', (goc + lui).toFixed(1) + 'px'); } }
+  var henCanh = function(){ clearTimeout(hen); hen = setTimeout(canh, 80); };
+  addEventListener('resize', henCanh);
+  var gan = setInterval(function(){ var tb = document.getElementById('tbody'); if(!tb) return; clearInterval(gan);
+    new MutationObserver(henCanh).observe(tb, { childList: true }); henCanh(); }, 300);
+  new MutationObserver(henCanh).observe(document.body, { attributes: true, attributeFilter: ['class'] });   // thanh bên mở/đóng, đổi tab
+})();
 function bbCell(r, nhan){   // nhan=true (thẻ điện thoại): chỉ ghi «Biên bản:» khi đã có ảnh — nút tự nói «+ Biên bản»
   const code=String(r[iCode]||'').trim();
   const sheetUrls=(iBienBan>=0?String(r[iBienBan]||''):'').split(/[\n,]/).map(s=>s.trim()).filter(s=>/^https?:/.test(s));
@@ -4274,6 +4301,8 @@ document.addEventListener('click', e=>{
   if(bbu){ e.preventDefault(); e.stopPropagation();
     // Khoá tầng JS: nút disabled/bb-off (task đã huỷ / đã đóng) -> bỏ qua mọi click lọt qua CSS
     if(bbu.disabled || bbu.classList.contains('bb-off') || bbu.classList.contains('btn-disabled')) return;
+    /* 26/10 user «khách vẫn vô + Biên bản rồi bị chặn OTP»: chặn cả tầng bấm (trình duyệt còn giữ bản cũ thì nút có thể còn hiện) */
+    if(!(window.TK && window.TK.nguoi && typeof window.tkCo==='function' && window.tkCo('r.task','lam'))){ if(typeof toast==='function') toast('Tải biên bản cần đăng nhập tài khoản có quyền Vi phạm: Xem + thao tác.','loi'); return; }
     bbCode=bbu.dataset.code; $('bbFile').value=''; $('bbFile').click(); return; }
   const bbt=e.target.closest('.bb-thumb');
   if(bbt){ e.preventDefault(); e.stopPropagation(); openLB([{url:bbt.dataset.bb,type:isVideo(bbt.dataset.bb)?'vid':'img'}],0); return; }
@@ -4559,7 +4588,7 @@ document.addEventListener('click', ()=>csDongHet(null));
          Apps Script chập chờn là mục biến mất không lời. Nay tài khoản có quyền thì LUÔN hiện; bấm vào mà chưa nối được → khung «Chưa nối được máy chủ
          Xác minh» + Thử lại (moHasakiXacMinh), trang tự dò lại (hẹn giờ + khi quay lại trang). */
       var its = grp.items.filter(function(x){ return tabs.indexOf(x[0]) >= 0 && (x[0] !== "xacminh" || window.__HX_MAY_CHU || daDN)
-        && (x[2] !== "sodo" || !!(window.TK && window.TK.nguoi && String(window.TK.nguoi.id || "").toLowerCase() === "tamlc")); });
+        && (x[2] !== "sodo" || !!(window.tkCoCctv && window.tkCoCctv())); });   // 26/10 CCTV theo quyền r.xm.sodo (tamlc luôn có)
       if (!its.length) return;
       /* 15/10 user: chưa đăng nhập thì «Xác minh» là TIÊU ĐỀ NHÓM như Tồn kho / Hạng mục 5S + biểu tượng khoá sau chữ (không phải 1 mục con); bấm = đăng nhập */
       if (grp.hx && !daDN) { html += '<div class="s-grp s-khoa" role="button" tabindex="0" title="' + (window.TK && window.TK.nguoi ? 'Tài khoản chưa có quyền Xác minh' : 'Đăng nhập để xem Xác minh') + '">Xác minh<span class="khoa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12,17C10.89,17 10,16.1 10,15C10,13.89 10.89,13 12,13A2,2 0 0,1 14,15A2,2 0 0,1 12,17M18,20V10H6V20H18M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V10C4,8.89 4.89,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z"/></svg></span></div>'; return; }
