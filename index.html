@@ -4279,12 +4279,19 @@ async function taiBienBanLen(files){
     arr.push({name:f.name, mime:f.type||'image/jpeg', base64:b64});
   }
   if(!arr.length){ toast("Vui lòng chọn tệp ảnh (≤5MB).", 'loi'); return; }
-  const pin = await hoiPin('Tải biên bản', 'Nhập PIN để xác thực trước khi tải biên bản lên');
-  if(pin===null || !pin.trim()) return;
-  toast("Đang tải "+arr.length+" ảnh biên bản…", 'ok');
+  /* 26/10 user «quản trị / tài khoản được cấp vẫn phải nhập PIN»: đã đăng nhập + Vi phạm = Xem + thao tác → gửi phiên, máy chủ kiểm, không hỏi PIN.
+     Máy chủ từ chối phiên (hết hạn) → mới hỏi PIN như cũ. */
+  const phien=(window.TK && window.TK.phien && typeof window.tkCo==='function' && window.tkCo('r.task','lam')) ? window.TK.phien : '';
+  const gui=async(pin)=>{ const res=await fetch(APPSCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"uploadBienBan",code,phien,pin,files:arr})}); return res.json(); };
   try{
-    const res=await fetch(APPSCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"uploadBienBan",code,pin:pin.trim(),files:arr})});
-    const j=await res.json();
+    let j=null;
+    if(phien){ toast("Đang tải "+arr.length+" ảnh biên bản…", 'ok'); j=await gui(''); }
+    if(!j || (j.status!=="success" && j.canPin)){
+      const pin = await hoiPin('Tải biên bản', phien ? 'Phiên đăng nhập không còn hiệu lực — nhập PIN để tải biên bản lên' : 'Nhập PIN để xác thực trước khi tải biên bản lên');
+      if(pin===null || !pin.trim()) return;
+      toast("Đang tải "+arr.length+" ảnh biên bản…", 'ok');
+      j=await gui(pin.trim());
+    }
     if(j&&j.status==="success"&&j.urls){ (bbLocal[code]=bbLocal[code]||[]).push(...j.urls); render(); toast("Đã tải biên bản.", 'ok'); setTimeout(()=>lamMoiNen(), 1500); }
     else toast("Không tải được biên bản: "+((j&&j.message)||"?"), 'loi');
   }catch(e){ toast("Lỗi kết nối khi tải biên bản: "+e.message, 'loi'); }
