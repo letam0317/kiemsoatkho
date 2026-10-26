@@ -14,7 +14,7 @@
   /* 22/10 user «phải hiển thị hạng mục con bên trong: theo tác vụ/theo máy,…»: bảng quyền theo đúng thanh bên — mục có mục con = [khoá cha|null, tên, [con…], tab thanh bên].
      Khoá cha (r.xacminh) = mức cao nhất của các con (máy chủ 8591 vẫn hỏi r.xacminh); con chưa từng lưu thì thừa hưởng quyền cha cũ. Cùng luật ở google-script-TaiKhoan.gs. */
   var NHOM = [
-    ["Audit Retail", [["r.tong", "Tổng kết"], ["r.task", "Vi phạm"], ["r.hangmuc", "Quy định"], ["r.planogram", "Planogram"],
+    ["Audit Retail", [["r.tong", "Tổng kết"], ["r.task", "Vi phạm"], ["r.ghinhan", "Ghi nhận 5S", null, null, "phu"], ["r.hangmuc", "Quy định"], ["r.planogram", "Planogram"],
       [null, "Tồn kho chính xác", [["r.kk", "Kiểm kê"], ["r.htonbat", "Bất thường"]], "kk"],
       ["r.xacminh", "Xác minh", [["r.xm.treo", "Theo tác vụ"], ["r.xm.cam", "Theo máy"], ["r.maytram", "Máy trạm"], ["r.xm.tg", "Nhật ký"]], "xacminh"]]],
     ["Audit Factory", [["f.stock", "Trạng thái lưu trữ"], [null, "Tồn kho chính xác", [["f.kk", "Kiểm kê"], ["f.abn", "Bất thường"]], "kk"],
@@ -29,7 +29,9 @@
   var BAC = { khong: 0, xem: 1, lam: 2 };
   /* 24/10 mục MỚI chưa có khoá ở máy chủ (TK_TAB của google-script-TaiKhoan.gs): đi theo quyền của mục gần nhất, khỏi phải deploy GAS.
      «Bảng thông tin» (Factory › Công cụ kho, chỉ soạn + in biển, không ghi dữ liệu) = quyền «Tem vị trí». Muốn chỉnh riêng thì thêm khoá vào NHOM + TK_TAB. */
-  var THEO = { "f.btt": "f.tem" };
+  /* 26/10 user «tách riêng quyền + Ghi nhận» (Vi phạm «Xem + thao tác» kéo theo cả nút + Biên bản): r.ghinhan = nút «+ Ghi nhận 5S»
+     (Tổng quan + pop-up ô Planogram). Tài khoản chưa đặt dòng này → theo quyền Vi phạm (cùng luật TK_THEO ở google-script-TaiKhoan.gs). */
+  var THEO = { "f.btt": "f.tem", "r.ghinhan": "r.task" };
   function chuanQ(q) {   // con thiếu → theo cha cũ; cha = mức cao nhất của con
     q = Object.assign({}, q || {});
     Object.keys(THEO).forEach(function (k) { if (q[k] == null) q[k] = q[THEO[k]]; });
@@ -45,7 +47,7 @@
   };
   /* 22/10 (clip user: chưa đăng nhập thấy Planogram/Tồn kho/Xác minh 1–2 giây rồi mới mất): quyền khách MẶC ĐỊNH trên trang = đúng bộ đang đặt ở máy chủ
      (Retail chỉ Tổng kết · Vi phạm · Quy định; Factory đủ) — máy chủ trả về sau chỉ chỉnh lại nếu quản trị đổi, không còn chớp mục. */
-  var KHACH_GOC = (function () { var q = {}; MUC.forEach(function (m) { q[m[0]] = m[0].charAt(0) === "f" || /^r\.(tong|task|hangmuc)$/.test(m[0]) ? "lam" : "khong"; }); return chuanQ(q); })();
+  var KHACH_GOC = (function () { var q = {}; MUC.forEach(function (m) { q[m[0]] = m[0].charAt(0) === "f" || /^r\.(tong|task|ghinhan|hangmuc)$/.test(m[0]) ? "lam" : "khong"; }); return chuanQ(q); })();
   var e_ = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
   var ls = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} } };
 
@@ -86,7 +88,7 @@
     if (APP === "r" && !TK.nguoi && (q["r.xacminh"] || "khong") === "khong") css.push("#sideNav .s-grp.s-khoa,.tq-gkhoa{display:none!important}");
     /* 26/10 user «không có nút Ghi nhận 5S kể cả khi đã đăng nhập — nhiều người bị»: tài khoản NV đều Vi phạm = «Xem» ⇒ nút bị ẩn, trong khi khách
        chưa đăng nhập lại thấy nút (xin OTP). Nay nút Ghi nhận chỉ ẩn khi Vi phạm = «Không»; «Xem» bấm vào thì xin OTP như khách, «Xem + thao tác» mở thẳng. */
-    if (APP === "r" && an("r.task")) css.push("#btnGhiNhan,.hp-vtghi{display:none!important}");
+    if (APP === "r" && an("r.ghinhan")) css.push("#btnGhiNhan,.hp-vtghi{display:none!important}");   // 26/10 tách quyền «Ghi nhận 5S»
     (THAO_TAC[APP] || []).forEach(function (x) { if (x[2] ? (cur === x[1] && q[x[1]] !== "lam") : q[x[1]] !== "lam") css.push(x[0] + "{display:none!important}"); });
     stQ.textContent = css.join("\n");
     /* tiêu đề nhóm thanh bên: ẩn khi mọi mục trong nhóm bị ẩn */
@@ -185,7 +187,7 @@
   /* 23/10 user (t2): chưa đăng nhập, chưa gõ OTP mà vẫn bấm thẳng «+ Ghi nhận» được — vì tb-khoa còn do link #khoa= / OTP Planogram-Factory cũ đặt
      (không có tb-het). Khách nay CHỈ được ghi khi còn hạn OTP Ghi nhận (tb-het); khoá thiết bị đơn thuần không còn mở form. */
   var duocGhi = function () {
-    if (TK.nguoi && window.tkCo("r.task", "lam")) return true;   // 26/10: tài khoản «Xem» rơi xuống đường OTP như khách
+    if (TK.nguoi && window.tkCo("r.ghinhan", "lam")) return true;   // 26/10: «Ghi nhận 5S» = Xem → đường OTP như khách
     var het = Number(ls.get("tb-het") || 0);
     if (het && Date.now() >= het) { ls.set("tb-het", null); return false; }
     return !!het && !!ls.get("tb-khoa");
@@ -196,7 +198,7 @@
         '<label>Bạn là ai?<input name="ten" maxlength="60" required placeholder="tên · bộ phận" value="' + e_(ls.get("tb-ten") || (TK.nguoi ? TK.nguoi.ten || TK.nguoi.id : "")) + '"></label>' +
         '<button type="submit" class="tk-chinh">Xin mã OTP</button>' +
         '<label class="tk-otp" hidden>Mã OTP 4 số<input name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="4" pattern="[0-9]{4}"></label><button type="button" class="tk-chinh tk-otp" data-a="kich" hidden>Kích hoạt</button>' +
-        (TK.nguoi ? '<div class="tk-goiy">Tài khoản ' + e_(TK.nguoi.id) + ' chỉ có quyền xem Vi phạm nên cần mã OTP.</div>'
+        (TK.nguoi ? '<div class="tk-goiy">Tài khoản ' + e_(TK.nguoi.id) + ' chưa có quyền «Ghi nhận 5S: Xem + thao tác» nên cần mã OTP.</div>'
           : '<div class="tk-goiy">Đã được cấp tài khoản? <button type="button" class="tk-chinh tk-lk2" data-a="dn">Đăng nhập</button> — không cần OTP.</div>') + '<div class="tk-st"></div></form>');
       sauDong = function () { xong(duocGhi()); };
       var f = o.querySelector("form"); f.ten.focus();
@@ -285,7 +287,7 @@
       NHOM.map(function (g) { return '<tr class="tk-qg"><td colspan="4">' + e_(g[0]) + "</td></tr>" + g[1].map(function (t, i) {
         var o = function (ten, ten2, v, cls) { return '<tr' + (cls ? ' class="' + cls + '"' : "") + "><td>" + e_(ten2) + "</td>" + ["khong", "xem", "lam"].map(function (m) {
           return '<td><input type="radio" name="' + ten + '" value="' + m + '"' + (v === m ? " checked" : "") + (khoa ? " disabled" : "") + ' aria-label="' + e_(ten2) + " — " + m + '"></td>'; }).join("") + "</tr>"; };
-        if (!t[2]) return o("q:" + t[0], t[1], q[t[0]] || "khong");
+        if (!t[2]) return o("q:" + t[0], t[1], q[t[0]] || "khong", t[4] === "phu" ? "tk-qphu" : "");
         /* hàng cha: chọn 1 lần cho mọi mục con; con lệch nhau thì hàng cha để trống */
         var vs = t[2].map(function (c) { return q[c[0]] || "khong"; });
         return o("qc:" + g[0].charAt(6) + i, t[1], vs.every(function (v) { return v === vs[0]; }) ? vs[0] : "", "tk-qcha") +
@@ -391,7 +393,7 @@
     ".tk-q .tk-qg td{font-size:12px;font-weight:600;color:var(--muted);background:var(--surface)}.tk-q input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}",
     "#sideNav .s-grp.tk-an{display:none!important}",
     ".tk-f [hidden]{display:none!important}.tk-f .tk-lk2{min-height:0;padding:0;border:0;background:none;color:var(--accent);font-weight:600;text-decoration:underline}",
-    ".tk-q .tk-qcha td:first-child{font-weight:600}.tk-q .tk-qcon td:first-child{padding-left:28px;color:var(--muted)}",
+    ".tk-q .tk-qcha td:first-child{font-weight:600}.tk-q .tk-qcon td:first-child,.tk-q .tk-qphu td:first-child{padding-left:28px;color:var(--muted)}",
     /* bản QC: chắn = nền trang phủ kín (dưới hộp đăng nhập #tkHop 1400); dấu chìm trên cùng, không bắt chuột */
     "#tkCanQC{position:fixed;inset:0;z-index:1350;display:flex;align-items:flex-start;justify-content:center;padding:80px 16px 16px;background:var(--bg,var(--surface));overflow:auto}",
     "#tkCanQC .tk-box{width:100%;max-width:440px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;animation:popIn .2s ease}",
