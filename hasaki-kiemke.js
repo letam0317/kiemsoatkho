@@ -951,7 +951,7 @@ function fcOpen(kind){
   var U = (kind === "loc") ? "mã vị trí" : "SKU";
   FC = { kind: kind, fc: fc, U: U };
   $id("hkFcTitle").textContent = "Dự báo hoàn thành kiểm kê · " + U;
-  $id("hkFcSub").textContent = (S.wh ? ("Kho " + S.wh) : "Toàn bộ kho") + " · còn lại " + nf(notc) + " " + U + " chưa kiểm · lịch làm việc bỏ qua Chủ nhật";
+  $id("hkFcSub").textContent = S.wh ? ("Kho " + S.wh) : "";   // 26/10 AD-07 (user dán nguyên dòng): bỏ «Toàn bộ kho · còn lại N chưa kiểm · lịch làm việc bỏ qua Chủ nhật»
   var htmlA = "", htmlB = "";
   if (fc.done){
     htmlA = '<div class="hk-fcsec"><h3>Trạng thái</h3><div class="hk-fchero"><span class="d ok">✓ 100%</span><span class="n">Toàn bộ ' + U + " trong phạm vi đã được kiểm.</span></div></div>";
@@ -1158,13 +1158,9 @@ function openModal(kind, metric){
   var U = (kind === "loc") ? "Mã vị trí" : "SKU";
   var lab = (metric.indexOf("st:") === 0) ? ("trạng thái " + stMeta(metric.slice(3))[0]) : METRIC_LABEL[metric];
   $id("hkKkTitle").textContent = U + " · " + lab + (S.wh ? (" · kho " + S.wh) : "") + " — " + nf(rows.length) + " dòng";
-  $id("hkKkSub").textContent = (S.wh ? ("Đang lọc theo kho " + S.wh + " · ") : "") + (metric === "total"
-    ? "Mẫu số: distinct (kho|mã) từ toàn bộ phiếu kiểm kê WMS — 1 mã nhiều phiếu chỉ tính 1, kèm cột trạng thái kiểm kê"
-    : metric === "notcount"
-    ? "Anti-join: distinct (kho|mã) trong phiếu WMS TRỪ tập đã kiểm — đây là phần chưa được đụng tới"
-    : (metric === "counted" || metric === "negative" || metric === "positive")
-    ? "Đã khử trùng phiếu: mỗi (kho|mã) chỉ tính 1 phiếu đã kiểm MỚI NHẤT (ưu tiên phiếu không bị từ chối/huỷ) · bấm ID để mở WMS"
-    : "Bấm ID để mở WMS");
+  /* 26/10 user «dòng giải nghĩa, le ve xoá hết — bộ luật đâu» (AD-07 không dòng mô tả dưới tiêu đề · AD-10 không chữ dạy thao tác):
+     bỏ câu «Mẫu số / Anti-join / Đã khử trùng phiếu… · bấm ID để mở WMS»; kho đã nằm trên tiêu đề. */
+  $id("hkKkSub").textContent = "";
   buildFilters();
   mRender();
   var m = $id("hkKkModal"); m.style.display = "flex";
@@ -1239,7 +1235,7 @@ function mRender(){
   var state = fstate(), q = qval();
   var rs = rowsWith(null, state, q);
   var nAct = state.filter(function(f){ return f.v; }).length + (q ? 1 : 0);
-  $id("hkKkSum").textContent = nf(rs.length) + " / " + nf(MODAL.rows.length) + " dòng" + (nAct ? " · " + nAct + " bộ lọc đang áp dụng" : "");
+  $id("hkKkSum").textContent = nf(rs.length) + " / " + nf(MODAL.rows.length) + " dòng";   // 26/10: bỏ «N bộ lọc đang áp dụng» — nút Bộ lọc đã báo (luật không lặp)
   var body = $id("hkKkBody");
   body.innerHTML = (MODAL.metric === "notcount") ? tableRemain(MODAL.kind, rs)
     : (MODAL.metric === "total") ? tableRemain(MODAL.kind, rs, true)

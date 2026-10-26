@@ -487,7 +487,7 @@ function showModal(base, title, preset){
   /* Phụ đề chỉ mang SỐ, không dạy cách dùng: đoạn "combo lọc sinh động, gõ để lọc, đếm số dòng" là
      hướng dẫn thao tác — cùng loài đã dồn vào nút `i` ở các nơi khác, mà ở đây thì bỏ hẳn vì cái
      combo tự nói lên nó là combo lọc (21/08/2026). */
-  $id("htMsub").textContent = nf(MODAL.base.length) + " dòng (kho | SKU)";
+  $id("htMsub").textContent = "";   // 26/10 luật không lặp: số dòng đã ở hàng tóm tắt
   buildFilters();
   $id("htMSum").textContent = "";
   $id("htMBody").innerHTML = '<tr><td colspan="' + (7 + TYPES.length) + '" class="empty">Đang hiển thị…</td></tr>';
@@ -562,9 +562,7 @@ function mRender(){
   var tk = null; state.forEach(function(f){ if (f.k === "type" && f.exact && f.raw){ var ty = typeByLb(f.raw); if (ty) tk = ty.k; } });
   rows = rows.slice().sort(function(a, b){ return tk ? (b[tk] - a[tk]) : (b._abn - a._abn); });
   var NCOL = 7 + TYPES.length, out = [];   // +1 cột checkbox chọn tạo lệnh (HPC)
-  var sums = { in_stock: 0, available: 0 }; TYPES.forEach(function(t){ sums[t.k] = 0; });
   for (var i = 0; i < rows.length; i++){ var r = rows[i];
-    sums.in_stock += r.in_stock; sums.available += r.available; TYPES.forEach(function(t){ sums[t.k] += r[t.k]; });
     if (out.length < CAP){
       /* `data-lb` + class `ab*`: bố cục THẺ trên điện thoại đọc ô nào là ô nào theo CLASS, không theo
          `nth-child` (số cột loại đổi theo TYPES). Bảng máy tính không đổi gì. */
@@ -577,16 +575,11 @@ function mRender(){
         '<td class="num abtot" data-lb="Tồn">' + nf(r.in_stock) + '</td><td class="num abav" data-lb="Available">' + nf(r.available) + '</td>' + tds + '</tr>');
     }
   }
-  if (rows.length > CAP) out.push('<tr><td colspan="' + NCOL + '" class="empty">Hiển thị ' + nf(CAP) + ' / ' + nf(rows.length) + ' dòng — dùng bộ lọc để thu hẹp.</td></tr>');
+  if (rows.length > CAP) out.push('<tr><td colspan="' + NCOL + '" class="empty">Hiển thị ' + nf(CAP) + ' / ' + nf(rows.length) + ' dòng</td></tr>');   // 26/10 AD-10: bỏ «dùng bộ lọc để thu hẹp»
   $id("htMBody").innerHTML = out.length ? out.join("") : '<tr><td colspan="' + NCOL + '" class="empty">Không có dòng phù hợp</td></tr>';
   if (window.HPC) HPC.syncAll($id("htModal"), rows);
-  var nAct = state.filter(function(f){ return f.v; }).length + (q ? 1 : 0);
-  /* CHỈ liệt kê loại có số > 0. Bản cũ in đủ 6 loại nên dòng tổng kết dài ra toàn "Conflict: 0 ·
-     Not Found: 0 · Unsuitable product: 0" — không mang tin nào, mà trên điện thoại thì đẩy dòng số
-     xuống 3-4 hàng. Cùng lẽ với việc ẩn ô 0 trong thẻ (21/08/2026). */
-  var parts = TYPES.filter(function(t){ return sums[t.k] > 0; }).map(function(t){ return t.lb + ": " + nf(sums[t.k]); });
-  if (!parts.length) parts = ["không còn loại nào > 0"];
-  $id("htMSum").textContent = nf(rows.length) + " / " + nf(MODAL.base.length) + " dòng" + (nAct ? (" · " + nAct + " bộ lọc đang áp dụng") : "") + " · Tồn " + nf(sums.in_stock) + " · " + parts.join(" · ");
+  /* 26/10 user dán nguyên dòng này vào danh sách «tào lao thừa thãi»: «N bộ lọc đang áp dụng» lặp nút Bộ lọc; tổng từng loại lặp chip trên từng thẻ ⇒ chỉ giữ số dòng */
+  $id("htMSum").textContent = nf(rows.length) + " / " + nf(MODAL.base.length) + " dòng";
 }
 
 /* ===== INIT (host gọi mỗi lần mở tab — idempotent) ===== */

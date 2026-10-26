@@ -1583,7 +1583,7 @@ var MODAL_HTML =
 '<div id="hpAiModal" class="hp-modal">' +
 '  <div class="hp-modalbox" style="width:min(1100px,96vw);height:min(760px,92vh);">' +
 '    <div class="hp-modalhd"><div><div class="mt">Kết quả AI xét duyệt ảnh</div>' +
-'      <div class="mtsub" id="hpAiSub">Toàn bộ ảnh chụp vệ sinh được Gemini AI phân tích chất lượng</div></div>' +
+'      <div class="mtsub" id="hpAiSub"></div></div>' +
 '      <button type="button" class="hsk-nut phu nho hp-mdong" onclick="HPLANOGRAM.closeAiModal()">Đóng</button></div>' +
 '    <div class="hp-ai-toolbar">' +
 '      <div id="hpAiChips" class="hp-whbar hp-chipbar" style="margin:0;flex:1;min-width:0;"></div>' +
@@ -2533,7 +2533,7 @@ function renderAiModal(){
   }
 
   if (sBox){
-    sBox.textContent = 'Toàn bộ ảnh chụp vệ sinh được Gemini AI phân tích chất lượng · ' + nf(rows.length) + ' / ' + nf(all.length) + ' kết quả' + (S.area ? (' (' + areaMeta(S.area).short + ')') : '');
+    sBox.textContent = nf(rows.length) + ' / ' + nf(all.length) + ' kết quả' + (S.area ? (' (' + areaMeta(S.area).short + ')') : '');
   }
 
   var CAPAI = 300;
@@ -4419,7 +4419,7 @@ function showModal(base, title, preset, mode){
   MODAL.base = base || []; MODAL.preset = preset || null; MODAL.mode = mode || "loc";
   if (MODAL.mode === "req"){ canANH(); ganAnh(MODAL.base); }   // cột Ảnh của bảng yêu cầu (tab bậc 3)
   $id("hpMtitle").textContent = title;
-  $id("hpMsub").textContent = nf(MODAL.base.length) + (MODAL.mode === "req" ? " yêu cầu" : " vị trí") + "";
+  $id("hpMsub").textContent = "";   // 26/10 luật không lặp: số yêu cầu/vị trí đã ở hàng tóm tắt (hpMSum)
   $id("hpMHead").innerHTML = THEADS[MODAL.mode] || THEAD_LOC;
   var pg = $id("hpMPg");
   if (MODAL.mode === "loc") pg.style.display = "none";
@@ -4589,7 +4589,7 @@ function mRender(){
   $id("hpMBody").innerHTML = out.join("");
   lazyQuet();
   var nAct = state.filter(function(f){ return f.v; }).length + (q ? 1 : 0);
-  $id("hpMSum").textContent = sum + (nAct ? (" · " + nAct + " bộ lọc đang áp dụng") : "");
+  $id("hpMSum").textContent = sum;   // 26/10: bỏ «N bộ lọc đang áp dụng» — nút Bộ lọc đã báo
 }
 /* Ảnh báo cáo → LIGHTBOX CAROUSEL của host (openLB) */
 function moAnhHet(id){ VT.moAnh[String(id)] = 1; renderVt(); }

@@ -141,7 +141,7 @@ var HTML =
 /* modal tạo lệnh */
 '<div id="hpcmodal" class="hpc-modal">' +
 '  <div class="hpc-box">' +
-'    <div class="hpc-hd"><div><div class="mt">Tạo lệnh kiểm kê WMS <span style="font-weight:400;color:var(--muted,#9ca3af);font-size:11.5px">(template CHECKLIST_SKU · mỗi SKU 1 dòng)</span></div><div class="mtsub" id="hpcSub"></div></div>' +
+'    <div class="hpc-hd"><div><div class="mt">Tạo lệnh kiểm kê WMS</div><div class="mtsub" id="hpcSub"></div></div>' +
 '      <button class="hpc-close" onclick="HPC.closeModal()">&times;</button></div>' +
 '    <div class="hpc-filters" id="hpcFilters">' +
 '      <div class="fld"><label>Kho kiểm</label><div class="hpc-combo"><input id="hpcWh" autocomplete="off" placeholder="Tất cả kho nguồn…" oninput="HPC.whInput(this)" onfocus="HPC.whMenu()"><div class="hpc-combo-menu" id="hpcWhMenu"></div></div></div>' +
@@ -160,7 +160,7 @@ var HTML =
 /* modal kế hoạch chờ push */
 '<div id="hplmodal" class="hpc-modal">' +
 '  <div class="hpc-box">' +
-'    <div class="hpc-hd"><div><div class="mt">Kế hoạch kiểm kê trên WMS <span style="font-weight:400;color:var(--muted,#9ca3af);font-size:11.5px">(counting plan · type SKU · 2 kho Hasaki)</span></div><div class="mtsub">Pending = chờ WMS push thành phiếu · Processing = đã push · đọc trực tiếp từ WMS</div></div>' +
+'    <div class="hpc-hd"><div><div class="mt">Kế hoạch kiểm kê trên WMS</div></div>' +
 '      <button class="hpc-close" onclick="HPC.planClose()">&times;</button></div>' +
 '    <div class="hpc-filters"><div class="fld" style="flex:1 1 100%"><label>Tìm nhanh</label><input id="hplQ" autocomplete="off" placeholder="SKU / tên / kho / người push / ngày…" oninput="HPC.planRender()"></div>' +
 '      <div class="fld" style="flex:0 0 auto;justify-content:flex-end"><label>&nbsp;</label><button class="hpc-chip" onclick="HPC.planLoad()">⟳ Làm mới từ WMS</button></div></div>' +
@@ -356,7 +356,7 @@ function render(){
     out.push("<tr><td class=\"" + (code ? "whn" : "codebad") + "\">" + (code ? esc(code) : "✗ chưa có mã") + '</td><td class="num">' + esc(ty) + "</td><td><b>" + esc(r.sku) + '</b></td><td class="pn">' + esc(r.pn) + "</td><td>" + esc(r.wh) + '</td><td class="rsn">' + esc(r.src || "—") + "</td><td>" + esc(plan || "—") + "</td><td>" + (by ? esc(by) : '<span style="color:var(--muted,#9ca3af)">(trống)</span>') + '</td><td class="hpc-x"><button class="pcx" data-w="' + esc(r.wh) + '" data-s="' + esc(r.sku) + '" title="Bỏ SKU">&times;</button></td></tr>');
   });
   $id("hpcTBody").innerHTML = out.join("") || '<tr><td colspan="9" class="empty">' + (rs.length ? ("Giỏ không có SKU nào phát sinh tại kho “" + esc(pick) + "”.") : "Giỏ trống — tick chọn SKU từ pop-up Kiểm kê / Tồn kho bất thường.") + "</td></tr>";
-  $id("hpcSub").textContent = nf(rs.length) + " SKU đã chọn · lệnh tạo theo KHO NGUỒN · mỗi SKU 1 dòng";
+  $id("hpcSub").textContent = nf(rs.length) + " SKU đã chọn";   // 26/10 AD-07: bỏ chữ giải thích
   $id("hpcSum").textContent = nf(inc) + " dòng vào lệnh · " + nf(Object.keys(whs).length) + " mã kho" + (miss ? (" · " + nf(miss) + " dòng CHƯA có mã kho") : "") + (excl ? (" · " + nf(excl) + " SKU kho khác chờ lệnh sau") : "");
   var w = $id("hpcWarn"); w.className = "hpc-warn"; w.textContent = "";
   if (inc && !(PC.whcode && PC.whcode.length) && !manual){ w.className = "hpc-warn show"; w.textContent = "Chưa tải được danh mục mã kho (sheet Warehouse code) — thử lại, hoặc gõ MÃ SỐ kho vào ô Kho kiểm."; }

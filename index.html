@@ -66,7 +66,7 @@ window.GOC_DL=/\.pages\.dev$|^(localhost|127\.0\.0\.1)$/.test(location.hostname)
   try{
     var tb=null; try{ tb=new URLSearchParams(location.search).get('tab'); }catch(e){}
     if(tb!=='planogram' || /khoa=/.test(location.hash||'')) return;
-    var V='20261025a';   // PHẢI khớp s.src trong moHasakiPlanogram()
+    var V='20261026b';   // PHẢI khớp s.src trong moHasakiPlanogram()
     var l=document.createElement('link'); l.rel='preload'; l.as='script'; l.href='hasaki-planogram.js?v='+V; document.head.appendChild(l);
     var GAS='https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec';
     var khoa=''; try{ khoa=localStorage.getItem('tb-khoa')||(localStorage.getItem('tk-phien')?'tk:'+localStorage.getItem('tk-phien'):''); }catch(e){}   // 22/10 phiên tài khoản thay mã thiết bị
@@ -398,6 +398,7 @@ label{display:flex; flex-direction:column; gap:4px;}
   #filterGrid > .date-filter, #filterGrid > label:has(#fTim), #filterGrid:not(.co-xm) > label:has(#fLoai){grid-column:1/-1;}
 }
 .btn-filter{display:none;}
+.mtsub:empty{display:none!important;}   /* 26/10 AD-07: dòng phụ dưới tiêu đề pop-up đã bỏ chữ giải thích — trống thì không chừa chỗ */
 html body .panel > .panel-head:has(.btn-filter){display:flex!important; align-items:center!important; justify-content:space-between!important;
   gap:8px!important; flex-wrap:nowrap!important; height:40px!important; min-height:40px!important; padding:0 16px!important;
   font-size:14px!important; line-height:20px!important;}
@@ -3598,7 +3599,7 @@ function moFactoryStock(){
       '<div class="sk sk-line" style="width:72%"></div><div class="sk sk-line" style="width:56%"></div>'+
       '<div class="sk sk-line" style="width:64%"></div><div class="sk sk-line" style="width:48%"></div></div>';
     _fsNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='factory-stock.js?v=20260724e';
+      const s=document.createElement('script'); s.src='factory-stock.js?v=20261026b';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module factory-stock.js'));
       document.body.appendChild(s);
     });
@@ -3628,7 +3629,7 @@ let _hpcNap=null;
 function napHasakiPC(){
   if(!_hpcNap){
     _hpcNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-pc.js?v=20261019n';
+      const s=document.createElement('script'); s.src='hasaki-pc.js?v=20261026b';
       s.onload=res; s.onerror=()=>rej(new Error('hasaki-pc.js'));
       document.body.appendChild(s);
     }).then(()=>{ if(window.HPC) window.HPC.init(); }).catch(()=>{});
@@ -3643,7 +3644,7 @@ function moHasakiTonbat(){
       '<div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:54%"></div>'+
       '<div class="sk sk-line" style="width:62%"></div></div>';
     _htNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-tonbatthuong.js?v=20261013tq';
+      const s=document.createElement('script'); s.src='hasaki-tonbatthuong.js?v=20261026b';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-tonbatthuong.js'));
       document.body.appendChild(s);
     });
@@ -3673,7 +3674,7 @@ function moHasakiPlanogram(){
       '<div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:54%"></div>'+
       '<div class="sk sk-line" style="width:62%"></div></div>';
     _hpNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20261025a';   // khớp V ở <head>
+      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20261026b';   // khớp V ở <head>
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-planogram.js'));
       document.body.appendChild(s);
     });
@@ -3778,7 +3779,7 @@ function moHasakiKiemke(){
       '<div class="sk sk-line" style="width:68%"></div><div class="sk sk-line" style="width:52%"></div>'+
       '<div class="sk sk-line" style="width:60%"></div></div>';
     _hkNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-kiemke.js?v=20261019n';
+      const s=document.createElement('script'); s.src='hasaki-kiemke.js?v=20261026b';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-kiemke.js'));
       document.body.appendChild(s);
     });

@@ -190,7 +190,7 @@ var KHUNG =
 var MODAL =
 '<div id="fsModal" class="fs-modal">' +
 '  <div class="fs-modalbox">' +
-'    <div class="fs-modalhd"><div><div class="mt" id="fsMtitle"></div><div class="mtsub">Chi tiết SKU theo mã vị trí — lọc theo từng cột bên dưới</div></div>' +
+'    <div class="fs-modalhd"><div><div class="mt" id="fsMtitle"></div></div>' +
 '      <button class="fs-mclose" onclick="FSTOCK.closeModal()">&times;</button></div>' +
 '    <div class="fs-tabs">' +
 '      <button id="fsTabShelf" class="fs-tab active" onclick="FSTOCK.setTab(\'shelf\')">Đã lên kệ (<span id="fsCShelf">0</span>)</button>' +
