@@ -1840,7 +1840,7 @@ window.hxDoMayChu = function(){
         <label id="fXmO" hidden><span class="lbl">Xác minh</span><select id="fXm"><option value="">Tất cả</option>
           <option value="tv">Có ở Theo tác vụ</option><option value="tm">Có ở Theo máy</option><option value="chua">Chưa có ở Xác minh</option></select></label>
         <label><span class="lbl">Loại phiếu</span><select id="fLoai"><option value="">Tất cả</option>
-          <option value="5S">5S</option><option value="ĐG">ĐG — Đóng gói</option><option value="NF">NF</option></select></label>
+          <option value="5S">5S — Vệ sinh</option><option value="ĐG">ĐG — Đóng gói</option><option value="NF">NF — Không tìm thấy</option><option value="BD">BD — Bảo dưỡng</option></select></label>
         <label><span class="lbl">Tìm (vị trí / mã)</span><input type="search" id="fTim" autocomplete="off" placeholder="F0-A1 / HSK-..."></label>
       </div>
       <div class="table-wrap">
@@ -2602,9 +2602,9 @@ function napLoc(){
 /* ===== LỌC LIÊN HOÀN (chain-filtering): Data gốc -> Ngày -> Trạng thái -> Lỗi -> Search -> Bảng.
    Mỗi bước ở giá trị mặc định ("Tất cả"/rỗng) thì return true (bỏ qua bước đó).
    Search: case-insensitive + đa trường (vị trí, mã task, lỗi, mã/tên NV, QL trực tiếp, TRẠNG THÁI). ===== */
-/* 25/10 loại phiếu theo tiền tố tên task: [ĐG] hoặc tên «Đóng gói / Đóng sai / Đóng thiếu» (phiếu cũ chưa có tiền tố) = ĐG · [NF] = NF · còn lại 5S */
+/* 25/10 loại phiếu theo tiền tố tên task: [ĐG] hoặc tên «Đóng gói / Đóng sai / Đóng thiếu» (phiếu cũ chưa có tiền tố) = ĐG · [NF] = NF · [BD] = BD (27/10) · còn lại 5S */
 function loaiPhieu(r){ const t=String(r[iName]||'');
-  return /^\s*\[ĐG\]|^\s*(Đóng gói|Đóng sai|Đóng thiếu)|đóng gói sai/i.test(t) ? 'ĐG' : /^\s*\[NF\]/i.test(t) ? 'NF' : '5S'; }
+  return /^\s*\[ĐG\]|^\s*(Đóng gói|Đóng sai|Đóng thiếu)|đóng gói sai/i.test(t) ? 'ĐG' : /^\s*\[NF\]/i.test(t) ? 'NF' : /^\s*\[BD\]/i.test(t) ? 'BD' : '5S'; }
 function loc(){
   const st =$('fStatus').value.trim();
   const lo =$('fLoi').value.trim();
