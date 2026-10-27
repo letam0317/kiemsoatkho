@@ -395,14 +395,29 @@ var MODAL_HTML =
 '  </div>' +
 '</div>';
 
-/* ===== TẢI DỮ LIỆU (gviz JSONP — callback tiền tố hkgv_, không đụng host) ===== */
-function gvizP(sheet, cb){
+/* ===== TẢI DỮ LIỆU — Apps Script readTab (SHEET RIÊNG) · 27/10/2026 =====
+   2 tab có cột «Counted by» (tên người đếm) mà quyền Khách của Kiểm kê Retail = Không ⇒ đã chuyển khỏi sheet 5S công khai
+   (trước đọc bằng gviz: ai có mã Sheet trong Ctrl+U cũng tải được — bộ đo qc-nguoi-la bắt). readTab đòi khoá thiết bị hoặc phiên tài khoản.
+   Apps Script chập chờn 404 ⇒ THỬ LẠI 3 lượt như mô-đun vệ sinh; không mượn đường gviz (tab không còn ở sheet công khai). */
+function tbKhoa(){ try{ return localStorage.getItem("tb-khoa") || (localStorage.getItem("tk-phien") ? "tk:" + localStorage.getItem("tk-phien") : ""); }catch(e){ return ""; } }
+var HK_CHO = [700, 1800, 4000], HK_SO = 0;
+function readTabP(tab, cb0, lan){
+  lan = lan || 0;
+  /* tên hàm trả về RIÊNG mỗi lượt: mô-đun có lúc gọi tải 2 lần liền — dùng chung «hkgv_sku» thì lượt sau đè lượt trước, bảng treo «Đang tải» */
+  var cb = cb0 + "_" + (++HK_SO);
   return new Promise(function(res){
-    window[cb] = function(resp){ res(resp); };
-    var old = $id("hk_sc_" + cb); if (old) old.remove();
+    var xong = false, hen = setTimeout(function(){ ket(null); }, 60000);
+    function ket(resp){
+      if (xong) return; xong = true; clearTimeout(hen); delete window[cb];
+      var sc = $id("hk_sc_" + cb); if (sc) sc.remove();
+      var hong = !resp || (resp.status !== "success" && resp.code !== 403);
+      if (hong && lan < HK_CHO.length) { setTimeout(function(){ readTabP(tab, cb0, lan + 1).then(res); }, HK_CHO[lan]); return; }
+      res(resp);
+    }
+    window[cb] = ket;
     var s = document.createElement("script"); s.id = "hk_sc_" + cb;
-    s.src = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:json;responseHandler:" + cb + "&sheet=" + encodeURIComponent(sheet) + "&headers=1";
-    s.onerror = function(){ res(null); };
+    s.src = APPSCRIPT_URL + "?action=readTab&tab=" + encodeURIComponent(tab) + "&callback=" + cb + "&tb=" + encodeURIComponent(tbKhoa());
+    s.onerror = function(){ ket(null); };
     document.body.appendChild(s);
   });
 }
@@ -442,9 +457,9 @@ function mapRows(kind, H, rows){
 }
 function parseResp(kind, resp){
   try{
-    if (!resp || resp.status === "error") return null;
-    var H = ((resp.table && resp.table.cols) || []).map(function(c){ return String((c && c.label) || "").replace(/\s+/g, " ").trim().toLowerCase(); });
-    var rows = ((resp.table && resp.table.rows) || []).map(function(r){ return (r.c || []).map(function(c){ return c ? (c.v == null ? "" : c.v) : ""; }); });
+    if (!resp || resp.status !== "success") return null;
+    var H = (resp.header || []).map(function(c){ return String(c || "").replace(/\s+/g, " ").trim().toLowerCase(); });
+    var rows = (resp.rows || []).map(function(r){ return (r || []).map(function(v){ return v == null ? "" : v; }); });
     return mapRows(kind, H, rows);
   }catch(e){ return null; }
 }
@@ -455,9 +470,10 @@ function loadData(){
   st.innerHTML = '<div class="hk-spin"></div>Đang tải dữ liệu kiểm kê…';
   $id("hkGrid").style.display = "none";
   S.lastAt = Date.now();
-  Promise.all([gvizP(TAB_SKU, "hkgv_sku"), gvizP(TAB_LOC, "hkgv_loc")]).then(function(res){
+  Promise.all([readTabP(TAB_SKU, "hkgv_sku"), readTabP(TAB_LOC, "hkgv_loc")]).then(function(res){
     var sku = parseResp("sku", res[0]), loc = parseResp("loc", res[1]);
     S.ok = !!(sku || loc);
+    S.loi = S.ok ? "" : (res.some(function(r){ return r && r.code === 403; }) ? "khoa" : "gas");
     S.data = { sku: sku || [], loc: loc || [] };
     render();
   });
@@ -562,6 +578,7 @@ function totalRows(kind){
 function setWh(w){ if (S.wh === w) w = ""; S.wh = w; render(); }   // bấm lại kho đang chọn = bỏ lọc
 
 /* ===== RENDER ===== */
+document.addEventListener("tk-doi", function(){ if (S.loi === "khoa") loadData(); });   // vừa đăng nhập mà đang báo thiếu quyền → tải lại
 function render(){
   var st = $id("hkState"), grid = $id("hkGrid");
   if (!st || !grid) return;
@@ -570,9 +587,9 @@ function render(){
     grid.style.display = "none";
     st.style.display = "block";
     st.innerHTML = '<div style="max-width:720px;margin:0 auto;text-align:left;line-height:1.75;color:var(--muted,#6b7280)">' +
-      '<b style="color:var(--text,#1f2937)">Chưa có dữ liệu kiểm kê trong Google Sheet.</b><br>' +
-      'Tab này đọc từ sheet <code>' + esc(TAB_SKU) + '</code> và <code>' + esc(TAB_LOC) + '</code> — bộ đồng bộ <code>push-pc-to-sheet.mjs</code> ' +
-      '(cụm 8h40) sẽ ghi phiếu <code>physical-count</code> WMS của công ty Hasaki Vietnam (kho SHOP + WH 170 QUOC LO 1A) vào đó.</div>';
+      '<b style="color:var(--text,#1f2937)">' + ({ khoa: "Chưa có quyền xem dữ liệu kiểm kê.", gas: "Apps Script chưa trả dữ liệu kiểm kê." }[S.loi] || "Chưa có dữ liệu kiểm kê.") + '</b><br>' +
+      ({ khoa: "Đăng nhập tài khoản có quyền Kiểm kê rồi tải lại.", gas: "Đã thử lại 4 lượt — bấm Tải lại sau ít phút." }[S.loi] ||
+        'Bộ đồng bộ <code>push-pc-to-sheet.mjs</code> (cụm 8h40) ghi phiếu <code>physical-count</code> WMS của Hasaki Vietnam vào sheet riêng.') + '</div>';
     capNhatInfo();
     return;
   }
