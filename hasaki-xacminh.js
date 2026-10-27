@@ -462,7 +462,12 @@
   function goi(path, opt) {
     opt = Object.assign({}, opt || {});
     /* 22/10 bản dự phòng MÃ HOÁ: GET dữ liệu = bản chụp laptop đã mã hoá (giải ở sw.js); lệnh ghi vẫn gửi máy chủ (trả 503 «chỉ xem» như cũ) */
-    if (maHoa_() && (!opt.method || opt.method === "GET")) return window.hxGuongMa.api(path).catch(function (e) {
+    if (maHoa_() && (!opt.method || opt.method === "GET")) return window.hxGuongMa.api(path).then(function (j) {
+      /* 27/10 lớp PC: laptop tắt mà máy trạm đã làm tươi → báo 1 lần mỗi bản chụp mới (giờ máy trạm chụp) */
+      var l = path.indexOf("/api/du-lieu") === 0 && window.hxGuongMa.lop && window.hxGuongMa.lop();
+      if (l && l.apiMoi && goi._lop !== l.luc && typeof toast === "function") { goi._lop = l.luc; var t = new Date(l.luc);
+        toast("Dữ liệu máy trạm cập nhật lúc " + ("0" + t.getHours()).slice(-2) + ":" + ("0" + t.getMinutes()).slice(-2) + " " + ("0" + t.getDate()).slice(-2) + "/" + ("0" + (t.getMonth() + 1)).slice(-2)); }
+      return j; }).catch(function (e) {
       if (e && e.ma === 401 && e.canDangNhap) { datPhien(""); D = null; veDangNhap("Phiên đăng nhập đã hết — đăng nhập lại."); var x = new Error(e.message); x.dangNhap = 1; throw x; }
       throw e; });
     var ctl = new AbortController(); var h = setTimeout(function () { ctl.abort(); }, opt.tg || 8000); delete opt.tg;   // tg: trần riêng (gọi qua Apps Script = 45 s, bộ chuẩn mục 3)
