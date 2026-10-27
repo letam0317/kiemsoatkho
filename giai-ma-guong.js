@@ -5,6 +5,9 @@
  *   đầu 36 byte "XMGM" · bản 1 · loại · salt 16 · cỡ bản rõ uint64 · cỡ đoạn uint32; đoạn i ở 36 + i·(đoạn+16), AES-256-GCM,
  *   khoá tệp = HKDF(K, salt, "xm-guong-tep"), nonce = [cờ cuối,0,0,0, i uint64], AAD = 36 byte đầu + khoá (chuỗi) UTF-8.
  *   tên ẩn = hex HMAC-SHA256(HKDF(K, rỗng, "xm-guong-ten"), khoá).
+ * 27/10 LỚP PC (laptop tắt vẫn làm tươi — hasaki/xm-lop-pc.mjs): PC chạy cò mã hoá bằng khoá RIÊNG Kp, Kp + danh sách khoá nằm trong PHONG BÌ
+ *   bọc khoá công khai (ECDH P-256). moPhongBi: khoá riêng d = HKDF(K, rỗng, info) → mở phong bì. nhapKhoa(K, lop) → khoá kép: tenAn/docDau
+ *   tự chọn Kp cho khoá có trong lớp (khoá api: chỉ khi lớp mới hơn bản chụp laptop — lop.apiMoi), còn lại K. Vỏ phong bì: KVO công khai.
  * Chỉ WebCrypto, không thư viện ngoài. Gắn vào self.hxGiaiMa (trang: window, service worker: self). */
 (function (g) {
   "use strict";
@@ -15,8 +18,8 @@
   function loi(chu, ma) { var e = new Error(chu); e.ma = ma; return e; }
   function tuB64(s) { var b = atob(String(s || "")), r = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) r[i] = b.charCodeAt(i); return r; }
 
-  /** K (base64 hoặc 32 byte) → { kGoc: khoá HKDF, kTen: khoá HMAC đặt tên } */
-  function nhapKhoa(k) {
+  /** K (base64 hoặc 32 byte) → { kGoc: khoá HKDF, kTen: khoá HMAC đặt tên }. lop {kp, ds:[khoá], apiMoi} → thêm .lop (khoá kép, xem chon) */
+  function nhapMot(k) {
     var raw = typeof k === "string" ? tuB64(k) : new Uint8Array(k || []);
     if (raw.length !== 32) return Promise.reject(loi("khoá giải mã sai cỡ", 400));
     return crypto.subtle.importKey("raw", raw, "HKDF", false, ["deriveKey", "deriveBits"]).then(function (kGoc) {
@@ -25,7 +28,35 @@
         .then(function (kTen) { return { kGoc: kGoc, kTen: kTen }; });
     });
   }
-  function tenAn(kk, khoa) { return crypto.subtle.sign("HMAC", kk.kTen, utf8(khoa)).then(hex); }
+  function nhapKhoa(k, lop) {
+    return nhapMot(k).then(function (kk) {
+      if (!lop || !lop.kp || !lop.ds) return kk;
+      return nhapMot(lop.kp).then(function (kl) { kl.ds = new Set(lop.ds); kl.apiMoi = !!lop.apiMoi; kk.lop = kl; return kk; });
+    });
+  }
+  /* khoá nào giải tệp nào: có trong lớp PC (khoá api: thêm điều kiện lớp mới hơn bản chụp laptop) → Kp, còn lại → K */
+  function chon(kk, khoa) { var l = kk && kk.lop; return l && l.ds.has(khoa) && (String(khoa).indexOf("api:") !== 0 || l.apiMoi) ? l : kk; }
+  function tenAn(kk, khoa) { return crypto.subtle.sign("HMAC", chon(kk, khoa).kTen, utf8(khoa)).then(hex); }
+  /* vỏ phong bì: khoá CÔNG KHAI KVO = sha256("xm-lop-vo-cong-khai") (hasaki/guong-ma-hoa.mjs) */
+  function khoaVo() { return crypto.subtle.digest("SHA-256", utf8("xm-lop-vo-cong-khai")).then(nhapMot); }
+  var b64u = function (u8) { return btoa(String.fromCharCode.apply(null, u8)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); };
+  /** Mở phong bì lớp PC: K (base64) + phong bì (đối tượng JSON {v,info,pub,epk,iv,ct}) → nội dung {kp, luc, may, ds} */
+  function moPhongBi(k, pb) {
+    var raw = tuB64(k), pub = tuB64(pb.pub), epk = tuB64(pb.epk);
+    if (raw.length !== 32 || pub.length !== 65 || epk.length !== 65) return Promise.reject(loi("Phong bì lớp PC hỏng.", 502));
+    var EC = { name: "ECDH", namedCurve: "P-256" };
+    return crypto.subtle.importKey("raw", raw, "HKDF", false, ["deriveBits"])
+      .then(function (kG) { return crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: utf8(pb.info || "xm-lop-rieng") }, kG, 256); })
+      .then(function (d) {
+        return Promise.all([crypto.subtle.importKey("jwk", { kty: "EC", crv: "P-256", d: b64u(new Uint8Array(d)), x: b64u(pub.subarray(1, 33)), y: b64u(pub.subarray(33, 65)), ext: true }, EC, false, ["deriveBits"]),
+          crypto.subtle.importKey("raw", epk, EC, false, [])]);
+      })
+      .then(function (r) { return crypto.subtle.deriveBits({ name: "ECDH", public: r[1] }, r[0], 256); })
+      .then(function (z) { return crypto.subtle.importKey("raw", z, "HKDF", false, ["deriveKey"]); })
+      .then(function (kz) { return crypto.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: epk, info: utf8("xm-lop-boc") }, kz, { name: "AES-GCM", length: 256 }, false, ["decrypt"]); })
+      .then(function (kB) { return crypto.subtle.decrypt({ name: "AES-GCM", iv: tuB64(pb.iv), additionalData: utf8("xm-lop-v1"), tagLength: 128 }, kB, tuB64(pb.ct)); })
+      .then(function (ro) { return JSON.parse(new TextDecoder().decode(ro)); });
+  }
 
   /** 36 byte đầu → thông tin tệp + khoá tệp (Promise) */
   function docDau(h, khoa, kk) {
@@ -35,7 +66,7 @@
     if (!(doan >= 4096 && doan <= 16777216)) return Promise.reject(loi("Đầu tệp hỏng.", 502));
     var n = Math.max(1, Math.ceil(coRo / doan)), kb = utf8(khoa), ad = new Uint8Array(DAU + kb.length);
     ad.set(h.subarray(0, DAU), 0); ad.set(kb, DAU);
-    return crypto.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: h.slice(8, 24), info: utf8("xm-guong-tep") }, kk.kGoc, { name: "AES-GCM", length: 256 }, false, ["decrypt"])
+    return crypto.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: h.slice(8, 24), info: utf8("xm-guong-tep") }, chon(kk, khoa).kGoc, { name: "AES-GCM", length: 256 }, false, ["decrypt"])
       .then(function (kTep) { return { loai: h[5], ct: LOAI_CT[h[5]] || LOAI_CT[0], coRo: coRo, doan: doan, n: n, tong: DAU + coRo + THE * n, ad: ad, kTep: kTep }; });
   }
   function nonce(i, cuoi) { var n = new Uint8Array(12), v = new DataView(n.buffer); n[0] = cuoi ? 1 : 0; v.setUint32(4, Math.floor(i / 4294967296)); v.setUint32(8, i >>> 0); return n; }
@@ -70,5 +101,5 @@
       });
     })();
   }
-  g.hxGiaiMa = { DAU: DAU, THE: THE, LOAI_CT: LOAI_CT, loi: loi, nhapKhoa: nhapKhoa, tenAn: tenAn, docDau: docDau, giaiDoan: giaiDoan, boGom: boGom, docTron: docTron };
+  g.hxGiaiMa = { DAU: DAU, THE: THE, LOAI_CT: LOAI_CT, loi: loi, nhapKhoa: nhapKhoa, chon: chon, khoaVo: khoaVo, moPhongBi: moPhongBi, tenAn: tenAn, docDau: docDau, giaiDoan: giaiDoan, boGom: boGom, docTron: docTron };
 })(typeof self !== "undefined" ? self : this);
