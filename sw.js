@@ -12,7 +12,7 @@
  *    Laptop bật (không phải bản mã hoá) thì index.html gỡ đăng ký tệp này (hxGuongMa.capNhat).
  *  · Bị trình duyệt tắt khi rảnh → mất K trong bộ nhớ → lượt sau hỏi lại trang đang mở (MessageChannel «xin»). */
 "use strict";
-importScripts("giai-ma-guong.js");
+importScripts("giai-ma-guong.js?v=20261027a");   // 27/10 lớp PC: đổi bản để trình duyệt nạp lại bộ giải
 var G = self.hxGiaiMa, DAU = G.DAU, THE = G.THE, loi = G.loi;
 var K = null;              // { goc, phien, kGoc (HKDF), kTen (HMAC) }
 var DAU_C = new Map();     // tên ẩn → Promise<thông tin đầu tệp + khoá tệp>
@@ -28,7 +28,8 @@ self.addEventListener("message", function (e) {
 
 function datKhoa(d) {
   if (!/^https?:\/\//.test(String(d.goc || ""))) return Promise.reject(new Error("thiếu địa chỉ máy dự phòng"));
-  return G.nhapKhoa(d.khoa).then(function (kk) { DAU_C.clear(); K = { goc: String(d.goc).replace(/\/$/, ""), phien: String(d.phien || ""), kGoc: kk.kGoc, kTen: kk.kTen }; return K; });
+  /* 27/10 lớp PC: d.lop {kp, ds, apiMoi} → khoá kép (giai-ma-guong.js chon: tệp có trong lớp giải bằng Kp, còn lại K) */
+  return G.nhapKhoa(d.khoa, d.lop).then(function (kk) { DAU_C.clear(); K = { goc: String(d.goc).replace(/\/$/, ""), phien: String(d.phien || ""), kGoc: kk.kGoc, kTen: kk.kTen, lop: kk.lop }; return K; });
 }
 
 /* Mất K (trình duyệt tắt service worker khi rảnh) → hỏi trang đã gửi yêu cầu (hoặc mọi trang đang mở) qua MessageChannel. */
