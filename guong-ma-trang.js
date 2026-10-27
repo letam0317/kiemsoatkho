@@ -10,15 +10,18 @@
  *    đúng loại → blob: URL. Video: <video> báo lỗi, hoặc chưa đủ khung hình sau 6 s → tải trọn (chỉ báo «Đang tải clip x%», trần 150 MB),
  *    giữ vị trí đang xem; blob thu hồi khi phần tử rời trang / đổi clip. Ảnh + dữ liệu /api/* cũng giải trong trang khi cần.
  *    Không có service worker thì đường giải mã là «about:blank#__giai-ma/…» — báo lỗi ngay, không tốn lượt mạng nào.
- *  · Laptop bật (không mã hoá) → quên khoá, gỡ đăng ký sw.js, trang như cũ. Định dạng + cách đặt tên: hasaki/guong-ma-hoa.mjs. */
+ *  · Laptop bật (không mã hoá) → quên khoá, gỡ đăng ký sw.js, trang như cũ. Định dạng + cách đặt tên: hasaki/guong-ma-hoa.mjs.
+ *  · 27/10 LỚP PC (laptop tắt vẫn làm tươi): sau khi có K, đọc PHONG BÌ lớp PC (vỏ KVO công khai, ruột ECDH mở bằng khoá riêng dẫn từ K) + mốc
+ *    bản chụp laptop (api:__luc). Lớp mới hơn → dữ liệu /api/* + tệp có trong lớp giải bằng Kp; còn lại như cũ. Xem lại phong bì mỗi 5' khi tải
+ *    dữ liệu. Không có / hỏng phong bì → y như trước (chỉ bản laptop). */
 (function () {
   "use strict";
-  var KHOA = "", CHO = null, KK = null, LIB = null, SW_OK = false;
+  var KHOA = "", CHO = null, KK = null, LIB = null, SW_OK = false, LOP = null, LOP_LUC = 0;
   var SW = "serviceWorker" in navigator && navigator.serviceWorker ? navigator.serviceWorker : null;
   var TRAN_CLIP = 150 * 1048576, TRAN_ANH = 30 * 1048576;
   var goc = function () { try { return localStorage.getItem("hx-api") || window.HX_API; } catch (e) { return window.HX_API; } };
   var phien = function () { try { return localStorage.getItem("hx-phien") || ""; } catch (e) { return ""; } };
-  var goiKhoa = function () { return { hxGm: "khoa", khoa: KHOA, goc: goc(), phien: phien() }; };
+  var goiKhoa = function () { return { hxGm: "khoa", khoa: KHOA, lop: LOP, goc: goc(), phien: phien() }; };
   var hoiCho = function (p, ms, chu) { return Promise.race([p, new Promise(function (o, h) { setTimeout(function () { h(new Error(chu)); }, ms); })]); };
   var loi = function (chu, ma) { var e = new Error(chu); e.ma = ma; return e; };
 
@@ -32,7 +35,7 @@
     if (window.hxGiaiMa) return Promise.resolve(window.hxGiaiMa);
     if (LIB) return LIB;
     LIB = new Promise(function (ok, hong) {
-      var s = document.createElement("script"); s.src = new URL("giai-ma-guong.js?v=20261022a", document.baseURI).href;
+      var s = document.createElement("script"); s.src = new URL("giai-ma-guong.js?v=20261027a", document.baseURI).href;
       s.onload = function () { ok(window.hxGiaiMa); }; s.onerror = function () { LIB = null; hong(new Error("Không tải được bộ giải mã — tải lại trang.")); };
       document.head.appendChild(s);
     });
@@ -49,9 +52,31 @@
       return new Promise(function (o) { SW.addEventListener("controllerchange", o, { once: true }); }); }), 8000, "sw chậm")
       .then(guiSW).then(function () { return true; }, function () { return false; });
   }
+  /* 27/10 lớp PC: tải trọn 1 tệp nhỏ theo tên ẩn → JSON (404 → null) */
+  function taiJson(G, kk, khoa) {
+    return G.tenAn(kk, khoa).then(function (ten) { return fetch(String(goc()).replace(/\/$/, "") + "/ma/" + ten + "?phien=" + encodeURIComponent(phien()), { cache: "no-store", credentials: "omit" }); })
+      .then(function (r) { if (r.status === 404) return null; if (!r.ok) throw loi("Máy dự phòng trả " + r.status, r.status);
+        return G.docTron(r, khoa, kk, { tran: 8 * 1048576 }).then(function (x) { return new Blob(x.phan).text(); }).then(JSON.parse); });
+  }
+  function layLop(G, k) {   // → {kp, ds, apiMoi, luc, may} | null — mọi trục trặc: null (trang dùng bản laptop như cũ)
+    LOP_LUC = Date.now();
+    return Promise.all([G.khoaVo().then(function (vo) { return taiJson(G, vo, "lop:phong-bi"); }), G.nhapKhoa(k).then(function (k0) { return taiJson(G, k0, "api:__luc"); })])
+      .then(function (r) { if (!r[0]) return null;
+        return G.moPhongBi(k, r[0]).then(function (nd) {
+          var lp = Date.parse((r[1] || {}).luc || 0) || 0, ll = Date.parse(nd.luc || 0) || 0;
+          return nd && nd.kp && nd.ds ? { kp: nd.kp, ds: nd.ds, apiMoi: ll > lp, luc: nd.luc, may: nd.may || "", lucLaptop: (r[1] || {}).luc || "" } : null; }); })
+      .catch(function () { return null; });
+  }
+  function lamMoiLop() {   // xem lại phong bì (≥5' một lần) — đổi thì nạp khoá kép mới + gửi sw.js
+    if (!KHOA || Date.now() - LOP_LUC < 5 * 60e3) return Promise.resolve();
+    return napLib().then(function (G) { return layLop(G, KHOA).then(function (lop) {
+      if (JSON.stringify(lop) === JSON.stringify(LOP)) return;
+      return G.nhapKhoa(KHOA, lop).then(function (kk) { LOP = lop; KK = kk; if (SW_OK) return guiSW().catch(function () {}); }); }); }).catch(function () {});
+  }
   function sanSang() {
     if (CHO) return CHO;
-    CHO = layKhoa().then(function (k) { KHOA = k; return Promise.all([dangKy(), napLib().then(function (G) { return G.nhapKhoa(k); })]); })
+    CHO = layKhoa().then(function (k) { KHOA = k; return napLib().then(function (G) { return layLop(G, k).then(function (lop) { LOP = lop;
+        return Promise.all([dangKy(), G.nhapKhoa(k, lop)]); }); }); })
       .then(function (r) { SW_OK = r[0]; KK = r[1]; return true; });
     CHO.catch(function () { CHO = null; });
     return CHO;
@@ -160,20 +185,21 @@
   window.hxGuongMa = {
     sanSang: sanSang,
     coSW: function () { return SW_OK; },
+    lop: function () { return LOP ? { luc: LOP.luc, may: LOP.may, apiMoi: LOP.apiMoi, lucLaptop: LOP.lucLaptop } : null; },   // 27/10 lớp PC đang dùng (giờ chụp)
     tep: function (p) { return url("tep:" + khoaDuong(p)); },
     thu: function (u, api) { var p = duongCua(u, api); if (!p) return u; var k = khoaDuong(p); return url("thu:" + k, "tep:" + k); },
     api: function (path) {   /* bản chụp GET /api/* (laptop chụp sẵn); ghi-chu?id= lọc tại trang; nv?q= không chụp được → rỗng */
       var q = new URL(path, "http://x"), p = q.pathname, id = q.searchParams.get("id");
       if (p === "/api/nv") return Promise.resolve([]);
       if (!/^\/api\/(du-lieu|quy-dinh|ghi-chu)$/.test(p)) return Promise.reject(new Error("Bản dự phòng mã hoá không có mục " + p));
-      return sanSang().then(function () {
+      return sanSang().then(function () { return p === "/api/du-lieu" ? lamMoiLop() : null; }).then(function () {
         if (!SW_OK) return apiTrang(p);
         return apiSW(p).catch(function (e) { if (e && (e.ma === 401 || e.ma === 404)) throw e; return apiTrang(p); });   // sw.js hỏng → giải trong trang
       }).then(function (j) { return p === "/api/ghi-chu" && id ? (j || []).filter(function (x) { return x.id === id; }) : j; });
     },
     capNhat: function () {   /* sau mỗi lần dò máy chủ: không mã hoá → quên khoá + gỡ sw.js (trang y như cũ) */
       if (window.__HX_MA_HOA) return;
-      KHOA = ""; CHO = null; KK = null; SW_OK = false;
+      KHOA = ""; CHO = null; KK = null; SW_OK = false; LOP = null; LOP_LUC = 0;
       if (SW && SW.controller && /\/sw\.js$/.test(SW.controller.scriptURL)) SW.getRegistration().then(function (r) { if (r) r.unregister(); }).catch(function () {});
     }
   };
