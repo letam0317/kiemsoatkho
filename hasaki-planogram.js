@@ -3638,8 +3638,21 @@ function openCanhBao(){
 /* ===== POP-UP CHI TIẾT VỊ TRÍ (bấm ô trên sơ đồ) — báo cáo của ngày + lịch sử 7 ngày ===== */
 var VT = { loc: "", ngay: "", moAnh: {} };   // moAnh[request id] = đã bấm "+N" trải hết lưới ảnh
 function bkCua(r, dd){ return r.bk === "da" ? "da" : (dd === isoToday() ? r.bk : "chua"); }
+/* 28/10 user «thanh bên phải Bảo dưỡng theo giao diện thanh bên phải Planogram, thiết kế như nhau chỉ khác dữ liệu»:
+   VỎ #hpVtModal DÙNG CHUNG. Mục khác gọi moVoVt("bd") → nhận các ô (tiêu đề, phụ đề, link góc phải, thân) để điền dữ liệu của mình;
+   khi vỏ thuộc mục khác (data-chu) thì renderVt của Planogram bỏ qua — không vẽ đè. openViTri lấy lại vỏ cho Planogram. */
+function moVoVt(chu){
+  napVo();
+  if (document.body.classList.contains("side-open")) { var tg = $id("sideToggle"); if (tg) tg.click(); else document.body.classList.remove("side-open"); }
+  var m = $id("hpVtModal"); m.dataset.chu = chu || "";
+  if (_vtDong){ clearTimeout(_vtDong); _vtDong = 0; }
+  m.style.display = "flex";
+  requestAnimationFrame(function(){ m.classList.add("show"); });
+  return { m: m, tieu: $id("hpVtTitle"), phu: $id("hpVtSub"), lk: $id("hpVtPg"), than: $id("hpVtBody"), ghi: $id("hpVtGhi"), lt: $id("hpVtLt") };
+}
 function openViTri(loc){
   if (!loc) return;
+  var mVo = $id("hpVtModal"); if (mVo){ mVo.dataset.chu = ""; [$id("hpVtGhi"), $id("hpVtLt"), $id("hpVtPg")].forEach(function(e){ if (e) e.style.display = ""; }); }
   /* Luật thanh bên: khi thanh bên phải hiển thị thì thanh bên trái tự động ẩn */
   if (document.body.classList.contains("side-open")) {
     var tg = $id("sideToggle");
@@ -3751,6 +3764,7 @@ function dongHoatDong(em, d, boQua){
   return out;
 }
 function renderVt(){
+  if ($id("hpVtModal") && $id("hpVtModal").dataset.chu) return;   // vỏ đang do mục khác dùng (moVoVt) — không vẽ đè
   var loc = VT.loc, d = VT.ngay, kO = khoaO(loc);
   /* gom theo KHOÁ Ô (kệ alias nhiều mã vẫn về đúng pop-up); 1 ngày nhiều mã → ưu tiên bản ĐÃ vệ sinh */
   var byNgay = {}; S.yc.rows.forEach(function(r){ if (khoaO(r.loc) !== kO) return;
@@ -4807,11 +4821,11 @@ function pgListUrlLoc(isoNgay, locDesc){
 }
 
 /* ===== INIT (host gọi mỗi lần mở tab — idempotent) ===== */
-var _booted = false;
-function init(pane){
-  PANE = pane;
-  if (!_booted){
-    _booted = true;
+var _booted = false, _vo = false;
+/* 28/10: dựng VỎ (CSS + các pop-up + sự kiện chung) tách khỏi init — mục khác (Tài sản › Bảo dưỡng) gọi moVoVt() để dùng chung
+   thanh bên vị trí mà KHÔNG khởi động Planogram (không tải dữ liệu, không vẽ tab). */
+function napVo(){
+  if (_vo) return; _vo = true;
     var style = document.createElement("style"); style.id = "hp-css"; style.textContent = CSS;
     document.head.appendChild(style);
     var wrap = document.createElement("div"); wrap.innerHTML = MODAL_HTML;
@@ -4848,6 +4862,12 @@ function init(pane){
        (đã có giữ-lì hệ số nên lệch nhỏ không gây nhảy); load = logo/ảnh xong (đổi mốc chặn cao) */
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitMaps(); });
     window.addEventListener("load", function(){ fitMaps(); });
+}
+function init(pane){
+  PANE = pane;
+  if (!_booted){
+    _booted = true;
+    napVo();
     pane.innerHTML = KHUNG;
     loadData();
     return;
@@ -4863,7 +4883,7 @@ window.HPLANOGRAM = {
   openAiList: openAiList, closeAiModal: closeAiModal, renderAiModal: renderAiModal,
   comboInput: comboInput, comboMenu: comboMenu, quick: quick, openAnh: openAnh, anhLui: anhLui,
   openNk: openNk, closeNk: closeNk, nkPick: nkPick, nkSearch: nkSearch,
-  openViTri: openViTri, moAnhHet: moAnhHet, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao, openThieu: openThieu, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
+  openViTri: openViTri, moVoVt: moVoVt, theTaiSan: theTaiSan, moAnhHet: moAnhHet, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao, openThieu: openThieu, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
   toggleLegend: toggleLegend, closeLegend: closeLegend,
   ccSetStatus: ccSetStatus, ccSearch: ccSearch, aiSetKl: aiSetKl, aiSearch: aiSearch, moMap: moMap,
   toggleMatBang: toggleMatBang, setStHi: setStHi, togglePhong: togglePhong, moKhuMenu: moKhuMenu, nvXemHet: nvXemHet,
