@@ -113,6 +113,10 @@
       B + " .bd-xam{font-weight:400;color:var(--muted)}",
       "#pane-baoduong .bd-nguon{text-align:center;font-size:12px;line-height:20px;margin:0 0 16px}",
       "#pane-baoduong .bd-nguon a{color:var(--muted)}",
+      "#pane-baoduong .bd-gs{display:inline-flex;align-items:flex-start;gap:2px;padding:6px 8px;border-radius:8px;text-decoration:none;transition:background .15s}",
+      "#pane-baoduong .bd-gs:hover{background:var(--ad-re,var(--hover))}",
+      "#pane-baoduong .bd-gs-mui{font-size:13px;line-height:14px;font-weight:700;color:var(--muted)}",
+      "#pane-baoduong .bd-gs:hover .bd-gs-mui{color:var(--accent)}",
       "#pane-baoduong .bd-panel>.panel-head .bd-phai .date-btn{min-height:32px}",
       /* thanh bên: yêu cầu ngày */
       B + " .bd-hm td.vt{width:1%}",
@@ -146,13 +150,13 @@
       B + " .bd-pc-ai .bd-pc-than{display:flex;flex-direction:column}",
       B + " .bd-pc-ai .bd-ng{line-height:20px}",
       /* thẻ ẩn/hiện có mũi tên (khuôn .hp-vtts của Planogram, nhưng bấm được cả trên web) */
-      B + " .bd-gap>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:default;min-height:24px}",
+      B + " .bd-gap>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;min-height:24px;-webkit-tap-highlight-color:transparent}",
       B + " .bd-gap>summary::-webkit-details-marker{display:none}",
       B + " details.hp-vtcard:not([open]){gap:0}",
       B + " .bd-gap-mui{margin-left:auto;flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;margin-right:-6px;border-radius:8px;" +
         "font-size:14px;color:var(--muted);cursor:pointer;transition:transform .2s var(--ez-apple,ease),background .15s,color .15s}",
-      B + " .bd-gap-mui:hover{background:var(--ad-re,var(--hover));color:var(--accent)}",
-      B + " .bd-gap-mui:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}",
+      B + " .bd-gap>summary:hover .bd-gap-mui{background:var(--ad-re,var(--hover));color:var(--accent)}",
+      B + " .bd-gap>summary:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent);border-radius:8px}",
       B + " .bd-gap[open] .bd-gap-mui{transform:rotate(180deg)}",
       "@media(max-width:560px){" + B + " .bd-gap-mui{width:40px;height:40px;margin:-6px -8px -6px auto}}",
       B + " .bd-gap-tt{font-size:12px;font-weight:700;color:var(--accent);white-space:nowrap}",
@@ -446,6 +450,13 @@
           thuCua(n) + "</b>" + dm(n) + "</span>";
     }).join("") + "</div>";
   }
+  /* 28/10 user «hiển thị NV (yenntk6@hasaki.vn) chưa đạt»: họ tên ĐẬM + mã NV (cột «Tên người làm», sync tra danh bạ theo email);
+     không có trong danh bạ → rút gọn «@yenntk6» như trang Xác minh. Email đầy đủ để ở title. Người chưa nộp ghi «Đã mở, chưa nộp»
+     (planogram ghi tên người MỞ yêu cầu, không phải người được giao — tránh hiểu nhầm «tamlc phụ trách»). */
+  function nguoiLam(y) {
+    var em = String(y["NGƯỜI LÀM"] || ""), t = String(y["TÊN NGƯỜI LÀM"] || "").split(" · ");
+    return '<span title="' + esc(em) + '">' + (t[0] ? "<b>" + o(t[0]) + "</b>" + (t[1] ? ' <span class="hp-hint">' + esc(t[1]) + "</span>" : "") : o("@" + em.split("@")[0])) + "</span>";
+  }
   function dong(nhan, gt) { return '<div class="hp-vtrow"><label>' + nhan + "</label><div>" + gt + "</div></div>"; }
   /* các dòng của NGÀY đang xem: trạng thái · người báo cáo · ảnh từng khung (thiếu khung nào nói tên) · cảnh báo khung lệch */
   function veNgay(b, v, d) {
@@ -472,7 +483,7 @@
         (lech ? dong("Cảnh báo", badge("Khung ảnh của lịch là khung quạt — không khớp thiết bị, cần sửa lịch planogram", "var(--warn)")) : "") +
         dong("Trạng thái", badge(CHU_O[l] || y["TRẠNG THÁI"], MAU_O[l] || "var(--muted)") + (TT_YC[st] ? " " + badge(TT_YC[st], "var(--info)") : "") +
           (tsCuaYc(y) ? " " + badge("Định kỳ " + nhanTs(tsCuaYc(y)), "var(--accent)") : "")) +
-        (y["NGƯỜI LÀM"] ? dong(xong(st) ? "Người báo cáo" : "Người cập nhật", o(y["NGƯỜI LÀM"]) +
+        (y["NGƯỜI LÀM"] ? dong(xong(st) ? "Người báo cáo" : st === 2 ? "Đang làm" : "Đã mở, chưa nộp", nguoiLam(y) +
           (y["LÚC LÀM"] ? ' <span class="hp-hint">lúc ' + esc(String(y["LÚC LÀM"]).slice(11, 16) + " " + dm(String(y["LÚC LÀM"]).slice(0, 10))) + "</span>" : "")) : "") +
         dong("Ảnh báo cáo (" + anh.length + "/" + kh.length + ")", (anh.length ? '<div class="hp-vtthumbs">' + anh.map(function (a, i) { return oAnh(y, a, i); }).join("") + "</div>" : "") +
           (thieu.length ? '<div class="hp-hint">Chưa có ảnh: ' + thieu.map(esc).join(" · ") + "</div>" : ""));
@@ -480,11 +491,11 @@
   }
   /* thẻ ẨN/HIỆN có mũi tên — khuôn thư viện của thẻ «Tài sản tại vị trí» (Planogram: <details class="hp-vtcard hp-vtts">, ▾ bên phải xoay khi mở).
      28/10 user: «Làm gì» + «Báo cáo ở đâu» gập được trên web lẫn điện thoại; đầu thẻ vẫn đủ tóm tắt khi gập.
-     28/10 lượt sau (user CHỐT): «2 mục này LUÔN ẨN, chỉ nhấn MŨI TÊN mới hiển thị» ⇒ mỗi lần vẽ đều gập (không nhớ trạng thái),
-     bấm chữ đầu thẻ không mở — chỉ nút mũi tên .bd-gap-mui (chặn ở bộ bắt click của thân thanh bên). */
+     28/10 lượt sau (user CHỐT): «2 mục này LUÔN ẨN» ⇒ mỗi lần vẽ đều gập (không nhớ trạng thái).
+     28/10 chiều user ĐỔI: «ấn vào là hiển thị, không phải buộc ấn mũi tên» ⇒ bấm CẢ DÒNG đầu thẻ (summary gốc) mở/đóng; mũi tên chỉ là dấu hiệu. */
   function theGap(khoa, tieu, tomTat, than) {
     return '<details class="hp-vtcard bd-gap" data-the="' + esc(khoa) + '"><summary><span class="hd">' + tieu + '</span><span class="bd-gap-tt">' + tomTat +
-      '</span><span class="bd-gap-mui" role="button" tabindex="0" aria-label="Hiện / ẩn ' + esc(String(tieu).replace(/<[^>]*>/g, "")) + '">▾</span></summary>' + than + "</details>";
+      '</span><span class="bd-gap-mui" aria-hidden="true">▾</span></summary>' + than + "</details>";
   }
   function veCachLam(b, d) {
     var v = S.vt[b]; if (!v) return "";
@@ -656,7 +667,12 @@
     /* viên Cập nhật ở CHÂN TRANG như Kiểm kê / Bất thường / Planogram (khuôn .cn-wrap) — user 27/10 «cập nhật luôn ở cuối trang» */
     return '<div class="cn-wrap" id="bdLoadinfo">' + (typeof window.hskCapNhat === "function" ? window.hskCapNhat(S.ts || 0, { id: "bdReload", onclick: "HBAODUONG.reload()",
       tip: "Bảo dưỡng kho 170 · g-sheet kế hoạch + yêu cầu planogram " + NGAY_DU_LIEU + " ngày — bấm để tải lại" }) : "") + "</div>" +
-      '<div class="bd-nguon"><a href="' + GSHEET + '" target="_blank" rel="noopener">Mở g-sheet kế hoạch bảo dưỡng</a></div>';
+      /* 28/10 user: chữ «Mở g-sheet…» → BIỂU TƯỢNG Google Sheets + mũi tên ↗ (bấm là sang g-sheet); chữ đầy đủ ở title/aria-label.
+         3 mã màu trong SVG = màu NHẬN DIỆN của biểu tượng Google Sheets — cố ý không theo token sáng/tối (phát hành --bo-qua-lint có lý do). */
+      '<div class="bd-nguon"><a class="bd-gs" href="' + GSHEET + '" target="_blank" rel="noopener" title="Mở g-sheet kế hoạch bảo dưỡng" aria-label="Mở g-sheet kế hoạch bảo dưỡng">' +
+        '<svg viewBox="0 0 24 32" width="18" height="24" aria-hidden="true"><path d="M2 0h14l8 8v22a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2z" fill="#0F9D58"/>' +
+        '<path d="M16 0l8 8h-6a2 2 0 0 1-2-2z" fill="#87CEAC"/><path d="M5 14h14v11H5zm2 2v2h4v-2zm6 0v2h4v-2zm-6 4v3h4v-3zm6 0v3h4v-3z" fill="#fff"/></svg>' +
+        '<span class="bd-gs-mui">↗</span></a></div>';
   }
   function ganLocNgay() {
     var r = $id("bdLocNgay"); if (!r || typeof window.taoBoLocNgay !== "function") return;
@@ -706,14 +722,8 @@
       V.than.__bd = 1;
       V.than.addEventListener("click", function (e) {
         if (V.m.dataset.chu !== "bd") return;
-        /* thẻ gập: chỉ mũi tên mới mở/đóng */
-        var sm = e.target.closest(".bd-gap>summary"); if (sm && !e.target.closest(".bd-gap-mui")) { e.preventDefault(); return; }
         var a = e.target.closest(".bd-anh"); if (a) { e.preventDefault(); xemAnhNut(a); return; }
         var n = e.target.closest("[data-sang]"); if (n) moBen(S.chon, n.getAttribute("data-sang"));
-      });
-      V.than.addEventListener("keydown", function (e) {   // mũi tên dùng được bằng bàn phím
-        var mui = e.target.closest && e.target.closest(".bd-gap-mui"); if (!mui || (e.key !== "Enter" && e.key !== " ")) return;
-        e.preventDefault(); var d = mui.closest("details"); d.open = !d.open;
       });
       ganSua(V.than);
     }
@@ -747,7 +757,9 @@
       });
     });
     PANE.querySelectorAll("#bdLich tr.gd").forEach(function (tr) {
-      tr.addEventListener("click", function () { var tenHm = tr.getAttribute("data-hm"); S.moNhom[tenHm] = !S.moNhom[tenHm]; ve(); });
+      /* đảo theo trạng thái ĐANG HIỆN (lớp .mo), không theo S.moNhom — web mặc định mở mà S.moNhom chưa có ⇒ !undefined = true:
+         lần bấm đầu không gập (28/10 user «mục cha cũng phải bấm vào là ẩn/hiện») */
+      tr.addEventListener("click", function () { S.moNhom[tr.getAttribute("data-hm")] = !tr.classList.contains("mo"); ve(); });
     });
     /* Việc hôm nay: 1 dòng → thanh bên vị trí đó, ngày hôm nay */
     /* ô lọc trạng thái: ẩn/hiện thẻ tại chỗ (không vẽ lại cả trang), thẻ còn lại hiện dần lại */
