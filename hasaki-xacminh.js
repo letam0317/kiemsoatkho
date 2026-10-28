@@ -556,7 +556,7 @@
     var ctx = { API: function () { return API; }, phien: function () { return PHIEN; }, moThanhBen: moThanhBen };
     if (window.HXSODO) return window.HXSODO.ve(b, ctx);
     b.innerHTML = '<div class="panel"><div class="hx-trong">Đang tải sơ đồ camera…</div></div>';
-    _sdcNap = _sdcNap || new Promise(function (ok, loi) { var s = document.createElement("script"); s.src = "hasaki-so-do-camera.js?v=20261025k"; s.onload = ok; s.onerror = function () { _sdcNap = null; loi(); }; document.head.appendChild(s); });
+    _sdcNap = _sdcNap || new Promise(function (ok, loi) { var s = document.createElement("script"); s.src = "hasaki-so-do-camera.js?v=20261028a"; s.onload = ok; s.onerror = function () { _sdcNap = null; loi(); }; document.head.appendChild(s); });
     _sdcNap.then(function () { if ($id("hxBody") === b) window.HXSODO.ve(b, ctx); }).catch(function () {
       b.innerHTML = '<div class="panel"><div class="hx-trong">Không tải được mô-đun sơ đồ camera (mất mạng?). <button type="button" class="hx-nut nho" id="sdcThuLai">Thử lại</button></div></div>';
       var t = $id("sdcThuLai"); if (t) t.onclick = veSoDo; });
