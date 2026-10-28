@@ -29,9 +29,12 @@
   var nhanNhom = function (n) { var x = NHOM[nhomCua(n)] || [n || "?", "n-cxd"]; return '<span class="bd-nhom ' + x[1] + '">' + esc(x[0]) + "</span>"; };
   var NGUON = [["he-thong|phan-cong", "Theo hệ thống · Phân công (g-sheet)"], ["he-thong|work", "Theo hệ thống · Chia việc work"], ["he-thong|lan-truoc", "Theo hệ thống · Làm lần trước"], ["chi-dinh|", "Chỉ định (nhập tên / mã NV)"]];
   var xong = function (st) { return st === 3 || st === 4; };
+  /* tài khoản THỬ thao tác (28/10 user: «Lê Chí Tâm chỉ là người thử thao tác, không phải luôn làm») — không suy làm người phụ trách.
+     Cùng danh sách với sync-vesinh-all.js (TK_THU) */
+  var TK_THU = { "tamlc@hasaki.vn": 1 };
   var laDT = function () { return window.matchMedia("(max-width:768px)").matches; };
 
-  var PANE = null, S = { ok: false, loi: "", dv: [], yc: [], ky: [], giao: {}, ts: 0, lastAt: 0, chon: "", soNgay: 0, luu: {}, moNhom: {}, locNay: "", khoang: null, khoangTuDong: true };
+  var PANE = null, S = { ok: false, loi: "", dv: [], yc: [], ky: [], giao: {}, ts: 0, lastAt: 0, chon: "", soNgay: 0, luu: {}, moNhom: {}, locNay: "", locHm: "", locAi: "", moLocNay: false, khoang: null, khoangTuDong: true };
 
   function napCss() {
     if ($id("bd-css")) return;
@@ -111,8 +114,9 @@
       B + " .bd-chu i.co-ky{width:14px;height:14px;vertical-align:-3px}",
       B + " .bd-hm td .bd-o.tb-dangxem{outline:2px solid var(--accent);outline-offset:1px}",
       B + " .bd-xam{font-weight:400;color:var(--muted)}",
-      "#pane-baoduong .bd-nguon{text-align:center;font-size:12px;line-height:20px;margin:0 0 16px}",
-      "#pane-baoduong .bd-nguon a{color:var(--muted)}",
+      "#pane-baoduong .bd-cn{align-items:center;gap:6px;margin-bottom:16px}",
+      "#pane-baoduong .bd-nay-bl{grid-template-columns:repeat(2,minmax(0,260px))}",
+      "@media(max-width:560px){#pane-baoduong .bd-nay-bl{grid-template-columns:minmax(0,1fr)}}",
       "#pane-baoduong .bd-gs{display:inline-flex;align-items:flex-start;gap:2px;padding:6px 8px;border-radius:8px;text-decoration:none;transition:background .15s}",
       "#pane-baoduong .bd-gs:hover{background:var(--ad-re,var(--hover))}",
       "#pane-baoduong .bd-gs-mui{font-size:13px;line-height:14px;font-weight:700;color:var(--muted)}",
@@ -184,24 +188,25 @@
       B + " .bd-loc-o[aria-pressed=true]{border-color:var(--mau);background:color-mix(in srgb,var(--mau) 8%,var(--surface));box-shadow:0 0 0 3px color-mix(in srgb,var(--mau) 16%,transparent)}",
       B + " .bd-loc-o:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--mau) 30%,transparent)}",
       /* lưới thẻ việc */
-      B + " .bd-nay-luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}",
-      B + " .bd-tn{--mau:var(--warn);position:relative;display:flex;flex-direction:column;gap:4px;min-width:0;padding:12px 14px 12px 17px;border:1px solid var(--ad-chia,var(--border));border-radius:12px;" +
+      B + " .bd-nay-luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;align-content:start;align-items:start}",
+      B + " .bd-tn{--mau:var(--warn);position:relative;display:flex;flex-direction:column;gap:2px;min-width:0;padding:8px 10px 8px 13px;border:1px solid var(--ad-chia,var(--border));border-radius:10px;" +
         "background:var(--surface);overflow:hidden;animation:fadeUp .4s var(--ez-apple,ease) both;transition:transform .22s var(--ez-apple,ease),box-shadow .22s,border-color .22s}",
-      B + " .bd-tn::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--mau)}",
+      B + " .bd-tn::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--mau)}",
       B + " .bd-tn.s-d{--mau:var(--info,var(--accent))}" + B + " .bd-tn.s-x{--mau:var(--good)}" + B + " .bd-tn.s-b{--mau:var(--bad)}",
       B + " .bd-tn[data-bin]{cursor:pointer}",
       B + " .bd-tn[data-bin]:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--mau) 45%,var(--ad-chia,var(--border)));box-shadow:0 8px 20px -8px color-mix(in srgb,var(--text) 22%,transparent)}",
       B + " .bd-tn[data-bin]:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}",
       B + " .bd-tn[hidden]{display:none}",
       B + " .bd-tn-dau{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}",
-      B + " .bd-tn-hm{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}",
-      B + " .bd-tn-ten{font-size:14px;line-height:20px;font-weight:600;color:var(--text)}",
-      B + " .bd-tn-ai{font-size:12.5px;line-height:18px;color:var(--muted)}",
-      B + " .bd-tn-chan{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-top:6px;font-size:11.5px;color:var(--muted)}",
-      B + " .bd-tn-anh{flex:1 1 60px;max-width:110px;height:5px;border-radius:3px;background:var(--ad-nen2,var(--surface2));overflow:hidden}",
+      B + " .bd-tn-hm{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}",
+      B + " .bd-tn-ten{font-size:13px;line-height:18px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+      B + " .bd-tn-ai{font-size:12px;line-height:16px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+      B + " .bd-tn .hsk-chip{padding:0 6px;font-size:10px;line-height:16px;gap:4px}" + B + " .bd-tn .hsk-chip::before{width:5px;height:5px}",
+      B + " .bd-tn-chan{display:flex;align-items:center;flex-wrap:nowrap;gap:8px;margin-top:3px;font-size:11px;color:var(--muted);white-space:nowrap;min-width:0}",
+      B + " .bd-tn-anh{flex:1 1 50px;min-width:24px;max-width:90px;height:4px;border-radius:3px;background:var(--ad-nen2,var(--surface2));overflow:hidden}",
       B + " .bd-tn-anh i{display:block;height:100%;border-radius:3px;background:var(--mau);animation:bd-thanh .8s .2s var(--ez-apple,ease) both;transform-origin:left}",
       "@keyframes bd-thanh{from{transform:scaleX(0)}}",
-      B + " .bd-tn-ky{margin-left:auto;padding:0 7px;border-radius:6px;font-weight:700;line-height:18px;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}",
+      B + " .bd-tn-ky{margin-left:auto;padding:0 6px;border-radius:6px;font-weight:700;line-height:16px;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}",
       "@media (prefers-reduced-motion:reduce){" + B + " .bd-tn," + B + " .bd-vong .tien," + B + " .bd-tn-anh i{animation:none}}",
       B + " .bd-nay-trong{padding:10px 6px;font-size:13px;color:var(--muted)}",
       /* nhiều yêu cầu cùng ngày: đầu từng yêu cầu */
@@ -222,8 +227,8 @@
         B + " .bd-nay-tong{gap:12px;margin-bottom:12px}" + B + " .bd-vong{width:68px;height:68px}" + B + " .bd-vong-so b{font-size:15px}" + B + " .bd-vong-so small{font-size:9px}" +
         B + " .bd-nay-loc{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;flex:1 1 auto}" + B + " .bd-nay-loc::-webkit-scrollbar{display:none}" +
         B + " .bd-loc-o{min-width:76px;flex:none;padding:6px 10px}" + B + " .bd-loc-o .tkq-num{font-size:17px;line-height:20px}" + B + " .bd-loc-o .tkq-cap{font-size:11px;white-space:nowrap}" +
-        B + " .bd-nay-luoi{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}" + B + " .bd-tn{padding:10px 10px 10px 13px;border-radius:10px}" +
-        B + " .bd-tn-dau{flex-direction:column;align-items:flex-start;gap:4px}" + B + " .bd-tn-ten{font-size:13px;line-height:18px}" + B + " .bd-tn-ai{font-size:12px}" +
+        B + " .bd-nay-luoi{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}" + B + " .bd-tn{padding:8px 8px 8px 11px}" +
+        B + " .bd-tn-dau{flex-direction:column;align-items:flex-start;gap:2px}" + B + " .bd-tn-ten{font-size:12.5px;line-height:17px}" + B + " .bd-tn-ai{font-size:11.5px}" +
         B + " .bd-tn-ky{margin-left:0}" +
         B + " .bd-hm td .bd-o{width:12px;height:12px}" +
         B + " .bd-hm thead th{font-size:10px;line-height:11px;min-width:12px}" +
@@ -532,8 +537,10 @@
      chia việc work = người đang được giao ở task kỳ trước (Vận hành không có task ⇒ trống) */
   function goiY(b, nhom) {
     var n = S.vt[b].nhom[nhom] || { pt: {} }, k = kyCua(b, nhom)[0] || {};
-    var lan = nhom === "VẬN HÀNH" ? ((ycCua(b).filter(function (y) { return xong(Number(y["STATUS ID"])) && y["NGƯỜI LÀM"]; })
-      .sort(function (a, c) { return String(c["LÚC LÀM"]).localeCompare(String(a["LÚC LÀM"])); })[0] || {})["NGƯỜI LÀM"] || "") : k["LÀM LẦN TRƯỚC"] || "";
+    /* 28/10 user: thẻ hiện «yenntk6@hasaki.vn», «tamlc@hasaki.vn» ⇒ lấy HỌ TÊN (cột «Tên người làm»), bỏ lượt của tài khoản THỬ (TK_THU) */
+    var yLan = nhom === "VẬN HÀNH" ? (ycCua(b).filter(function (y) { return xong(Number(y["STATUS ID"])) && y["NGƯỜI LÀM"] && !TK_THU[String(y["NGƯỜI LÀM"]).toLowerCase()]; })
+      .sort(function (a, c) { return String(c["LÚC LÀM"]).localeCompare(String(a["LÚC LÀM"])); })[0] || null) : null;
+    var lan = yLan ? (String(yLan["TÊN NGƯỜI LÀM"] || "").split(" · ")[0] || "@" + String(yLan["NGƯỜI LÀM"]).split("@")[0]) : nhom === "VẬN HÀNH" ? "" : k["LÀM LẦN TRƯỚC"] || "";
     return { "phan-cong": Object.keys(n.pt).join(" / "), work: nhom === "VẬN HÀNH" ? "" : k["CHIA VIỆC WORK (KỲ TRƯỚC)"] || "", "lan-truoc": lan };
   }
   function cheDoCua(khoa) {
@@ -602,6 +609,20 @@
       the.push({ b: b, l: ls.indexOf("b") >= 0 ? "b" : ls.indexOf("d") >= 0 ? "d" : "m", hm: k0["HẠNG MỤC"], ten: (NHOM[nhomCua(k0["NHÓM THỰC HIỆN"])] || [k0["NHÓM THỰC HIỆN"]])[0] + " · " + ds.length + " vị trí",
         ai: k0["NGƯỜI NHẬN"], ts: k0["TẦN SUẤT"], han: k0["HẠN"], d: isoTuDmy(k0["KỲ HIỆN TẠI"]) });
     });
+    /* bộ lọc Hạng mục · Người phụ trách (28/10 user «bổ sung bộ lọc ở thư viện vào Việc hôm nay») — lựa chọn lấy từ chính thẻ hôm nay */
+    var tachAi = function (t) { return t.ai ? String(t.ai).split(/\s*[\/,;]\s*/).filter(Boolean) : ["Chưa giao người"]; };
+    var dsHm = {}, dsAi = {};
+    the.forEach(function (t) { dsHm[t.hm] = (dsHm[t.hm] || 0) + 1; tachAi(t).forEach(function (a) { dsAi[a] = (dsAi[a] || 0) + 1; }); });
+    if (S.locHm && !dsHm[S.locHm]) S.locHm = ""; if (S.locAi && !dsAi[S.locAi]) S.locAi = "";
+    var tatCa = the.length, dangLoc = !!(S.locHm || S.locAi);
+    the = the.filter(function (t) { return (!S.locHm || t.hm === S.locHm) && (!S.locAi || tachAi(t).indexOf(S.locAi) >= 0); });
+    var luaChon = function (id, nhan, tat, ds, chon) {
+      return '<label><span class="lbl">' + nhan + '</span><select id="' + id + '"><option value="">' + tat + " (" + tatCa + ")</option>" +
+        Object.keys(ds).sort(function (a, c) { return a.localeCompare(c, "vi"); }).map(function (k) {
+          return '<option value="' + esc(k) + '"' + (k === chon ? " selected" : "") + ">" + esc(k) + " (" + ds[k] + ")</option>"; }).join("") + "</select></label>";
+    };
+    var khoiLoc = '<div class="filters bd-nay-bl' + (S.moLocNay ? "" : " collapsed") + '" id="bdNayLoc">' +
+      luaChon("bdNayHm", "Hạng mục", "Tất cả hạng mục", dsHm, S.locHm) + luaChon("bdNayAi", "Người phụ trách", "Tất cả người", dsAi, S.locAi) + "</div>";
     var THU_L = { b: 0, m: 1, d: 2, x: 3 };
     the.sort(function (a, c) { return THU_L[a.l] - THU_L[c.l] || S.thuTu.indexOf(a.b) - S.thuTu.indexOf(c.b); });
     var dem = { m: 0, b: 0, d: 0, x: 0 }; the.forEach(function (t) { dem[t.l]++; });
@@ -623,11 +644,13 @@
         '<div class="bd-tn-ten">' + o(t.ten) + "</div>" +
         '<div class="bd-tn-ai">' + (t.ai ? o(t.ai) : '<span class="bd-do">Chưa giao người</span>') + "</div>" +
         '<div class="bd-tn-chan">' + (t.kh ? '<span class="bd-tn-anh" title="ảnh đã chụp / số khung"><i style="width:' + Math.round(100 * t.co / t.kh) + '%"></i></span><span>' + t.co + "/" + t.kh + " ảnh</span>"
-          : t.han ? "<span>hạn " + esc(t.han) + "</span>" : "") + (t.ts ? '<span class="bd-tn-ky">Định kỳ ' + esc(nhanTs(t.ts)) + "</span>" : "") + "</div></div>";
+          : t.han ? "<span>hạn " + esc(t.han) + "</span>" : "") + (t.ts ? '<span class="bd-tn-ky" title="Việc định kỳ ' + esc(nhanTs(t.ts)) + '">' + esc(nhanTs(t.ts)) + "</span>" : "") + "</div></div>";
     }).join("");
-    return '<div class="panel bd-panel" id="bdNay"><div class="panel-head"><span class="ph-trai"><span class="ph-td">Việc hôm nay</span></span></div>' +
+    return '<div class="panel bd-panel" id="bdNay"><div class="panel-head"><span class="ph-trai"><span class="ph-td">Việc hôm nay</span></span>' +
+        (tatCa ? '<button type="button" class="btn-filter' + (S.moLocNay ? " mo" : "") + (dangLoc ? " dang-loc" : "") + '" id="bdNayNut" aria-controls="bdNayLoc">' +
+          (dangLoc ? "Bộ lọc · đang lọc" : "Bộ lọc") + "</button>" : "") + "</div>" + (tatCa ? khoiLoc : "") +
       '<div class="bd-than bd-nay">' + (tong ? '<div class="bd-nay-tong">' + vong + loc + '</div><div class="bd-nay-luoi">' + the_ + "</div>"
-        : '<div class="bd-nay-trong">Hôm nay không có việc bảo dưỡng nào.</div>') + "</div></div>";
+        : '<div class="bd-nay-trong">' + (dangLoc ? "Không có việc khớp bộ lọc." : "Hôm nay không có việc bảo dưỡng nào.") + "</div>") + "</div></div>";
   }
 
   function luuGiao(nut) {
@@ -665,11 +688,12 @@
 
   function chanTrang() {
     /* viên Cập nhật ở CHÂN TRANG như Kiểm kê / Bất thường / Planogram (khuôn .cn-wrap) — user 27/10 «cập nhật luôn ở cuối trang» */
-    return '<div class="cn-wrap" id="bdLoadinfo">' + (typeof window.hskCapNhat === "function" ? window.hskCapNhat(S.ts || 0, { id: "bdReload", onclick: "HBAODUONG.reload()",
-      tip: "Bảo dưỡng kho 170 · g-sheet kế hoạch + yêu cầu planogram " + NGAY_DU_LIEU + " ngày — bấm để tải lại" }) : "") + "</div>" +
+    return '<div class="cn-wrap bd-cn" id="bdLoadinfo">' + (typeof window.hskCapNhat === "function" ? window.hskCapNhat(S.ts || 0, { id: "bdReload", onclick: "HBAODUONG.reload()",
+      tip: "Bảo dưỡng kho 170 · g-sheet kế hoạch + yêu cầu planogram " + NGAY_DU_LIEU + " ngày — bấm để tải lại" }) : "") +
       /* 28/10 user: chữ «Mở g-sheet…» → BIỂU TƯỢNG Google Sheets + mũi tên ↗ (bấm là sang g-sheet); chữ đầy đủ ở title/aria-label.
-         3 mã màu trong SVG = màu NHẬN DIỆN của biểu tượng Google Sheets — cố ý không theo token sáng/tối (phát hành --bo-qua-lint có lý do). */
-      '<div class="bd-nguon"><a class="bd-gs" href="' + GSHEET + '" target="_blank" rel="noopener" title="Mở g-sheet kế hoạch bảo dưỡng" aria-label="Mở g-sheet kế hoạch bảo dưỡng">' +
+         3 mã màu trong SVG = màu NHẬN DIỆN của biểu tượng Google Sheets — cố ý không theo token sáng/tối (phát hành --bo-qua-lint có lý do).
+         28/10 lượt sau: biểu tượng NGANG HÀNG, bên phải viên Cập nhật (cùng .cn-wrap) */
+      '<a class="bd-gs" href="' + GSHEET + '" target="_blank" rel="noopener" title="Mở g-sheet kế hoạch bảo dưỡng" aria-label="Mở g-sheet kế hoạch bảo dưỡng">' +
         '<svg viewBox="0 0 24 32" width="18" height="24" aria-hidden="true"><path d="M2 0h14l8 8v22a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2z" fill="#0F9D58"/>' +
         '<path d="M16 0l8 8h-6a2 2 0 0 1-2-2z" fill="#87CEAC"/><path d="M5 14h14v11H5zm2 2v2h4v-2zm6 0v2h4v-2zm-6 4v3h4v-3zm6 0v3h4v-3z" fill="#fff"/></svg>' +
         '<span class="bd-gs-mui">↗</span></a></div>';
@@ -686,7 +710,7 @@
       coDuLieu: function (iso) { return !!coNgay[iso]; },
       chanNgay: function (iso) { return iso < ngayDau() || iso > isoVN(Date.now()); },
       nhan: function (a, b) { return a ? dm(a) + (b && b !== a ? " → " + dm(b) : "") : ""; },
-      onApply: function (a, b) { var m = khoangMacDinh(); S.khoang = [a || m[0], b || a || m[1]]; S.khoangTuDong = !a; ve(); }
+      onApply: function (a, b) { var m = khoangMacDinh(); S.khoang = [a || m[0], b || a || m[1]]; S.khoangTuDong = !a; veLaiLuoi(); }
     });
     loc.dat(S.khoang[0], S.khoang[1]);
   }
@@ -749,7 +773,16 @@
     var ds = ycCua(b).map(function (y) { return y["NGÀY"]; }).filter(function (d) { return d >= S.khoang[0] && d <= S.khoang[1]; }).sort();
     return ds.length ? ds[ds.length - 1] : S.khoang[1];
   }
-  function ganSuKien() {
+  /* 28/10 user «trỏ/nhấn mục cha ở lưới thì thẻ Việc hôm nay lại nhảy»: gập/mở mục cha + đổi khoảng ngày chỉ VẼ LẠI KHUNG LƯỚI,
+     không vẽ lại cả trang (vẽ lại cả trang = thẻ chạy lại hiệu ứng fadeUp so le ⇒ trông như nhảy). Tương tự bộ lọc Việc hôm nay chỉ vẽ lại khung đó. */
+  function thayKhung(id, html) {
+    var cu = $id(id); if (!cu) { ve(); return false; }
+    var t = document.createElement("div"); t.innerHTML = html; cu.parentNode.replaceChild(t.firstChild, cu); return true;
+  }
+  function veLaiLuoi() { if (thayKhung("bdLich", veLuoi())) { ganLocNgay(); ganLuoi(); } }
+  function veLaiNay() { if (thayKhung("bdNay", veHomNay())) ganNay(); }
+  function ganSuKien() { ganLuoi(); ganNay(); if (!PANE.__bdSua) { PANE.__bdSua = 1; ganSua(PANE); } }
+  function ganLuoi() {
     PANE.querySelectorAll("#bdLich tr.vtr").forEach(function (tr) {
       tr.addEventListener("click", function (e) {
         var b = tr.getAttribute("data-bin"), oNgay = e.target.closest(".bd-o[data-ngay]");
@@ -759,7 +792,16 @@
     PANE.querySelectorAll("#bdLich tr.gd").forEach(function (tr) {
       /* đảo theo trạng thái ĐANG HIỆN (lớp .mo), không theo S.moNhom — web mặc định mở mà S.moNhom chưa có ⇒ !undefined = true:
          lần bấm đầu không gập (28/10 user «mục cha cũng phải bấm vào là ẩn/hiện») */
-      tr.addEventListener("click", function () { S.moNhom[tr.getAttribute("data-hm")] = !tr.classList.contains("mo"); ve(); });
+      tr.addEventListener("click", function () { S.moNhom[tr.getAttribute("data-hm")] = !tr.classList.contains("mo"); veLaiLuoi(); });
+    });
+  }
+  function ganNay() {
+    /* Bộ lọc (khuôn .btn-filter + .filters của thư viện, như Kiểm kê): nút mở/đóng khối lọc; ô chọn enhanceSelect (mở xuống, popIn, ✕) */
+    var nut = $id("bdNayNut"); if (nut) nut.addEventListener("click", function () { S.moLocNay = !S.moLocNay; $id("bdNayLoc").classList.toggle("collapsed", !S.moLocNay); nut.classList.toggle("mo", S.moLocNay); });
+    [["bdNayHm", "locHm"], ["bdNayAi", "locAi"]].forEach(function (x) {
+      var s = $id(x[0]); if (!s) return;
+      if (typeof window.enhanceSelect === "function") { try { window.enhanceSelect(s); } catch (er) {} }
+      s.addEventListener("change", function () { S[x[1]] = s.value; veLaiNay(); });
     });
     /* Việc hôm nay: 1 dòng → thanh bên vị trí đó, ngày hôm nay */
     /* ô lọc trạng thái: ẩn/hiện thẻ tại chỗ (không vẽ lại cả trang), thẻ còn lại hiện dần lại */
@@ -778,7 +820,6 @@
       r.addEventListener("click", bat);
       r.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); bat(); } });
     });
-    if (!PANE.__bdSua) { PANE.__bdSua = 1; ganSua(PANE); }
   }
 
   var mq = window.matchMedia("(max-width:768px)");
