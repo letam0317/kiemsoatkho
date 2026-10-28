@@ -3998,14 +3998,15 @@ function theTaiSan(loc){
   if (!ds.length){ var kk = khoaO(key); Object.keys(T.by).forEach(function(k){ if (!ds.length && khoaO(k) === kk) ds = T.by[k]; }); }
   var hd = '<div class="hd">Tài sản tại vị trí <span class="hp-hint" style="font-size:10.5px;text-transform:none;letter-spacing:0;font-weight:500">sổ khai báo ' +
     esc(ngayVN(T.tu)) + '→' + esc(ngayVN(T.den)) + '/' + esc(String(T.den).slice(0, 4)) + '</span></div>';
-  if (!ds.length) return '<div class="hp-vtcard hp-vtts">' + hd + '<div class="ln mut">sổ tài sản chưa khai món nào cho vị trí này</div></div>';
+  /* 22/10 user: web LUÔN mở mục Tài sản, không thu lại được (CSS ≥769px chặn bấm summary); điện thoại giữ thu/mở — 28/10: cả khi sổ chưa khai món nào */
+  var web = !(window.matchMedia && matchMedia("(max-width:768px)").matches);
+  var dau = '<summary>' + hd.replace('<div class="hd">', '<span class="hd">').replace(/<\/div>$/, '</span>');
+  if (!ds.length) return '<details class="hp-vtcard hp-vtts"' + (web ? " open" : "") + '>' + dau + '<span class="hp-vttsn">0 món</span></summary><div class="ln mut">sổ tài sản chưa khai món nào cho vị trí này</div></details>';
   var nhom = {}, thu = [];
   ds.forEach(function(x){ var ten = String(x[0] || "").split("/")[0].trim() || x[0]; var g = nhom[ten];
     if (!g){ g = nhom[ten] = { ten: ten, full: x[0], n: 0, ct: [] }; thu.push(g); } g.n += (+x[1] || 1); g.ct.push(x); });
   var tong = thu.reduce(function(a, g){ return a + g.n; }, 0);
-  /* 22/10 user: web LUÔN mở mục Tài sản, không thu lại được (CSS ≥769px chặn bấm summary); điện thoại giữ thu/mở */
-  var web = !(window.matchMedia && matchMedia("(max-width:768px)").matches);
-  return '<details class="hp-vtcard hp-vtts"' + (web ? " open" : "") + '><summary>' + hd.replace('<div class="hd">', '<span class="hd">').replace(/<\/div>$/, '</span>') +
+  return '<details class="hp-vtcard hp-vtts"' + (web ? " open" : "") + '>' + dau +
     '<span class="hp-vttsn">' + nf(tong) + ' món · ' + thu.length + ' loại</span></summary><ul>' +
     thu.map(function(g){ return '<li><b>' + esc(g.ten) + '</b>' + (g.n > 1 ? ' <span class="sl">×' + g.n + '</span>' : "") +
       '<small>' + esc(g.full) + '</small>' +
