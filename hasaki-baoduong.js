@@ -31,7 +31,7 @@
   var xong = function (st) { return st === 3 || st === 4; };
   var laDT = function () { return window.matchMedia("(max-width:768px)").matches; };
 
-  var PANE = null, S = { ok: false, loi: "", dv: [], yc: [], ky: [], giao: {}, ts: 0, lastAt: 0, chon: "", soNgay: 0, luu: {}, moNhom: {}, locNay: "", moThe: {}, khoang: null, khoangTuDong: true };
+  var PANE = null, S = { ok: false, loi: "", dv: [], yc: [], ky: [], giao: {}, ts: 0, lastAt: 0, chon: "", soNgay: 0, luu: {}, moNhom: {}, locNay: "", khoang: null, khoangTuDong: true };
 
   function napCss() {
     if ($id("bd-css")) return;
@@ -146,12 +146,15 @@
       B + " .bd-pc-ai .bd-pc-than{display:flex;flex-direction:column}",
       B + " .bd-pc-ai .bd-ng{line-height:20px}",
       /* thẻ ẩn/hiện có mũi tên (khuôn .hp-vtts của Planogram, nhưng bấm được cả trên web) */
-      B + " .bd-gap>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;min-height:24px}",
+      B + " .bd-gap>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:default;min-height:24px}",
       B + " .bd-gap>summary::-webkit-details-marker{display:none}",
       B + " details.hp-vtcard:not([open]){gap:0}",
-      B + " .bd-gap>summary::after{content:'▾';margin-left:auto;padding-left:8px;opacity:.6;transition:transform .2s ease}",
-      B + " .bd-gap[open]>summary::after{transform:rotate(180deg)}",
-      B + " .bd-gap>summary:hover .hd{color:var(--accent)}",
+      B + " .bd-gap-mui{margin-left:auto;flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;margin-right:-6px;border-radius:8px;" +
+        "font-size:14px;color:var(--muted);cursor:pointer;transition:transform .2s var(--ez-apple,ease),background .15s,color .15s}",
+      B + " .bd-gap-mui:hover{background:var(--ad-re,var(--hover));color:var(--accent)}",
+      B + " .bd-gap-mui:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}",
+      B + " .bd-gap[open] .bd-gap-mui{transform:rotate(180deg)}",
+      "@media(max-width:560px){" + B + " .bd-gap-mui{width:40px;height:40px;margin:-6px -8px -6px auto}}",
       B + " .bd-gap-tt{font-size:12px;font-weight:700;color:var(--accent);white-space:nowrap}",
       B + " .bd-pc-ai .bd-doi{margin-left:auto}",
       /* Việc hôm nay */
@@ -476,11 +479,12 @@
     }).join("");
   }
   /* thẻ ẨN/HIỆN có mũi tên — khuôn thư viện của thẻ «Tài sản tại vị trí» (Planogram: <details class="hp-vtcard hp-vtts">, ▾ bên phải xoay khi mở).
-     28/10 user: «Làm gì» + «Báo cáo ở đâu» gập được trên web lẫn điện thoại; đầu thẻ vẫn đủ tóm tắt khi gập. Trạng thái mở/gập nhớ theo khoá
-     trong phiên (đổi ngày / vị trí không bật lại). moMd: mặc định khi chưa bấm. */
-  function theGap(khoa, tieu, tomTat, than, moMd) {
-    var mo = S.moThe[khoa] == null ? moMd : S.moThe[khoa];
-    return '<details class="hp-vtcard bd-gap" data-the="' + esc(khoa) + '"' + (mo ? " open" : "") + '><summary><span class="hd">' + tieu + '</span><span class="bd-gap-tt">' + tomTat + "</span></summary>" + than + "</details>";
+     28/10 user: «Làm gì» + «Báo cáo ở đâu» gập được trên web lẫn điện thoại; đầu thẻ vẫn đủ tóm tắt khi gập.
+     28/10 lượt sau (user CHỐT): «2 mục này LUÔN ẨN, chỉ nhấn MŨI TÊN mới hiển thị» ⇒ mỗi lần vẽ đều gập (không nhớ trạng thái),
+     bấm chữ đầu thẻ không mở — chỉ nút mũi tên .bd-gap-mui (chặn ở bộ bắt click của thân thanh bên). */
+  function theGap(khoa, tieu, tomTat, than) {
+    return '<details class="hp-vtcard bd-gap" data-the="' + esc(khoa) + '"><summary><span class="hd">' + tieu + '</span><span class="bd-gap-tt">' + tomTat +
+      '</span><span class="bd-gap-mui" role="button" tabindex="0" aria-label="Hiện / ẩn ' + esc(String(tieu).replace(/<[^>]*>/g, "")) + '">▾</span></summary>' + than + "</details>";
   }
   function veCachLam(b, d) {
     var v = S.vt[b]; if (!v) return "";
@@ -493,10 +497,10 @@
       var rs = Object.keys(gom[ts]).map(function (k) { return gom[ts][k]; });
       return theGap("lam|" + ts, "Làm gì · " + esc(ts), rs.length + " việc" + (phut(rs) ? " · ~" + phut(rs) + " phút" : ""), '<ol class="bd-buoc">' + rs.map(function (r) {
         return "<li><b>" + o(r["HẠNG MỤC KIỂM TRA"]) + "</b>" + (r["THỜI GIAN"] ? ' <span class="bd-phu-n">· ' + o(r["THỜI GIAN"]) + "</span>" : "") + '<span class="bd-nd">' + o(r["NỘI DUNG CÔNG VIỆC"]) + "</span></li>";
-      }).join("") + "</ol>", !laDT());
+      }).join("") + "</ol>");
     }).join("");
     var duong = v.vh.length ? theGap("duong", "Báo cáo ở đâu", "App Hasaki WMS", '<div class="ln">App <b>Hasaki WMS</b> › <b>Quản lý tài sản</b> (Asset Management) › <b>Báo cáo vệ sinh (vị trí)</b> (Declaration request (location))' +
-      " › chọn kho và <b>Loại mục đích</b> (Purpose type) theo yêu cầu › quét mã <b>" + esc(b) + "</b> › <b>Chụp ảnh</b> (Take photo) đủ khung › <b>Hoàn thành yêu cầu</b> (Complete request)</div>", false) : "";
+      " › chọn kho và <b>Loại mục đích</b> (Purpose type) theo yêu cầu › quét mã <b>" + esc(b) + "</b> › <b>Chụp ảnh</b> (Take photo) đủ khung › <b>Hoàn thành yêu cầu</b> (Complete request)</div>") : "";
     /* báo cáo gần nhất (tham khảo) — như thẻ phải của Planogram */
     var gan = ycCua(b).filter(function (y) { return xong(Number(y["STATUS ID"])) && y["NGƯỜI LÀM"]; }).sort(function (a, c) { return String(c["LÚC LÀM"]).localeCompare(String(a["LÚC LÀM"])); })[0];
     var tuoi = gan ? Math.round((Date.parse(isoVN(Date.now())) - Date.parse(gan["NGÀY"])) / 864e5) : null;
@@ -702,14 +706,15 @@
       V.than.__bd = 1;
       V.than.addEventListener("click", function (e) {
         if (V.m.dataset.chu !== "bd") return;
+        /* thẻ gập: chỉ mũi tên mới mở/đóng */
+        var sm = e.target.closest(".bd-gap>summary"); if (sm && !e.target.closest(".bd-gap-mui")) { e.preventDefault(); return; }
         var a = e.target.closest(".bd-anh"); if (a) { e.preventDefault(); xemAnhNut(a); return; }
         var n = e.target.closest("[data-sang]"); if (n) moBen(S.chon, n.getAttribute("data-sang"));
       });
-      /* «toggle» của <details> không nổi bọt ⇒ bắt ở pha bắt */
-      V.than.addEventListener("toggle", function (e) {
-        var t = e.target; if (V.m.dataset.chu !== "bd" || !t.matches || !t.matches("details[data-the]")) return;
-        S.moThe[t.getAttribute("data-the")] = t.open;
-      }, true);
+      V.than.addEventListener("keydown", function (e) {   // mũi tên dùng được bằng bàn phím
+        var mui = e.target.closest && e.target.closest(".bd-gap-mui"); if (!mui || (e.key !== "Enter" && e.key !== " ")) return;
+        e.preventDefault(); var d = mui.closest("details"); d.open = !d.open;
+      });
       ganSua(V.than);
     }
     /* sổ tài sản nạp lười lần đầu (taisan-vitri.js) — về thì vẽ lại thẻ Tài sản */
