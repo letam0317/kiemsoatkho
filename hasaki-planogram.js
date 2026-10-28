@@ -3596,7 +3596,8 @@ function nvTheoNgay(byL){
       }
     } else list.forEach(function(r){ if (r.pt && r.bk !== "da"){ var p2 = ng(r.pt, r.ptCode, ptTen(r)); p2.so++; p2.chua++; oChua++; } });
     list.forEach(function(r){
-      if (r.bk !== "da" || !r.email) return;
+      /* 28/10 user «Lê Chí Tâm chỉ là người thử thao tác» — tài khoản thử không vào danh sách nhân viên (sync-vesinh-all.js TK_THU cũng chặn phía máy) */
+      if (r.bk !== "da" || !r.email || String(r.email).toLowerCase() === "tamlc@hasaki.vn") return;
       var q = ng(r.email, "", tenNm(r.email)); q.da++;
       if (String(r.at || "") > q.at){ q.at = String(r.at || ""); q.loc = r.loc; }
     });
