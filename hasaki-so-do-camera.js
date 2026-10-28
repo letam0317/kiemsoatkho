@@ -764,7 +764,11 @@
     veThan();
     window.hskThanhBen.xong(TB);
     /* chưa có khung lưu ⇒ lấy 1 khung trực tiếp (1 lượt đầu ghi cho mỗi lần người mở kênh) thay vì để ô đen */
-    napAnh(k).then(function () { veAnhKhung(); }).catch(function () { return khungTrucTiep(k).then(function () { veAnhKhung(); var kt = $id("sdcKhungTt"); if (kt && S.hc && S.hc.k === k) kt.textContent = "Khung trực tiếp lúc " + new Date().toTimeString().slice(0, 5) + " (chưa lưu)"; }).catch(function () { veAnhKhung(); }); });
+    /* 28/10 user «top-review chụp khung ngay khi trỏ vào mắt cam»: khung lưu cũ > 10' ⇒ hiện khung lưu trước rồi thay bằng 1 khung trực tiếp
+       (1 lượt top-review mỗi lần mở — nhẹ hơn hẳn làm mới định kỳ cả 237 kênh). Hỏng (kênh ngoài số kênh top-review, máy dự phòng) ⇒ giữ khung lưu. */
+    var trucTiep = function () { return khungTrucTiep(k).then(function () { veAnhKhung(); var kt = $id("sdcKhungTt"); if (kt && S.hc && S.hc.k === k) kt.textContent = "Khung trực tiếp lúc " + new Date().toTimeString().slice(0, 5) + " (chưa lưu)"; }); };
+    var cu = !c.khung || Date.now() - Date.parse(c.khung.luc) > 10 * 60e3;
+    napAnh(k).then(function () { veAnhKhung(); if (cu && !GM) return trucTiep().catch(function () {}); }).catch(function () { return trucTiep().catch(function () { veAnhKhung(); }); });
   }
   function rHienTai() { return DS.find(function (x) { return x.c.k === S.hc.k; }); }
   function veThan() {
