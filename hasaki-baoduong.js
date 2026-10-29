@@ -21,7 +21,7 @@
   var APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec";
   var TAB_DV = "BAO-DUONG-DAU-VIEC", TAB_YC = "BAO-DUONG-YEUCAU", TAB_KY = "BAO-DUONG-KY", TAB_GIAO = "BAO-DUONG-GIAO";
   var GSHEET = "https://docs.google.com/spreadsheets/d/1ERdim9g4-BbJspzWhIfy6jWXFMMNya4zhhvWYF59GHc/edit?gid=481972207#gid=481972207";
-  var STALE_MS = 5 * 60 * 1000, NGAY_PC = 30, NGAY_DT = 14, NGAY_DU_LIEU = 60;   // khoảng mặc định máy tính / điện thoại · dữ liệu sync-bao-duong-yc
+  var STALE_MS = 5 * 60 * 1000, NGAY_DU_LIEU = 60;   // dữ liệu sync-bao-duong-yc (lưới hiện trọn 60 ngày — 29/10 bỏ bộ lọc ngày, đã có thước thời gian)
   var TOI_PC = 30, TOI_DT = 14;   // số ngày TỚI sau cột hôm nay ghim (29/10 phương án A2)
   var chuan = function (s) { return String(s == null ? "" : s).replace(/\s+/g, " ").trim().toUpperCase(); };
   var nhomCua = function (s) { var u = chuan(s); return u === "KT CƠ ĐIỆN" ? "KỸ THUẬT CƠ ĐIỆN" : u; };
@@ -35,7 +35,7 @@
   var TK_THU = { "tamlc@hasaki.vn": 1 };
   var laDT = function () { return window.matchMedia("(max-width:768px)").matches; };
 
-  var PANE = null, S = { ok: false, loi: "", dv: [], yc: [], ky: [], giao: {}, ts: 0, lastAt: 0, chon: "", soNgay: 0, luu: {}, moNhom: {}, locNay: "", locHm: "", locAi: "", moLocNay: false, khoang: null, khoangTuDong: true, cuonX: null };
+  var PANE = null, S = { ok: false, loi: "", dv: [], yc: [], ky: [], giao: {}, ts: 0, lastAt: 0, chon: "", soNgay: 0, luu: {}, moNhom: {}, locNay: "", locHm: "", locAi: "", moLocNay: false, khoang: null, cuonX: null };
 
   function napCss() {
     if ($id("bd-css")) return;
@@ -392,12 +392,12 @@
 
   /* ===== ① LƯỚI VỊ TRÍ × NGÀY =====
      27/10 lượt 4 (user): bỏ chữ dạy thao tác dưới lưới («luật đâu mà hiển thị»); đầu lưới đủ THÁNG · NGÀY · THỨ («ngày lịch không đủ»);
-     khoảng ngày chọn bằng bộ lọc ngày chuẩn (taoBoLocNgay, dữ liệu 60 ngày); lưới trọn bề ngang, chi tiết mở ở THANH BÊN PHẢI khi trỏ ngày. */
+     khoảng ngày (29/10: bỏ bộ lọc ngày, lưới luôn đủ 60 ngày + thước thời gian); lưới trọn bề ngang, chi tiết mở ở THANH BÊN PHẢI khi trỏ ngày. */
   var THU = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
   function thuCua(iso) { return THU[new Date(iso + "T00:00:00Z").getUTCDay()]; }
   function congNgay(iso, n) { return new Date(Date.parse(iso + "T00:00:00Z") + n * 864e5).toISOString().slice(0, 10); }
   function ngayDau() { return congNgay(isoVN(Date.now()), -(NGAY_DU_LIEU - 1)); }
-  function khoangMacDinh() { var den = isoVN(Date.now()); return [congNgay(den, -((laDT() ? NGAY_DT : NGAY_PC) - 1)), den]; }
+  function khoangMacDinh() { return [ngayDau(), isoVN(Date.now())]; }
   function dsKhoang() { var a = [], d = S.khoang[0]; while (d <= S.khoang[1]) { a.push(d); d = congNgay(d, 1); } return a; }
   function theoBinNgay() {
     var m = {}; S.yc.forEach(function (y) { var b = m[y["MÃ VỊ TRÍ"]] = m[y["MÃ VỊ TRÍ"]] || {}; (b[y["NGÀY"]] = b[y["NGÀY"]] || []).push(y); });
@@ -476,7 +476,7 @@
         '<button type="button" class="hsk-nut phu nho" data-thuoc="7" aria-label="Tới 7 ngày">7 ngày ›</button></span></div>' : "";
     return '<div class="panel bd-panel" id="bdLich"><div class="panel-head"><span class="ph-trai"><span class="ph-td">Lịch thực hiện</span><span class="ph-dem">' +
       S.thuTu.length + " vị trí · " + (qua.length + 1) + " ngày" + (toi.length ? " + " + toi.length + " ngày tới" : "") + " · " + bc + "/" + tong + " yêu cầu đã báo cáo</span></span>" +
-      '<span class="bd-phai"><div id="bdLocNgay"></div></span></div>' +
+      "</div>" +
       '<div class="bd-than"><div class="bd-chu"><span><i class="x"></i>Đã báo cáo</span><span><i class="d"></i>Đang làm</span><span><i class="m"></i>Chưa làm (hôm nay / còn hạn)</span><span><i class="b"></i>Không làm</span>' +
         '<span><i class="p"></i>Sắp tới</span><span><i></i>Không có yêu cầu</span><span><i class="x co-ky" data-ky="3"></i>Việc định kỳ: số = 1 · 3 · 6 tháng/lần (T = hàng tuần)</span><span><b class="bd-xam">Tên xám</b> chưa có lịch</span></div>' +
       thuoc + '<div class="bd-hm"><table><thead>' + dau + "</thead><tbody>" + hang + "</tbody></table></div></div></div>";
@@ -796,22 +796,7 @@
         '<path d="M16 0l8 8h-6a2 2 0 0 1-2-2z" fill="#87CEAC"/><path d="M5 14h14v11H5zm2 2v2h4v-2zm6 0v2h4v-2zm-6 4v3h4v-3zm6 0v3h4v-3z" fill="#fff"/></svg>' +
         '<span class="bd-gs-mui">↗</span></a></div>';
   }
-  function ganLocNgay() {
-    var r = $id("bdLocNgay"); if (!r || typeof window.taoBoLocNgay !== "function") return;
-    var coNgay = {}; S.yc.forEach(function (y) { coNgay[y["NGÀY"]] = 1; });
-    Object.keys(S.kyNgay || {}).forEach(function (b) { Object.keys(S.kyNgay[b]).forEach(function (d) { coNgay[d] = 1; }); });
-    var loc = window.taoBoLocNgay({
-      root: r, idNut: "bdNgayBtn", idPop: "bdNgayPop", homNay: function () { return isoVN(Date.now()); },
-      presets: [{ k: "7", lb: "7 ngày" }, { k: "14", lb: "14 ngày" }, { k: "30", lb: "30 ngày" }, { k: "month", lb: "Tháng này" }, { k: "all", lb: NGAY_DU_LIEU + " ngày" }],
-      tinhPreset: function (k) { return k === "all" ? [ngayDau(), isoVN(Date.now())] : null; },
-      khongRong: true, macDinh: khoangMacDinh,
-      coDuLieu: function (iso) { return !!coNgay[iso]; },
-      chanNgay: function (iso) { return iso < ngayDau() || iso > isoVN(Date.now()); },
-      nhan: function (a, b) { return a ? dm(a) + (b && b !== a ? " → " + dm(b) : "") : ""; },
-      onApply: function (a, b) { var m = khoangMacDinh(); S.khoang = [a || m[0], b || a || m[1]]; S.khoangTuDong = !a; S.cuonX = null; veLaiLuoi(); }
-    });
-    loc.dat(S.khoang[0], S.khoang[1]);
-  }
+
 
   function ve() {
     if (!PANE) return;
@@ -822,10 +807,9 @@
       PANE.innerHTML = '<div class="panel bd-panel"><div class="bd-trong">' + esc(cau) + '<br><button type="button" class="hsk-nut chinh" onclick="HBAODUONG.reload()">Thử lại</button></div></div>';
       return;
     }
-    if (!S.khoang || S.khoangTuDong) { S.khoang = khoangMacDinh(); S.khoangTuDong = true; }
+    S.khoang = khoangMacDinh();   // 29/10 user «có thước rồi thì 30/09 → 29/10 cần bỏ» ⇒ không còn bộ lọc ngày, luôn đủ 60 ngày
     var cuon = PANE.scrollTop;
     PANE.innerHTML = veHomNay() + veLuoi() + chanTrang();
-    ganLocNgay();
     ganSuKien();
     PANE.scrollTop = cuon;
     if (typeof window.tqGhi === "function") window.tqGhi("bd", { dv: S.dv.length, vt: S.thuTu.length });
@@ -877,7 +861,7 @@
     var cu = $id(id); if (!cu) { ve(); return false; }
     var t = document.createElement("div"); t.innerHTML = html; cu.parentNode.replaceChild(t.firstChild, cu); return true;
   }
-  function veLaiLuoi() { if (thayKhung("bdLich", veLuoi())) { ganLocNgay(); ganLuoi(); } }
+  function veLaiLuoi() { if (thayKhung("bdLich", veLuoi())) ganLuoi(); }
   function veLaiNay() { if (thayKhung("bdNay", veHomNay())) ganNay(); }
   function ganSuKien() { ganLuoi(); ganNay(); if (!PANE.__bdSua) { PANE.__bdSua = 1; ganSua(PANE); } }
   function ganLuoi() {
