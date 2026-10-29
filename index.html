@@ -458,8 +458,10 @@ tbody tr:hover{background:var(--hover);}
 .cl-item.vp{flex-direction:column; gap:8px; align-items:stretch;}
 .cl-hang1{display:flex; align-items:center; gap:10px; min-height:64px;}
 .cl-hang1 .row-media{align-self:flex-start; flex:none;}
-.cl-hang1 .cl-tt{flex:1; min-width:0; display:flex; align-items:center;}
-.cl-hang1 .cl-nut{display:flex; flex-direction:column; gap:6px; flex:none; align-items:stretch;}
+/* 29/10 (10) user «chỉ ở điện thoại: Bởi lên trên chip Biên bản; đảo cụm Bởi·Biên bản với Chờ xử lý·Theo tác vụ» — trái (cạnh ảnh): Bởi / + Biên bản; phải (sát mép): trạng thái / Theo tác vụ */
+.cl-hang1 .cl-nut{flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; align-items:flex-start;}
+.cl-hang1 .cl-nut .tg-boi{max-width:100%; overflow:hidden; text-overflow:ellipsis;}
+.cl-hang1 .cl-tt{flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
 .cl-hang1 .cl-nut .hsk-nut, .cl-hang1 .cl-nut .bb-up{min-height:28px!important; height:28px; padding:0 10px!important; font-size:12px!important; justify-content:center; white-space:nowrap;}
 .cl-hang1 .cl-nut .bb-cell{display:block; margin:0;}
 .cl-data{font-size:12px; min-width:0;}
@@ -822,7 +824,7 @@ tbody td.c-freq{white-space:normal;} .freq-lan{white-space:nowrap;}   /* «Lần
 thead th.c-status, tbody td.c-status{width:118px; white-space:normal;}   /* 21/10 chip trên, nút «Mở ↗» xuống hàng dưới — cột hẹp */
 /* 25/10 nút «Theo tác vụ ›» (phiếu đang chờ xác minh ở Xác minh) — khuôn nút gọn sẵn có, bấm mở thẳng thanh bên của phiếu đó */
 tbody td.c-status .xm-tv{margin-top:4px;}
-.cl-hang1 .cl-tt:has(.xm-tv){flex-wrap:wrap; gap:6px;}
+.cl-hang1 .cl-tt:has(.xm-tv){gap:6px;}
 .cl-hang1 .cl-tt .xm-tv{min-height:28px!important; height:28px; padding:0 10px!important; font-size:12px!important; white-space:nowrap;}
 .rm-vid{background:var(--surface2);}
 /* watermark hasaki tách layer riêng -> không vẽ lại khi cuộn */
@@ -3232,7 +3234,7 @@ function _render(){
     const anh=thumbCell(r,gi,'cl');
     /* 21/10 user (ảnh 12:18): hàng 1 = ảnh · chip trạng thái · 2 nút gọn (Mở task / + Biên bản) vừa chiều cao ảnh; hàng 2 = dữ liệu sát lề trái, mỗi dòng 1 hàng không gãy; số ảnh ở góc ảnh */
     return `<div class="cl-item vp" data-i="${gi}">
-      <div class="cl-hang1">${anh}<span class="cl-tt">${chipStatus(r)}${xmTvChip(r)}</span><span class="cl-nut">${bbCell(r, false)}</span></div>
+      <div class="cl-hang1">${anh}<span class="cl-nut">${ngBoi(r)}${bbCell(r, false)}</span><span class="cl-tt">${chipStatus(r)}${xmTvChip(r)}</span></div>
       <div class="cl-data">
         <div class="cl-loi" title="${esc(r[iLoi]||'')}">${esc(r[iLoi]||'')}</div>
         <div class="cl-chot">
@@ -3241,7 +3243,6 @@ function _render(){
         </div>
         ${(nameVP(r)||(iQLTT>=0&&r[iQLTT]))?`<div class="cl-kv cl-tach">${nameVP(r)?`<span class="cl-p">Ghi nhận cho: ${nvNgayDs(r)}</span>`:''}${''
         }${iQLTT>=0&&r[iQLTT]?`${nameVP(r)?' <span class="cl-sep">|</span> ':''}<span class="cl-p">QL: <b>${esc(tenNganDs(r[iQLTT]))}</b></span>`:''}</div>`:''}
-        ${ngTen(r)?`<div class="cl-kv">Bởi: <b>${esc(ngTen(r))}</b></div>`:ngLyDo(r)?`<div class="cl-kv">Bởi: <i>chưa rõ</i> <span class="muted">(${esc(ngLyDo(r).split(' — ')[0])})</span></div>`:''}
         <div class="cl-kv">Tần suất: ${freqCell(gi,r)}</div>
       </div>
     </div>`;
