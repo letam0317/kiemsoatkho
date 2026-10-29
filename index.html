@@ -818,6 +818,10 @@ thead th.c-ngay, tbody td.c-ngay{width:110px;}   /* 21/10 120 → 110: bảng v�
 thead th.c-anh, tbody td.c-anh{width:84px;}   /* 21/10 ảnh 72×48 */
 thead th.c-freq, tbody td.c-freq{width:12ch; min-width:12ch;}   /* 21/10 «Lần 1/tháng · −2% KPI» không gãy 4 dòng */
 tbody td.c-freq{white-space:normal;} .freq-lan{white-space:nowrap;}   /* «Lần 1/tháng» liền 1 hàng, % KPI xuống hàng dưới */
+/* 29/10 lịch sử nhắc nhở + thâm niên NV dưới tần suất (chỉ tamlc / người có quyền r.vp.nn) */
+.freq-nn{margin-top:4px; font-size:12px; line-height:1.4; white-space:normal; font-weight:400; color:var(--text);}
+.freq-nn>div+div{margin-top:4px; padding-top:4px; border-top:1px dashed var(--border);}
+.freq-nn a{color:inherit; text-decoration:underline; text-underline-offset:2px;} .freq-nn .nn-cung{color:var(--bad); font-weight:600;}
 thead th.c-status, tbody td.c-status{width:118px; white-space:normal;}   /* 21/10 chip trên, nút «Mở ↗» xuống hàng dưới — cột hẹp */
 tbody td.c-status .vp-mo{margin-top:4px;}
 /* 25/10 nút «Theo tác vụ ›» (phiếu đang chờ xác minh ở Xác minh) — khuôn nút gọn sẵn có, bấm mở thẳng thanh bên của phiếu đó */
@@ -2713,13 +2717,49 @@ function kpiTheoLoi(loi,lan){
   return v===''?null:v;
 }
 function freqCell(gi,r){
-  const f=FREQ[gi];
-  if(!f) return '<span class="row-none">—</span>';
+  const f=FREQ[gi], nn=nnCell(r);
+  if(!f) return '<span class="row-none">—</span>'+nn;
   const k=kpiTheoLoi(iLoi>=0?r[iLoi]:'',f.lan);
   const kh = k==null ? '' : (Number(k)===0
     ? ' · <span class="kpi-zero">0% KPI</span>'
     : ' · <span class="kpi-neg">−'+esc(k)+'% KPI</span>');
-  return '<span class="freq-lan">Lần '+f.lan+'/tháng</span>'+kh;
+  return '<span class="freq-lan">Lần '+f.lan+'/tháng</span>'+kh+nn;
+}
+/* ===== 29/10 user «đã nhắc nhở trước đó chưa, nhắc bao nhiêu lần rồi, NV vào làm được bao lâu — chỉ t xem được»:
+   sổ do canh-b11 dựng (nhac-nho-591.mjs), phát qua máy chủ Xác minh 8591 /api/nhac-nho — CHỈ tamlc hoặc tài khoản được cấp
+   «Lịch sử nhắc nhở» (r.vp.nn, mục Quyền xem); máy chủ gác lần nữa. Nhắc nhở = QLTT bấm Fail ở bước ghi nhận với lý do «nhắc nhở». ===== */
+let NN=null, _nnHoi=0;
+function nnDuocXem(){ return typeof window.tkCoNhacNho==='function' && window.tkCoNhacNho(); }
+function nnNap(){
+  if(NN || _nnHoi || window.__HX_MA_HOA || !window.__HX_MAY_CHU || !nnDuocXem()) return;
+  let ph=''; try{ ph=localStorage.getItem('hx-phien')||''; }catch(e){} if(!ph) return;
+  _nnHoi=1;
+  fetch(window.HX_API+'/api/nhac-nho',{headers:{'x-hx-phien':ph},signal:AbortSignal.timeout(15000)})
+    .then(r=>r.ok?r.json():null).then(j=>{ if(j && j.vao){ NN=j; render(); } }).catch(()=>{}).then(()=>{ _nnHoi=0; });
+}
+window.addEventListener('hx-du-lieu', nnNap);
+document.addEventListener('tk-doi', ()=>{ if(NN && !nnDuocXem()){ NN=null; render(); } else nnNap(); });
+function nnThamNien(d){
+  const a=new Date(d+'T00:00:00'), b=new Date(); if(isNaN(a)) return '';
+  let th=(b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth()); if(b.getDate()<a.getDate()) th--;
+  if(th<1) return Math.max(0,Math.floor((b-a)/864e5))+' ngày';
+  return (th>=12?Math.floor(th/12)+' năm':'')+(th%12?(th>=12?' ':'')+(th%12)+' tháng':'');
+}
+function nnCell(r){
+  if(!NN || !nnDuocXem()) return '';
+  const ma=codeChuanVP(r).split(',').map(s=>s.trim()).filter(Boolean); if(!ma.length) return '';
+  const id=idTaskVP(r), loi=_chuan(iLoi>=0?r[iLoi]:'').slice(0,45), nhieu=ma.length>1;
+  const ddmm=s=>{ const m=String(s||'').match(/^\d{4}-(\d\d)-(\d\d)/); return m?m[2]+'/'+m[1]:esc(s); };
+  return '<div class="freq-nn">'+ma.slice(0,4).map(c=>{
+    const v=NN.vao[c]||{}, ds=(NN.nhac||[]).filter(x=>String(x.id)!==id && (x.nv||[]).includes(c));
+    const cung=ds.filter(x=>loi && _chuan(x.loi).slice(0,45)===loi).length;
+    const ten=nhieu?'<b>'+esc(String(v.ten||c).split(' ').slice(-2).join(' '))+'</b><br>':'';
+    const nhac=ds.length?'Đã nhắc nhở '+ds.length+' lần'+(cung?' <span class="nn-cung">('+cung+' cùng lỗi)</span>':'')+': '+
+      ds.map(x=>'<a href="https://work.hasaki.vn/tasks?task_id='+esc(x.id)+'" target="_blank" rel="noopener" title="'+esc((x.nguoi||'')+': '+(x.ly||'')+' — '+(x.loi||''))+'">'+ddmm(x.luc)+'</a>').join(' · ')
+      :'Chưa nhắc nhở lần nào';
+    const tn=v.vao?nnThamNien(v.vao):'';
+    return '<div>'+ten+nhac+(tn?'<br><span class="muted" title="Ngày vào làm '+esc(v.vao)+'">Vào làm '+tn+'</span>':'')+'</div>';
+  }).join('')+(ma.length>4?'<div class="muted">+'+(ma.length-4)+' NV khác</div>':'')+'</div>';
 }
 
 /* ===== KHOÁ BIÊN BẢN: task ĐÃ HOÀN THÀNH quá 96h -> làm mờ/tắt nút +Ảnh.
@@ -3023,6 +3063,7 @@ let rafId=null, curD=[];
 function render(){ if(rafId) cancelAnimationFrame(rafId); rafId=requestAnimationFrame(_render); }
 try{ matchMedia('(max-width:820px)').addEventListener('change',()=>{ if(ROWS.length) render(); }); }catch(e){}   // 25/10 qua mốc bảng ⇄ thẻ thì vẽ kiểu kia
 function _render(){
+  nnNap();                                      // 29/10 lịch sử nhắc nhở (chỉ khi có quyền + máy chủ 8591)
   xmTvNap();                                     // 25/10 chip «Theo tác vụ»: hỏi nền 1 lần khi máy vào được Xác minh
   const dTable=loc().sort(cmpNgayDesc);          // Task vi phạm: theo BỘ LỌC của tab này
   const dAll=ROWS.slice().sort(cmpNgayDesc);     // Tổng quan: TOÀN BỘ (KHÔNG chịu ảnh hưởng bộ lọc tab Task)
