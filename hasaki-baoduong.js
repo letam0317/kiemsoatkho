@@ -130,6 +130,16 @@
       B + " .bd-cot-r{position:relative;flex:1 1 auto;height:10px;border-radius:3px;background:var(--ad-nen2,var(--surface2));overflow:hidden}",
       B + " .bd-cot-r i{position:absolute;left:0;top:0;bottom:0;background:color-mix(in srgb,var(--warn) 35%,transparent)}" + B + " .bd-cot-r b{position:absolute;left:0;top:0;bottom:0;background:var(--good)}",
       B + " .bd-cot-s{flex:none;width:42px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}",
+      /* Việc theo người: dòng bấm được; trỏ → ô nổi chi tiết bên TRÁI cột (đè lên danh sách, không đẩy bố cục); đang chọn → chi tiết hiện ngay dưới dòng */
+      B + " .bd-cot-ng{position:relative;margin:0 -6px;padding:0 6px;border-radius:6px;cursor:pointer;transition:background .15s}",
+      B + " .bd-cot-ng:hover{background:var(--ad-re,var(--hover))}" + B + " .bd-cot-ng.on{background:color-mix(in srgb,var(--accent) 10%,transparent)}" + B + " .bd-cot-ng.on .bd-cot-n{font-weight:700;color:var(--accent)}",
+      B + " .bd-cot-ng:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}",
+      B + " .bd-cot-ct{display:none;position:absolute;right:calc(100% + 10px);top:-6px;z-index:5;width:280px;padding:10px 12px;border:1px solid var(--ad-chia,var(--border));border-radius:10px;" +
+        "background:var(--surface);box-shadow:0 8px 24px color-mix(in srgb,var(--text) 18%,transparent);cursor:default}",
+      B + " .bd-cot-ng:is(:hover,:focus-visible) .bd-cot-ct{display:block}",
+      B + " .bd-ct-dau{margin-bottom:4px;font-size:12.5px;font-weight:700;color:var(--text)}",
+      B + " .bd-ct-dong{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;padding:3px 0;border-top:1px solid var(--ad-chia,var(--border));font-size:12px;line-height:17px;color:var(--text)}",
+      B + " .bd-ct-dong span{flex:1 1 auto;min-width:0}" + B + " .bd-ct-dong b{font-variant-numeric:tabular-nums}" + B + " .bd-ct-dong small{flex-basis:100%;font-size:11px;color:var(--muted)}" + B + " .bd-ct-dong small.bd-do{color:var(--bad)}",
       B + " .bd-tdo-hong{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-top:1px solid var(--ad-chia,var(--border));font-size:12px;line-height:16px;cursor:pointer}",
       B + " .bd-tdo-hong:hover .bd-tdo-ht b{color:var(--accent)}",
       B + " .bd-tdo-ht{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;color:var(--muted)}" + B + " .bd-tdo-ht b{font-weight:600;color:var(--text)}",
@@ -148,7 +158,9 @@
       B + " .bd-ls-o{display:flex;flex-direction:column;gap:3px;min-width:0;font-size:12px;color:var(--muted)}",
       B + " .bd-ls-hang>.bd-ls-o{flex:1 1 140px}" + B + " .bd-ls-hang>.bd-ls-o.rong{flex:2 1 200px}" + B + " .bd-ls-hang>.bd-ls-o.hep{flex:0 1 90px}",
       B + " .bd-ls-o :is(input,textarea){width:100%;min-width:0;font:inherit;font-size:13px;color:var(--text)}",
-      "@media(max-width:768px){" + B + " .bd-b4{grid-template-columns:minmax(0,1fr)}" + B + " .bd-ckl{columns:1}" + B + " .bd-cot-n{width:104px}" + B + " .bd-ckl .bd-tn{min-height:42px}}",
+      "@media(max-width:768px){" + B + " .bd-cot-ng:is(:hover,:focus-visible) .bd-cot-ct{display:none}" +
+        B + " .bd-cot-ng.on .bd-cot-ct{display:block;position:static;width:auto;margin:2px 0 6px;box-shadow:none}" + B + " .bd-cot-ng.on .bd-ct-dau{display:none}" +
+        B + " .bd-b4{grid-template-columns:minmax(0,1fr)}" + B + " .bd-ckl{columns:1}" + B + " .bd-cot-n{width:104px}" + B + " .bd-ckl .bd-tn{min-height:42px}}",
       /* thước thời gian */
       B + " .bd-thuoc{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:11px;line-height:16px;color:var(--muted)}",
       B + " .bd-thuoc-mep{flex:none;font-variant-numeric:tabular-nums}",
@@ -763,6 +775,7 @@
     the.forEach(function (t) { dsHm[t.hm] = (dsHm[t.hm] || 0) + 1; tachAi(t).forEach(function (a) { dsAi[a] = (dsAi[a] || 0) + 1; }); });
     if (S.locHm && !dsHm[S.locHm]) S.locHm = ""; if (S.locAi && !dsAi[S.locAi]) S.locAi = "";
     var tatCa = the.length, dangLoc = !!(S.locHm || S.locAi);
+    var theGoc = the.slice();   // Việc theo người luôn đếm trên TOÀN BỘ việc hôm nay (đang lọc 1 người vẫn thấy đủ người để đổi)
     the = the.filter(function (t) { return (!S.locHm || t.hm === S.locHm) && (!S.locAi || tachAi(t).indexOf(S.locAi) >= 0); });
     var luaChon = function (id, nhan, tat, ds, chon) {
       return '<label><span class="lbl">' + nhan + '</span><select id="' + id + '"><option value="">' + tat + " (" + tatCa + ")</option>" +
@@ -808,13 +821,21 @@
       (100 * tg / max).toFixed(1) + '%"></i><b style="width:' + (100 * xg / max).toFixed(1) + '%"></b></span><span class="bd-cot-s">' + xg + "/" + tg + "</span></div>"; };
     var anhHm = khoi.map(function (hm) { var a = theoHm[hm].reduce(function (s, t) { return [s[0] + (t.co || 0), s[1] + (t.kh || 0)]; }, [0, 0]); return [hm, a[0], a[1]]; }).filter(function (x) { return x[2]; });
     var maxA = Math.max.apply(null, anhHm.map(function (x) { return x[2]; }).concat(1));
-    var ngTheo = {}; the.forEach(function (t) { tachAi(t).forEach(function (a) { var n = ngTheo[a] = ngTheo[a] || [0, 0]; n[1]++; if (t.l === "x") n[0]++; }); });
+    /* 29/10 user «Việc theo người lên trên Ảnh theo hạng mục; nhấn/trỏ thì hiện chi tiết — xem có lặp không»: chi tiết = TÓM TẮT theo hạng mục
+       (x/y + số chưa làm/quá hạn), KHÔNG liệt kê lại từng vị trí (danh sách trái đã có ⇒ lặp). Trỏ = ô nổi; bấm = lọc danh sách trái theo người đó. */
+    var ngTheo = {}, ngCt = {};
+    theGoc.forEach(function (t) { tachAi(t).forEach(function (a) { var n = ngTheo[a] = ngTheo[a] || [0, 0]; n[1]++; if (t.l === "x") n[0]++;
+      var c = (ngCt[a] = ngCt[a] || {})[t.hm] = (ngCt[a] || {})[t.hm] || { x: 0, n: 0, m: 0, b: 0, d: 0 }; c.n++; c[t.l]++; }); });
     var dsNg = Object.keys(ngTheo).sort(function (a, c) { return (a === "Chưa giao người") - (c === "Chưa giao người") || ngTheo[c][1] - ngTheo[a][1]; });
     var maxN = Math.max.apply(null, dsNg.map(function (k) { return ngTheo[k][1]; }).concat(1));
     var hong = lsMo();
     var phai = '<aside class="bd-tdo">' +
+      '<div class="bd-tdo-the"><div class="bd-tdo-hd">Việc theo người</div>' + dsNg.map(function (k) {
+        var ct = Object.keys(ngCt[k]).map(function (hm) { var c = ngCt[k][hm], con = [c.m ? c.m + " chưa làm" : "", c.b ? c.b + " quá hạn" : "", c.d ? c.d + " đang làm" : ""].filter(Boolean).join(" · ");
+          return '<div class="bd-ct-dong"><span>' + o(hm) + "</span><b>" + c.x + "/" + c.n + "</b>" + (con ? '<small class="' + (c.b ? "bd-do" : "") + '">' + con + "</small>" : "") + "</div>"; }).join("");
+        return '<div class="bd-cot-ng' + (S.locAi === k ? " on" : "") + '" data-ai="' + esc(k) + '" role="button" tabindex="0" aria-pressed="' + (S.locAi === k) + '">' +
+          cot(k, ngTheo[k][0], ngTheo[k][1], maxN, k === "Chưa giao người" ? "bd-do" : "") + '<div class="bd-cot-ct"><div class="bd-ct-dau">' + o(k) + " · " + ngTheo[k][1] + " việc</div>" + ct + "</div></div>"; }).join("") + "</div>" +
       '<div class="bd-tdo-the"><div class="bd-tdo-hd">Ảnh theo hạng mục</div>' + (anhHm.length ? anhHm.map(function (x) { return cot(x[0], x[1], x[2], maxA); }).join("") : '<div class="bd-phu">Không có yêu cầu chụp ảnh.</div>') + "</div>" +
-      '<div class="bd-tdo-the"><div class="bd-tdo-hd">Việc theo người</div>' + dsNg.map(function (k) { return cot(k, ngTheo[k][0], ngTheo[k][1], maxN, k === "Chưa giao người" ? "bd-do" : ""); }).join("") + "</div>" +
       '<div class="bd-tdo-the"><div class="bd-tdo-hd">Hư hỏng đang mở' + (hong.length ? ' <span class="bd-tdo-dem">' + hong.length + "</span>" : "") + "</div>" + (hong.length ? hong.slice(0, 8).map(function (r) {
         var b = r["MÃ VỊ TRÍ"], v = S.vt[b] || {}, n = soNgay(r["NGÀY"], homNay);
         return '<div class="bd-tdo-hong" data-bin="' + esc(b) + '" role="button" tabindex="0"><span class="bd-tdo-ht"><b>' + o(String(v.ten || b).split("|").pop().trim()) + "</b>" + o(r["MÔ TẢ"]) + "</span>" +
@@ -1052,6 +1073,12 @@
           if (!an) { k.style.animation = "none"; void k.offsetWidth; k.style.animation = ""; k.style.animationDelay = Math.min(i++ * 45, 400) + "ms"; }
         });
       });
+    });
+    /* Việc theo người: bấm = lọc danh sách trái theo người đó (bấm lại = bỏ lọc) — dùng chung S.locAi với Bộ lọc «Người phụ trách» */
+    PANE.querySelectorAll("#bdNay .bd-cot-ng").forEach(function (r) {
+      var bat = function () { var a = r.getAttribute("data-ai"); S.locAi = S.locAi === a ? "" : a; veLaiNay(); };
+      r.addEventListener("click", bat);
+      r.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); bat(); } });
     });
     PANE.querySelectorAll("#bdNay .bd-tn[data-bin], #bdNay .bd-tdo-hong").forEach(function (r) {
       var bat = function () { moBen(r.getAttribute("data-bin"), r.getAttribute("data-ngay") || isoVN(Date.now())); };
