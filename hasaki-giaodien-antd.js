@@ -325,8 +325,9 @@
     "@media(max-width:768px){" + B + " :is(#pane-kk,#pane-htonbat,#viewKK,#viewAbn) :is(.hk-strip,.kkstrip,.ht-tiles,.abntiles) > :is(.ks,.ht-tile,.abntile){padding:4px 10px!important}" + B + " :is(#pane-kk,#pane-htonbat,#viewKK,#viewAbn) :is(.hk-strip,.kkstrip,.ht-tiles,.abntiles) > :is(.ks,.ht-tile,.abntile):nth-child(3n+1){border-left:0!important;padding-left:0!important}}",
     /* 13/10 QC «vừa chiều ngang»: bảng Task vi phạm (Retail) rộng 1.342px trong khung 1.159px ở màn 1440 → phải kéo ngang.
        Tên NV / quản lý được xuống dòng (bỏ min 22ch), nhãn cột «Tần suất vi phạm» xuống dòng — bảng vừa khung, không cuộn ngang */
-    "@media(min-width:769px){" + B + " :is(thead th,tbody td).c-ql{min-width:0!important;white-space:normal!important}" + B + " thead th:is(.c-freq,.c-ql){white-space:normal!important}}",
-    "@media(min-width:769px) and (max-width:1366px){" + B + " :is(thead th,tbody td).c-vitri{width:17ch!important;min-width:17ch!important;max-width:17ch!important}" + B + " tbody td.c-freq{white-space:normal!important}}",
+    "@media(min-width:769px){" + B + " :is(thead th,tbody td).c-ql{min-width:0!important;white-space:normal!important}" + B + " thead th.c-ql{white-space:normal!important}}",
+    // 29/10: bỏ .c-freq ở luật trên — tiêu đề «Tần suất vi phạm» bị bóp 4 dòng khi lọc ra 0 phiếu (luật «không xuống dòng»)
+    /* 29/10: bỏ ép Vị trí 17ch + Tần suất xuống dòng ở ≤1366 — mã vị trí 18 ký tự liền 1 dòng tràn sang cột Lỗi; bề rộng nay do index.html (Vị trí ≥19ch, cột Lỗi lấy phần còn trống) */
     /* 13/10 Tổng quan phương án B (tqVe) — token antd: thẻ viền 1px bo 8, số 30/600 (ô chỉ số) · 24/600 (thẻ), mô tả 14 xám 2 dòng */
     ".tq{display:flex;flex-direction:column}",
     /* 13/10 tối user: «mục Tổng quan ở cả 2 dự án làm nhỏ lại — LUÔN VỪA VỚI KHUNG màn hình». Bậc 1 (mặc định) gọn hơn bản cũ;
