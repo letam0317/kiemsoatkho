@@ -436,7 +436,7 @@ html body .panel > .panel-head:has(.btn-filter){display:flex!important; align-it
 .panel{background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow);}
 .panel-head{display:flex; justify-content:space-between; align-items:center; padding:11px 16px; border-bottom:1px solid var(--border); font-weight:600; font-size:14px;}
 .panel-head #dem{color:var(--muted); font-weight:400; font-size:12px;}
-.table-wrap{overflow-x:auto; max-height:calc(100vh - 124px);}
+.table-wrap{overflow-x:auto; max-height:calc(100vh - 124px); scrollbar-gutter:stable;}   /* 29/10 (9) lọc còn ít dòng → mất thanh cuộn dọc khung bảng → cột dời 4–8 px: chừa sẵn chỗ */
 @supports (height:100dvh){.table-wrap{max-height:calc(100dvh - 124px);}}
 .panel:has(.filters:not(.collapsed)) .table-wrap{max-height:calc(100vh - 188px);}
 @supports (height:100dvh){.panel:has(.filters:not(.collapsed)) .table-wrap{max-height:calc(100dvh - 188px);}}
@@ -1461,6 +1461,8 @@ body.side-open #sideNav .s-grp:nth-of-type(2){animation-delay:.05s;}
 /* Trong lúc trượt, nội dung lấn ra ngoài -> clip ngang (clip KHÔNG tạo scroll container nên
    header sticky vẫn dính bình thường, khác overflow:hidden). */
 body.side-anim{overflow-x:clip;}
+/* 29/10 pop-up mở GIỮA lúc thanh bên đang trượt: bỏ transform/animation của .wrap ngay (pop-up fixed trong .wrap không bị lệch theo độ cuộn) */
+body.side-anim:has(.wrap :is([class*="modal"],[id$="modal"],[id$="Modal"],#lightbox).show) .wrap{animation:none!important;will-change:auto!important;transform:none!important}
 /* ===== MOBILE (≤768px): phủ lên nội dung + nền mờ (không đủ chỗ để đẩy) ===== */
 @media(max-width:768px){
   #sideNav{width:200px;max-width:200px;   /* 15/10 user «thanh bên to» trên điện thoại: 80vw/300px → 72vw/264px (cỡ Drawer antd) */}
@@ -3202,7 +3204,7 @@ function _render(){
      dù đang ở mục khác. Khung Vi phạm đang ẩn → hoãn, setTab('task') vẽ lại (số đếm/Tổng kết ở trên vẫn tính). */
   if($('pane-task') && $('pane-task').classList.contains('hidden')){ _render.cho=1; return; }
   _render.cho=0;
-  requestAnimationFrame(dongBoCotTanSuat);   // 29/10 (6) cột Tên / lần thẳng hàng giữa MỌI dòng
+  { const du=dTable.length>=dAll.length; requestAnimationFrame(()=>{ if(du || !$('tbody').style.getPropertyValue('--fq1')) dongBoCotTanSuat(); }); }   // 29/10 (6) cột Tên / lần thẳng hàng giữa MỌI dòng · (9) đang lọc: giữ bề rộng
   /* 25/10 (đo điện thoại CPU ×4: đứng hình 0,8 s khi mở Vi phạm): trước đây vẽ CẢ bảng lẫn thẻ (198 dòng × 2) rồi CSS giấu 1 kiểu —
      nay chỉ vẽ kiểu đang hiện (≤ 820 px = thẻ, rộng hơn = bảng); đổi cỡ qua mốc 820 thì vẽ lại. Chỉ số dòng tra bằng Map (bỏ indexOf n²). */
   const laThe=matchMedia('(max-width:820px)').matches, soDong=new Map(ROWS.map((r,i)=>[r,i])); _render.laThe=laThe;
@@ -3900,7 +3902,7 @@ let _hxNap=null;
 function napXm(){
   if(!_hxNap){
     _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261027a';
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261029a';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
       document.body.appendChild(s);
     });
@@ -4454,7 +4456,19 @@ const bbFull =u=>{const id=bbDriveId(u);return id?`https://drive.google.com/thum
 /* 26/10: dời 4 cột phải sang trái 2 cm — đo cột đệm (c-flex), nở lề phải cột Biên bản = min(2cm, phần đệm còn) */
 (function(){
   var CM2 = 2 * 96 / 2.54, hen = 0;
-  function canh(){ var t = document.querySelector('#pane-task .table-wrap table'); if(!t) return;
+  /* 29/10 (9) user (clip 18.45.25): gõ tìm ra 0 phiếu / lọc → tiêu đề cột nhảy (bảng tự chia cột theo nội dung). Lưu bề rộng cột ở lần vẽ ĐỦ phiếu;
+     đang lọc (ít dòng hơn) ⇒ khoá đúng bề rộng đó (table-layout:fixed) + giữ --loi-fit/--bb-pr cũ, không tính lại theo dữ liệu đã lọc. */
+  var VPK = null;
+  function vpDu(){ return typeof ROWS !== 'undefined' && document.querySelectorAll('#tbody tr[data-i]').length >= ROWS.length; }
+  function canh(){ var t = document.querySelector('#pane-task .table-wrap table'); if(!t || !t.offsetParent) return;
+    var th = [].slice.call(t.tHead.rows[0].cells), cw = t.closest('.table-wrap').clientWidth;
+    if(VPK && VPK.cw !== cw) VPK = null;   // đổi cỡ khung (thanh bên, cửa sổ) → đo lại ở lần vẽ đủ kế tiếp
+    if(!vpDu() && VPK){ t.style.tableLayout = 'fixed'; th.forEach(function(c, i){ c.style.width = VPK.w[i] + 'px'; }); return; }
+    t.style.tableLayout = ''; th.forEach(function(c){ c.style.width = ''; });
+    canhGoc(t);
+    if(vpDu()) VPK = { cw: cw, w: th.map(function(c){ return c.getBoundingClientRect().width; }) };
+  }
+  function canhGoc(t){
     t.classList.remove('bb-lui');   // 29/10: gỡ TRƯỚC khi xét — cột đệm 0 px (bảng đã chật) thì thoát mà vẫn còn lề 2 cm cũ ⇒ bảng tràn
     /* 29/10 (4): dòng Tần suất không xuống dòng ⇒ bề rộng các cột khác đổi theo dữ liệu; cột Lỗi lấy PHẦN CÒN TRỐNG (120 px … 350px+1cm), không tính theo 100vw */
     var w0 = t.closest('.table-wrap');
@@ -4469,8 +4483,35 @@ const bbFull =u=>{const id=bbDriveId(u);return id?`https://drive.google.com/thum
   var henCanh = function(){ clearTimeout(hen); hen = setTimeout(canh, 80); };
   addEventListener('resize', henCanh);
   var gan = setInterval(function(){ var tb = document.getElementById('tbody'); if(!tb) return; clearInterval(gan);
-    new MutationObserver(henCanh).observe(tb, { childList: true }); henCanh(); }, 300);
+    new MutationObserver(henCanh).observe(tb, { childList: true }); henCanh();
+    /* 29/10 (9) phông chữ web tải xong / ảnh nạp làm bảng đổi cỡ mà KHÔNG đổi DOM ⇒ bề rộng đã lưu cũ 0,6% ⇒ khi lọc cột lệch 4–8 px: đo lại */
+    if (window.ResizeObserver) new ResizeObserver(function(){ if (vpDu()) henCanh(); }).observe(tb.closest('table'));
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(henCanh); }, 300);
   new MutationObserver(henCanh).observe(document.body, { attributes: true, attributeFilter: ['class'] });   // thanh bên mở/đóng, đổi tab
+})();
+/* 29/10 (9) KHOÁ BỀ RỘNG CỘT CHUNG (user «nhảy ô, nhảy vị trí… rất nhiều nơi»): bảng tự chia cột theo nội dung nên lọc / tìm / đổi tháng → cột nhảy.
+   Mỗi bảng (nhận theo mục + chữ tiêu đề) lưu bề rộng cột ở lần vẽ NHIỀU DÒNG NHẤT; lần vẽ ít dòng hơn (lọc, 0 kết quả) ⇒ khoá đúng bề rộng đó.
+   Đổi cỡ khung ⇒ đo lại. Bảng Vi phạm có luật riêng (canh ở trên). Mọi cỡ màn — bảng đã thành thẻ (điện thoại) thì bỏ qua. Đo: qc-nhay-o.mjs. */
+(function(){
+  const SO = new Map(); let hen = 0;
+  const dong = (t) => [].reduce.call(t.tBodies, (a, b) => a + [].filter.call(b.rows, (r) => r.cells.length > 1 && r.offsetParent !== null).length, 0);
+  function khoa(t){
+    if(!t.tHead || !t.tHead.rows.length || !t.offsetParent || t.closest('#pane-task')) return;
+    const th = [].slice.call(t.tHead.rows[t.tHead.rows.length - 1].cells), p = t.closest('[id^=pane-]');
+    if(!th.length || !th[0].offsetParent || getComputedStyle(t).display !== 'table') return;   // bảng đã thành THẺ (điện thoại) — không khoá
+    const sig = (p ? p.id : '') + '|' + th.map((c) => c.className + ':' + c.textContent.trim().replace(/\d+/g, '#')).join('|'), cw = t.parentElement.clientWidth, n = dong(t);
+    let s = SO.get(sig); if(s && (s.cw !== cw || s.w.length !== th.length)) { SO.delete(sig); s = null; }
+    if(!s || n >= s.n){
+      if(t.dataset.khoaCot){ t.style.removeProperty('table-layout'); th.forEach((c) => c.style.removeProperty('width')); delete t.dataset.khoaCot; void t.offsetWidth; }
+      SO.set(sig, { n, cw, w: th.map((c) => c.getBoundingClientRect().width) }); return;
+    }
+    t.style.setProperty('table-layout', 'fixed', 'important'); th.forEach((c, i) => c.style.setProperty('width', s.w[i] + 'px', 'important')); t.dataset.khoaCot = '1';
+  }
+  function quet(){ hen = 0;
+    document.querySelectorAll('[id^=pane-] table').forEach((t) => { try { khoa(t); } catch(e){} }); }
+  new MutationObserver(() => { if(!hen) hen = requestAnimationFrame(quet); }).observe(document.body, { childList: true, subtree: true });
+  addEventListener('resize', () => { if(!hen) hen = requestAnimationFrame(quet); });
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => { SO.clear(); quet(); });   // phông tải xong ⇒ bề rộng đã lưu cũ ⇒ đo lại
 })();
 function bbCell(r, nhan){   // nhan=true (thẻ điện thoại): chỉ ghi «Biên bản:» khi đã có ảnh — nút tự nói «+ Biên bản»
   const code=String(r[iCode]||'').trim();
@@ -4878,8 +4919,14 @@ document.addEventListener('click', ()=>csDongHet(null));
   /* .side-anim: chỉ bật trong lúc trượt (~320ms) để mở khoá animation FLIP của .wrap
      + will-change + clip ngang. Bật/tắt theo lượt nên KHÔNG giữ layer thừa khi đứng yên. */
   var hetAnim = null;
+  /* 29/10 user (clip 18.45.25 «nhảy ô, nhảy vị trí… rất nhiều nơi»): .side-anim gắn transform/animation lên .wrap ⇒ mọi pop-up position:fixed
+     NẰM TRONG .wrap bị tính theo .wrap thay vì màn hình ⇒ lệch đúng bằng độ cuộn trang suốt ~0,4 s rồi nhảy về (đo: pop-up ô Planogram Factory
+     lệch 183 px). Đang có lớp phủ hiện (kể cả lúc mờ dần khi đóng) ⇒ KHÔNG chạy hiệu ứng trượt, chỉ đổi bố cục. Cùng luật CSS :has() bên trên. */
+  function coLopPhu(){ return [].some.call(document.querySelectorAll('.wrap :is([class*="modal"],[id$="modal"],[id$="Modal"],#lightbox)'), function(e){
+    var c = getComputedStyle(e); return c.display !== "none" && c.visibility !== "hidden" && (c.position === "fixed" || c.position === "absolute") && e.getBoundingClientRect().width > 0; }); }
   function nhipAnim(){
-    if(document.body.dataset.moNgay){ setTimeout(function(){ window.dispatchEvent(new Event("resize")); },0); return; }   // 15/10 mở sẵn lúc tải (lớp antd) = không trượt
+    if(document.body.dataset.moNgay){ setTimeout(function(){ window.dispatchEvent(new Event("resize")); },0); return; }
+    if(coLopPhu()){ setTimeout(function(){ window.dispatchEvent(new Event("resize")); },0); return; }   // 15/10 mở sẵn lúc tải (lớp antd) = không trượt
     document.body.classList.add("side-anim"); /* 15/10 user «thanh bên giật, nhảy chữ dù không trỏ chuột»: nhịp trượt-vào của mục chỉ chạy khi NGƯỜI DÙNG bấm mở (.side-vao ~600ms) — trước đây chạy lại mỗi lần thanh bên được dựng lại (tải trang 3 lần, đổi phiên Xác minh, bộ áp bố cục) */ document.body.classList.add("side-vao"); clearTimeout(window.__hetVao); window.__hetVao=setTimeout(function(){ document.body.classList.remove("side-vao"); },600);
     clearTimeout(hetAnim);
     hetAnim = setTimeout(function(){
