@@ -818,10 +818,7 @@ thead th.c-ngay, tbody td.c-ngay{width:110px;}   /* 21/10 120 → 110: bảng v�
 thead th.c-anh, tbody td.c-anh{width:84px;}   /* 21/10 ảnh 72×48 */
 thead th.c-freq, tbody td.c-freq{width:12ch; min-width:12ch;}   /* 21/10 «Lần 1/tháng · −2% KPI» không gãy 4 dòng */
 tbody td.c-freq{white-space:normal;} .freq-lan{white-space:nowrap;}   /* «Lần 1/tháng» liền 1 hàng, % KPI xuống hàng dưới */
-/* 29/10 lịch sử nhắc nhở + thâm niên NV dưới tần suất (chỉ tamlc / người có quyền r.vp.nn) */
-.freq-nn{margin-top:4px; font-size:12px; line-height:1.4; white-space:normal; font-weight:400; color:var(--text);}
-.freq-nn>div+div{margin-top:4px; padding-top:4px; border-top:1px dashed var(--border);}
-.freq-nn a{color:inherit; text-decoration:underline; text-underline-offset:2px;} .freq-nn .nn-cung{color:var(--bad); font-weight:600;}
+/* 29/10 nhắc nhở + số ngày vào làm (chỉ tamlc / người có quyền r.vp.nn) — kiểu ở khối «CỘT TẦN SUẤT VI PHẠM» */
 thead th.c-status, tbody td.c-status{width:118px; white-space:normal;}   /* 21/10 chip trên, nút «Mở ↗» xuống hàng dưới — cột hẹp */
 /* 25/10 nút «Theo tác vụ ›» (phiếu đang chờ xác minh ở Xác minh) — khuôn nút gọn sẵn có, bấm mở thẳng thanh bên của phiếu đó */
 tbody td.c-status .xm-tv{margin-top:4px;}
@@ -988,10 +985,16 @@ tbody td.c-bb{width:104px; white-space:normal;}
 thead th.c-freq, tbody td.c-freq{white-space:nowrap; vertical-align:middle;}
 /* 29/10 user «Nhân viên · Quản lý qua trái 3 cm (thu hẹp Lỗi vi phạm — dài quá thì xuống dòng); Ảnh + Tần suất sát Nhân viên; mỗi cụm dữ liệu không xuống dòng» */
 #pane-task tbody td.c-loi .loi-2d{display:block; -webkit-line-clamp:unset; max-height:none; overflow:visible;}
-#pane-task thead th.c-freq, #pane-task tbody td.c-freq{width:auto; min-width:0; white-space:nowrap;}
+#pane-task thead th.c-freq, #pane-task tbody td.c-freq{width:auto; min-width:0; max-width:250px; white-space:normal;}
+.freq-ds>div{line-height:1.45;} .freq-ds>div+div{margin-top:3px;} .freq-c{white-space:nowrap;} .freq-ds b{font-weight:600;}
+.nn-chua{color:var(--muted);} a.nn-co{color:inherit; text-decoration:underline; text-underline-offset:2px;} a.nn-co.nn-cung{color:var(--bad); font-weight:600;}
+td.c-nv .nn-ngay, .cl-data .nn-ngay{white-space:nowrap;}
+.cl-data .cl-p:has(.nn-ngay){white-space:normal; overflow:visible; text-overflow:clip;} .cl-data .cl-tach:has(.nn-ngay){white-space:normal; overflow:visible;} .cl-data .cl-p b{white-space:nowrap;}
+/* cụm «[N ngày]» được xuống dòng khi bảng chật (tên NV + dòng QL vẫn liền 1 dòng) — bảng vừa 1366 */
+#pane-task tbody td.c-nv{white-space:normal!important;} #pane-task tbody td.c-nv .c-ql-sub{white-space:nowrap;}
 #pane-task thead th.c-status, #pane-task tbody td.c-status{width:1%;}   /* chip «Chờ xử lý ↗» gọn: cột co theo nội dung (bảng vừa 1366, thanh bên mở) */
 #pane-task thead th.c-flex, #pane-task tbody td.c-flex{padding:0!important;}
-.freq-nn>div>div{white-space:nowrap;} .freq-nn .nn-ngay{color:var(--muted); font-weight:400;}
+.nn-ngay{color:var(--muted); font-weight:400;}
 .tg-boi{display:block; white-space:nowrap; font-size:11.5px; color:var(--muted);} .tg-boi b{font-weight:600; color:var(--text);}
 a.hsk-chip{text-decoration:none; cursor:pointer;} a.hsk-chip:hover{filter:brightness(.92);} a.hsk-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
 .freq-lan{font-weight:600;}
@@ -1854,7 +1857,7 @@ window.hxDoMayChu = function(){
           <option value="tv">Có ở Theo tác vụ</option><option value="tm">Có ở Theo máy</option><option value="chua">Chưa có ở Xác minh</option></select></label>
         <label><span class="lbl">Loại phiếu</span><select id="fLoai"><option value="">Tất cả</option>
           <option value="5S">5S — Vệ sinh</option><option value="ĐG">ĐG — Đóng gói</option><option value="NF">NF — Không tìm thấy</option><option value="BD">BD — Bảo dưỡng</option></select></label>
-        <label><span class="lbl">Tìm (vị trí / mã)</span><input type="search" id="fTim" autocomplete="off" placeholder="F0-A1 / HSK-..."></label>
+        <label><span class="lbl">Tìm (vị trí / mã / tên task…)</span><input type="search" id="fTim" autocomplete="off" placeholder="[5S] A1-502-03 / HSK-... / tên NV"></label>
       </div>
       <div class="table-wrap">
         <table>
@@ -2052,6 +2055,7 @@ const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1v
 let H = [], ROWS = [];
 let iCode, iLink, iName, iStatus, iCreatedAt, iAnh, iNgayVP, iLoi, iViTri, iNVVP, iQLTT, iVideo, iNVName, iBienBan, iNVChuan=-1;
 let iB2loi, iKP, iB11ND, iDieuHuong=-1, STATUS_COLS = [], B3_COLS = [];
+let iCreatedBy=-1;   // 29/10 «Bởi» dự phòng: người tạo task thẳng trên work (không qua form 5S)
 let iB11St=-1, iB11DL=-1, iB11Giao=-1;   // bước B1.1: Status / Deadline / Ngày giao (thẻ "Xác nhận lỗi còn treo", 07/09/2026)
 let firstLoad = true, dangCho = false, galleries = {}, rowGal = {};
 let ANH_KHONG = null;   // danh sách 'Đạt khống' do pipeline quét ảnh cấp qua data-summary.json
@@ -2302,7 +2306,10 @@ const tenNgan = t => { const p = String(t||'').trim().split(/\s+/); return p.len
 const tenNganDs = v => String(v||'').split(/[,\n]/).map(s=>s.trim()).filter(Boolean).map(tenNgan).join(', ');
 const nvQlCell = r => {
   const nv = nameVP(r), ql = iQLTT>=0 ? String(r[iQLTT]||'').trim() : '';
-  return (nv ? `<b>${lines(nv)}</b>` : '<span class="vp-chua-xm">chưa xác minh</span>') + (ql ? `<div class="c-ql-sub">QL: ${esc(ql)}</div>` : '');
+  /* 29/10 (3) user: «Phùng Thanh Trà My [10 ngày]» — số ngày vào làm gộp cạnh tên (chỉ tamlc / quyền «Lịch sử nhắc nhở») */
+  const ma=codeChuanVP(r).split(',').map(x=>x.trim()).filter(Boolean), ten=String(nv||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const ds = nv && nnCo() && ma.length===ten.length ? ten.map((t,k)=>`<b>${esc(t)}</b>${nnNgay(ma[k])}`).join('<br>') : (nv ? `<b>${lines(nv)}</b>` : '');
+  return (nv ? ds : '<span class="vp-chua-xm">chưa xác minh</span>') + (ql ? `<div class="c-ql-sub">QL: ${esc(ql)}</div>` : '');
 };
 
 function fmtNgay(v){
@@ -2430,7 +2437,7 @@ function thumbCell(r, gi, cls){
 function napDuLieu(Hn, Rn){
       H = Hn; ROWS = Rn;
       iCode=idxOf("Task Code"); iLink=idxOf("Link Task"); iName=idxOf("Task Name");
-      iStatus=H.findIndex(h=>h==="Status"); iCreatedAt=idxOf("Created At");
+      iStatus=H.findIndex(h=>h==="Status"); iCreatedAt=idxOf("Created At"); iCreatedBy=H.findIndex(h=>/^created by$/i.test(nhanCuoi(h)));
       iAnh=idxOf("Hình ảnh vi phạm"); iVideo=idxOf("Video vi phạm");
       iNgayVP=idxOf("Ngày vi phạm"); iLoi=idxOf("Lỗi vi phạm"); iViTri=idxOf("Vị trí ghi nhận");
       iNVVP=H.findIndex(h=>nhanCuoi(h).toLowerCase()==="nhân viên vi phạm");
@@ -2643,10 +2650,10 @@ function loc(){
   // Bước 4 — Search text đa trường, không phân biệt hoa thường
   const locTim = r => {
     if(!tim) return true;
-    const hay=[ r[iViTri], r[iCode], r[iLoi], codeVP(r), nameVP(r),
-                (iQLTT>=0?r[iQLTT]:''), statusHienThi(r) ]
-      .map(v=>String(v==null?'':v).toLowerCase()).join(' ');
-    return hay.includes(tim);
+    /* 29/10 user «gõ thông tin nào có ở task cũng tìm ra, vd tên task "[5S] A1-502-03"»: gộp MỌI cột của dòng (tên task, link, các bước…)
+       + tên NV / trạng thái hiển thị + người gửi (nếu được xem); khoảng trắng thừa không làm trượt */
+    const hay=r.map(v=>v==null?'':String(v)).concat([nameVP(r), statusHienThi(r), fmtNgay(r[iNgayVP]), ngTen(r)]).join(' \u0001 ').toLowerCase().replace(/\s+/g,' ');
+    return hay.includes(tim.replace(/\s+/g,' '));
   };
 
   // Bước 5 — 25/10 Xác minh (Theo tác vụ / Theo máy / chưa có) · Loại phiếu (5S / ĐG / NF theo tiền tố tên task)
@@ -2703,7 +2710,8 @@ function tinhTanSuat(){
   });
   for(const k in seq){
     seq[k].sort((a,b)=>a.t-b.t);
-    seq[k].forEach((e,i)=>{ const lan=i+1; if(!FREQ[e.gi]||lan>FREQ[e.gi].lan) FREQ[e.gi]={lan}; });
+    const cd=k.slice(0,k.lastIndexOf('|'));
+    seq[k].forEach((e,i)=>{ const lan=i+1, f=FREQ[e.gi]||(FREQ[e.gi]={lan, ma:{}}); if(lan>f.lan) f.lan=lan; f.ma[cd]=lan; });   // 29/10: lần của TỪNG NV
   }
 }
 // Tra %KPI trừ của hạng mục theo lần (QUY-DINH: cột 3=lần1, 6=lần2, 9=lần3+); khớp theo text "Lỗi vi phạm".
@@ -2725,15 +2733,24 @@ function kpiTheoLoi(loi,lan){
   const v=String(row[lan>=3?9:(lan===2?6:3)]).trim();
   return v===''?null:v;
 }
-function freqCell(gi,r){
-  const f=FREQ[gi], nn=nnCell(r);
-  if(!f) return '<span class="row-none">—</span>'+nn;
-  const k=kpiTheoLoi(iLoi>=0?r[iLoi]:'',f.lan);
-  const kh = k==null ? '' : (Number(k)===0
-    ? ' · <span class="kpi-zero">0% KPI</span>'
-    : ' · <span class="kpi-neg">−'+esc(k)+'% KPI</span>');
-  return '<span class="freq-lan">Lần '+f.lan+'/tháng</span>'+kh+nn;
+/* 29/10 (3) user: mỗi NV 1 dòng «Trà My: Lần 1/tháng (−2% KPI) [1 lần nhắc nhở]» — các cụm (tên · lần/KPI · nhắc nhở) không gãy giữa cụm.
+   Phần [nhắc nhở] chỉ hiện với tamlc / quyền «Lịch sử nhắc nhở». */
+function tenMaVP(r,c){ const v=NN&&NN.vao[c]; if(v&&v.ten) return v.ten; if(NV_MAP[c]||NAME_BY_CODE[c]) return NV_MAP[c]||NAME_BY_CODE[c];
+  const ma=codeChuanVP(r).split(',').map(x=>x.trim()).filter(Boolean), ten=nameVP(r).split(',').map(x=>x.trim()).filter(Boolean);
+  return ma.length===ten.length ? ten[ma.indexOf(c)] : (ma.length===1 ? ten[0]||'' : ''); }
+function kpiNhan(r,lan){ const k=kpiTheoLoi(iLoi>=0?r[iLoi]:'',lan); return k==null?'':Number(k)===0?' <span class="freq-c kpi-zero">(0% KPI)</span>':' <span class="freq-c kpi-neg">(−'+esc(k)+'% KPI)</span>'; }
+function freqDong(gi,r){   // [{c, ten, lan}] theo thứ tự NV của dòng
+  const f=FREQ[gi]; if(!f) return [];
+  const ma=codeChuanVP(r).split(',').map(x=>x.trim()).filter(c=>f.ma&&f.ma[c]);
+  return (ma.length?ma:Object.keys(f.ma||{})).map(c=>({c, ten:tenMaVP(r,c)||('Mã '+c), lan:f.ma[c]}));
 }
+function freqCell(gi,r){
+  const ds=freqDong(gi,r);
+  if(!ds.length) return '<span class="row-none">—</span>';
+  return '<div class="freq-ds">'+ds.slice(0,4).map(x=>'<div><span class="freq-c"><b>'+esc(tenNgan(x.ten))+'</b>:</span> <span class="freq-c freq-lan">Lần '+x.lan+'/tháng</span>'+kpiNhan(r,x.lan)+nnNhan(r,x.c)+'</div>').join('')
+    +(ds.length>4?'<div class="muted">+'+(ds.length-4)+' NV khác</div>':'')+'</div>';
+}
+
 /* ===== 29/10 user «đã nhắc nhở trước đó chưa, nhắc bao nhiêu lần rồi, NV vào làm được bao lâu — chỉ t xem được»:
    sổ do canh-b11 dựng (nhac-nho-591.mjs), phát qua máy chủ Xác minh 8591 /api/nhac-nho — CHỈ tamlc hoặc tài khoản được cấp
    «Lịch sử nhắc nhở» (r.vp.nn, mục Quyền xem); máy chủ gác lần nữa. Nhắc nhở = QLTT bấm Fail ở bước ghi nhận với lý do «nhắc nhở». ===== */
@@ -2760,28 +2777,43 @@ function ngNap(){
 }
 window.addEventListener('hx-du-lieu', ngNap);
 document.addEventListener('tk-doi', ()=>{ if(NG && !ngDuocXem()){ NG=null; render(); } else ngNap(); });
-function ngTen(r){ if(!NG || !ngDuocXem()) return ''; return NG.theoMa[String(r[iCode]||'').trim()] || NG.theoId[idTaskVP(r)] || ''; }
+/* 29/10 (3) user «sao các mục này không thấy Bởi ai»: 3 phiếu A1 27/10 do NGƯỜI tạo thẳng trên work (created_by ≠ tài khoản cò) — không qua form ⇒ sổ người gửi
+   không có. Dự phòng: cột Người tạo, trừ khi đó là tài khoản cò (Lê Chí Tâm) — phiếu cò tạo thì không suy ra được người gửi. */
+function ngTen(r){ if(!NG || !ngDuocXem()) return '';
+  const t=NG.theoMa[String(r[iCode]||'').trim()] || NG.theoId[idTaskVP(r)]; if(t) return t;
+  const tao=iCreatedBy>=0 ? String(r[iCreatedBy]||'').replace(/\s*-\s*\d+\s*$/,'').trim() : '';
+  return tao && !/^lê chí tâm$/i.test(tao) ? tao : ''; }
 /* người: 2 chữ cuối («Anh Tài/Ngọc Thành»); cò/script (có số, ngoặc, hoặc > 4 chữ): bỏ phần ngoặc, giữ 3 chữ đầu («Cò luỹ tiến», «Luật 3 ngày») */
 const ngNgan=t=>{ t=String(t).trim(); const laNguoi=!/[\d()]/.test(t) && t.split(/\s+/).length<=4; return laNguoi ? tenNgan(t) : t.replace(/\s*\(.*?\)\s*/g,' ').trim().split(/\s+/).slice(0,3).join(' '); };
 function ngBoi(r){ const t=ngTen(r); return t ? '<span class="tg-boi" title="Người gửi ghi nhận: '+esc(t)+'">Bởi <b>'+esc(t.split(/\s*[,/]\s*/).map(ngNgan).join('/'))+'</b></span>' : ''; }
 document.addEventListener('tk-doi', ()=>{ if(NN && !nnDuocXem()){ NN=null; render(); } else nnNap(); });
 function nnSoNgay(d){ const a=new Date(d+'T00:00:00'); return isNaN(a) ? null : Math.max(0, Math.floor((Date.now()-a)/864e5)); }
 /* 29/10 (2) user: «các cụm dữ liệu riêng biệt không xuống dòng · thời gian vào làm ghi kế bên tên NV, dạng ngày: Lê Chí Tâm [1000 ngày]» */
-function nnCell(r){
-  if(!NN || !nnDuocXem()) return '';
-  const ma=codeChuanVP(r).split(',').map(s=>s.trim()).filter(Boolean); if(!ma.length) return '';
-  const id=idTaskVP(r), loi=_chuan(iLoi>=0?r[iLoi]:'').slice(0,45);
-  const ddmm=s=>{ const m=String(s||'').match(/^\d{4}-(\d\d)-(\d\d)/); return m?m[2]+'/'+m[1]:esc(s); };
-  return '<div class="freq-nn">'+ma.slice(0,4).map(c=>{
-    const v=NN.vao[c]||{}, ds=(NN.nhac||[]).filter(x=>String(x.id)!==id && (x.nv||[]).includes(c));
-    const cung=ds.filter(x=>loi && _chuan(x.loi).slice(0,45)===loi).length, ng=v.vao?nnSoNgay(v.vao):null;
-    const ten='<div><b>'+esc(tenNgan(v.ten||c))+'</b>'+(ng!=null?' <span class="nn-ngay" title="Vào làm '+esc(v.vao)+'">['+ng+' ngày]</span>':'')+'</div>';
-    const lk=ds.map(x=>'<a href="https://work.hasaki.vn/tasks?task_id='+esc(x.id)+'" target="_blank" rel="noopener" title="'+esc((x.nguoi||'')+': '+(x.ly||'')+' — '+(x.loi||''))+'">'+ddmm(x.luc)+'</a>').join(' · ');
-    const dau='Đã nhắc nhở '+ds.length+' lần'+(cung?' <span class="nn-cung">('+cung+' cùng lỗi)</span>':'')+':';
-    const nhac=!ds.length?'<div>Chưa nhắc nhở lần nào</div>':ds.length===1?'<div>'+dau+' '+lk+'</div>':'<div>'+dau+'</div><div>'+lk+'</div>';   // ≥2 lần: ngày xuống dòng riêng (cột không phình)
-    return '<div>'+ten+nhac+'</div>';
-  }).join('')+(ma.length>4?'<div class="muted">+'+(ma.length-4)+' NV khác</div>':'')+'</div>';
+/* 29/10 (3) thanh bên phải dưới «Nhân sự»: Tần suất vi phạm (từng NV) + Nhắc nhở (link từng lần — chỉ người được xem) */
+function benTanSuat(r){
+  const gi=ROWS.indexOf(r), ds=freqDong(gi,r); if(!ds.length) return '';
+  const h=(l,v)=>`<div class="vp-h"><span class="vp-hl">${esc(l)}</span><span class="vp-hv">${v}</span></div>`;
+  let o=h('Tần suất vi phạm', ds.map(x=>'<div><b>'+esc(tenNgan(x.ten))+'</b>: Lần '+x.lan+'/tháng'+kpiNhan(r,x.lan)+'</div>').join(''));
+  if(nnCo()) o+=h('Nhắc nhở', ds.map(x=>{ const n=nnDs(r,x.c); return '<div><b>'+esc(tenNgan(x.ten))+'</b>: '+(n.length?n.map(nnLink).join(' · '):'Chưa có nhắc nhở')+'</div>'; }).join(''));
+  return o;
 }
+/* tên NV vi phạm kèm «[N ngày]» (thẻ điện thoại) — không có quyền / không ghép được mã ↔ tên thì như cũ */
+function nvNgayDs(r){ const nv=nameVP(r), ma=codeChuanVP(r).split(',').map(x=>x.trim()).filter(Boolean), ten=String(nv||'').split(',').map(x=>x.trim()).filter(Boolean);
+  return nnCo() && ma.length===ten.length ? ten.map((t,k)=>'<b>'+esc(t)+'</b>'+nnNgay(ma[k])).join(', ') : '<b>'+esc(nv)+'</b>'; }
+function nnCo(){ return !!(NN && nnDuocXem()); }
+function nnDs(r,c){ const id=idTaskVP(r); return (NN.nhac||[]).filter(x=>String(x.id)!==id && (x.nv||[]).includes(c)); }
+const nnDdmm=s=>{ const m=String(s||'').match(/^\d{4}-(\d\d)-(\d\d)/); return m?m[2]+'/'+m[1]:esc(s); };
+const nnLink=x=>'<a href="https://work.hasaki.vn/tasks?task_id='+esc(x.id)+'" target="_blank" rel="noopener" title="'+esc((x.nguoi||'')+': '+(x.ly||'')+' — '+(x.loi||''))+'">'+nnDdmm(x.luc)+'</a>';
+function nnNhan(r,c){
+  if(!nnCo()) return '';
+  const ds=nnDs(r,c); if(!ds.length) return ' <span class="freq-c nn-chua">[Chưa có nhắc nhở]</span>';
+  const loi=_chuan(iLoi>=0?r[iLoi]:'').slice(0,45), cung=ds.filter(x=>loi && _chuan(x.loi).slice(0,45)===loi).length, moi=ds[ds.length-1];
+  const tieuDe=esc(ds.map(x=>nnDdmm(x.luc)+' '+(x.nguoi||'')+': '+(x.ly||'')).join(' | '));
+  return ' <a class="freq-c nn-co'+(cung?' nn-cung':'')+'" href="https://work.hasaki.vn/tasks?task_id='+esc(moi.id)+'" target="_blank" rel="noopener"'
+    +' title="'+tieuDe+'">['+ds.length+' lần nhắc nhở'+(cung?' · '+cung+' cùng lỗi':'')+']</a>';
+}
+function nnNgay(c){ const v=nnCo()&&NN.vao[c]; const n=v&&v.vao?nnSoNgay(v.vao):null; return n==null?'':' <span class="nn-ngay" title="Vào làm '+esc(v.vao)+'">['+n+' ngày]</span>'; }
+
 
 
 /* ===== KHOÁ BIÊN BẢN: task ĐÃ HOÀN THÀNH quá 96h -> làm mờ/tắt nút +Ảnh.
@@ -3135,9 +3167,9 @@ function _render(){
         <div class="cl-loi" title="${esc(r[iLoi]||'')}">${esc(r[iLoi]||'')}</div>
         ${kv('Vị trí',r[iViTri])}
         <div class="cl-kv">Ghi nhận<span class="cl-dai"> ngày</span>: <b>${namNgan(esc(fmtNgay(r[iNgayVP])))}</b>${iCreatedAt>=0&&r[iCreatedAt]?` <span class="cl-sep">|</span> Tạo: <b>${esc(boNamNay(fmtNgay(r[iCreatedAt])))}</b>`:''}</div>
-        ${(nameVP(r)||(iQLTT>=0&&r[iQLTT]))?`<div class="cl-kv cl-tach">${nameVP(r)?`<span class="cl-p">Ghi nhận cho: <b>${esc(nameVP(r))}</b></span>`:''}${''
+        ${(nameVP(r)||(iQLTT>=0&&r[iQLTT]))?`<div class="cl-kv cl-tach">${nameVP(r)?`<span class="cl-p">Ghi nhận cho: ${nvNgayDs(r)}</span>`:''}${''
         }${iQLTT>=0&&r[iQLTT]?`${nameVP(r)?' <span class="cl-sep">|</span> ':''}<span class="cl-p">QL: <b>${esc(tenNganDs(r[iQLTT]))}</b></span>`:''}</div>`:''}
-        ${ngTen(r)?`<div class="cl-kv">Người gửi ghi nhận: <b>${esc(ngTen(r))}</b></div>`:''}
+        ${ngTen(r)?`<div class="cl-kv">Bởi: <b>${esc(ngTen(r))}</b></div>`:''}
         <div class="cl-kv">Tần suất: ${freqCell(gi,r)}</div>
       </div>
     </div>`;
@@ -3379,7 +3411,7 @@ function moChiTiet(i){
   $('mBody').innerHTML = `<div class="vp-wf"><div class="vp-buoc" role="tablist">${tab}</div><div class="vp-than">
     <div class="vp-chinh">${chung?`<section class="vp-muc"><h3 class="vp-h3">Dữ liệu khai báo</h3>${chung.fail}${dsDL(chung.du)}</section>`:''}${than}${cmtStep}</div>
     <aside class="vp-ben"><div class="vp-nhom"><h4>Trạng thái &amp; thời gian</h4>${chung&&chung.tt?hang('Trạng thái',tag(chung.tt)):''}${chung?chung.gio.map(x=>hang(x.label,esc(x.v))).join(''):''}</div>
-      <div class="vp-nhom"><h4>Nhân sự</h4>${chung?chung.nguoi.map(x=>hang(x.label,esc(x.v))).join(''):''}${ngTen(r)?hang('Người gửi ghi nhận',esc(ngTen(r))):''}</div></aside></div></div>`;
+      <div class="vp-nhom"><h4>Nhân sự</h4>${chung?chung.nguoi.map(x=>hang(x.label,esc(x.v))).join(''):''}${ngTen(r)?hang('Bởi',esc(ngTen(r))):''}${benTanSuat(r)}</div></aside></div></div>`;
   // dải bước = thanh tổng quan: bấm → cuộn tới bước đó trong «Giai đoạn» + nháy nền (bước chưa tới thì không có gì để cuộn)
   $('mBody').querySelectorAll('.vp-tab').forEach(t=>t.onclick=()=>{ const k=t.dataset.vpb, li=$('mBody').querySelector(`.vp-gd-b[data-vpgd="${k}"]`);
     $('mBody').querySelectorAll('.vp-tab').forEach(e=>{ e.classList.toggle('on',e===t); e.setAttribute('aria-selected',e===t); });
