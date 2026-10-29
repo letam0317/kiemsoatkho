@@ -544,7 +544,7 @@ thead th.c-ngay, tbody td.c-ngay{white-space:nowrap; font-variant-numeric:tabula
 thead th.c-status, tbody td.c-status{white-space:nowrap; vertical-align:middle;}
 /* (2) Vị trí: bề rộng CỐ ĐỊNH vừa "F0-A1-515-05-02-02111111" (24 ký tự) — mọi dòng đồng bộ;
    dài hơn thì XUỐNG DÒNG (không kéo giãn cột) */
-thead th.c-vitri, tbody td.c-vitri{white-space:normal; width:auto; min-width:0; max-width:24ch; overflow-wrap:anywhere; line-height:1.35;}
+thead th.c-vitri, tbody td.c-vitri{white-space:normal; width:auto; min-width:19ch; max-width:24ch; overflow-wrap:anywhere; line-height:1.35;}
 /* (3) Lỗi vi phạm: thu hẹp còn ~2/3, cắt bớt bằng "…", KHÔNG xuống dòng (hover xem đủ) */
 /* 21/10 user: tăng kích thước cột Lỗi vi phạm về bên phải thêm 4cm (350px + 4cm ≈ 501px), dài hơn thì gãy 2 dòng trong khung dòng; min-width giữ cột đệm 100% không ép về min-content */
 thead th.c-loi, tbody td.c-loi{--loi-w:var(--loi-fit, clamp(120px, calc(100vw - 1010px - 3cm), calc(350px + 1cm))); white-space:normal!important; max-width:var(--loi-w); width:var(--loi-w); min-width:var(--loi-w);}
@@ -997,7 +997,9 @@ a.nn-co:hover .nn-so{text-decoration:underline;}
 .cl-chot-t{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
 .cl-chot-p{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .vt-ma{white-space:nowrap;}   /* mã vị trí liền 1 dòng */   /* 29/10 (4) user: «Hoài Sang: Lần 3/tháng (−5% KPI) [1 lần nhắc nhở]» không được xuống dòng */
 .freq-ds .freq-lan{font-weight:400;} .freq-ds .kpi-neg, .vp-h-doc .kpi-neg{font-weight:500;}   /* chỉ tên NV đậm — số lần / KPI chữ thường (KPI giữ màu đỏ) */
-.vp-h.vp-h-doc{display:block;} .vp-h-doc .vp-hl{display:block; margin-bottom:3px;} .vp-h-doc .vp-hv{display:block;} .vp-h-doc .vp-hv>div{white-space:nowrap; line-height:1.5;} .vp-h-doc b{font-weight:600;}
+.vp-h.vp-h-doc{display:block;}
+.ben-luoi{display:grid; grid-template-columns:max-content max-content; column-gap:8px; row-gap:2px; align-items:baseline;}
+.ben-luoi>*{white-space:nowrap;} .vp-h-doc .vp-hl{display:block; margin-bottom:3px;} .vp-h-doc .vp-hv{display:block;} .vp-h-doc .vp-hv>div{white-space:nowrap; line-height:1.5;} .vp-h-doc b{font-weight:600;}
 .tg-boi.ng-chua i{font-style:normal; color:var(--muted);} .freq-ds>div+div{margin-top:3px;} .freq-c{white-space:nowrap;} .freq-ds b{font-weight:600;}
 .nn-chua{color:var(--muted);}
 td.c-nv .nn-ngay, .cl-data .nn-ngay{white-space:nowrap;} td.c-nv .nv-cum{white-space:nowrap;}   /* 29/10 (4) «Phùng Thanh Trà My [10 ngày]» liền 1 dòng */
@@ -1870,7 +1872,7 @@ window.hxDoMayChu = function(){
           <option value="tv">Có ở Theo tác vụ</option><option value="tm">Có ở Theo máy</option><option value="chua">Chưa có ở Xác minh</option></select></label>
         <label><span class="lbl">Loại phiếu</span><select id="fLoai"><option value="">Tất cả</option>
           <option value="5S">5S — Vệ sinh</option><option value="ĐG">ĐG — Đóng gói</option><option value="NF">NF — Không tìm thấy</option><option value="BD">BD — Bảo dưỡng</option></select></label>
-        <label><span class="lbl">Tìm (vị trí / mã / tên task…)</span><input type="search" id="fTim" autocomplete="off" placeholder="[5S] A1-502-03 / HSK-... / tên NV"></label>
+        <label><span class="lbl">Tìm (vị trí / mã / tên task…)</span><input type="search" id="fTim" autocomplete="off" placeholder="[5S] A1-502-03 / HSK-... / id hoặc link task / tên NV"></label>
       </div>
       <div class="table-wrap">
         <table>
@@ -2665,6 +2667,10 @@ function loc(){
     if(!tim) return true;
     /* 29/10 user «gõ thông tin nào có ở task cũng tìm ra, vd tên task "[5S] A1-502-03"»: gộp MỌI cột của dòng (tên task, link, các bước…)
        + tên NV / trạng thái hiển thị + người gửi (nếu được xem); khoảng trắng thừa không làm trượt */
+    /* 29/10 (7) dán link work «…tasks?task_id=13180308&status=…» hoặc gõ id → so ĐÚNG id phiếu */
+    const idTim=(tim.match(/task_id=(\d{5,})/)||[])[1] || (/^\d{7,9}$/.test(tim)?tim:'');
+    if(idTim && idTaskVP(r)===idTim) return true;
+    if(/task_id=\d/.test(tim)) return false;
     const hay=r.map(v=>v==null?'':String(v)).concat([nameVP(r), statusHienThi(r), fmtNgay(r[iNgayVP]), ngTen(r)]).join(' \u0001 ').toLowerCase().replace(/\s+/g,' ');
     return hay.includes(tim.replace(/\s+/g,' '));
   };
@@ -2839,8 +2845,10 @@ function benTanSuat(r){
   const gi=ROWS.indexOf(r), ds=freqDong(gi,r); if(!ds.length) return '';
   /* 29/10 (4) user «không được xuống dòng»: nhãn nằm TRÊN, các dòng NV chiếm hết bề ngang cột bên, mỗi dòng 1 hàng */
   const h=(l,v)=>`<div class="vp-h vp-h-doc"><span class="vp-hl">${esc(l)}</span><span class="vp-hv">${v}</span></div>`;
-  let o=h('Tần suất vi phạm', ds.map(x=>'<div><b>'+esc(tenNgan(x.ten))+'</b>: Lần '+x.lan+'/tháng'+kpiNhan(r,x.lan)+'</div>').join(''));
-  if(nnCo()) o+=h('Nhắc nhở', ds.map(x=>{ const n=nnDs(r,x.c); return '<div><b>'+esc(tenNgan(x.ten))+'</b>: '+(n.length?n.map(nnLink).join(' · '):'Chưa có nhắc nhở')+'</div>'; }).join(''));
+  /* 29/10 (7) user «mục này cũng cần thẳng cột»: lưới Tên | giá trị — 2 khối cùng danh sách tên nên cột tên rộng bằng nhau, thẳng cả giữa 2 khối */
+  const luoi=f=>'<div class="ben-luoi">'+ds.map(x=>'<b>'+esc(tenNgan(x.ten))+':</b><span>'+f(x)+'</span>').join('')+'</div>';
+  let o=h('Tần suất vi phạm', luoi(x=>'lần '+x.lan+'/tháng'+kpiNhan(r,x.lan)));
+  if(nnCo()) o+=h('Nhắc nhở', luoi(x=>{ const n=nnDs(r,x.c); return n.length?n.map(nnLink).join(' · '):'<span class="muted">chưa có nhắc nhở</span>'; }));
   return o;
 }
 /* tên NV vi phạm kèm «[N ngày]» (thẻ điện thoại) — không có quyền / không ghép được mã ↔ tên thì như cũ */
@@ -3392,6 +3400,7 @@ function moChiTiet(i){
           ? `<video class="thumb" src="${esc(safeUrl(m.url))}" preload="metadata" data-g="${si}" data-i="${tu+k}"></video>`
           : `<img class="thumb" loading="lazy" src="${esc(safeUrl(m.url))}" data-g="${si}" data-i="${tu+k}">`).join('') }); return; }
       if(laTT(f.label)){ if(!o.tt) o.tt=String(f.val); return; }
+      if(/^lý do$/i.test(String(f.label).trim())) return;   // 29/10 cột «▸ Lý do» (note_failed) chỉ vào hộp Lý do thất bại/huỷ bên dưới — không lặp ở danh sách trường
       if(laNguoi(f.label)){ o.nguoi.push({label:f.label, v:giaTri(f)}); return; }
       if(laGio(f.label)){ o.gio.push({label:f.label, v:giaTri(f)}); return; }
       o.du.push({label:f.label, v:giaTri(f)});
