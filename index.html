@@ -985,7 +985,7 @@ tbody td.c-bb{width:104px; white-space:normal;}
 thead th.c-freq, tbody td.c-freq{white-space:nowrap; vertical-align:middle;}
 /* 29/10 user «Nhân viên · Quản lý qua trái 3 cm (thu hẹp Lỗi vi phạm — dài quá thì xuống dòng); Ảnh + Tần suất sát Nhân viên; mỗi cụm dữ liệu không xuống dòng» */
 #pane-task tbody td.c-loi .loi-2d{display:block; -webkit-line-clamp:unset; max-height:none; overflow:visible;}
-#pane-task thead th.c-freq, #pane-task tbody td.c-freq{width:auto; min-width:0; white-space:normal;}
+#pane-task thead th.c-freq, #pane-task tbody td.c-freq{width:auto; min-width:0;} #pane-task tbody td.c-freq{white-space:normal;} #pane-task thead th{white-space:nowrap;}   /* tiêu đề cột luôn 1 dòng (kể cả khi lọc ra 0 phiếu) */
 .freq-ds{display:grid; grid-template-columns:var(--fq1,auto) var(--fq2,auto); column-gap:5px; row-gap:3px; justify-content:start; align-items:baseline; font-size:12.5px; line-height:1.45;}
 .freq-ds.co-nn{grid-template-columns:var(--fq1,auto) var(--fq2,auto) auto;} .freq-ds .freq-them{grid-column:1/-1;}
 .nv-luoi{display:grid; grid-template-columns:auto auto; column-gap:6px; row-gap:2px; justify-content:start; align-items:baseline;} .nv-luoi b{white-space:nowrap;}
@@ -1624,7 +1624,7 @@ body.side-anim{overflow-x:clip;}
 <!-- 12/10 giao diện Ant Design: LIVE mặc định (user "theo ant design chưa live"); nạp ĐỒNG BỘ ở head để khung hình đầu đã đúng kiểu, tắt trong Cài đặt -->
 <script>window.AD_BI_DANH={"tonkho/kiemke":"kk","tonkho/batthuong":"kk#pane-htonbat"};   /* 15/10 link cũ → mục gộp «Tồn kho chính xác» */ window.AD_TEN='Audit Retail'; window.AD_CHUYEN={ten:'Audit Factory', app:'factory'};</script>   <!-- 13/10 user: Audit Hasaki → Audit Retail + nút sang Factory cuối thanh bên -->
 <script src="tien-ich.js?v=20261020a"></script><!-- 20/10 tiện ích chung: esc/$id/hm/ngayVN — nạp TRƯỚC mọi mô-đun -->
-<script src="hasaki-giaodien-antd.js?v=20261027a"></script>
+<script src="hasaki-giaodien-antd.js?v=20261029a"></script>
 <script src="tai-khoan.js?v=20261028a"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
 <script src="tat-loc.js?v=20261026a" defer></script>
 <script src="loc-popup.js?v=20261026a" defer></script>
@@ -2643,6 +2643,14 @@ function napLoc(){
 /* 25/10 loại phiếu theo tiền tố tên task: [ĐG] hoặc tên «Đóng gói / Đóng sai / Đóng thiếu» (phiếu cũ chưa có tiền tố) = ĐG · [NF] = NF · [BD] = BD (27/10) · còn lại 5S */
 function loaiPhieu(r){ const t=String(r[iName]||'');
   return /^\s*\[ĐG\]|^\s*(Đóng gói|Đóng sai|Đóng thiếu)|đóng gói sai/i.test(t) ? 'ĐG' : /^\s*\[NF\]/i.test(t) ? 'NF' : /^\s*\[BD\]/i.test(t) ? 'BD' : '5S'; }
+/* 29/10 (8) user tìm id 13180308 ra 0 phiếu — id không thuộc phiếu 5S nào đang có: nói rõ + mở thẳng trên work thay vì «không có task» chung chung */
+function rongLoc(){
+  const t=$('fTim').value.trim(), id=(t.match(/task_id=(\d{5,})/)||[])[1] || (/^\d{7,9}$/.test(t)?t:'');
+  if(!id) return 'Không có task khớp bộ lọc.';
+  const ng=ROWS.map(r=>ngayISO(r[iNgayVP])).filter(Boolean).sort(), d=s=>s?s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4):'';
+  return 'Id <b>'+esc(id)+'</b> không thuộc phiếu vi phạm 5S nào trong dữ liệu ('+d(ng[0])+' – '+d(ng[ng.length-1])+') — có thể là task của quy trình khác hoặc đã ngoài khoảng dữ liệu. '
+    +'<a href="https://work.hasaki.vn/tasks?task_id='+esc(id)+'" target="_blank" rel="noopener">Mở id này trên work ↗</a>';
+}
 function loc(){
   const st =$('fStatus').value.trim();
   const lo =$('fLoi').value.trim();
@@ -2669,7 +2677,7 @@ function loc(){
        + tên NV / trạng thái hiển thị + người gửi (nếu được xem); khoảng trắng thừa không làm trượt */
     /* 29/10 (7) dán link work «…tasks?task_id=13180308&status=…» hoặc gõ id → so ĐÚNG id phiếu */
     const idTim=(tim.match(/task_id=(\d{5,})/)||[])[1] || (/^\d{7,9}$/.test(tim)?tim:'');
-    if(idTim && idTaskVP(r)===idTim) return true;
+    if(idTim && (idTaskVP(r)===idTim || r.some(v=>String(v==null?'':v).includes('task_id='+idTim)))) return true;   // id phiếu hoặc id BƯỚC con
     if(/task_id=\d/.test(tim)) return false;
     const hay=r.map(v=>v==null?'':String(v)).concat([nameVP(r), statusHienThi(r), fmtNgay(r[iNgayVP]), ngTen(r)]).join(' \u0001 ').toLowerCase().replace(/\s+/g,' ');
     return hay.includes(tim.replace(/\s+/g,' '));
@@ -3213,7 +3221,7 @@ function _render(){
       <td class="c-flex"></td>
       <td class="c-status">${statusCell(r)}${xmTvChip(r)}</td>
       <td class="c-bb">${bbCell(r)}</td></tr>`;
-  }).join('') || '<tr><td colspan="9"><div class="empty-row">Không có task khớp bộ lọc.</div></td></tr>';
+  }).join('') || '<tr><td colspan="9"><div class="empty-row">'+rongLoc()+'</div></td></tr>';
 
   // Danh sách thẻ (mobile)
   const kv=(l,v)=> v?`<div class="cl-kv">${l}: <b>${esc(v)}</b></div>`:'';
@@ -3235,7 +3243,7 @@ function _render(){
         <div class="cl-kv">Tần suất: ${freqCell(gi,r)}</div>
       </div>
     </div>`;
-  }).join('') || '<div class="empty-row">Không có task khớp bộ lọc.</div>';
+  }).join('') || '<div class="empty-row">'+rongLoc()+'</div>';
 }
 
 /* ===== POP-UP CHI TIẾT THỐNG KÊ ===== */
