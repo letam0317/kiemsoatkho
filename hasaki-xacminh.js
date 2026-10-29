@@ -263,8 +263,9 @@
         /* 17/10 (8) user «ảnh ghi nhận vẫn chưa khít với khung»: khung = KÍN bề rộng cột (thẳng mép với «Sẽ ghi nhận», Lỗi…), ảnh phủ kín khung không viền;
            ảnh ngang hiện đủ, ảnh dọc cao quá min(300px,36vh) thì cắt giữa (bấm ảnh xem đủ) */
         "#modal.hx-ben .hx-tb-luoi .hx-qd-anh{width:100%;max-width:none;min-height:0!important;background:transparent!important;line-height:0;border-radius:8px;overflow:hidden}" +
-        /* 19/10 «mở thanh giật khung»: ảnh ghi nhận GIỮ CHỖ 16:9 trước khi tải xong (auto 16/9 = tải xong theo tỉ lệ thật) — phần dưới không bị đẩy */
-        "#modal.hx-ben .hx-tb-luoi .hx-qd-anh img{display:block;width:100%!important;height:auto!important;max-width:none;max-height:min(300px,36vh)!important;aspect-ratio:auto 16/9!important;object-fit:cover;background:transparent!important;border-radius:0}" +
+        /* 19/10 «mở thanh giật khung»: ảnh ghi nhận GIỮ CHỖ 16:9 trước khi tải xong — phần dưới không bị đẩy.
+           29/10 (9) bỏ «auto»: ảnh 4:3 tải xong vẫn đổi khung theo tỉ lệ thật ⇒ ô Lỗi / Là ai bị đẩy 41–57 px (qc-nhay-o). Khung CỐ ĐỊNH 16:9, ảnh phủ kín (bấm xem đủ). */
+        "#modal.hx-ben .hx-tb-luoi .hx-qd-anh img{display:block;width:100%!important;height:auto!important;max-width:none;max-height:min(300px,36vh)!important;aspect-ratio:16/9!important;object-fit:cover;background:transparent!important;border-radius:0}" +
         /* đầu thanh đảo: nút (Ghi chú · Mở task · Đóng) bên TRÁI, tiêu đề bên PHẢI — chỉ thanh Xác minh */
         "#modal.hx-ben:has(#mBody .hx-tb-luoi) .modal-head{flex-wrap:nowrap!important}#modal.hx-ben:has(#mBody .hx-tb-luoi) .modal-head>#mTitle{order:-1;flex:1 1 auto;min-width:0;margin:0!important;text-align:left;display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:baseline!important;justify-content:flex-start!important;column-gap:8px;overflow:hidden}#modal.hx-ben:has(#mBody .hx-tb-luoi) #mTitle .hx-mt1{flex:0 1 auto;min-width:64px;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis}#modal.hx-ben:has(#mBody .hx-tb-luoi) #mTitle .hx-mt2{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#modal.hx-ben:has(#mBody .hx-tb-luoi) .modal-head>:not(#mTitle){flex:none;margin-left:0!important;margin-right:0!important}#modal.hx-ben:has(#mBody .hx-tb-luoi) .modal-head>#hxMoTask{order:1}#modal.hx-ben:has(#mBody .hx-tb-luoi) .modal-head>#gcNut{order:2}#modal.hx-ben:has(#mBody .hx-tb-luoi) .modal-head>#mClose{order:3}" +   // 19/10 user đổi ý: TRÁI = tiêu đề + giờ (1 hàng, dài thì cắt …), PHẢI = Mở task · Ghi chú · Đóng (Đóng ngoài cùng) — thay 17/10 (9) «Đóng bên trái»
         "#modal.hx-ben .hx-pd-duoi{margin-top:6px;border-radius:6px}#modal.hx-ben .hx-tb-luoi .hx-tl-hang[hidden]{display:none!important}#modal.hx-ben .hx-tb-luoi .hx-qd-xem>.hx-tl-hang{margin-top:8px}" +
@@ -402,7 +403,8 @@
       ".hx-visao{font-size:13px;line-height:1.45;color:var(--text);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}.hx-visao.mo{display:block}",
       ".hx-sx{border:0;background:none;padding:0;font:inherit;font-weight:inherit;color:inherit;cursor:pointer;text-align:left}.hx-sx:hover,.hx-sx.on{color:var(--accent)}",
       ".hx-pd{display:flex;gap:10px;align-items:baseline;padding:8px 12px;background:#111;color:#e6efe9;font-size:14px;min-height:22px;flex-wrap:nowrap;overflow:hidden}.hx-pd>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
-      ".hx-qd-khung{position:relative}.hx-qd-khung.hx-dang-tai::after,.hx-qd-khung.hx-loi-clip::after,",
+      ".hx-qd-khung{position:relative}.hx-qd-khung.trong{background:none;min-height:0}" +   // 29/10 ô clip không có camera: chỉ dòng lý do, không nền đen
+      ".hx-qd-khung.hx-dang-tai::after,.hx-qd-khung.hx-loi-clip::after,",
       ".hx-qd-khung.hx-cham-phat::after{content:'Đang tải clip…';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);color:white;font-size:14px;font-weight:600;pointer-events:none}",
       ".hx-qd-khung.hx-loi-clip::after{content:'Không tải được clip lượt này — chọn dòng khác'}.hx-qd-khung.hx-cham-phat::after{content:'▶  Bấm để phát';font-size:18px;cursor:pointer;pointer-events:none}",
       ".hx-pd .gio{font-variant-numeric:tabular-nums;font-weight:700;color:#9fd3b5;flex:none}.hx-pd .ngay{color:#ffd54f;font-weight:700}.hx-pd .sap{color:#cfd8d3}",
@@ -1263,7 +1265,7 @@
   function khoaAnhGN() { var M0 = $id("modal"); if (M0._roAnh) { M0._roAnh.disconnect(); M0._roAnh = null; }
     var a = $id("mBody").querySelector(".hx-qd-anh"), k = $id("mBody").querySelector("[data-khung]"); if (!a) return;
     if (a.closest(".hx-qd-luot,.hx-tb-luoi")) { a.style.height = ""; a.classList.remove("khoa"); var im = a.querySelector("img"); if (im && !im.complete) im.addEventListener("load", lapCotPhai, { once: true }); return; }   // 16/10 (8) Theo máy: ảnh camera NGANG → khối vừa khít ảnh, không dải xám; mục người sát dưới
-    var dat = function () { var rk = k && !k.hidden ? k.getBoundingClientRect() : null, ra = a.getBoundingClientRect();
+    var dat = function () { var rk = k && !k.hidden && k.querySelector("video,img") ? k.getBoundingClientRect() : null, ra = a.getBoundingClientRect();
       a.style.height = rk && rk.height > 40 && ra.left >= rk.right - 1 ? Math.round(rk.height) + "px" : ""; a.classList.toggle("khoa", !!a.style.height); lapCotPhai(); };
     dat(); if (k && window.ResizeObserver) { M0._roAnh = new ResizeObserver(dat); M0._roAnh.observe(k); M0._roAnh.observe(a.parentNode); } }
   /* 17/10 BỐ CỤC THANH BÊN theo khung (user «rã tất cả thành phần/khung ở thanh bên phải để t tự di chuyển ở bản QC»):
@@ -1749,6 +1751,13 @@
     /* tình trạng chỉ hiện khi CHƯA đủ / cần chú ý — "Đủ bằng chứng để quyết" trùng với nút Lưu đang bật nên bỏ */
     var tt = bc.vs && (bc.vs.bui || bc.vs.camSo || bc.vs.cam) ? "Kho bụi / camera giờ báo cáo — đã nhờ anh Tâm kiểm tra thực tế, xem rồi quyết" : co ? ""
       : bc.chupLui ? "Chưa biết đồ vật xuất hiện lúc nào — chọn khung sớm nhất đã thấy đồ vật trên Dải 72 giờ" : "Chưa có bằng chứng camera — máy đang tìm";
+    /* 29/10 user (14394419 lỗi vệ sinh «vị trí dành cho clip trống rỗng»): phiếu vệ sinh tính đủ bằng chứng ⇒ tt rỗng, khung ẩn mà ô vẫn chừa chỗ trắng.
+       Không có nguồn camera nào → nói lý do NGAY TRONG ô clip (dòng tình trạng không nhắc lại).
+       Khu có camera gán = _kenh-luc-chup (A1/A2) + KENH_THEM tim-bang-chung-b1 (A9/A10 «Tong Quan PO 1») — đổi bên đó thì sửa danh sách này */
+    var khuVT = (/^F0-(A\d+)-/.exec((LS && LS.bin) || p.viTri || "") || [])[1], trongCam = nguon.length ? ""
+      : khuVT && ["A1", "A2", "A9", "A10"].indexOf(khuVT) < 0 ? "Khu " + khuVT + " chưa có camera gán — máy không cắt clip, đối chiếu bằng Ảnh ghi nhận"
+      : tt || (bc.veSinh ? "Chưa có clip camera — lỗi vệ sinh hằng ngày máy đã xử theo luật người phụ trách, không cần clip để quyết" : "Chưa có bằng chứng camera — máy đang tìm");
+    if (trongCam) tt = "";
     var nvp = String(p.ngayVP || "");   // 13/10 user: mã ô dòng trên · ngày giờ dòng dưới
     var nvpChu = nvp.length >= 16 ? nvp.slice(8, 10) + "/" + nvp.slice(5, 7) + "/" + nvp.slice(0, 4) + " " + nvp.slice(11, 16) : nvp, viTriChu = (LS && LS.bin) || p.viTri || "";
     /* 20/10 user: dòng «SKU / Mã SP» dưới Vị trí — tách từ Mô tả «Mã SP quét: <mã vạch> → SKU <sku>» / «Mã SP quét: <sku>»; dòng đó bỏ khỏi Ghi chú (không lặp) */
@@ -1841,8 +1850,9 @@
       v.onclick = function () { if (v.paused) v.play().catch(function () {}); else v.pause(); };
     }
     function xem(i) {
-      var n = nguon[i], k = $id("qdKhung"); dangXem = null; k.hidden = false; var th0 = $id("qdTlHang"); if (th0) th0.hidden = true; var pd0 = $id("qdPd"); if (pd0) pd0.remove();
-      if (!n) { k.innerHTML = ""; k.hidden = true; khoaAnhGN(); return; }   // không có hình camera: ẩn khung — dòng tình trạng ở cột Quyết định đã nói (không lặp)
+      var n = nguon[i], k = $id("qdKhung"); dangXem = null; k.hidden = false; k.classList.remove("trong"); var th0 = $id("qdTlHang"); if (th0) th0.hidden = true; var pd0 = $id("qdPd"); if (pd0) pd0.remove();
+      /* không có hình camera: lý do nằm trong ô clip (29/10), dòng tình trạng không lặp */
+      if (!n) { k.innerHTML = trongCam ? '<div class="hx-qd-tt">' + e_(trongCam) + '</div>' : ""; k.hidden = !trongCam; k.classList.toggle("trong", !!trongCam); khoaAnhGN(); return; }
       $id("mBody").querySelectorAll(".hx-qd-nguon [data-ng]").forEach(function (b) { b.classList.toggle("on", Number(b.dataset.ng) === i); });
       $id("mBody").querySelectorAll(".hx-qd-nguon [data-vlmay]").forEach(function (b) { b.classList.toggle("on", Number(b.dataset.vlmay) === i); });   // nút «Ảnh ghi nhận» là bật/tắt riêng — không đụng
       if (n.video) {   /* 05/10 user: "nên chạy dạng phụ đề bên dưới clip, chứ xem k hiểu đang xem gì, bạn xác minh bằng cách nhận diện gì" */
@@ -1927,7 +1937,7 @@
       g.disabled = true; goi("/api/tac-dong-vat-ly", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: p.id, at: pr[0], ma: pr[1], xoa: true }) }).then(napLai).catch(function () { g.disabled = false; }); }; });
     xem(bc.truy ? 0 : (!co && bc.chupLui ? nguon.findIndex(function (n) { return n.k === "lui"; }) : 0));
     /* phiếu không có hình camera: ảnh ghi nhận hiện sẵn (nút Ảnh ghi nhận đang bật) */
-    if ($id("qdKhung").hidden && nutA && anhTp && anhTp.classList.contains("an-dt")) nutA.click();
+    if (!nguon.length && nutA && anhTp && anhTp.classList.contains("an-dt")) nutA.click();
     if (typeof enhanceSelect === "function") enhanceSelect($id("qdSel"));
     if (!co) { $id("qdLuu").disabled = true; $id("qdLuu").textContent = "Chưa đủ bằng chứng để quyết"; }
     $id("qdLuu").onclick = function () {
