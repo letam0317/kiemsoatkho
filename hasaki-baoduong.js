@@ -503,9 +503,9 @@
     };
     /* 28/10 user: «nhìn vào là biết mục nào chủ, mục nào con» + ẩn/hiện có mũi tên (khuôn mũi tên › xoay của thư viện) — cả web lẫn điện thoại.
        Mục chủ = hàng nền xám, chữ đậm, mũi tên, số vị trí; đang gập thì ô ngày = tổng các mục con. Mục con thụt lề + vạch nối bên trái.
-       Mặc định: web mở, điện thoại gập; bấm rồi thì nhớ theo hạng mục. */
+       29/10 user «các mục con mặc định ẩn — chỉ khi chọn mục cha hoặc ô ngang hàng mới hiện» ⇒ MỌI màn mặc định GẬP; bấm hàng mục cha (tên hoặc ô ngày) = mở/gập, nhớ theo hạng mục. */
     thuTuHm.forEach(function (hm) {
-      var mo = S.moNhom[hm] == null ? !dt : !!S.moNhom[hm];
+      var mo = !!S.moNhom[hm];
       hang += '<tr class="gd' + (mo ? " mo" : "") + '" data-hm="' + esc(hm) + '" aria-expanded="' + mo + '"><td class="vt"><div class="bd-gdv"><span class="bd-mui">›</span><span class="bd-ten">' + o(hm) +
           '</span><span class="bd-sl" title="số vị trí">' + nhom[hm].length + '</span></div></td><td class="nay">' + (mo ? "" : oGop(nhom[hm], homNay)) + "</td>" +
         ngay.map(function (d) { return '<td class="' + lopCot(d).trim() + '">' + (mo ? "" : oGop(nhom[hm], d)) + "</td>"; }).join("") + "</tr>";
@@ -553,13 +553,14 @@
     var xNoi = function (e) { return e.getBoundingClientRect().left - vc.getBoundingClientRect().left + vc.scrollLeft; };
     var tren = function () { return goc.offsetWidth + nay.offsetWidth + 3 * sp; };   // phần ghim bên trái
     var veMai = function () { return ranh ? xNoi(ranh) - tren() : vc.scrollWidth; };
-    vc.scrollLeft = S.cuonX != null ? S.cuonX : veMai();
+    /* nhớ độ LỆCH so với «ngày mai» chứ không nhớ điểm ảnh: mở/gập mục cha làm cột tên rộng/hẹp ⇒ điểm ảnh cũ lệch ngày (29/10) */
+    var mai0 = veMai(); vc.scrollLeft = mai0 + (S.cuonX || 0);
     var T = $id("bdThuoc"); if (!T) return;
     var ray = T.querySelector(".bd-thuoc-ray"), kh = T.querySelector(".bd-thuoc-khung");
     var x0 = cot1 ? xNoi(cot1) - sp : tren(), dai = function () { return Math.max(1, vc.scrollWidth - x0); };
     var capNhat = function () { var d = dai(), nhin = Math.max(0, vc.clientWidth - tren());
       kh.style.left = (100 * vc.scrollLeft / d).toFixed(2) + "%"; kh.style.width = Math.min(100, 100 * nhin / d).toFixed(2) + "%"; };
-    var cho = 0; vc.addEventListener("scroll", function () { S.cuonX = vc.scrollLeft; if (!cho) cho = requestAnimationFrame(function () { cho = 0; capNhat(); }); }, { passive: true });
+    var cho = 0; vc.addEventListener("scroll", function () { S.cuonX = vc.scrollLeft - mai0; if (!cho) cho = requestAnimationFrame(function () { cho = 0; capNhat(); }); }, { passive: true });
     var toi = function (e) { var r = ray.getBoundingClientRect(), f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); vc.scrollLeft = f * dai() - (vc.clientWidth - tren()) / 2; };
     ray.addEventListener("pointerdown", function (e) { ray.setPointerCapture(e.pointerId); ray.classList.add("keo"); toi(e); });
     ray.addEventListener("pointermove", function (e) { if (ray.hasPointerCapture(e.pointerId)) toi(e); });
