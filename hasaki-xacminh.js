@@ -1184,12 +1184,21 @@
     if (g.ketLuan === "nghi-ngo" || (g.nv || []).length) return "chon";   // máy đã tra, còn nghi ngờ → bạn quyết
     return "khong";
   }
+  /* 30/10 phiếu đã qua B1 chỉ hiện khi tìm — ghi rõ đang ở bước nào */
+  function daQuaB1(p) { return p.buoc && p.buoc !== "B1" ? '<div class="muted" style="font-size:12px">Đang ở ' + e_(p.buoc) + '</div>' : ""; }
   function veTreo() {
     var demM = {}, THU = ["chac", "vua", "chon", "nhan", "tam", "cam", "tudong", "tra", "soi", "quyet", "khong", "xong"];
     var pB1 = D.phieu.filter(function (p) { return p.buoc === "B1"; });   // 23/10: phiếu đã qua B1 không còn việc xác minh → không hiện, bỏ lọc «Đang ở bước»
     pB1.forEach(function (p) { var m = mucMay(p); demM[m] = (demM[m] || 0) + 1; });
-    var ds = pB1.filter(function (p) { return (!LOC.treo || (p.treoGio || 0) > 48) && (!LOC.mucMay || (LOC.mucMay === "gc" ? !!gcCua(p.id) : mucMay(p) === LOC.mucMay)) &&
-      (!TIM || (p.code + " " + p.viTri + " " + p.loi + " " + p.nguoiBuoc + " " + p.nv.map(function (v) { return v.ten + " " + v.ma; }).join(" ")).toLowerCase().indexOf(TIM.toLowerCase()) >= 0); })
+    /* 30/10 user «ô tìm ở Theo tác vụ không tìm được như ô Tìm ở Vi phạm (vị trí / mã / tên task…)»: cùng luật — gộp mọi trường của phiếu,
+       dán link / gõ id phiếu hoặc id BƯỚC con (đổi về phiếu cha qua Vi phạm); đang tìm thì xét CẢ phiếu đã qua B1 (dòng ghi «Đang ở <bước>») */
+    var tim = String(TIM || "").trim().toLowerCase().replace(/\s+/g, " ");
+    var idTim = (tim.match(/task_id=(\d{5,})/) || [])[1] || (/^\d{7,9}$/.test(tim) ? tim : "");
+    if (idTim && typeof window.vpIdChaTask === "function") idTim = window.vpIdChaTask(idTim) || idTim;
+    var khopTim = function (p) { if (!tim) return true; if (idTim) return String(p.id) === idTim; if (/task_id=\d/.test(tim)) return false;
+      return [p.id, p.code, p.link, p.ten, p.viTri, p.lsKho && p.lsKho.bin, p.loi, p.ngayVP, p.buoc, p.tenBuoc, p.nguoiBuoc, p.nguoiGhi, p.ghiChu]
+        .concat((p.nv || []).map(function (v) { return v.ten + " " + v.ma; })).map(function (v) { return v == null ? "" : String(v); }).join(" \u0001 ").toLowerCase().replace(/\s+/g, " ").indexOf(tim) >= 0; };
+    var ds = (tim ? D.phieu : pB1).filter(function (p) { return (!LOC.treo || (p.treoGio || 0) > 48) && (!LOC.mucMay || (LOC.mucMay === "gc" ? !!gcCua(p.id) : mucMay(p) === LOC.mucMay)) && khopTim(p); })
       .sort(function (a, b) { var sx = LOC.sxTreo; if (sx && sx.k) { var v = function (p) { return sx.k === "luc" ? String(p.ngayVP || "") : sx.k === "treo" ? (p.treoGio || 0) : sx.k === "ai" ? (aiPhieu(p) ? 0 : 1) + aiPhieu(p) : (coBC(p) ? 0 : 1); };
         var x = v(a), y = v(b); if (x !== y) return (x > y ? 1 : -1) * sx.d; } return THU.indexOf(mucMay(a)) - THU.indexOf(mucMay(b)) || (b.treoGio || 0) - (a.treoGio || 0); });
     taiGC(veTreo); ds = donGC(ds, function (p) { return p.id; });   // 20/10 phiếu có ghi chú dồn cuối, làm mờ
@@ -1198,11 +1207,11 @@
       { k: "mucMay", lbl: "Máy đã biết tới đâu", v: LOC.mucMay || "", opt: [["", "Tất cả (" + pB1.length + ")"]].concat(THU.filter(function (k) { return demM[k]; }).map(function (k) { return [k, MUC_MAY[k][0] + " (" + demM[k] + ")"]; }))
         .concat((function () { var n = pB1.filter(function (p) { return gcCua(p.id); }).length; return n || LOC.mucMay === "gc" ? [["gc", "Có ghi chú (" + n + ")"]] : []; })()) },
       { k: "treo", lbl: "Thời gian treo", v: LOC.treo, opt: [["", "Tất cả"], ["48", "Quá 48 giờ"]] },
-      { k: "tim", lbl: "Tìm (vị trí / tên NV)", input: 1, v: TIM, ph: "F0-A1 / Nguyễn…" }]) +
+      { k: "tim", lbl: "Tìm (vị trí / mã / tên task…)", input: 1, v: TIM, ph: "[5S] A1-502-03 / HSK-... / id hoặc link task / tên NV" }]) +
       '<div class="table-wrap"><table class="hx-chung" style="table-layout:fixed;width:100%;min-width:0"><thead><tr>' + cotSx(LOC.sxTreo) + '</tr></thead><tbody>' +
       (dsHien.map(function (p) { var b = bcPhieu(p), ai = aiPhieu(p), mm = MUC_MAY[mucMay(p)] || ["", ""];
         return '<tr data-p="' + e_(p.id) + '"' + (gcCua(p.id) ? ' class="hx-gc-mo"' : "") + '>' +
-          '<td><b class="hx-vt">' + e_((p.lsKho && p.lsKho.bin) || p.viTri || "—") + '</b><div class="muted" style="font-size:12px">' + e_(String(p.ngayVP || "").slice(8, 10) + "/" + String(p.ngayVP || "").slice(5, 7) + " " + String(p.ngayVP || "").slice(11, 16)) + (b.kenh ? " · " + e_(b.kenh) : "") + '</div>' + coGC(p.id) + '</td>' +
+          '<td><b class="hx-vt">' + e_((p.lsKho && p.lsKho.bin) || p.viTri || "—") + '</b><div class="muted" style="font-size:12px">' + e_(String(p.ngayVP || "").slice(8, 10) + "/" + String(p.ngayVP || "").slice(5, 7) + " " + String(p.ngayVP || "").slice(11, 16)) + (b.kenh ? " · " + e_(b.kenh) : "") + '</div>' + daQuaB1(p) + coGC(p.id) + '</td>' +
           '<td style="white-space:normal" title="' + e_(p.loi) + '"><div class="hx-l2">' + e_(p.loi) + '</div></td>' +
           '<td>' + oBC(b, p.id) + '</td>' +
           '<td style="white-space:normal">' + (ai ? '<b>' + e_(ai) + '</b>' : '<span class="muted">Chưa có ứng viên</span>') + '<div style="margin-top:3px"><span class="hx-tag ' + mm[1] + '"' + (p.goiY ? ' title="Luật ' + e_(p.goiY.luat) + '"' : "") + '>' + e_(String(mm[0]).replace(/^Máy gợi ý · /, "")) + '</span></div>' + taoBoi(p) + '</td>' +
@@ -2270,7 +2279,8 @@
     taiNen: function () { if (D) return Promise.resolve(true); if (!PHIEN) return Promise.resolve(false);   // chưa có phiên: KHÔNG đổi phiên ở nền (nhánh hỏng tự chuyển tab Máy trạm)
       if (tai._nen) return tai._nen;
       tai._nen = Promise.resolve(tai(true)).then(function () { tai._nen = null; return !!D; }, function () { tai._nen = null; return false; }); return tai._nen; },
-    idTacVu: function () { return D ? D.phieu.filter(function (p) { return p.buoc === "B1"; }).map(function (p) { return String(p.id); }) : []; },
+    /* 30/10 user «không thấy nút Theo tác vụ khi tìm task 14081936» (đã qua B1, đang B3.2 — vẫn có clip/lượt kho ở Xác minh): mọi phiếu Xác minh có dữ liệu */
+    idTacVu: function () { return D ? D.phieu.map(function (p) { return String(p.id); }) : []; },
     /* 25/10 (2) phiếu do Theo máy lập (lượt camera → máy ghi phiếu): { task_id: id lượt } */
     idTheoMay: function () { var m = {}; (D ? D.luot : []).forEach(function (l) { var t = l.may && (l.may.phieu || l.may.taskId); if (t) m[String(t)] = l.id; }); return m; },
     /* mở thanh bên ở NGAY tab đang đứng (Vi phạm gọi — user «đóng thanh bên thì vẫn về giao diện Vi phạm»): CSS Xác minh nạp trước */
