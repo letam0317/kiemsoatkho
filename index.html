@@ -2805,8 +2805,8 @@ function freqCell(gi,r){
   const ds=freqDong(gi,r);
   if(!ds.length) return '<span class="row-none">—</span>';
   const nn=nnCo();
-  return '<div class="freq-ds'+(nn?' co-nn':'')+'">'+ds.slice(0,4).map(x=>'<span class="freq-c"><b>'+esc(tenNgan(x.ten))+'</b>:</span><span class="freq-c freq-lan">lần '+x.lan+'/tháng'+(nn?',':'')+'</span>'+(nn?nnNhan(r,x.c):'')).join('')
-    +(ds.length>4?'<span class="muted freq-them">+'+(ds.length-4)+' NV khác</span>':'')+'</div>';
+  /* 30/10 user «lượt nhắc nhở NV bị ẩn bớt 4 NV» (phiếu 8 NV): hiện ĐỦ mọi NV, bỏ «+N NV khác» */
+  return '<div class="freq-ds'+(nn?' co-nn':'')+'">'+ds.map(x=>'<span class="freq-c"><b>'+esc(tenNgan(x.ten))+'</b>:</span><span class="freq-c freq-lan">lần '+x.lan+'/tháng'+(nn?',':'')+'</span>'+(nn?nnNhan(r,x.c):'')).join('')+'</div>';
 }
 /* [−2% KPI] đỏ đậm ở đầu ô Lỗi: theo lần của từng NV trong tháng — các NV khác mức thì ghi «−2% / −5%» */
 /* 29/10 (6) user: MỌI hạng mục lỗi đều có −%KPI ở đầu — chưa xác minh ra NV / phiếu huỷ thì lấy mức LẦN 1 của hạng mục */
@@ -3967,11 +3967,13 @@ document.addEventListener('tk-doi', function(){ const m=$('modal');
   if(m && m.classList.contains('show') && m.classList.contains('hx-ben') && !xmDuocXem()) dongModal();
   xmTvCapNhat(); });
 function idTaskVP(r){ return (String(r[iLink]||'').match(/task_id=(\d+)/)||[])[1]||''; }
+/* 30/10 Xác minh › Theo tác vụ tìm theo id BƯỚC con (vd link B1.1) như ô Tìm Vi phạm: đổi id bước → id phiếu cha */
+window.vpIdChaTask=function(id){ const r=(ROWS||[]).find(r=>idTaskVP(r)===id || r.some(v=>String(v==null?'':v).includes('task_id='+id))); return r?idTaskVP(r):''; };
 /* chỗ của phiếu bên Xác minh: 'tv' Theo tác vụ (còn ở B1) · 'tm' Theo máy (lượt camera đã lập phiếu) · '' chưa có */
 function xmCho(r){ const id=idTaskVP(r); return !id ? '' : XM_TV.has(id) ? 'tv' : XM_TM[id] ? 'tm' : ''; }
 function xmTvChip(r){ const id=idTaskVP(r), c=xmCho(r); if(!c || !xmCoMuc(c==='tv' ? 'treo' : 'cam')) return '';   // nút gọn cùng khuôn «Mở task ↗» (hsk-nut phu nho)
   return c==='tv' ? `<button type="button" class="hsk-nut phu nho xm-tv" data-xmtv="${esc(id)}"
-    title="Phiếu này đang chờ xác minh ở Theo tác vụ — bấm để mở thanh bên">Theo tác vụ ›</button>`
+    title="Phiếu này có ở Theo tác vụ (camera, lượt kho, bằng chứng) — bấm để mở thanh bên">Theo tác vụ ›</button>`
     : `<button type="button" class="hsk-nut phu nho xm-tv" data-xmtm="${esc(XM_TM[id])}"
     title="Phiếu này do lượt camera ở Theo máy lập — bấm để mở thanh bên">Theo máy ›</button>`; }
 /* mở thanh bên Xác minh NGAY trên Vi phạm; dòng Vi phạm được tô như đang xem (hskThanhBen bỏ tô khi đóng) */
