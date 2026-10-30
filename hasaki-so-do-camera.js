@@ -354,8 +354,19 @@
       .then(function (x) { return new Blob(x.phan, { type: loai }); });
   }
   function het428(r) { if (r.status === 428) setTimeout(function () { khoaLai("Đã khoá lại CCTV (lâu không dùng) — nhập lại mật khẩu."); }, 0); }
+  /* 30/10 user «laptop tắt thì CCTV không vô được (báo không kết nối được đường hầm)»: trang mở lúc laptop bật ⇒ địa chỉ còn trỏ đường hầm laptop
+     đã chết (Failed to fetch) hoặc phiên của laptop bị máy dự phòng trả 401 → 1 lần dò lại máy chủ + đổi phiên (hasaki-xacminh noiLai → index.html
+     hxNoiLai) rồi gọi lại; chỉ GET mới gọi lại (lệnh ghi không gửi 2 lần). */
   function goi(p, o) {
-    o = o || {}; var h = tieuDe(); if (o.body) h["Content-Type"] = "application/json";
+    o = o || {}; var get = !o.method || o.method === "GET";
+    return goi1(p, o).catch(function (e) {
+      var mang = e && (e.name === "TypeError" || e.name === "AbortError" || e.name === "TimeoutError"), het = e && e.code === 401;
+      if (!(mang || het) || !get || !CTX.noiLai) throw e;
+      return CTX.noiLai().then(function (ok) { if (!ok) throw e; return goi1(p, o); }, function () { throw e; });
+    });
+  }
+  function goi1(p, o) {
+    var h = tieuDe(); if (o.body) h["Content-Type"] = "application/json";
     return fetch(CTX.API() + p, { method: o.method || "GET", headers: h, body: o.body ? JSON.stringify(o.body) : undefined, signal: AbortSignal.timeout(o.ms || 45000) })
       .then(function (r) { if (!o.khongKhoa) het428(r); return r.text().then(function (t) { var j = null; if (t && t.charAt(0) === "{") try { j = JSON.parse(t); } catch (e) {}
         if (!r.ok || !j) { var e = new Error((j && j.loi) || ("Máy chủ trả " + r.status)); e.code = r.status; e.j = j; throw e; } return j; }); });
