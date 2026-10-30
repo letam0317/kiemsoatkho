@@ -461,7 +461,31 @@
   }
 
   /* ---------- tải dữ liệu ---------- */
+  /* 30/10 user «laptop tắt thì CCTV không vô được (báo không kết nối được đường hầm)»: trang mở lúc laptop bật, laptop tắt ⇒ API vẫn là đường hầm
+     laptop đã chết (Failed to fetch), hoặc sang máy dự phòng mà phiên là của laptop (401). Trước: báo lỗi / bắt đăng nhập lại. Nay: 1 lần dò lại
+     máy chủ + đổi phiên đúng máy (index.html hxNoiLai) rồi gọi lại; GET mới gọi lại (lệnh ghi không gửi 2 lần). */
+  var het401 = function () { datPhien(""); D = null; veDangNhap("Phiên đăng nhập đã hết — đăng nhập lại."); var x = new Error("Phiên đăng nhập đã hết"); x.dangNhap = 1; return x; };
+  var loiMang = function (e) { return !!e && (e.name === "TypeError" || e.name === "AbortError" || e.name === "TimeoutError"); };
+  function noiLai() {
+    if (typeof window.hxNoiLai !== "function") return Promise.resolve(false);
+    return window.hxNoiLai().then(function (co) { API = docApi(); try { PHIEN = localStorage.getItem("hx-phien") || ""; } catch (e) {} return !!(co && PHIEN); });
+  }
+  window.addEventListener("hx-phien", function () { API = docApi(); });
   function goi(path, opt) {
+    var get = !opt || !opt.method || opt.method === "GET";
+    return goi1(path, opt).catch(function (e) {
+      var la401 = e && e.ma401;
+      if (!(la401 || loiMang(e))) throw e;
+      if (la401 && !(window.TK && window.TK.phien)) throw het401();   // phiên đăng nhập riêng cũ của laptop: không đổi phiên tự động được
+      /* gọi chồng nhau (du-lieu + quy-dinh) dùng chung 1 lượt dò lại (hxNoiLai gộp); mỗi lệnh chỉ gọi lại 1 lần — không vòng lặp */
+      return noiLai().then(function (ok) {
+        if (!ok) { if (la401) throw het401(); throw e; }
+        if (!get) throw e;
+        return goi1(path, opt).catch(function (e2) { if (e2 && e2.ma401) throw het401(); throw e2; });
+      }, function () { if (la401) throw het401(); throw e; });
+    });
+  }
+  function goi1(path, opt) {
     opt = Object.assign({}, opt || {});
     /* 22/10 bản dự phòng MÃ HOÁ: GET dữ liệu = bản chụp laptop đã mã hoá (giải ở sw.js); lệnh ghi vẫn gửi máy chủ (trả 503 «chỉ xem» như cũ) */
     if (maHoa_() && (!opt.method || opt.method === "GET")) return window.hxGuongMa.api(path).then(function (j) {
@@ -470,12 +494,12 @@
       if (l && l.apiMoi && goi._lop !== l.luc && typeof toast === "function") { goi._lop = l.luc; var t = new Date(l.luc);
         toast("Dữ liệu máy trạm cập nhật lúc " + ("0" + t.getHours()).slice(-2) + ":" + ("0" + t.getMinutes()).slice(-2) + " " + ("0" + t.getDate()).slice(-2) + "/" + ("0" + (t.getMonth() + 1)).slice(-2)); }
       return j; }).catch(function (e) {
-      if (e && e.ma === 401 && e.canDangNhap) { datPhien(""); D = null; veDangNhap("Phiên đăng nhập đã hết — đăng nhập lại."); var x = new Error(e.message); x.dangNhap = 1; throw x; }
+      if (e && e.ma === 401 && e.canDangNhap) { var x = new Error(e.message); x.ma401 = 1; throw x; }
       throw e; });
     var ctl = new AbortController(); var h = setTimeout(function () { ctl.abort(); }, opt.tg || 8000); delete opt.tg;   // tg: trần riêng (gọi qua Apps Script = 45 s, bộ chuẩn mục 3)
     opt.headers = Object.assign({}, opt.headers || {}, PHIEN ? { "x-hx-phien": PHIEN } : {});
     return fetch(API + path, Object.assign({ signal: ctl.signal }, opt)).then(function (r) { clearTimeout(h); return r.json().then(function (j) {
-      if (r.status === 401 && j.canDangNhap) { datPhien(""); D = null; veDangNhap("Phiên đăng nhập đã hết — đăng nhập lại."); var e = new Error(j.loi); e.dangNhap = 1; throw e; }
+      if (r.status === 401 && j.canDangNhap) { var e = new Error(j.loi); e.ma401 = 1; throw e; }
       if (!r.ok) throw new Error(j.loi || ("HTTP " + r.status)); return j; }); });
   }
   /* 10/10 QC: máy bận → gói 420 KB quá 8 s → báo nhầm «chỉ mở được trên máy quản lý». Thử lại 2 lần (3 s, 6 s) trước khi báo. */
@@ -555,10 +579,10 @@
   function veSoDo() {
     var b = $id("hxBody"); if (!b) return; b.__sdc = 1;
     if (!laChuSoDo()) { SUB = "treo"; luu(); return ve(); }
-    var ctx = { API: function () { return API; }, phien: function () { return PHIEN; }, moThanhBen: moThanhBen };
+    var ctx = { API: function () { return API; }, phien: function () { return PHIEN; }, moThanhBen: moThanhBen, noiLai: noiLai };   // 30/10 noiLai: CCTV dò lại máy chủ khi đường hầm laptop đã chết
     if (window.HXSODO) return window.HXSODO.ve(b, ctx);
     b.innerHTML = '<div class="panel"><div class="hx-trong">Đang tải sơ đồ camera…</div></div>';
-    _sdcNap = _sdcNap || new Promise(function (ok, loi) { var s = document.createElement("script"); s.src = "hasaki-so-do-camera.js?v=20261028a"; s.onload = ok; s.onerror = function () { _sdcNap = null; loi(); }; document.head.appendChild(s); });
+    _sdcNap = _sdcNap || new Promise(function (ok, loi) { var s = document.createElement("script"); s.src = "hasaki-so-do-camera.js?v=20261030a"; s.onload = ok; s.onerror = function () { _sdcNap = null; loi(); }; document.head.appendChild(s); });
     _sdcNap.then(function () { if ($id("hxBody") === b) window.HXSODO.ve(b, ctx); }).catch(function () {
       b.innerHTML = '<div class="panel"><div class="hx-trong">Không tải được mô-đun sơ đồ camera (mất mạng?). <button type="button" class="hx-nut nho" id="sdcThuLai">Thử lại</button></div></div>';
       var t = $id("sdcThuLai"); if (t) t.onclick = veSoDo; });
@@ -1429,7 +1453,7 @@
         '<div class="cl-kv">Ghi nhận ngày: <b>' + e_(ngayGioVN(p.ngayVP)) + '</b>' + (tgTao ? ' <span class="cl-sep">|</span> Tạo: <b>' + e_(ngayGioNgan(tgTao)) + '</b>' : "") + '</div>' +
         '<div class="cl-kv">Máy gợi ý: ' + (ai ? '<b>' + e_(ai) + '</b>' : '<span class="vp-chua-xm">chưa có ứng viên</span>') + '</div>' +
         '<div class="cl-kv">Bằng chứng: ' + chuBC + '</div>' +
-        (p.mayTao ? '<div class="cl-kv">Phiếu do: <b>' + e_(p.mayTao) + '</b>' + (p.nguoiGui ? ' <span class="cl-sep">|</span> Người gửi: <b>' + e_(p.nguoiGui) + '</b>' : "") + '</div>' : "") +
+        (p.mayTao ? '<div class="cl-kv">Phiếu do: <b>' + e_(p.mayTao) + '</b>' + (ngGui_(p) ? ' <span class="cl-sep">|</span> Người gửi: <b>' + e_(ngGui_(p)) + '</b>' : "") + '</div>' : "") +
         ((daXong || daQD) ? '<div class="cl-kv">Đã quyết: <b>' + e_(daXong ? String(x.daXuLy).slice(0, 60) : q.qd) + '</b></div>' : "") +
       '</div></div>';
   }
@@ -1986,7 +2010,9 @@
 
   /* 12/10 user: "mọi task đều để tên t là người tạo — do bộ cò tạo từ tài khoản của t; cải tiến để t biết task/hình ảnh đó do ai tạo
      (dữ liệu này chỉ t coi được)". Nguồn: sổ tác giả (so-tac-gia.mjs) trên máy này, qua máy chủ 8591 — trang công khai không có. */
-  function taoBoi(p) { return p.mayTao ? '<div class="muted" style="font-size:12px;margin-top:3px">Phiếu do <b>' + e_(p.mayTao) + '</b> tạo' + (p.nguoiGui ? ' · người gửi <b>' + e_(p.nguoiGui) + '</b>' : "") + '</div>' : ""; }
+  /* 30/10 laptop tắt: bản chụp dự phòng đã gỡ người gửi (khoá giải mã chung) → index.html ngTheoPhieu (Apps Script vpRieng, chỉ tài khoản có quyền) */
+  function ngGui_(p) { return p.nguoiGui || (typeof window.ngTheoPhieu === "function" ? window.ngTheoPhieu(p.id, p.code) : ""); }
+  function taoBoi(p) { return p.mayTao ? '<div class="muted" style="font-size:12px;margin-top:3px">Phiếu do <b>' + e_(p.mayTao) + '</b> tạo' + (ngGui_(p) ? ' · người gửi <b>' + e_(ngGui_(p)) + '</b>' : "") + '</div>' : ""; }
   function tgHomNay() { var hn = new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10); return ((D.tacGia || {}).ds || []).filter(function (x) { return x.t.slice(0, 10) === hn; }).length; }
   var HD_TAG = { "Tạo phiếu": "info", "Dừng phiếu": "bad", "Xoá bình luận": "bad", "Bình luận + tệp": "warn" };
   var NHOM_TG = [];
