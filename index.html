@@ -1629,7 +1629,7 @@ body.side-anim:has(.wrap :is([class*="modal"],[id$="modal"],[id$="Modal"],#light
 <script>window.AD_BI_DANH={"tonkho/kiemke":"kk","tonkho/batthuong":"kk#pane-htonbat"};   /* 15/10 link cũ → mục gộp «Tồn kho chính xác» */ window.AD_TEN='Audit Retail'; window.AD_CHUYEN={ten:'Audit Factory', app:'factory'};</script>   <!-- 13/10 user: Audit Hasaki → Audit Retail + nút sang Factory cuối thanh bên -->
 <script src="tien-ich.js?v=20261020a"></script><!-- 20/10 tiện ích chung: esc/$id/hm/ngayVN — nạp TRƯỚC mọi mô-đun -->
 <script src="hasaki-giaodien-antd.js?v=20261029a"></script>
-<script src="tai-khoan.js?v=20261028a"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
+<script src="tai-khoan.js?v=20261030a"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
 <script src="tat-loc.js?v=20261026a" defer></script>
 <script src="loc-popup.js?v=20261026a" defer></script>
 <!-- 26/10 điện thoại: khối lọc trong pop-up gập sau nút «Bộ lọc» (cùng mẫu nút trang) -->
@@ -1706,9 +1706,25 @@ window.hxDoMayChu = function(){
         if (window.__HX_DU_PHONG && typeof toast === "function") setTimeout(function(){ if (window.TK && window.TK.nguoi) toast(tb, "loi"); }, 600);   // 26/10: phiên vừa hết hạn → chỉ báo «hết hạn», không báo thêm
         return u; }); };
   var p = window.__HX_KHONG_MAY ? ham() : ping("http://127.0.0.1:8591", 1500).catch(function(){ return ham(); });
-  return window.__HX_DO = p.then(function(u){ window.HX_API = u; window.__HX_MAY_CHU = 1; if (window.hxGuongMa) window.hxGuongMa.capNhat(); document.body.classList.remove("hx-an"); if (typeof homeVeLai === "function") setTimeout(homeVeLai, 0); return true; },   /* 20/10 dò máy chủ/đường hầm xong → vẽ lại Tổng quan (thẻ Xác minh) */
+  return window.__HX_DO = p.then(function(u){ window.HX_API = u; window.__HX_MAY_CHU = 1; if (window.hxGuongMa) window.hxGuongMa.capNhat(); document.body.classList.remove("hx-an"); if (typeof homeVeLai === "function") setTimeout(homeVeLai, 0);   /* 20/10 dò máy chủ/đường hầm xong → vẽ lại Tổng quan (thẻ Xác minh) */
+      /* 30/10 user «laptop tắt thì CCTV không vô được»: phiên Xác minh (hx-phien) do TỪNG máy chủ 8591 cấp, lưu riêng ở máy đó — phiên laptop
+         đưa sang máy dự phòng BANGCHUYEN-2 bị 401 (đo 30/10). Máy chủ đổi (laptop ⇄ dự phòng) mà có phiên tài khoản → đổi phiên NGAY ở máy mới. */
+      var phApi = ""; try { phApi = localStorage.getItem("hx-phien-api") || ""; } catch(e){}
+      if (phApi !== u && window.TK && window.TK.phien && typeof window.tkDoiPhienXmNgay === "function")
+        return window.tkDoiPhienXmNgay().then(function(){ return true; }, function(){ return true; });
+      return true; },
     function(){ window.__HX_DO = null;   /* 22/10: dò hỏng KHÔNG nhớ — lần sau (đăng nhập xong, laptop bật lại) dò lại được */
       var ph = ""; try { ph = localStorage.getItem("hx-phien") || ""; } catch(e){} if (ph && !window.__HX_KHONG_MAY) window.__HX_CHAN = 1; return false; });
+};
+/* 30/10: trang mở sẵn lúc laptop bật, rồi laptop tắt ⇒ HX_API vẫn trỏ đường hầm laptop đã chết (Failed to fetch / 530). Mô-đun Xác minh / CCTV
+   gọi hàm này khi mất mạng tới máy chủ hoặc phiên bị 401: quên kết quả dò cũ, dò lại (laptop → máy dự phòng), đổi phiên đúng máy mới.
+   Gộp các lượt gọi chồng nhau thành 1. → Promise<bool> */
+window.hxNoiLai = function(){
+  if (window.hxNoiLai._p) return window.hxNoiLai._p;
+  window.__HX_DO = null; window.__HX_MAY_CHU = 0;
+  try { localStorage.removeItem("hx-phien-api"); } catch(e){}   // ép đổi phiên cả khi dò ra đúng máy cũ (phiên ở đó đã hết)
+  return window.hxNoiLai._p = window.hxDoMayChu().then(function(co){ window.hxNoiLai._p = null; return co; },
+    function(){ window.hxNoiLai._p = null; return false; });
 };</script>
 <script src="guong-ma-trang.js?v=20261027a"></script>   <!-- 22/10 bản dự phòng Xác minh MÃ HOÁ: window.hxGuongMa (sw.js + đường lùi blob khi không có service worker — iPhone) -->
 <script>/* 14/10: pop-up không che thanh bên — --pop-trai = mép phải thật của #sideNav (máy tính); điện thoại = 0 (ngăn kéo nổi trên pop-up) */
@@ -2807,12 +2823,25 @@ function loiKpi(gi,r){ const k=kpiChu(gi,r); return k ? '<b class="loi-kpi">['+e
    «Lịch sử nhắc nhở» (r.vp.nn, mục Quyền xem); máy chủ gác lần nữa. Nhắc nhở = QLTT bấm Fail ở bước ghi nhận với lý do «nhắc nhở». ===== */
 let NN=null, _nnHoi=0;
 function nnDuocXem(){ return typeof window.tkCoNhacNho==='function' && window.tkCoNhacNho(); }
+/* 30/10 user «laptop tắt, tamlc không xem được số ngày làm việc, nút Bởi và số lần nhắc nhở»: trước CHỈ hỏi 8591 laptop (bản dự phòng không có sổ).
+   Nay: laptop bật → 8591 như cũ; laptop tắt / chưa nối / 8591 hỏng → Apps Script vpRieng (gác phiên + quyền tại đó; canh-b11 trên laptop đẩy sổ lên mỗi lượt).
+   KHÔNG đi bản chụp mã hoá chung — khoá đó cấp cho mọi tài khoản Xác minh. Hai lời gọi nnNap/ngNap dùng chung 1 lượt hỏi. */
+let _vpHoi=null;
+function vpRiengGas(){
+  if(_vpHoi) return _vpHoi;
+  if(!(window.TK && window.TK.phien) || typeof window.tkGoi!=='function') return Promise.resolve(null);
+  return _vpHoi=window.tkGoi('vpRieng',{phien:window.TK.phien}).catch(()=>null).then(j=>{ setTimeout(()=>{ _vpHoi=null; },2000); return j; });
+}
+function vpQuaLaptop(duong,ma){   // → Promise<json|null>: chỉ khi máy chủ là laptop thật (không phải bản dự phòng)
+  let ph=''; try{ ph=localStorage.getItem('hx-phien')||''; }catch(e){}
+  if(!ph || !window.__HX_MAY_CHU || window.__HX_DU_PHONG || window.__HX_MA_HOA) return Promise.resolve(null);
+  return fetch(window.HX_API+duong,{headers:{'x-hx-phien':ph},signal:AbortSignal.timeout(ma)}).then(r=>r.ok?r.json():null).catch(()=>null);
+}
 function nnNap(){
-  if(NN || _nnHoi || window.__HX_MA_HOA || !window.__HX_MAY_CHU || !nnDuocXem()) return;
-  let ph=''; try{ ph=localStorage.getItem('hx-phien')||''; }catch(e){} if(!ph) return;
+  if(NN || _nnHoi || !nnDuocXem()) return;
   _nnHoi=1;
-  fetch(window.HX_API+'/api/nhac-nho',{headers:{'x-hx-phien':ph},signal:AbortSignal.timeout(15000)})
-    .then(r=>r.ok?r.json():null).then(j=>{ if(j && j.vao){ NN=j; render(); } }).catch(()=>{}).then(()=>{ _nnHoi=0; });
+  vpQuaLaptop('/api/nhac-nho',15000).then(j=>j && j.vao ? j : vpRiengGas().then(g=>g && g.nhacNho))
+    .then(j=>{ if(j && j.vao){ NN=j; render(); } }).catch(()=>{}).then(()=>{ _nnHoi=0; });
 }
 window.addEventListener('hx-du-lieu', nnNap);
 /* 29/10 user «Bởi Anh Tài/Ngọc Thành… — người gửi form ghi nhận; bổ sung ở mục quyền»: 8591 /api/nguoi-gui (sổ người gửi riêng tư + sổ tác giả),
@@ -2820,12 +2849,13 @@ window.addEventListener('hx-du-lieu', nnNap);
 let NG=null, _ngHoi=0;
 function ngDuocXem(){ return typeof window.tkCoNguoiGui==='function' && window.tkCoNguoiGui(); }
 function ngNap(){
-  if(NG || _ngHoi || window.__HX_MA_HOA || !window.__HX_MAY_CHU || !ngDuocXem()) return;
-  let ph=''; try{ ph=localStorage.getItem('hx-phien')||''; }catch(e){} if(!ph) return;
+  if(NG || _ngHoi || !ngDuocXem()) return;
   _ngHoi=1;
-  fetch(window.HX_API+'/api/nguoi-gui',{headers:{'x-hx-phien':ph},signal:AbortSignal.timeout(30000)})
-    .then(r=>r.ok?r.json():null).then(j=>{ if(j && j.theoMa){ NG=j; render(); } }).catch(()=>{}).then(()=>{ _ngHoi=0; });
+  vpQuaLaptop('/api/nguoi-gui',30000).then(j=>j && j.theoMa ? j : vpRiengGas().then(g=>g && g.nguoiGui))
+    .then(j=>{ if(j && j.theoMa){ NG=j; render(); } }).catch(()=>{}).then(()=>{ _ngHoi=0; });
 }
+/* 30/10: Xác minh › Theo tác vụ «người gửi …» — bản chụp dự phòng đã gỡ người gửi (khoá chung) ⇒ lấy từ NG khi tài khoản có quyền */
+window.ngTheoPhieu=function(id,ma){ if(!NG || !ngDuocXem()) return ''; return (ma && NG.theoMa[String(ma).trim()]) || NG.theoId[String(id)] || ''; };
 window.addEventListener('hx-du-lieu', ngNap);
 document.addEventListener('tk-doi', ()=>{ if(NG && !ngDuocXem()){ NG=null; render(); } else ngNap(); });
 /* 29/10 (3) user «sao các mục này không thấy Bởi ai»: 3 phiếu A1 27/10 do NGƯỜI tạo thẳng trên work (created_by ≠ tài khoản cò) — không qua form ⇒ sổ người gửi
@@ -3903,7 +3933,7 @@ let _hxNap=null;
 function napXm(){
   if(!_hxNap){
     _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261029a';
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261030a';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
       document.body.appendChild(s);
     });
@@ -4058,7 +4088,12 @@ function homeRender(){
   /* 13/10: máy không có 8591 (điện thoại) vẫn thấy nhóm Xác minh nhưng CHỈ thẻ Máy trạm (đăng nhập qua GAS) */
   var laChu=function(it){ return !it.chu||!!(window.TK&&TK.nguoi&&TK.nguoi.id===it.chu)||(it.sub==='sodo'&&!!(window.tkCoCctv&&window.tkCoCctv())); };   // 26/10 CCTV theo quyền r.xm.sodo   // 25/10 thẻ riêng 1 tài khoản (Sơ đồ camera → tamlc)
   var nhom=HOME_MUC.map(function(g){ var its=g.items.filter(laChu);
-      if(g.hx&&!window.__HX_MAY_CHU) its=its.filter(function(it){ return it.t!=="xacminh"; });
+      /* 30/10 user «laptop tắt, các mục Xác minh không hiển thị ở Tổng quan»: trước ẩn khi CHƯA dò ra máy chủ (laptop tắt → dò đường hầm cũ 6 s
+         hỏng rồi mới sang máy dự phòng) — cùng lỗi thanh bên đã sửa 26/10. LUẬT: ẩn chỉ theo QUYỀN tài khoản (xmDuocXem + quyền mục con),
+         không theo kết quả dò mạng; bấm vào mà chưa nối được → moHasakiXacMinh báo «Chưa nối được» + Thử lại. */
+      if(g.hx) its=its.filter(function(it){ if(it.t!=="xacminh") return true;
+        if(!window.__HX_MAY_CHU && !(typeof xmDuocXem==="function" && xmDuocXem())) return false;
+        return !it.sub || it.sub==="sodo" || typeof window.tkCo!=="function" || !(window.TK&&window.TK.nguoi) || window.tkCo("r.xm."+it.sub); });
       return { g:g.g, hx:g.hx, mo:g.mo, items:its }; })
     .filter(function(g){ return g.items.length; }).map(function(g){
     /* 20/10 user «chưa đăng nhập không thấy nhóm Xác minh»: khoá theo ĐĂNG NHẬP TÀI KHOẢN (TK.nguoi) — trước đây theo hx-phien/mt-phien còn sót trong máy
