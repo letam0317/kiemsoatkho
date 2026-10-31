@@ -1786,10 +1786,13 @@
     /* 31/10 (2) «Cộng tác viên»: mọi clip của phiếu (đường /bc/ GỐC, không qua u_) — clip chính / lúc chụp / cắt thêm / máy tìm + từng lượt «Ai tác động» */
     var gioClip = function (inf) { var s = inf && inf.batDau; return s ? String(s).replace("T", " ").slice(0, 19) : ""; };
     var ddmmHM = function (s) { s = String(s || ""); return s.length >= 16 ? s.slice(8, 10) + "/" + s.slice(5, 7) + " " + s.slice(11, 16) : s; };
-    var ctvDs = [], ctvNg = function (url, nguonTen, inf) { if (String(url || "").indexOf("/bc/") !== 0) return;
+    /* 31/10 (3) 13774191: clip chính là video đã gắn sẵn trên work (hr-media) → vẫn cho chọn (máy tải về để đính bình luận); clip lúc chụp có riêng thì cũng liệt kê */
+    var laWork = function (u) { return String(u || "").indexOf("https://hr-media.hasaki.vn/") === 0; };
+    var ctvDs = [], ctvNg = function (url, nguonTen, inf) { if (String(url || "").indexOf("/bc/") !== 0 && !laWork(url)) return;
+      if (ctvDs.some(function (c) { return c.url === url; })) return; if (laWork(url)) nguonTen = "Video đã gắn trên phiếu (work)";
       ctvDs.push({ url: url, at: gioClip(inf), ten: "", wms: false, nguon: nguonTen, nhan: nguonTen + (gioClip(inf) ? " · từ " + ddmmHM(gioClip(inf)) : "") }); };
-    ctvNg(bc.clip, bc.truy ? "Clip lúc đồ vật xuất hiện" : "Clip chính (camera giờ kho)", bc.clipInfo);
-    if (!bc.clip) ctvNg(bc.chupClip, "Clip lúc người kiểm chụp", bc.chupInfo);
+    ctvNg(bc.clip, bc.truy ? "Clip lúc đồ vật xuất hiện" : "Clip chính (camera giờ kho)", laWork(bc.clip) ? null : bc.clipInfo);
+    ctvNg(bc.chupClip, "Clip lúc người kiểm chụp", bc.chupInfo);
     ((p.bc && p.bc.clipThem) || []).concat((p.bcChup && p.bcChup.clipThem) || []).forEach(function (z) { ctvNg(z.url, "Cắt thêm · " + z.kenh, bc.clip ? bc.clipInfo : bc.chupInfo); });
     if (p.bc && p.bc.clipTim) ctvNg(p.bc.clipTim.url, p.bc.clipTim.ten, p.bc.clipTim.info);
     (LS ? LS.ds : []).forEach(function (x) { if (String(x.clip || "").indexOf("/bc/") !== 0) return;
