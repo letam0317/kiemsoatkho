@@ -429,9 +429,13 @@
         ".hx-gc-hang{display:flex;gap:10px;align-items:center}.hx-gcp-quy{font-size:12px;line-height:1.45}.hx-gc-dong{font-size:13px;padding:8px 0;border-top:1px solid var(--border)}.hx-gc-dong .nd{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:2px}.hx-gc-dong .xong{margin-top:4px;color:var(--good);font-size:12.5px}" +
         "@media(max-width:560px){.hx-gcp{padding:12px;align-items:flex-end}.hx-gcp .hx-nut.nho,.hx-gcp .hx-gc-nut{min-height:44px}}",
         /* 22/10 (1) Gán người khác: chọn nhiều NV (gõ mail / họ tên / mã) — chip trong ô, menu theo datMenu (xuống, chỉ lật lên khi dưới thiếu chỗ) */
-        ".hx-nvm{display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-height:34px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}" +
+        /* 31/10 (5) user (clip 12.00.30 «khi tick bị nhảy cụm»): thêm chip làm ô xuống dòng → cao lên → cả cột trái nhảy. Nay ô LUÔN 1 dòng cao cố định 34px,
+           chip + ô gõ nằm trong hàng cuộn ngang (.hx-nvm-hang); menu gợi ý đứng ngoài hàng cuộn nên không bị cắt (luật không nhảy ô 29/10). */
+        ".hx-nvm{display:flex;flex-wrap:nowrap;align-items:center;height:34px;padding:0 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}" +
         ".hx-nvm:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 18%,transparent)}.hx-nvm .hx-chips{display:contents}" +
-        ".hx-nvm input{flex:1 1 120px;min-width:0;border:0!important;outline:0;box-shadow:none!important;background:transparent;padding:3px 2px!important;min-height:0!important}" +
+        ".hx-nvm .hx-nvm-hang{display:flex;flex-wrap:nowrap;gap:4px;align-items:center;flex:1 1 auto;min-width:0;height:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}" +
+        ".hx-nvm .hx-nvm-hang::-webkit-scrollbar{display:none}.hx-nvm .hx-chip{flex:none}" +
+        ".hx-nvm input{flex:1 0 90px;min-width:90px;border:0!important;outline:0;box-shadow:none!important;background:transparent;padding:3px 2px!important;min-height:0!important}" +
         ".hx-chip{display:inline-flex;align-items:center;gap:2px;max-width:100%;padding:1px 2px 1px 8px;border-radius:999px;background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--text);font-size:12px;line-height:20px}" +
         ".hx-chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
         ".hx-chip button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:11px;line-height:1;padding:3px 5px;min-height:0;border-radius:50%}.hx-chip button:hover{color:var(--bad)}" +
@@ -1695,6 +1699,7 @@
         return '<span class="hx-chip" title="' + e_(t) + '"><span>' + e_(t) + '</span><button type="button" data-xoa="' + i + '" aria-label="Bỏ ' + e_(n.ten || n.ma) + '">✕</button></span>'; }).join("");
       chips.querySelectorAll("[data-xoa]").forEach(function (b) { b.onmousedown = function (ev) { ev.preventDefault(); ds.splice(Number(b.dataset.xoa), 1); veChip(); if (api.onDoi) api.onDoi(); }; });
       inp.placeholder = ds.length ? "Thêm người…" : "Gõ mail, họ tên hoặc mã NV…";
+      var hg = box.querySelector(".hx-nvm-hang"); if (hg) hg.scrollLeft = hg.scrollWidth;   // 31/10 (5) hàng 1 dòng: cuộn tới chip mới nhất + ô gõ
     };
     var ve = function (kq) {
       var k = inp.value.trim(), con = (kq || []).filter(function (c) { return !ds.some(function (n) { return n.ma === c.ma; }); });
@@ -1711,7 +1716,7 @@
     inp.addEventListener("keydown", function (ev) {
       if (ev.key === "Backspace" && !inp.value && ds.length) { ds.pop(); veChip(); if (api.onDoi) api.onDoi(); }
       if (ev.key === "Enter") { ev.preventDefault(); var a = menu.querySelector("[data-ma]"); if (a) a.dispatchEvent(new MouseEvent("mousedown")); } });
-    box.onmousedown = function (ev) { if (ev.target === box) { ev.preventDefault(); inp.focus(); } };
+    box.onmousedown = function (ev) { if (ev.target === box || ev.target.classList.contains("hx-nvm-hang")) { ev.preventDefault(); inp.focus(); } };
     veChip();
     ds.forEach(function (n) { if (!n.ten) goi("/api/nv?q=" + n.ma).then(function (kq) { var x = (kq || []).find(function (c) { return c.ma === n.ma; }); if (x) { n.ten = x.ten; veChip(); } }).catch(function () {}); });
     var api = { giaTri: function () { return ds.length ? ds.map(function (n) { return n.ma; }).join(", ") : inp.value.trim(); },
@@ -1862,8 +1867,8 @@
         '<div class="hx-qd-form"><label class="hx-qd-o"><span class="lbl">Quyết định<span class="hx-dxl" hidden></span></span><select id="qdSel"><option value="">— chưa quyết —</option>' +
           ds.map(function (o) { return '<option' + (o === q.qd ? " selected" : "") + '>' + e_(o) + '</option>'; }).join("") + '</select></label>' +
           /* 22/10 user: gõ mail hoặc họ tên (như ô «1. Nhân viên vi phạm» của form 5S), chọn được nhiều NV */
-          '<div class="hx-qd-o"><span class="lbl">Gán người khác</span><div class="hx-cb hx-nvm" id="qdGcBox"><div class="hx-chips"></div>' +
-          '<input id="qdGc" type="text" autocomplete="off" spellcheck="false" placeholder="Gõ mail, họ tên hoặc mã NV…"><div class="menu"></div></div></div></div>' +
+          '<div class="hx-qd-o"><span class="lbl">Gán người khác</span><div class="hx-cb hx-nvm" id="qdGcBox"><div class="hx-nvm-hang"><div class="hx-chips"></div>' +
+          '<input id="qdGc" type="text" autocomplete="off" spellcheck="false" placeholder="Gõ mail, họ tên hoặc mã NV…"></div><div class="menu"></div></div></div></div>' +
         '<button class="hx-nut" id="qdLuu" style="width:100%">Lưu quyết định</button><div id="qdMsg" class="muted" style="font-size:12px;min-height:16px"></div></div>') + '</div>';
     tbAp();
     var aGN = $id("qdAnhGN"), anhI = 0;
