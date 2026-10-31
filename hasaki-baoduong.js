@@ -19,7 +19,7 @@
   if (window.HBAODUONG) return;
   var esc = window.hskTienIch.esc, $id = window.hskTienIch.$id;
   var APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec";
-  var TAB_DV = "BAO-DUONG-DAU-VIEC", TAB_YC = "BAO-DUONG-YEUCAU", TAB_KY = "BAO-DUONG-KY", TAB_GIAO = "BAO-DUONG-GIAO", TAB_LS = "BAO-DUONG-LICHSU";
+  var TAB_DV = "BAO-DUONG-DAU-VIEC", TAB_YC = "BAO-DUONG-YEUCAU", TAB_KY = "BAO-DUONG-KY", TAB_GIAO = "BAO-DUONG-GIAO", TAB_LS = "BAO-DUONG-LICHSU", TAB_NGAY = "BAO-DUONG-NGAY";
   var GSHEET = "https://docs.google.com/spreadsheets/d/1ERdim9g4-BbJspzWhIfy6jWXFMMNya4zhhvWYF59GHc/edit?gid=481972207#gid=481972207";
   var STALE_MS = 5 * 60 * 1000, NGAY_DU_LIEU = 60;   // dữ liệu sync-bao-duong-yc (lưới hiện trọn 60 ngày — 29/10 bỏ bộ lọc ngày, đã có thước thời gian)
   var TOI_PC = 30, TOI_DT = 14;   // số ngày TỚI sau cột hôm nay ghim (29/10 phương án A2)
@@ -421,13 +421,15 @@
     var btn = $id("bdReload"); if (btn) btn.disabled = true;
     S.lastAt = Date.now();
     if (PANE) PANE.innerHTML = '<div class="panel bd-panel"><div class="bd-trong"><div class="sk sk-line" style="width:60%;margin:0 auto 8px"></div><div class="sk sk-line" style="width:40%;margin:0 auto"></div></div></div>';
-    return Promise.all([readTabP(TAB_DV), readTabP(TAB_YC), readTabP(TAB_KY), readTabP(TAB_GIAO), readTabP(TAB_LS)]).then(function (res) {
+    return Promise.all([readTabP(TAB_DV), readTabP(TAB_YC), readTabP(TAB_KY), readTabP(TAB_GIAO), readTabP(TAB_LS), readTabP(TAB_NGAY)]).then(function (res) {
       var dv = bang(res[0]);
       S.ok = !!(dv && dv.length);
       S.loi = S.ok ? "" : (res[0] && res[0].code === 403 ? "khoa" : res[0] && res[0].status === "success" ? "trong" : "gas");
       S.dv = dv || []; S.yc = bang(res[1]) || []; S.ky = bang(res[2]) || [];
       S.giao = {}; (bang(res[3]) || []).forEach(function (g) { S.giao[g["KHOÁ"]] = g; });
       S.ls = bang(res[4]) || [];
+      /* 31/10 bd-giao-ngay.mjs: việc Vận hành hôm nay giao task cho người CÓ CHẤM CÔNG trong g-sheet chia việc (chưa ai chấm công = chờ) */
+      S.giaoNay = {}; (bang(res[5]) || []).forEach(function (r) { if (isoTuDmy(r["NGÀY"]) === isoVN(Date.now())) S.giaoNay[r["MÃ VỊ TRÍ"]] = r; });
       S.ts = Math.max(Number(res[1] && res[1].ts) || 0, Number(res[0] && res[0].ts) || 0);
       if (S.ok) dungViTri();
       ve();
@@ -736,7 +738,10 @@
     var v = S.vt[b], ds = Object.keys(v.nhom).sort(function (a, c) { return THU_NHOM.indexOf(a) - THU_NHOM.indexOf(c); });
     return '<div class="hp-vtcard pt bd-pc"><div class="hd">Phụ trách <span class="hp-hint">ai làm · khi nào</span></div>' + ds.map(function (nhom) {
       var n = v.nhom[nhom], k = kyCua(b, nhom)[0], ng = nguoiVt(b, nhom);
-      var khi = '<span class="bd-pc-khi"><b>' + esc(Object.keys(n.ts).join(" · ")) + "</b>" + (k ? '<span class="bd-phu">kỳ tới ' + esc(k["KỲ TỚI"] || "—") + "</span>" +
+      var gn = nhom === "VẬN HÀNH" ? S.giaoNay[b] : null;   // 31/10: task hôm nay (bd-giao-ngay) hoặc chữ đỏ khi chưa ai trong ô chấm công
+      var nay = !gn ? "" : gn["TASK ID"] ? '<span class="bd-phu"><a href="https://work.hasaki.vn/tasks?task_id=' + encodeURIComponent(gn["TASK ID"]) + '" target="_blank" rel="noopener">Task hôm nay ↗</a></span>'
+        : /^(Chờ người có chấm công|Không ai trong ca)$/.test(gn["TRẠNG THÁI"]) ? '<span class="bd-phu bd-do">' + esc(gn["TRẠNG THÁI"]) + "</span>" : "";
+      var khi = '<span class="bd-pc-khi"><b>' + esc(Object.keys(n.ts).join(" · ")) + "</b>" + nay + (k ? '<span class="bd-phu">kỳ tới ' + esc(k["KỲ TỚI"] || "—") + "</span>" +
           (k["TASK ID"] ? '<span class="bd-phu"><a href="https://work.hasaki.vn/tasks?task_id=' + encodeURIComponent(k["TASK ID"]) + '" target="_blank" rel="noopener">Task ' + esc(k["TASK ID"]) + " ↗</a></span>" : "") : "") + "</span>";
       var ai = ng.ten ? String(ng.ten).split(/\s*[\/,;]\s*/).filter(Boolean).map(function (t) { return '<span class="bd-ng">' + o(t) + "</span>"; }).join("") + '<span class="bd-phu">theo ' + esc(ng.nguon) + "</span>"
         : '<span class="bd-ng bd-thieu">Chưa giao người</span>';
@@ -758,7 +763,9 @@
       var ds = theoBin[b], v = S.vt[b], ng = nguoiVt(b, "VẬN HÀNH"), kh = 0, co = 0;
       ds.forEach(function (y) { var k = String(y["KHUNG ẢNH"] || "").split("|").filter(function (x) { return x.trim(); }).length; kh += k; co += Math.min(anhCua(y).length, k); });
       var l = lopO(ds, homNay, homNay);
-      the.push({ b: b, l: l, hm: v.hm, ten: String(v.ten || b).split("|").pop().trim() || b, ai: ng.ten, kh: kh, co: co, ts: ds.map(tsCuaYc).filter(Boolean)[0] || "" });
+      var gn = S.giaoNay[b] || {}, nhan = String(gn["NGƯỜI NHẬN"] || "").replace(/s*(d+)/g, "").replace(/s*,s*/g, " / ");
+      the.push({ b: b, l: l, hm: v.hm, ten: String(v.ten || b).split("|").pop().trim() || b, ai: gn["TASK ID"] && nhan ? nhan : ng.ten, kh: kh, co: co, ts: ds.map(tsCuaYc).filter(Boolean)[0] || "",
+        cho: l !== "x" && gn["TRẠNG THÁI"] === "Chờ người có chấm công" });
     });
     /* task [BD] định kỳ đang trong kỳ, chưa xong — 1 thẻ / nhóm việc */
     var kyMo = {}, thuKy = [];
@@ -808,7 +815,8 @@
         return '<div class="bd-tn s-' + t.l + '"' + (t.b ? ' data-bin="' + esc(t.b) + '"' + (t.d ? ' data-ngay="' + t.d + '"' : "") + ' role="button" tabindex="0"' : "") + (an ? " hidden" : "") +
             ' title="' + esc(CHIP_O[t.l][1]) + '"><i class="bd-tn-tron" aria-hidden="true"></i>' +
           '<span class="bd-tn-ten">' + o(t.ten) + (t.ts ? ' <span class="bd-tn-ky" title="Việc định kỳ ' + esc(nhanTs(t.ts)) + '">' + esc(nhanTs(t.ts)) + "</span>" : "") +
-            (aiK === null ? '<small class="bd-tn-ai">' + (t.ai ? o(t.ai) : '<span class="bd-do">Chưa giao người</span>') + "</small>" : "") + "</span>" +
+            (aiK === null || t.cho ? '<small class="bd-tn-ai">' + (aiK === null ? (t.ai ? o(t.ai) : '<span class="bd-do">Chưa giao người</span>') + (t.cho ? " · " : "") : "") +
+              (t.cho ? '<span class="bd-do">Chờ người có chấm công</span>' : "") + "</small>" : "") + "</span>" +
           (t.kh ? oAnh(t.co, t.kh) : t.han ? '<span class="bd-tn-so">hạn ' + esc(t.han) + "</span>" : "") + "</div>";
       }).join("");
       return '<section class="bd-nk" style="animation-delay:' + Math.min(gi * 40, 360) + 'ms"><div class="bd-nk-dau"><span class="bd-nk-ten">' + o(hm) +
