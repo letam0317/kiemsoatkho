@@ -352,8 +352,13 @@
         "#modal.hx-ben :is(.hx-gc-nut,.hx-motask,#mClose,.hx-vl-tt){min-height:32px;padding-top:0;padding-bottom:0}#modal.hx-ben #qdLuu{min-height:32px}#modal.hx-ben .hx-qd-o :is(input,.cs-trigger){min-height:32px}#modal.hx-ben .hx-qd-nguon button{min-height:28px}}" +
       ".hx-qd-khung{background:#000;border-radius:12px;overflow:hidden;min-height:200px;display:block}.hx-qd-khung video,.hx-qd-khung>img{width:100%;max-height:68vh;object-fit:contain;display:block}",
       ".hx-qd-nguon{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.hx-qd-nguon button{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;min-height:36px;padding:0 12px;font-size:13px;cursor:pointer}.hx-qd-nguon button.on{border-color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent);font-weight:700}",
-      ".hx-lan .hx-ck-lan{flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;min-height:36px;margin:0 -4px 0 -2px;cursor:pointer}" +
-      ".hx-lan .hx-ck-lan input{width:18px;height:18px;margin:0;cursor:pointer}" +
+      /* 31/10 (6) ô tick ở chỗ nút ▶: vuông, nền nhạt màu nhấn như ▶; tick → nền màu nhấn + ✓ trắng. Vùng chạm nới ra ±10px (điện thoại) */
+      ".hx-lan .hx-ck-lan{flex:none;position:relative;display:grid;place-items:center;width:28px;height:28px;cursor:pointer}#modal.hx-ben .hx-lan .hx-ck-lan{width:24px;height:24px}" +
+      ".hx-lan .hx-ck-lan::before{content:'';position:absolute;inset:-10px}.hx-lan .hx-ck-lan input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}" +
+      ".hx-lan .hx-ck-lan .o{width:100%;height:100%;box-sizing:border-box;border-radius:6px;display:grid;place-items:center;color:white;font-size:13px;font-weight:700;line-height:1;" +
+      "background:color-mix(in srgb,var(--accent) 14%,transparent);border:1.5px solid color-mix(in srgb,var(--accent) 45%,transparent);transition:background .12s,border-color .12s}" +
+      ".hx-lan .hx-ck-lan input:checked+.o{background:var(--accent);border-color:var(--accent)}.hx-lan .hx-ck-lan input:checked+.o::after{content:'✓'}" +
+      ".hx-lan .hx-ck-lan input:focus-visible+.o{outline:2px solid var(--accent);outline-offset:2px}.hx-lan .hx-ck-lan:hover .o{border-color:var(--accent)}" +
       ".hx-lans{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto}.hx-lan{display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);text-align:left;cursor:pointer;font:inherit}.hx-lan:hover,.hx-lan.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface))}.hx-lan.khong{cursor:default;opacity:.7}.hx-lan .gio{min-width:84px;font-variant-numeric:tabular-nums;font-weight:700;font-size:13px}.hx-lan small{display:block;font-weight:400;font-size:11.5px;color:var(--muted)}.hx-lan .ai{flex:1;min-width:0;font-size:13.5px}.hx-lan .pl{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-size:12px}",
       ".hx-qd-ben{display:flex;flex-direction:column;gap:12px}.hx-qd-tt{padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--warn) 12%,transparent);font-weight:650;font-size:14px}.hx-qd-tt.co{background:color-mix(in srgb,var(--good) 12%,transparent)}.hx-qd-o .lbl{display:block;font-size:12px;color:var(--muted)}",
       ".hx-lui{position:relative;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}.hx-lui img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}.hx-lui{aspect-ratio:1920/1176;width:100%}.hx-lui button{position:relative;border:2px solid transparent;background:transparent;cursor:pointer}.hx-lui button:hover{border-color:#f1c40f;background:rgba(241,196,15,.12)}",
@@ -1578,8 +1583,6 @@
     var thuong = LS.ds.filter(function (x) { return !x.vatLy; }), ngChung = thuong.length > 1 && thuong.every(function (x) { return x.nguon && chuNg(x) === chuNg(thuong[0]); }) ? chuNg(thuong[0]) : "";   // loại lặp ở mọi dòng thì KHÔNG ghi ở dòng (13/10 user bỏ dòng đếm lượt) — chỉ ghi loại KHÁC
     var dong = LS.ds.map(function (x, j) { var co = idx[j] >= 0, vl = !!x.vatLy, ra = x.chieu === "ra", soan = x.chieu === "soan";
       return '<div role="button" tabindex="0" class="hx-lan' + (co ? "" : " khong") + (vl ? " vl" : "") + (ra ? " ra" : "") + '" data-lan="' + idx[j] + '"' + (co ? "" : ' aria-disabled="true" title="Chưa cắt được clip lượt này"') + '>' +
-        /* 31/10 (4) user: ô vuông đứng ĐẦU dòng, luôn hiện — tick = gán NV của lượt này (chip ở «Gán người khác») + clip lượt này vào B1 khi Lưu */
-        '<label class="hx-ck-lan" title="Tick để gán NV + clip lượt này"><input type="checkbox" data-ctv="' + j + '" aria-label="Chọn lượt ' + e_(x.at.slice(5, 16)) + '"></label>' +
         '<span class="gio">' + e_(x.at.slice(8, 10) + "/" + x.at.slice(5, 7) + " " + x.at.slice(11, 16)) + '<small>trước ' + e_(x.truocGio < 24 ? soVN(x.truocGio) + " giờ" : soVN(Math.round(x.truocGio / 24 * 10) / 10) + " ngày") + '</small></span>' +
         /* 20/10 user: tên NV luôn «Họ tên [email|Trạng thái]», cả cụm tô màu theo trạng thái (Active xanh · Pending tím · Inactive xám) — tra theo email/mã ở máy chủ */
         '<span class="ai">' + (x.email ? cumNV(x.ten, x.email, x.ttNv) : '<b>' + e_(x.ten) + '</b>' + (x.ma ? ' <span class="muted">' + e_(x.ma) + '</span>' : "")) +
@@ -1602,7 +1605,9 @@
                   (oDu ? ' · <span class="vtn" title="' + e_(oDu) + '">' + e_(oDu) + '</span>' : "") +
                   (x.oGhiChu ? ' · <span class="gc">' + e_(x.oGhiChu) + '</span>' : "") + ' · <span class="sl">' + e_(x.qty) + ' cái</span></small>'; })()) + '</span>' +
         (vl && x.nguonVL !== "may" ? '<button class="hx-vl-go" data-vlgo="' + e_(x.at) + '|' + e_(x.ma) + '" aria-label="Gỡ ghi nhận">Gỡ</button>' : "") +
-        '<span class="pl">' + (co ? "▶" : "–") + '</span></div>'; }).join("");
+        /* 31/10 (6) user: bấm vào dòng đã phát clip → nút ▶ thừa; CHỖ ▶ thành ô vuông tick (cùng màu nhấn của ▶), bỏ ô tick đầu dòng — web + điện thoại.
+           Tick = gán NV của lượt (chip «Gán người khác») + clip lượt này vào B1 khi Lưu */
+        '<label class="hx-ck-lan" title="Tick để gán NV + clip lượt này"><input type="checkbox" data-ctv="' + j + '" aria-label="Chọn lượt ' + e_(x.at.slice(5, 16)) + '"><span class="o" aria-hidden="true"></span></label></div>'; }).join("");
     /* 19/10 (5) user: BỎ dòng chữ «Ai tác động ô trước giờ ghi nhận · WMS 72 giờ» — danh sách ai tác động (bấm phát clip, nút Gỡ) giữ nguyên */
     return '<div class="hx-qd-o">' +
       (pt ? '<div style="margin:2px 0 6px">Phụ trách kệ: <b>' + pt + '</b></div>' : "") +
