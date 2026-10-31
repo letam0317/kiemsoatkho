@@ -352,8 +352,8 @@
         "#modal.hx-ben :is(.hx-gc-nut,.hx-motask,#mClose,.hx-vl-tt){min-height:32px;padding-top:0;padding-bottom:0}#modal.hx-ben #qdLuu{min-height:32px}#modal.hx-ben .hx-qd-o :is(input,.cs-trigger){min-height:32px}#modal.hx-ben .hx-qd-nguon button{min-height:28px}}" +
       ".hx-qd-khung{background:#000;border-radius:12px;overflow:hidden;min-height:200px;display:block}.hx-qd-khung video,.hx-qd-khung>img{width:100%;max-height:68vh;object-fit:contain;display:block}",
       ".hx-qd-nguon{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.hx-qd-nguon button{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;min-height:36px;padding:0 12px;font-size:13px;cursor:pointer}.hx-qd-nguon button.on{border-color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent);font-weight:700}",
-      "#mBody .hx-ctv-ck{display:none}#mBody.ctv-mo .hx-ctv-ck{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:32px;min-height:32px;cursor:pointer}" +
-      "#mBody .hx-ctv-ck input{width:18px;height:18px;margin:0;cursor:pointer}" +
+      "#qdCtvDs[hidden]{display:none!important}.hx-ctv-ds .hx-ctv-ck{display:flex;align-items:center;gap:8px;min-height:36px;padding:2px 0;cursor:pointer;line-height:1.35}" +
+      ".hx-ctv-ds .hx-ctv-ck input{width:18px;height:18px;margin:0;flex:none;cursor:pointer}.hx-ctv-ds .hx-ctv-l{max-height:220px;overflow-y:auto}" +
       ".hx-lans{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto}.hx-lan{display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);text-align:left;cursor:pointer;font:inherit}.hx-lan:hover,.hx-lan.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface))}.hx-lan.khong{cursor:default;opacity:.7}.hx-lan .gio{min-width:84px;font-variant-numeric:tabular-nums;font-weight:700;font-size:13px}.hx-lan small{display:block;font-weight:400;font-size:11.5px;color:var(--muted)}.hx-lan .ai{flex:1;min-width:0;font-size:13.5px}.hx-lan .pl{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-size:12px}",
       ".hx-qd-ben{display:flex;flex-direction:column;gap:12px}.hx-qd-tt{padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--warn) 12%,transparent);font-weight:650;font-size:14px}.hx-qd-tt.co{background:color-mix(in srgb,var(--good) 12%,transparent)}.hx-qd-o .lbl{display:block;font-size:12px;color:var(--muted)}",
       ".hx-lui{position:relative;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}.hx-lui img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}.hx-lui{aspect-ratio:1920/1176;width:100%}.hx-lui button{position:relative;border:2px solid transparent;background:transparent;cursor:pointer}.hx-lui button:hover{border-color:#f1c40f;background:rgba(241,196,15,.12)}",
@@ -1596,8 +1596,6 @@
                   (oDu ? ' · <span class="vtn" title="' + e_(oDu) + '">' + e_(oDu) + '</span>' : "") +
                   (x.oGhiChu ? ' · <span class="gc">' + e_(x.oGhiChu) + '</span>' : "") + ' · <span class="sl">' + e_(x.qty) + ' cái</span></small>'; })()) + '</span>' +
         (vl && x.nguonVL !== "may" ? '<button class="hx-vl-go" data-vlgo="' + e_(x.at) + '|' + e_(x.ma) + '" aria-label="Gỡ ghi nhận">Gỡ</button>' : "") +
-        /* 31/10 user «Cộng tác viên»: ô tick chọn clip gắn vào B1 — chỉ hiện khi Quyết định = Cộng tác viên (#mBody.ctv-mo) */
-        (co ? '<label class="hx-ctv-ck" title="Chọn clip này để gắn vào B1 (Cộng tác viên)"><input type="checkbox" data-ctv="' + j + '" aria-label="Chọn clip ' + e_(x.at.slice(11, 16)) + '"></label>' : "") +
         '<span class="pl">' + (co ? "▶" : "–") + '</span></div>'; }).join("");
     /* 19/10 (5) user: BỎ dòng chữ «Ai tác động ô trước giờ ghi nhận · WMS 72 giờ» — danh sách ai tác động (bấm phát clip, nút Gỡ) giữ nguyên */
     return '<div class="hx-qd-o">' +
@@ -1785,6 +1783,19 @@
       nguon.push({ k: "lan", an: 1, ten: x.ten + " " + x.at.slice(11, 16), url: u_(x.clip), video: 1, tua: x.vatLy && x.tgClip != null ? Math.max(0, x.tgClip - 3) : null, info: { batDau: bd, suKien: [] } });
       return nguon.length - 1; });
     var coCam = nguon.some(function (n) { return n.video; });
+    /* 31/10 (2) «Cộng tác viên»: mọi clip của phiếu (đường /bc/ GỐC, không qua u_) — clip chính / lúc chụp / cắt thêm / máy tìm + từng lượt «Ai tác động» */
+    var gioClip = function (inf) { var s = inf && inf.batDau; return s ? String(s).replace("T", " ").slice(0, 19) : ""; };
+    var ddmmHM = function (s) { s = String(s || ""); return s.length >= 16 ? s.slice(8, 10) + "/" + s.slice(5, 7) + " " + s.slice(11, 16) : s; };
+    var ctvDs = [], ctvNg = function (url, nguonTen, inf) { if (String(url || "").indexOf("/bc/") !== 0) return;
+      ctvDs.push({ url: url, at: gioClip(inf), ten: "", wms: false, nguon: nguonTen, nhan: nguonTen + (gioClip(inf) ? " · từ " + ddmmHM(gioClip(inf)) : "") }); };
+    ctvNg(bc.clip, bc.truy ? "Clip lúc đồ vật xuất hiện" : "Clip chính (camera giờ kho)", bc.clipInfo);
+    if (!bc.clip) ctvNg(bc.chupClip, "Clip lúc người kiểm chụp", bc.chupInfo);
+    ((p.bc && p.bc.clipThem) || []).concat((p.bcChup && p.bcChup.clipThem) || []).forEach(function (z) { ctvNg(z.url, "Cắt thêm · " + z.kenh, bc.clip ? bc.clipInfo : bc.chupInfo); });
+    if (p.bc && p.bc.clipTim) ctvNg(p.bc.clipTim.url, p.bc.clipTim.ten, p.bc.clipTim.info);
+    (LS ? LS.ds : []).forEach(function (x) { if (String(x.clip || "").indexOf("/bc/") !== 0) return;
+      var lg = x.vatLy ? x.loai : x.chieu === "soan" ? "Soạn hàng" : loaiGon(x);
+      ctvDs.push({ url: x.clip, at: x.at, ten: x.ten, ma: x.ma || "", email: x.email || "", wms: !x.vatLy, loai: lg, qty: x.qty, kenh: x.kenh || x.kenhVL || "",
+        nhan: ddmmHM(x.at) + " · " + x.ten + " · " + (x.vatLy ? "không qua WMS: " : "WMS: ") + lg + (x.qty && !x.vatLy ? " " + x.qty + " cái" : "") }); });
     /* tình trạng chỉ hiện khi CHƯA đủ / cần chú ý — "Đủ bằng chứng để quyết" trùng với nút Lưu đang bật nên bỏ */
     var tt = bc.vs && (bc.vs.bui || bc.vs.camSo || bc.vs.cam) ? "Kho bụi / camera giờ báo cáo — đã nhờ anh Tâm kiểm tra thực tế, xem rồi quyết" : co ? ""
       : bc.chupLui ? "Chưa biết đồ vật xuất hiện lúc nào — chọn khung sớm nhất đã thấy đồ vật trên Dải 72 giờ" : "Chưa có bằng chứng camera — máy đang tìm";
@@ -1846,7 +1857,11 @@
           /* 22/10 user: gõ mail hoặc họ tên (như ô «1. Nhân viên vi phạm» của form 5S), chọn được nhiều NV */
           '<div class="hx-qd-o"><span class="lbl">Gán người khác</span><div class="hx-cb hx-nvm" id="qdGcBox"><div class="hx-chips"></div>' +
           '<input id="qdGc" type="text" autocomplete="off" spellcheck="false" placeholder="Gõ mail, họ tên hoặc mã NV…"><div class="menu"></div></div></div></div>' +
-        '<button class="hx-nut" id="qdLuu" style="width:100%">Lưu quyết định</button><div id="qdMsg" class="muted" style="font-size:12px;min-height:16px"></div></div>') + '</div>';
+        '<button class="hx-nut" id="qdLuu" style="width:100%">Lưu quyết định</button><div id="qdMsg" class="muted" style="font-size:12px;min-height:16px"></div>' +
+          /* 31/10 (2) user «tick ở đâu» (phiếu không có lượt WMS → «Ai tác động» trống): khung chọn MỌI clip của phiếu, chỉ hiện khi Quyết định = Cộng tác viên */
+          (ctvDs.length ? '<div class="hx-qd-o hx-ctv-ds" id="qdCtvDs" hidden><span class="lbl">Clip gắn vào B1 (tick để chọn)</span><div class="hx-ctv-l">' +
+            ctvDs.map(function (c, i) { return '<label class="hx-ctv-ck"><input type="checkbox" data-ctv="' + i + '"><span>' + e_(c.nhan) + '</span></label>'; }).join("") + '</div></div>'
+            : '<div class="hx-qd-o hx-ctv-ds" id="qdCtvDs" hidden><span class="muted">Phiếu chưa có clip camera nào để gắn.</span></div>') + "</div>") + '</div>';
     tbAp();
     var aGN = $id("qdAnhGN"), anhI = 0;
     if (aGN) aGN.onclick = function () { if (typeof openLB === "function") openLB(anhDs.map(function (u, i) { return { url: u, title: "Ảnh ghi nhận " + (i + 1) + "/" + anhDs.length }; }), anhI); };
@@ -1976,25 +1991,25 @@
     /* phiếu không có hình camera: ảnh ghi nhận hiện sẵn (nút Ảnh ghi nhận đang bật) */
     if (!nguon.length && nutA && anhTp && anhTp.classList.contains("an-dt")) nutA.click();
     if (typeof enhanceSelect === "function") enhanceSelect($id("qdSel"));
-    /* 31/10 «Cộng tác viên»: hiện ô tick ở «Ai tác động» (clip đã tick lần lưu trước được tick lại) + câu nhắc số lần 3 QLTT đã được nhắc (sổ luỹ tiến) */
+    /* 31/10 «Cộng tác viên»: khung «Clip gắn vào B1» (clip đã tick lần lưu trước được tick lại; phiếu chỉ 1 clip thì tick sẵn) + số lần 3 QLTT đã được nhắc (sổ luỹ tiến) */
     var daTick = (q.clips || []).map(function (c) { return c.url; });
-    $id("mBody").querySelectorAll("[data-ctv]").forEach(function (c) { var x0 = LS && LS.ds[Number(c.dataset.ctv)]; c.checked = !!(x0 && daTick.indexOf(x0.clip) >= 0); });
-    var capCtv = function () { var la = $id("qdSel").value === "Cộng tác viên"; $id("mBody").classList.toggle("ctv-mo", la);
+    $id("mBody").querySelectorAll("[data-ctv]").forEach(function (c) { var c0 = ctvDs[Number(c.dataset.ctv)]; c.checked = daTick.length ? daTick.indexOf(c0.url) >= 0 : ctvDs.length === 1; });
+    var capCtv = function () { var la = $id("qdSel").value === "Cộng tác viên"; $id("qdCtvDs").hidden = !la;
       if (!la) { if (/^Tick clip/.test($id("qdMsg").textContent)) $id("qdMsg").textContent = ""; return; }
       var NQ = D.nhacQL || { ql: [], ds: {} }, chuan = function (s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim().slice(0, 45); };
       var dem = (NQ.ql || []).map(function (x) { var l = (NQ.ds || {})[x.code] || [], k = l.filter(function (e) { return String(e.id) !== String(p.id); });
         return x.ten.split(" ").pop() + " " + k.length + " lần (cùng lỗi " + k.filter(function (e) { return chuan(e.loi) === chuan(p.loi); }).length + ")"; });
-      $id("qdMsg").textContent = "Tick clip cần gắn ở «Ai tác động». Tag 3 QLTT" + (dem.length ? " — đã nhắc: " + dem.join(" · ") : "") + ". Lần 3 cùng lỗi → B1.1 cho QL, còn lại dừng phiếu."; };
-    $id("mBody").classList.remove("ctv-mo"); $id("qdSel").addEventListener("change", capCtv); capCtv();
+      $id("qdMsg").textContent = "Tick clip cần gắn ở khung «Clip gắn vào B1» bên dưới. Tag 3 QLTT" + (dem.length ? " — đã nhắc: " + dem.join(" · ") : "") + ". Lần 3 cùng lỗi → B1.1 cho QL, còn lại dừng phiếu."; };
+    $id("qdSel").addEventListener("change", capCtv); capCtv();
     if (!co) { $id("qdLuu").disabled = true; $id("qdLuu").textContent = "Chưa đủ bằng chứng để quyết"; }
     $id("qdLuu").onclick = function () {
       /* 26/10: «Gán người khác (chọn ở ô bên dưới)» bắt buộc có người ở ô Gán người khác */
       var gcGiaTri = gcNv ? gcNv.giaTri() : $id("qdGc").value;
       if (/^Gán người khác/.test($id("qdSel").value) && !/[0-9]{6}/.test(gcGiaTri)) { $id("qdMsg").textContent = "Chọn người ở ô «Gán người khác» rồi bấm Lưu."; var oGc = $id("qdGc"); if (oGc) oGc.focus(); return; }
       /* 31/10 «Cộng tác viên»: gửi kèm clip đã tick + người tác động · qua WMS hay không (máy chủ chỉ nhận đường /bc/ của chính nó) */
-      var clips = [].map.call($id("mBody").querySelectorAll("[data-ctv]:checked"), function (c) { var x = LS.ds[Number(c.dataset.ctv)];
-        return { url: x.clip, at: x.at, ten: x.ten, ma: x.ma || "", email: x.email || "", wms: !x.vatLy, loai: x.vatLy ? x.loai : x.chieu === "soan" ? "Soạn hàng" : loaiGon(x), qty: x.qty, kenh: x.kenh || x.kenhVL || "" }; });
-      if ($id("qdSel").value === "Cộng tác viên" && !clips.length) { $id("qdMsg").textContent = "Cộng tác viên: tick ít nhất 1 clip ở danh sách «Ai tác động» rồi bấm Lưu."; return; }
+      var clips = [].map.call($id("mBody").querySelectorAll("#qdCtvDs [data-ctv]:checked"), function (c) { var x = Object.assign({}, ctvDs[Number(c.dataset.ctv)]); delete x.nhan; return x; });
+      if ($id("qdSel").value === "Cộng tác viên" && !clips.length) {
+        $id("qdMsg").textContent = ctvDs.length ? "Cộng tác viên: tick ít nhất 1 clip ở khung «Clip gắn vào B1» rồi bấm Lưu." : "Phiếu chưa có clip camera nào — chưa chọn «Cộng tác viên» được."; return; }
       var b = $id("qdLuu"); b.disabled = true; $id("qdMsg").textContent = "Đang lưu…";
       goi("/api/quyet-dinh-b1", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: p.id, qd: $id("qdSel").value, gc: gcNv ? gcNv.giaTri() : $id("qdGc").value, clips: clips }) })
         .then(function () { $id("qdMsg").textContent = "Đã lưu — máy làm ở lượt cò kế (mỗi 2 giờ)."; return tai(true).then(function () { if (SUB === "treo") veTreo(); }); })
