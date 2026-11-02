@@ -215,8 +215,7 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
                 @click="chonHangMuc(muc)"
                 class="px-4 py-3 text-sm text-slate-700 hover:bg-blue-50 cursor-pointer border-b border-slate-100 last:border-0"
                 :class="{ 'bg-blue-50 font-medium': form.hangMuc === muc }"
-                x-text="muc"
-              ></div>
+              ><b x-show="kpiHM(muc)" class="text-red-600 font-semibold whitespace-nowrap" x-text="'[' + kpiHM(muc) + ']'"></b> <span x-text="muc"></span></div>
             </template>
             <div x-show="danhSachLoc().length === 0" class="px-4 py-3 text-sm text-slate-400">
               Không tìm thấy hạng mục phù hợp
@@ -226,7 +225,7 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
 
         <!-- Hạng mục đã chọn -->
         <p x-show="form.hangMuc" x-cloak class="mt-2 text-xs text-green-600">
-          ✓ Đã chọn: <span x-text="form.hangMuc" class="font-medium"></span>
+          ✓ Đã chọn: <b x-show="kpiHM(form.hangMuc)" class="text-red-600 font-semibold whitespace-nowrap" x-text="'[' + kpiHM(form.hangMuc) + ']'"></b> <span x-text="form.hangMuc" class="font-medium"></span>
         </p>
       </div>
 
@@ -501,6 +500,7 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
         moBC: false, chonBC: {}, daThemBC: {}, dangTaiBC: '',
         dangChupBC: false,  // ảnh chụp pop-up đang về (form mở trước, chụp chạy nền ở dashboard)
         _napSanFiles: [],   // file do nạp sẵn thêm vào (ảnh chụp pop-up) — mở tay mà chưa sửa gì thì gỡ theo
+        kpiMap: {},   // 02/11 câu hạng mục → mức trừ KPI LẦN 1 (cột D tab QUY-DINH), như [−2% KPI] ở cột Lỗi trang Vi phạm
         dsHangMuc: DANH_SACH_5S.slice(),  // hạng mục hiển thị (reactive) — tải từ QUY-DINH lúc mở form
         files: [],          // danh sách file ảnh/video kèm preview
         xemMedia: null,     // ảnh/clip đang xem phóng to (Mục 4)
@@ -564,8 +564,10 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
           window[cb] = (resp) => {
             try {
               const rows = ((resp.table && resp.table.rows) || []).map(r => (r.c || []).map(c => c ? (c.v == null ? '' : c.v) : ''));
-              const mucs = rows.filter(r => /^\d+$/.test(String(r[0]).trim()))
-                               .map(r => String(r[1] || '').trim()).filter(Boolean);
+              const dongQD = rows.filter(r => /^\d+$/.test(String(r[0]).trim()) && String(r[1] || '').trim());
+              const mucs = dongQD.map(r => String(r[1]).trim());
+              const km = {}; dongQD.forEach(r => { const v = String(r[3] == null ? '' : r[3]).trim(); if (v !== '' && !isNaN(Number(v))) km[String(r[1]).trim()] = Number(v); });
+              this.kpiMap = km;
               if (mucs.length >= 5) { this.dsHangMuc = ['Không phát sinh vi phạm hạng mục', ...mucs]; this.khopLaiHangMucSauTai(); }
             } catch (e) { /* giữ danh sách dự phòng */ }
             delete window[cb];
@@ -717,6 +719,12 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
           const k = (this.tuKhoa || '').toLowerCase().trim();
           if (!k) return this.dsHangMuc;
           return this.dsHangMuc.filter(m => m.toLowerCase().includes(k));
+        },
+        // [−2% KPI] đầu hạng mục — mức LẦN 1 (form chưa biết NV vi phạm lần mấy trong tháng; trang Vi phạm cũng lấy lần 1 khi chưa rõ NV)
+        kpiHM(muc) {
+          const v = this.kpiMap[String(muc || '').trim()];
+          if (v == null) return '';
+          return v === 0 ? '0% KPI' : '−' + Math.abs(v) + '% KPI';
         },
         chonHangMuc(muc) {
           this.form.hangMuc = muc;
