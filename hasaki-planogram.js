@@ -4088,16 +4088,32 @@ function ngayDuVN(iso){ var m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2}
 /* NGƯỜI CHỊU của ô `loc` ngày d — CÙNG LUẬT với vipham-vesinh.tinhSoViPham (17/10/2026, user):
      · bàn A8 có camera mà hôm đó có người đóng gói → người đóng NHIỀU PHIẾU NHẤT (đứng bàn thật), coi như có đi làm;
      · còn lại → người phụ trách; MIỄN nếu hôm đó người này đóng ở bàn A8 khác ĐÃ được báo cáo. */
+/* 02/11/2026 user chốt LUẬT MIỄN (chép đúng vipham-vesinh.mjs, mốc LUAT_MIEN_CUNG_KHU_TU): từ 02/11 chỉ miễn khi CHÍNH người đó
+   báo cáo vệ sinh vị trí KHÁC CÙNG KHU (A1↔A1, A8↔A8) — làm A8 mà báo A1 vẫn tính. Ngày trước mốc giữ luật cũ (không tính lại quá khứ). */
+var LUAT_MIEN_CUNG_KHU_TU = "2026-11-02";
+function khuCua(loc){ var m = String(loc || "").match(/^F0-(A\d+)-/); return m ? m[1] : ""; }
+function mienCungKhu(em, kO, d){
+  em = String(em || "").toLowerCase(); if (!em) return "";
+  var k = khuCua(kO), ra = "";
+  var xet = function(l, e, n){ if (!ra && n === d && String(e || "").toLowerCase() === em && khoaO(l) !== kO && khuCua(l) === k) ra = l; };
+  (S.yc.rows || []).forEach(function(x){ if (x.bk === "da" || x.email) xet(x.loc, x.email, x.ngay); });
+  (S.ls.ev || []).forEach(function(v){ xet(v.loc, v.email, v.ngay); });
+  return ra;
+}
 function nguoiChiuNgay(loc, d, pc){
   var kO = khoaO(loc), cam = CAMERA_BAN[kO] ? String(CAMERA_BAN[kO]).replace(/\s*\(dự đoán\)$/, "") : "";
   var ds = (cam && S.pk.ok) ? (S.pk.by[d + "|" + cam] || []) : [];
+  var luatMoi = d >= LUAT_MIEN_CUNG_KHU_TU;
   if (ds.length){
     var p = ds[0], o = S.ccn.ok ? S.ccn.em[p.em] : null;
-    return { em: p.em, ten: p.ten || (o && o.ten) || tenNm(p.em) || p.em, code: (o && o.code) || "", camera: cam, nPk: p.n,
+    var kq = { em: p.em, ten: p.ten || (o && o.ten) || tenNm(p.em) || p.em, code: (o && o.code) || "", camera: cam, nPk: p.n,
       laPT: !!(pc && pc.em && String(pc.em).toLowerCase() === p.em) };
+    if (luatMoi){ var mc = mienCungKhu(p.em, kO, d); if (mc) kq.mien = mc; }
+    return kq;
   }
   if (!pc || !pc.em) return pc;
   var nc = Object.assign({}, pc);
+  if (luatMoi){ var m2 = mienCungKhu(pc.em, kO, d); if (m2) nc.mien = m2; return nc; }
   if (S.pk.ok){
     var em = String(pc.em).toLowerCase(), hd = hoatDongNgay(em, d);
     hd.dg.forEach(function(g){
