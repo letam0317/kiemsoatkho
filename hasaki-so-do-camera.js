@@ -312,7 +312,8 @@
         .then(function (b) { if (LIVE.k !== k) return; if (LIVE.url) URL.revokeObjectURL(LIVE.url); LIVE.url = URL.createObjectURL(b); LIVE.loi = 0; veAnhKhung();
           ttLive("Trực tiếp · " + new Date().toTimeString().slice(0, 8)); LIVE.h = setTimeout(vong, Math.max(300, 1000 - (Date.now() - t0))); })
         .catch(function (e) { if (LIVE.k !== k) return;
-          if (e.code === 503 || e.code === 403 || e.code === 423 || ++LIVE.loi >= 3) { dungLive(); veNutLive(); veAnhKhung(); return ttLive("Không xem trực tiếp được: " + e.message); }
+          /* 424 (02/11): top-review chặn mạng kho — thử lại vô ích */
+          if (e.code === 503 || e.code === 403 || e.code === 423 || e.code === 424 || ++LIVE.loi >= 3) { dungLive(); veNutLive(); veAnhKhung(); return ttLive("Không xem trực tiếp được: " + e.message); }
           LIVE.h = setTimeout(vong, 2000 * LIVE.loi); });
     };
     vong();
@@ -380,7 +381,8 @@
   }
   function khungTrucTiep(k) {
     return fetch(CTX.API() + "/api/so-do-camera/truc-tiep?cam=" + encodeURIComponent(k), { headers: tieuDe(), signal: AbortSignal.timeout(15000) })
-      .then(function (r) { het428(r); if (!r.ok) throw new Error("HTTP " + r.status); return r.blob(); })
+      .then(function (r) { het428(r); if (r.ok) return r.blob();
+        return r.text().then(function (t) { var j = {}; try { j = JSON.parse(t); } catch (e) {} throw new Error(j.loi || "HTTP " + r.status); }); })
       .then(function (b) { if (ANH[k]) URL.revokeObjectURL(ANH[k]); ANH[k] = URL.createObjectURL(b); return ANH[k]; });
   }
   function napSoDo() {
@@ -779,7 +781,13 @@
        (1 lượt top-review mỗi lần mở — nhẹ hơn hẳn làm mới định kỳ cả 237 kênh). Hỏng (kênh ngoài số kênh top-review, máy dự phòng) ⇒ giữ khung lưu. */
     var trucTiep = function () { return khungTrucTiep(k).then(function () { veAnhKhung(); var kt = $id("sdcKhungTt"); if (kt && S.hc && S.hc.k === k) kt.textContent = "Khung trực tiếp lúc " + new Date().toTimeString().slice(0, 5) + " (chưa lưu)"; }); };
     var cu = !c.khung || Date.now() - Date.parse(c.khung.luc) > 10 * 60e3;
-    napAnh(k).then(function () { veAnhKhung(); if (cu && !GM) return trucTiep().catch(function () {}); }).catch(function () { return trucTiep().catch(function () { veAnhKhung(); }); });
+    /* 02/11 user «khung camera luôn lỗi thời 8–36 giờ»: khung trực tiếp hỏng (top-review chặn mạng kho, máy dự phòng không giữ tài khoản…) trước đây
+       lặng lẽ giữ khung lưu ⇒ nay ghi rõ lý do ngay dòng giờ khung để không tưởng là khung mới */
+    var baoHong = function (e) {
+      veAnhKhung(); var kt = $id("sdcKhungTt"); if (!kt || !S.hc || S.hc.k !== k) return;
+      kt.textContent = (c.khung ? "Khung cũ lúc " + ngay(c.khung.chup) : "Chưa có khung hình") + " — không lấy được khung trực tiếp: " + ((e && e.message) || "lỗi mạng");
+    };
+    napAnh(k).then(function () { veAnhKhung(); if (cu && !GM) return trucTiep().catch(baoHong); }).catch(function () { return trucTiep().catch(baoHong); });
   }
   function rHienTai() { return DS.find(function (x) { return x.c.k === S.hc.k; }); }
   function veThan() {
