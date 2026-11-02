@@ -52,7 +52,7 @@
 
   <!-- Không dựng dòng tiêu đề: tên trang ở <title>; 2 nút nhóm kiểm đã nói rõ trang làm gì (luật 13: ≤130px đầu màn) -->
   <!-- Chia 2 nhóm kiểm: số đếm = số mục khớp ô tìm kiếm đang gõ (thấy ngay kết quả nằm ở nhóm nào) -->
-  <div class="flex gap-1 bg-white rounded-2xl p-1 shadow-sm mb-2" role="tablist">
+  <div x-show="!coBo" class="flex gap-1 bg-white rounded-2xl p-1 shadow-sm mb-2" role="tablist">
     <template x-for="b in [['vl', 'Kiểm vật lý'], ['ht', 'Kiểm hệ thống']]" :key="b[0]">
       <button type="button" @click="chonLoai(b[0])" :class="loai === b[0] ? 'bg-blue-600 text-white' : 'text-slate-600'"
         class="flex-1 rounded-xl px-1 text-[13px] font-semibold whitespace-nowrap transition min-h-[40px]">
@@ -377,9 +377,13 @@
   /* Bản nội bộ (xem-noi-bo.mjs trên chính máy này) đi qua /api/nt-thu → GAS HEAD + sheet NHÁP.
      Trang thật gọi đúng web app production như form.html. */
   const NOI_BO = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  /* 02/11: ?bo=factory = bộ «Checklist hiện trạng Factory» (sheet riêng, GAS NT_BO). Bộ này không chia vật lý/hệ thống,
+     mọi mục đều cần ảnh/clip; kho máy riêng để 2 bộ không đè danh sách của nhau. */
+  const BO = /^[a-z]+$/.test(new URLSearchParams(location.search).get('bo') || '') ? new URLSearchParams(location.search).get('bo') : '';
+  if (BO === 'factory') document.title = 'Nghiệm thu checklist hiện trạng Factory';
   const GAS_URL = NOI_BO ? '/api/nt-thu'
     : 'https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec';
-  const KHO_DS = NOI_BO ? 'nt-ds2-noibo' : 'nt-ds2';   // ds2: mỗi dòng mang muc[] + tay (bản ds cũ chỉ có chuỗi phanHoi)
+  const KHO_DS = (NOI_BO ? 'nt-ds2-noibo' : 'nt-ds2') + (BO ? '-' + BO : '');   // ds2: mỗi dòng mang muc[] + tay (bản ds cũ chỉ có chuỗi phanHoi)
 
   /* LUẬT CHIA NHÓM KIỂM (user 14/10): vật lý ↔ hệ thống (phần mềm, tool). Xét theo thứ tự:
      1. Ô Checklist mở đầu "Hệ thống:" / "Vật lý:" → theo đúng chữ đó.
@@ -398,7 +402,7 @@
 
   function ntForm() {
     return {
-      noiBo: NOI_BO,
+      noiBo: NOI_BO, coBo: !!BO,
       ds: [], loai: 'vl', tim: '', chiChua: false, moRong: false, dangTai: false, loiTai: '', luc: '',
       dang: null, ghiChu: '', ten: '', files: [], tepCu: [], sua: null,
       thongBao: { loai: '', noiDung: '' },
@@ -417,6 +421,7 @@
 
       init() {
         try { this.ten = localStorage.getItem('nt-ten') || ''; this.loai = localStorage.getItem('nt-loai') === 'ht' ? 'ht' : 'vl'; } catch (e) {}
+        if (BO) this.loai = 'vl';
         if (!this.ten) { const u = this._nguoiDung(); if (u && u.ten) this.ten = u.ten; }
         try { const c = JSON.parse(localStorage.getItem(KHO_DS) || 'null'); if (c && Array.isArray(c.dong)) { this.ds = c.dong.map(this._chuan); this.luc = c.luc || ''; } } catch (e) {}
         /* Còn phản hồi đang đẩy lên sheet mà đóng trang thì mất — hỏi lại trước khi rời. */
@@ -460,7 +465,7 @@
       async goi(body, lan = 4, cho = 150000) {
         const nonce = body.nonce || ('nt' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
         let tb = ''; try { tb = localStorage.getItem('tb-khoa') || (localStorage.getItem('tk-phien') ? 'tk:' + localStorage.getItem('tk-phien') : ''); } catch (e) {}   // 22/10 đã đăng nhập tài khoản = đủ quyền, không đòi OTP
-        const goi = JSON.stringify(Object.assign({}, body, { nonce, tb }));
+        const goi = JSON.stringify(Object.assign({}, body, { nonce, tb }, BO ? { bo: BO } : {}));
         let loi = '';
         for (let i = 0; i < lan; i++) {
           if (i) await new Promise(r => setTimeout(r, 1500 * i));
@@ -545,11 +550,12 @@
           this.loiTai = (this.ds.length ? 'Đang xem bản lưu lúc ' + this.luc + ' — ' : '') + 'Không tải được danh sách: ' + e.message;
         } finally { this.dangTai = false; }
       },
-      canAnh(d) { return !!String(d.yeuCau || '').trim(); },
+      canAnh(d) { return !!BO || !!String(d.yeuCau || '').trim(); },
       daPh(d) { return !!(d && (d.tay || (d.muc || []).length)); },
       dongBoCua(d) { const m = d.muc || []; return m.some(x => x.cho === 'loi') ? 'loi' : m.some(x => x.cho === 'dang') ? 'dang' : ''; },
       chonLoai(l) { this.loai = l; this.moRong = false; try { localStorage.setItem('nt-loai', l); } catch (e) {} },
       loaiCua(d) {
+        if (BO) return 'vl';   // bộ factory: 1 nhóm duy nhất
         const ck = String(d.checklist || '');
         if (/^\s*hệ thống\s*:/i.test(ck)) return 'ht';
         if (/^\s*vật lý\s*:/i.test(ck)) return 'vl';
@@ -665,7 +671,7 @@
           await Promise.all(Array.from({ length: Math.min(this.TOI_DA_SONG_SONG, can.length) }, tho));
           m.tt = 'Đang ghi vào sheet…';
           const ng = this._nguoiDung() || {};
-          const j = await this.goi({ action: 'nt_ghi', dong: d.dong, checklist: d.checklist, nguoiGui: { ten: m.ai, code: ng.code || '' },
+          const j = await this.goi({ action: 'nt_ghi', dong: d.dong, checklist: d.checklist, congViec: d.congViec, nguoiGui: { ten: m.ai, code: ng.code || '' },
             muc: { id: m.id, ghiChu: m.ghiChu, tep: m.tep.map(t => Object.assign({ id: t.id, ky: t.ky, loai: t.loai }, this._metaTep(t))) } });
           if (j.status !== 'success') throw new Error(j.message || 'Lỗi máy chủ');
           this._hopNhat(d, j, m);
@@ -694,7 +700,7 @@
         d.muc.splice(vt, 1);
         this.thongBao = { loai: 'ok', noiDung: '✓ Đã xoá — đang cập nhật sheet ở nền.' };
         try {
-          const j = await this.goi({ action: 'nt_ghi', dong: d.dong, checklist: d.checklist, xoa: 1, muc: { id: m.id } });
+          const j = await this.goi({ action: 'nt_ghi', dong: d.dong, checklist: d.checklist, congViec: d.congViec, xoa: 1, muc: { id: m.id } });
           if (j.status !== 'success') throw new Error(j.message || 'Lỗi máy chủ');
           this._hopNhat(d, j);
         } catch (e) {
