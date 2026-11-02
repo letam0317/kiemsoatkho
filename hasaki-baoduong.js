@@ -503,7 +503,7 @@
        Ngày TỚI chưa xong = «sắp tới» (viền đứt), không phải «chưa làm». */
     var gop = function (lYc, ks, d) { var a = (lYc ? [lYc] : []).concat(ks.map(lopKy)); if (!a.length) return "";
       var l = a.every(function (x) { return x === "x"; }) ? "x" : a.indexOf("d") >= 0 ? "d" : a.indexOf("m") >= 0 ? "m" : "b";
-      return d > homNay && (l === "m" || l === "b") ? "p" : l; };
+      return d > homNay ? "p" : l; };   // 02/11: kỳ SAU mượn trạng thái task kỳ hiện tại (Đang làm ⇒ ô cam ở 01/12, 01/01) — ngày tới luôn «sắp tới»
     /* số cờ của ô: tần suất việc định kỳ (yêu cầu planogram khớp dòng định kỳ g-sheet, hoặc task [BD]) */
     var coKy = function (ds, ks) { var t = ds.map(tsCuaYc).concat(ks.map(function (k) { return k["TẦN SUẤT"]; })).filter(kyHieu)[0] || ""; return t; };
     var theO = function (l, ts, them) { return '<i class="bd-o ' + l + them.lop + (ts ? " co-ky" : "") + '"' + (ts ? ' data-ky="' + kyHieu(ts) + '"' : "") + them.attr +
