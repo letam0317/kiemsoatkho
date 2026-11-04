@@ -73,6 +73,47 @@
     <button type="button" @click="chiChua = !chiChua" :class="chiChua ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-200'"
       class="shrink-0 rounded-2xl border px-3 min-h-[40px] text-[13px] font-semibold whitespace-nowrap transition"
       x-text="'Chưa làm ' + dsCua(loai, true).filter(d => !daPh(d)).length"></button>
+    <!-- 04/11 user: thêm / sửa / xoá khu vực + mục checklist ngay trên form (bộ factory) -->
+    <button type="button" x-show="coBo" x-cloak @click="suaDm = !suaDm; dmHuy(); dm.tb = ''" :class="suaDm ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200'"
+      class="shrink-0 rounded-2xl border px-3 min-h-[40px] text-[13px] font-semibold whitespace-nowrap transition" x-text="suaDm ? 'Xong' : 'Danh mục'"></button>
+  </div>
+
+  <!-- ===== Sửa danh mục: khu vực › mục checklist ===== -->
+  <div x-show="suaDm" x-cloak class="space-y-3">
+    <p class="text-xs text-slate-500">Mục đã có phản hồi thì không xoá được (xoá phản hồi trước). Sửa chữ thì phản hồi cũ đi theo.</p>
+    <p x-show="dm.tb" class="rounded-2xl border px-4 py-2 text-sm" :class="dm.loi ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'" x-text="dm.tb"></p>
+    <template x-for="(g, gi) in nhomDm()" :key="gi + '|' + g.ten">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3">
+        <div x-show="!(dm.loai === 'sua_kv' && dm.kv === g.ten)" class="flex items-center gap-1">
+          <p class="flex-1 text-sm font-bold text-slate-800" x-text="(g.stt ? g.stt + ' · ' : '') + g.ten"></p>
+          <button type="button" @click="dmBat('sua_kv', g.ten, null, g.ten)" class="shrink-0 rounded-xl text-blue-700 text-xs font-semibold px-2 min-h-[40px] hover:bg-blue-50">Đổi tên</button>
+          <button type="button" @click="dmXoa('xoa_kv', g.ten)" :disabled="g.ds.some(d => daPh(d))" :title="g.ds.some(d => daPh(d)) ? 'Khu vực có mục đã phản hồi' : 'Xoá cả khu vực'"
+            :class="g.ds.some(d => daPh(d)) ? 'text-slate-300' : 'text-red-600 hover:bg-red-50'" class="shrink-0 rounded-xl text-xs font-semibold px-2 min-h-[40px]">Xoá</button>
+        </div>
+        <template x-if="dm.loai === 'sua_kv' && dm.kv === g.ten"><div x-html="dmKhung()"></div></template>
+        <div class="mt-1 divide-y divide-slate-100">
+          <template x-for="d in g.ds" :key="d.dong">
+            <div class="py-1">
+              <div x-show="!(dm.loai === 'sua_ck' && dm.dong === d.dong)" class="flex items-start gap-1">
+                <p class="flex-1 pt-2.5 text-sm text-slate-700 whitespace-pre-line" x-text="d.checklist"></p>
+                <span x-show="daPh(d)" class="shrink-0 pt-3 text-[11px] text-green-700">đã phản hồi</span>
+                <button type="button" @click="dmBat('sua_ck', g.ten, d, d.checklist)" :disabled="!!dongBoCua(d)"
+                  class="shrink-0 rounded-xl text-blue-700 text-xs font-semibold px-2 min-h-[40px] hover:bg-blue-50">Sửa</button>
+                <button type="button" @click="dmXoa('xoa_ck', g.ten, d)" :disabled="daPh(d)" :title="daPh(d) ? 'Đã có phản hồi' : 'Xoá mục'"
+                  :class="daPh(d) ? 'text-slate-300' : 'text-red-600 hover:bg-red-50'" class="shrink-0 rounded-xl text-xs font-semibold px-2 min-h-[40px]">Xoá</button>
+              </div>
+              <template x-if="dm.loai === 'sua_ck' && dm.dong === d.dong"><div x-html="dmKhung()"></div></template>
+            </div>
+          </template>
+        </div>
+        <button type="button" x-show="!(dm.loai === 'them' && dm.kv === g.ten)" @click="dmBat('them', g.ten, g.ds[g.ds.length - 1], '')"
+          class="mt-1 w-full rounded-xl border border-dashed border-blue-300 text-blue-700 text-sm font-semibold min-h-[44px]">+ Thêm mục</button>
+        <template x-if="dm.loai === 'them' && dm.kv === g.ten"><div x-html="dmKhung()"></div></template>
+      </div>
+    </template>
+    <button type="button" x-show="dm.loai !== 'them_kv'" @click="dmBat('them_kv', '', null, '')"
+      class="w-full rounded-2xl border border-dashed border-blue-400 bg-white text-blue-700 text-sm font-semibold min-h-[48px]">+ Thêm khu vực</button>
+    <template x-if="dm.loai === 'them_kv'"><div class="bg-white rounded-2xl border border-slate-200 p-3" x-html="dmKhung()"></div></template>
   </div>
 
   <!-- Đang tải lần đầu -->
@@ -85,7 +126,7 @@
   </div>
 
   <!-- Danh sách checklist -->
-  <div class="space-y-2">
+  <div x-show="!suaDm" class="space-y-2">
     <template x-for="d in dsHien()" :key="d.dong">
       <button type="button" @click="mo(d)"
         class="the fade-up w-full text-left bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 active:scale-[0.99] transition">
@@ -438,7 +479,7 @@
     return {
       noiBo: NOI_BO, coBo: !!BO,
       ds: [], loai: 'vl', tim: '', chiChua: false, moRong: false, dangTai: false, loiTai: '', luc: '',
-      dang: null, ghiChu: '', deXuat: '', dangXoay: false, themCk: { mo: false, chu: '', loi: '', dang: false }, ten: '', files: [], tepCu: [], sua: null,
+      dang: null, ghiChu: '', deXuat: '', dangXoay: false, themCk: { mo: false, chu: '', loi: '', dang: false }, suaDm: false, dm: { loai: '', kv: '', dong: 0, ck: '', chu: '', chu2: '', dang: false, loi: false, tb: '' }, ten: '', files: [], tepCu: [], sua: null,
       thongBao: { loai: '', noiDung: '' },
       canQuyen: false, tbBuoc: 'xin', tbTen: '', tbOtp: '', tbTb: '', tbLoi: false, tbDang: false,
       xemMedia: null, keoVao: false,
@@ -641,6 +682,51 @@
       dong() {
         if (this._coNhap() && !confirm('Còn ảnh/ghi chú chưa gửi. Đóng và bỏ?')) return;
         this.dongQuet(); this._xoaNhap(); this.dang = null; this.themCk = { mo: false, chu: '', loi: '', dang: false };
+      },
+      /* 04/11 lượt 2: sửa danh mục (khu vực › mục). Mỗi lúc chỉ mở 1 khung nhập; GAS kiểm trùng + chặn xoá mục đã phản hồi. */
+      nhomDm() {
+        const g = [];
+        for (const d of this.ds) { const t = g[g.length - 1]; if (t && t.ten === d.congViec) t.ds.push(d); else g.push({ ten: d.congViec, stt: d.stt, ds: [d] }); }
+        return g;
+      },
+      dmHuy() { this.dm = { loai: '', kv: '', dong: 0, ck: '', chu: '', chu2: '', dang: false, loi: false, tb: this.dm.tb }; },
+      dmBat(loai, kv, d, chu) { if (this.dm.dang) return; this.dm = { loai, kv, dong: d ? d.dong : 0, ck: d ? d.checklist : '', chu: chu || '', chu2: '', dang: false, loi: false, tb: '' }; },
+      /* khung nhập dùng chung — x-html (Alpine 3 tự gắn x-model/@click cho phần tử vừa chèn); chỉ phụ thuộc dm.loai nên gõ chữ không vẽ lại */
+      dmKhung() {
+        const loai = this.dm.loai, o = 'w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:outline-none';
+        const nhan = { sua_kv: 'Tên khu vực', sua_ck: 'Nội dung mục', them: 'Mục mới', them_kv: 'Tên khu vực mới' }[loai] || '';
+        return '<div class="mt-2 space-y-2"><p class="text-xs font-semibold text-slate-600">' + nhan + '</p>'
+          + '<textarea x-model="dm.chu" rows="2" class="' + o + '"></textarea>'
+          + (loai === 'them_kv' ? '<p class="text-xs font-semibold text-slate-600">Mục checklist đầu tiên</p><textarea x-model="dm.chu2" rows="2" class="' + o + '"></textarea>' : '')
+          + '<div class="flex gap-2 justify-end">'
+          + '<button type="button" @click="dmHuy()" class="rounded-xl border border-slate-200 bg-white text-slate-600 px-4 min-h-[44px] text-sm font-semibold">Huỷ</button>'
+          + '<button type="button" @click="dmLuu()" :class="dm.dang ? \'opacity-60\' : \'\'" class="rounded-xl bg-blue-600 text-white px-4 min-h-[44px] text-sm font-semibold" x-text="dm.dang ? \'Đang lưu…\' : \'Lưu\'"></button>'
+          + '</div></div>';
+      },
+      async _dmGoi(body, xong) {
+        this.dm.dang = true; this.dm.tb = ''; this.dm.loi = false;
+        try {
+          const j = await this.goi(body, 3, 60000);
+          if (j.status !== 'success') throw new Error(j.message || 'Lỗi máy chủ');
+          await this.taiDs();
+          this.dm = { loai: '', kv: '', dong: 0, ck: '', chu: '', chu2: '', dang: false, loi: false, tb: xong };
+        } catch (e) { this.dm.dang = false; this.dm.loi = true; this.dm.tb = 'Chưa lưu được: ' + e.message; }
+      },
+      dmLuu() {
+        const m = this.dm, chu = String(m.chu || '').trim();
+        if (m.dang) return;
+        if (chu.length < 2 || (m.loai === 'them_kv' && String(m.chu2 || '').trim().length < 2)) { m.loi = true; m.tb = 'Nhập đủ nội dung.'; return; }
+        if (m.loai === 'them') return this._dmGoi({ action: 'nt_them', dong: m.dong, congViec: m.kv, checklist: chu }, 'Đã thêm mục vào «' + m.kv + '».');
+        if (m.loai === 'sua_ck') return this._dmGoi({ action: 'nt_sua', op: 'sua_ck', dong: m.dong, congViec: m.kv, checklist: m.ck, moi: chu }, 'Đã sửa nội dung mục.');
+        if (m.loai === 'sua_kv') return this._dmGoi({ action: 'nt_sua', op: 'sua_kv', congViec: m.kv, moi: chu }, 'Đã đổi tên khu vực.');
+        if (m.loai === 'them_kv') return this._dmGoi({ action: 'nt_sua', op: 'them_kv', moi: chu, checklist: String(m.chu2).trim() }, 'Đã thêm khu vực «' + chu + '».');
+      },
+      dmXoa(op, kv, d) {
+        if (this.dm.dang) return;
+        if (!confirm(op === 'xoa_kv' ? 'Xoá cả khu vực «' + kv + '» và mọi mục trong đó?' : 'Xoá mục «' + d.checklist + '»?')) return;
+        this.dm.loai = '';
+        return this._dmGoi(op === 'xoa_kv' ? { action: 'nt_sua', op, congViec: kv } : { action: 'nt_sua', op, dong: d.dong, congViec: kv, checklist: d.checklist },
+          op === 'xoa_kv' ? 'Đã xoá khu vực «' + kv + '».' : 'Đã xoá mục.');
       },
       /* 04/11: GAS chèn dòng ngay sau khu vực trên sheet checklist → tải lại danh sách, mở luôn hạng mục mới để chụp/ghi. */
       async guiThemCk() {
