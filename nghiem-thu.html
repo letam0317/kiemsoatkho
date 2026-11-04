@@ -81,7 +81,7 @@
   <!-- ===== Sửa danh mục: khu vực › mục checklist ===== -->
   <div x-show="suaDm" x-cloak class="space-y-3">
     <p class="text-xs text-slate-500">Sửa chữ thì phản hồi cũ đi theo. Xoá mục đã có phản hồi: phản hồi được sao lưu, ảnh/clip vẫn giữ trên Drive (báo cáo đã xuất không hỏng link).</p>
-    <p x-show="dm.tb" class="rounded-2xl border px-4 py-2 text-sm" :class="dm.loi ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'" x-text="dm.tb"></p>
+    <p x-show="dm.tb" class="sticky top-2 z-10 rounded-2xl border px-4 py-2 text-sm shadow-sm" :class="dm.loi ? 'bg-red-50 text-red-700 border-red-200' : dm.dang ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-green-50 text-green-700 border-green-200'" x-text="dm.tb"></p>
     <template x-for="(g, gi) in nhomDm()" :key="gi + '|' + g.ten">
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3">
         <div x-show="!(dm.loai === 'sua_kv' && dm.kv === g.ten)" class="flex items-center gap-1">
@@ -611,10 +611,10 @@
         } catch (e) { this.tbLoi = true; this.tbTb = e.message; } finally { this.tbDang = false; }
       },
 
-      async taiDs() {
+      async taiDs(j0, nhanh) {
         this.dangTai = true; this.loiTai = '';
         try {
-          const j = await this.goi({ action: 'nt_lay' });
+          const j = j0 || await this.goi(nhanh ? { action: 'nt_lay', nhanh: 1 } : { action: 'nt_lay' });
           if (j.status !== 'success') throw new Error(j.message || 'Lỗi máy chủ');
           /* Mục đang đẩy dở trên máy này (chưa có trên máy chủ) phải giữ lại, không để bản tải về đè mất. */
           const choCu = {}; this.ds.forEach(d => { const c = d.muc.filter(m => m.cho); if (c.length) choCu[d.congViec + '›' + d.checklist] = c; });   // 04/11: khoá theo Khu vực › Checklist (mục 3 + 7 trùng câu → phản hồi dính sang mục kia)
@@ -690,7 +690,7 @@
         return g;
       },
       dmHuy() { this.dm = { loai: '', kv: '', dong: 0, ck: '', chu: '', chu2: '', dang: false, loi: false, tb: this.dm.tb }; },
-      dmBat(loai, kv, d, chu) { if (this.dm.dang) return; this.dm = { loai, kv, dong: d ? d.dong : 0, ck: d ? d.checklist : '', chu: chu || '', chu2: '', dang: false, loi: false, tb: '' }; },
+      dmBat(loai, kv, d, chu) { if (this.dm.dang) { this.dm.tb = 'Đợi lượt trước lưu xong…'; return; } this.dm = { loai, kv, dong: d ? d.dong : 0, ck: d ? d.checklist : '', chu: chu || '', chu2: '', dang: false, loi: false, tb: '' }; },
       /* khung nhập dùng chung — x-html (Alpine 3 tự gắn x-model/@click cho phần tử vừa chèn); chỉ phụ thuộc dm.loai nên gõ chữ không vẽ lại */
       dmKhung() {
         const loai = this.dm.loai, o = 'w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:outline-none';
@@ -703,34 +703,43 @@
           + '<button type="button" @click="dmLuu()" :class="dm.dang ? \'opacity-60\' : \'\'" class="rounded-xl bg-blue-600 text-white px-4 min-h-[44px] text-sm font-semibold" x-text="dm.dang ? \'Đang lưu…\' : \'Lưu\'"></button>'
           + '</div></div>';
       },
-      async _dmGoi(body, xong) {
-        this.dm.dang = true; this.dm.tb = ''; this.dm.loi = false;
+      /* 04/11 lượt 5 user «xoá rất lâu, bị treo máy»: đổi NGAY trên màn hình (lac = đổi tạm, tra = hoàn lại khi lỗi),
+         lưu ngầm + dòng «Đang lưu…»; GAS trả luôn danh sách mới (j.lay), không trình bày lại cả bảng. */
+      async _dmGoi(body, xong, lac) {
+        const tra = lac ? lac() : null;
+        this.dm = Object.assign({}, this.dm, { loai: lac ? '' : this.dm.loai, dang: true, loi: false, tb: 'Đang lưu lên sheet…' });
         try {
-          const j = await this.goi(body, 3, 60000);
+          const j = await this.goi(body, 3, 90000);
           if (j.status !== 'success') throw new Error(j.message || 'Lỗi máy chủ');
-          await this.taiDs();
+          await this.taiDs(j.lay && j.lay.status === 'success' ? j.lay : null, true);
           this.dm = { loai: '', kv: '', dong: 0, ck: '', chu: '', chu2: '', dang: false, loi: false, tb: xong };
-        } catch (e) { this.dm.dang = false; this.dm.loi = true; this.dm.tb = 'Chưa lưu được: ' + e.message; }
+        } catch (e) { if (tra) tra(); this.dm.dang = false; this.dm.loi = true; this.dm.tb = 'Chưa lưu được: ' + e.message; }
       },
       dmLuu() {
         const m = this.dm, chu = String(m.chu || '').trim();
         if (m.dang) return;
         if (chu.length < 2 || (m.loai === 'them_kv' && String(m.chu2 || '').trim().length < 2)) { m.loi = true; m.tb = 'Nhập đủ nội dung.'; return; }
         if (m.loai === 'them') return this._dmGoi({ action: 'nt_them', dong: m.dong, congViec: m.kv, checklist: chu }, 'Đã thêm mục vào «' + m.kv + '».');
-        if (m.loai === 'sua_ck') return this._dmGoi({ action: 'nt_sua', op: 'sua_ck', dong: m.dong, congViec: m.kv, checklist: m.ck, moi: chu }, 'Đã sửa nội dung mục.');
-        if (m.loai === 'sua_kv') return this._dmGoi({ action: 'nt_sua', op: 'sua_kv', congViec: m.kv, moi: chu }, 'Đã đổi tên khu vực.');
+        if (m.loai === 'sua_ck') { const d = this.ds.find(x => x.dong === m.dong), cu = d && d.checklist;
+          return this._dmGoi({ action: 'nt_sua', op: 'sua_ck', dong: m.dong, congViec: m.kv, checklist: m.ck, moi: chu }, 'Đã sửa nội dung mục.',
+            () => { if (d) d.checklist = chu; return () => { if (d) d.checklist = cu; }; }); }
+        if (m.loai === 'sua_kv') { const g = this.ds.filter(x => x.congViec === m.kv), cu = m.kv;
+          return this._dmGoi({ action: 'nt_sua', op: 'sua_kv', congViec: m.kv, moi: chu }, 'Đã đổi tên khu vực.',
+            () => { g.forEach(x => { x.congViec = chu; }); return () => g.forEach(x => { x.congViec = cu; }); }); }
         if (m.loai === 'them_kv') return this._dmGoi({ action: 'nt_sua', op: 'them_kv', moi: chu, checklist: String(m.chu2).trim() }, 'Đã thêm khu vực «' + chu + '».');
       },
       dmXoa(op, kv, d, cac) {
-        if (this.dm.dang) return;
+        if (this.dm.dang) { this.dm.tb = 'Đợi lượt trước lưu xong…'; return; }
         const co = (cac || []).filter(x => this.daPh(x)), soPh = co.reduce((n, x) => n + Math.max(1, (x.muc || []).length), 0);
         const hoi = (op === 'xoa_kv' ? 'Xoá cả khu vực «' + kv + '» và mọi mục trong đó?' : 'Xoá mục «' + d.checklist + '»?')
           + (co.length ? '\n\nCó ' + soPh + ' phản hồi sẽ bị xoá theo (phản hồi được sao lưu, ảnh/clip giữ trên Drive). Báo cáo xuất SAU lúc xoá sẽ không còn tiêu chí này; tệp báo cáo đã xuất không đổi.' : '');
         if (!confirm(hoi)) return;
         this.dm.loai = '';
         const ca = co.length ? { ca: 1 } : {};
+        const bo = op === 'xoa_kv' ? this.ds.filter(x => x.congViec === kv) : [d];
         return this._dmGoi(op === 'xoa_kv' ? { action: 'nt_sua', op, congViec: kv, ...ca } : { action: 'nt_sua', op, dong: d.dong, congViec: kv, checklist: d.checklist, ...ca },
-          op === 'xoa_kv' ? 'Đã xoá khu vực «' + kv + '».' : 'Đã xoá mục.');
+          op === 'xoa_kv' ? 'Đã xoá khu vực «' + kv + '».' : 'Đã xoá mục.',
+          () => { const cu = this.ds; this.ds = cu.filter(x => !bo.includes(x)); return () => { this.ds = cu; }; });
       },
       /* 04/11: GAS chèn dòng ngay sau khu vực trên sheet checklist → tải lại danh sách, mở luôn hạng mục mới để chụp/ghi. */
       async guiThemCk() {
@@ -741,7 +750,7 @@
         try {
           const j = await this.goi({ action: 'nt_them', dong: d.dong, congViec: d.congViec, checklist: chu }, 3, 60000);
           if (j.status !== 'success') throw new Error(j.message || 'Lỗi máy chủ');
-          await this.taiDs();
+          await this.taiDs(j.lay && j.lay.status === 'success' ? j.lay : null, true);
           const moi = this.ds.find(x => x.dong === j.dong);
           this.themCk = { mo: false, chu: '', loi: '', dang: false };
           if (moi) this.mo(moi);
