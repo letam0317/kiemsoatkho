@@ -120,8 +120,25 @@
 
       <div class="overflow-y-auto px-5 py-4 space-y-4" x-show="dang">
         <section>
-          <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Checklist</p>
+          <div class="flex items-center gap-2 mb-1">
+            <p class="flex-1 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Checklist</p>
+            <!-- 04/11 user: tự thêm hạng mục checklist cho khu vực đang mở -->
+            <button type="button" x-show="coBo && !themCk.mo" @click="themCk = { mo: true, chu: '', loi: '', dang: false }"
+              class="shrink-0 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-xs font-semibold px-3 min-h-[36px] active:scale-95 transition">+ Thêm hạng mục</button>
+          </div>
           <p class="text-sm text-slate-800 whitespace-pre-line" x-text="dang && dang.checklist"></p>
+          <div x-show="themCk.mo" x-cloak class="mt-2 rounded-2xl border border-blue-200 bg-blue-50/60 p-3 space-y-2">
+            <p class="text-xs text-slate-600" x-text="'Hạng mục mới cho khu vực «' + (dang ? dang.congViec : '') + '»'"></p>
+            <textarea x-model="themCk.chu" rows="2" placeholder="Nội dung hạng mục cần kiểm..."
+              class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:outline-none transition"></textarea>
+            <p x-show="themCk.loi" class="text-xs text-red-600" x-text="themCk.loi"></p>
+            <div class="flex gap-2 justify-end">
+              <button type="button" @click="themCk = { mo: false, chu: '', loi: '', dang: false }"
+                class="rounded-xl border border-slate-200 bg-white text-slate-600 px-4 min-h-[44px] text-sm font-semibold">Huỷ</button>
+              <button type="button" @click="guiThemCk()" :disabled="themCk.dang" :class="themCk.dang ? 'opacity-60' : ''"
+                class="rounded-xl bg-blue-600 text-white px-4 min-h-[44px] text-sm font-semibold" x-text="themCk.dang ? 'Đang thêm…' : 'Thêm'"></button>
+            </div>
+          </div>
         </section>
         <section x-show="dang && dang.tienDo">
           <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Kho phản hồi tiến độ</p>
@@ -421,7 +438,7 @@
     return {
       noiBo: NOI_BO, coBo: !!BO,
       ds: [], loai: 'vl', tim: '', chiChua: false, moRong: false, dangTai: false, loiTai: '', luc: '',
-      dang: null, ghiChu: '', deXuat: '', dangXoay: false, ten: '', files: [], tepCu: [], sua: null,
+      dang: null, ghiChu: '', deXuat: '', dangXoay: false, themCk: { mo: false, chu: '', loi: '', dang: false }, ten: '', files: [], tepCu: [], sua: null,
       thongBao: { loai: '', noiDung: '' },
       canQuyen: false, tbBuoc: 'xin', tbTen: '', tbOtp: '', tbTb: '', tbLoi: false, tbDang: false,
       xemMedia: null, keoVao: false,
@@ -618,11 +635,28 @@
         if (this.dang && this.dang.dong !== d.dong && this._coNhap() && !confirm('Mục đang soạn còn ảnh/ghi chú chưa gửi. Bỏ để mở mục khác?')) return;
         if (!this.dang || this.dang.dong !== d.dong) { this._xoaNhap(); }
         if (!this.dang || this.dang.dong !== d.dong) this.dongQuet();
+        if (!this.dang || this.dang.dong !== d.dong) this.themCk = { mo: false, chu: '', loi: '', dang: false };
         this.dang = d; this.thongBao = { loai: '', noiDung: '' };
       },
       dong() {
         if (this._coNhap() && !confirm('Còn ảnh/ghi chú chưa gửi. Đóng và bỏ?')) return;
-        this.dongQuet(); this._xoaNhap(); this.dang = null;
+        this.dongQuet(); this._xoaNhap(); this.dang = null; this.themCk = { mo: false, chu: '', loi: '', dang: false };
+      },
+      /* 04/11: GAS chèn dòng ngay sau khu vực trên sheet checklist → tải lại danh sách, mở luôn hạng mục mới để chụp/ghi. */
+      async guiThemCk() {
+        const d = this.dang, chu = String(this.themCk.chu || '').trim();
+        if (!d || this.themCk.dang) return;
+        if (chu.length < 2) { this.themCk.loi = 'Nhập nội dung hạng mục.'; return; }
+        this.themCk.dang = true; this.themCk.loi = '';
+        try {
+          const j = await this.goi({ action: 'nt_them', dong: d.dong, congViec: d.congViec, checklist: chu }, 3, 60000);
+          if (j.status !== 'success') throw new Error(j.message || 'Lỗi máy chủ');
+          await this.taiDs();
+          const moi = this.ds.find(x => x.dong === j.dong);
+          this.themCk = { mo: false, chu: '', loi: '', dang: false };
+          if (moi) this.mo(moi);
+          this.thongBao = { loai: 'ok', noiDung: j.trung ? 'Hạng mục này đã có sẵn — đã mở.' : '✓ Đã thêm hạng mục vào sheet — chụp ảnh / ghi hiện trạng ngay.' };
+        } catch (e) { this.themCk.loi = 'Chưa thêm được: ' + e.message; this.themCk.dang = false; }
       },
       /* boGiu: true khi ảnh đã chuyển sang mục đang đẩy — đừng huỷ link xem trước của chúng. */
       _xoaNhap(boGiu) {
