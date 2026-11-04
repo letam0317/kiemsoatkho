@@ -80,15 +80,15 @@
 
   <!-- ===== Sửa danh mục: khu vực › mục checklist ===== -->
   <div x-show="suaDm" x-cloak class="space-y-3">
-    <p class="text-xs text-slate-500">Mục đã có phản hồi thì không xoá được (xoá phản hồi trước). Sửa chữ thì phản hồi cũ đi theo.</p>
+    <p class="text-xs text-slate-500">Sửa chữ thì phản hồi cũ đi theo. Xoá mục đã có phản hồi: phản hồi được sao lưu, ảnh/clip vào thùng rác Drive (khôi phục được 30 ngày).</p>
     <p x-show="dm.tb" class="rounded-2xl border px-4 py-2 text-sm" :class="dm.loi ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'" x-text="dm.tb"></p>
     <template x-for="(g, gi) in nhomDm()" :key="gi + '|' + g.ten">
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3">
         <div x-show="!(dm.loai === 'sua_kv' && dm.kv === g.ten)" class="flex items-center gap-1">
           <p class="flex-1 text-sm font-bold text-slate-800" x-text="(g.stt ? g.stt + ' · ' : '') + g.ten"></p>
           <button type="button" @click="dmBat('sua_kv', g.ten, null, g.ten)" class="shrink-0 rounded-xl text-blue-700 text-xs font-semibold px-2 min-h-[40px] hover:bg-blue-50">Đổi tên</button>
-          <button type="button" @click="dmXoa('xoa_kv', g.ten)" :disabled="g.ds.some(d => daPh(d))" :title="g.ds.some(d => daPh(d)) ? 'Khu vực có mục đã phản hồi' : 'Xoá cả khu vực'"
-            :class="g.ds.some(d => daPh(d)) ? 'text-slate-300' : 'text-red-600 hover:bg-red-50'" class="shrink-0 rounded-xl text-xs font-semibold px-2 min-h-[40px]">Xoá</button>
+          <button type="button" @click="dmXoa('xoa_kv', g.ten, null, g.ds)" :disabled="g.ds.some(d => dongBoCua(d))" title="Xoá cả khu vực"
+            :class="g.ds.some(d => dongBoCua(d)) ? 'text-slate-300' : 'text-red-600 hover:bg-red-50'" class="shrink-0 rounded-xl text-xs font-semibold px-2 min-h-[40px]">Xoá</button>
         </div>
         <template x-if="dm.loai === 'sua_kv' && dm.kv === g.ten"><div x-html="dmKhung()"></div></template>
         <div class="mt-1 divide-y divide-slate-100">
@@ -99,8 +99,8 @@
                 <span x-show="daPh(d)" class="shrink-0 pt-3 text-[11px] text-green-700">đã phản hồi</span>
                 <button type="button" @click="dmBat('sua_ck', g.ten, d, d.checklist)" :disabled="!!dongBoCua(d)"
                   class="shrink-0 rounded-xl text-blue-700 text-xs font-semibold px-2 min-h-[40px] hover:bg-blue-50">Sửa</button>
-                <button type="button" @click="dmXoa('xoa_ck', g.ten, d)" :disabled="daPh(d)" :title="daPh(d) ? 'Đã có phản hồi' : 'Xoá mục'"
-                  :class="daPh(d) ? 'text-slate-300' : 'text-red-600 hover:bg-red-50'" class="shrink-0 rounded-xl text-xs font-semibold px-2 min-h-[40px]">Xoá</button>
+                <button type="button" @click="dmXoa('xoa_ck', g.ten, d, [d])" :disabled="!!dongBoCua(d)" :title="dongBoCua(d) ? 'Đang lưu phản hồi — đợi xong' : 'Xoá mục'"
+                  :class="dongBoCua(d) ? 'text-slate-300' : 'text-red-600 hover:bg-red-50'" class="shrink-0 rounded-xl text-xs font-semibold px-2 min-h-[40px]">Xoá</button>
               </div>
               <template x-if="dm.loai === 'sua_ck' && dm.dong === d.dong"><div x-html="dmKhung()"></div></template>
             </div>
@@ -617,9 +617,9 @@
           const j = await this.goi({ action: 'nt_lay' });
           if (j.status !== 'success') throw new Error(j.message || 'Lỗi máy chủ');
           /* Mục đang đẩy dở trên máy này (chưa có trên máy chủ) phải giữ lại, không để bản tải về đè mất. */
-          const choCu = {}; this.ds.forEach(d => { const c = d.muc.filter(m => m.cho); if (c.length) choCu[d.checklist] = c; });
-          this.ds = (j.dong || []).map(d => { this._chuan(d); (choCu[d.checklist] || []).forEach(m => { const k = d.muc.findIndex(x => x.id === m.id); if (k >= 0) d.muc[k] = m; else d.muc.push(m); }); return d; });
-          if (this.dang) this.dang = this.ds.find(d => d.checklist === this.dang.checklist) || null;
+          const choCu = {}; this.ds.forEach(d => { const c = d.muc.filter(m => m.cho); if (c.length) choCu[d.congViec + '›' + d.checklist] = c; });   // 04/11: khoá theo Khu vực › Checklist (mục 3 + 7 trùng câu → phản hồi dính sang mục kia)
+          this.ds = (j.dong || []).map(d => { this._chuan(d); (choCu[d.congViec + '›' + d.checklist] || []).forEach(m => { const k = d.muc.findIndex(x => x.id === m.id); if (k >= 0) d.muc[k] = m; else d.muc.push(m); }); return d; });
+          if (this.dang) this.dang = this.ds.find(d => d.congViec === this.dang.congViec && d.checklist === this.dang.checklist) || null;
           this.luc = this._gio(); this._luuMay();
         } catch (e) {
           this.loiTai = (this.ds.length ? 'Đang xem bản lưu lúc ' + this.luc + ' — ' : '') + 'Không tải được danh sách: ' + e.message;
@@ -721,11 +721,15 @@
         if (m.loai === 'sua_kv') return this._dmGoi({ action: 'nt_sua', op: 'sua_kv', congViec: m.kv, moi: chu }, 'Đã đổi tên khu vực.');
         if (m.loai === 'them_kv') return this._dmGoi({ action: 'nt_sua', op: 'them_kv', moi: chu, checklist: String(m.chu2).trim() }, 'Đã thêm khu vực «' + chu + '».');
       },
-      dmXoa(op, kv, d) {
+      dmXoa(op, kv, d, cac) {
         if (this.dm.dang) return;
-        if (!confirm(op === 'xoa_kv' ? 'Xoá cả khu vực «' + kv + '» và mọi mục trong đó?' : 'Xoá mục «' + d.checklist + '»?')) return;
+        const co = (cac || []).filter(x => this.daPh(x)), soPh = co.reduce((n, x) => n + Math.max(1, (x.muc || []).length), 0);
+        const hoi = (op === 'xoa_kv' ? 'Xoá cả khu vực «' + kv + '» và mọi mục trong đó?' : 'Xoá mục «' + d.checklist + '»?')
+          + (co.length ? '\n\nCó ' + soPh + ' phản hồi sẽ bị xoá theo (ảnh/clip vào thùng rác Drive, phản hồi được sao lưu). Báo cáo bỏ luôn tiêu chí này.' : '');
+        if (!confirm(hoi)) return;
         this.dm.loai = '';
-        return this._dmGoi(op === 'xoa_kv' ? { action: 'nt_sua', op, congViec: kv } : { action: 'nt_sua', op, dong: d.dong, congViec: kv, checklist: d.checklist },
+        const ca = co.length ? { ca: 1 } : {};
+        return this._dmGoi(op === 'xoa_kv' ? { action: 'nt_sua', op, congViec: kv, ...ca } : { action: 'nt_sua', op, dong: d.dong, congViec: kv, checklist: d.checklist, ...ca },
           op === 'xoa_kv' ? 'Đã xoá khu vực «' + kv + '».' : 'Đã xoá mục.');
       },
       /* 04/11: GAS chèn dòng ngay sau khu vực trên sheet checklist → tải lại danh sách, mở luôn hạng mục mới để chụp/ghi. */
@@ -829,7 +833,7 @@
         d.muc = moi; if (j.tay != null) d.tay = j.tay; if (j.dong) d.dong = j.dong;
         this._luuMay();
       },
-      _dongNay(d) { return this.ds.find(x => x.checklist === d.checklist) || d; },
+      _dongNay(d) { return this.ds.find(x => x.congViec === d.congViec && x.checklist === d.checklist) || d; },
       thuLai(m) { const d = this.ds.find(x => x.muc.some(y => y.id === m.id)); if (d) this.dongBo(d, d.muc.find(y => y.id === m.id)); },
       async xoaMuc(m) {
         if (!confirm('Xoá phản hồi này (cả ghi chú và ảnh/clip) khỏi sheet?')) return;
