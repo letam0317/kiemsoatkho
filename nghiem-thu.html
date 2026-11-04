@@ -203,8 +203,18 @@
                 <span x-show="m.cho === 'dang'" class="shrink-0 text-[11px] font-semibold text-blue-600" x-text="m.tt || 'Đang lưu lên sheet…'"></span>
                 <button type="button" x-show="m.cho === 'loi'" @click="thuLai(m)" class="shrink-0 rounded-xl text-[12px] font-semibold text-red-600 px-2 min-h-[40px]">✗ Chưa lưu — thử lại</button>
                 <button type="button" x-show="!m.cho && sua !== m.id" @click="batSua(m)" class="shrink-0 rounded-xl text-[13px] font-semibold text-blue-700 hover:bg-white px-3 min-h-[40px]">Sửa</button>
+                <button type="button" x-show="coBo && !m.cho && sua !== m.id" @click="chuyenId = chuyenId === m.id ? '' : m.id" class="shrink-0 rounded-xl text-[13px] font-semibold text-slate-600 hover:bg-white px-3 min-h-[40px]">Chuyển</button>
                 <button type="button" x-show="!m.cho && sua !== m.id" @click="xoaMuc(m)" class="shrink-0 rounded-xl text-[13px] font-semibold text-red-600 hover:bg-white px-3 min-h-[40px]">Xoá</button>
                 <span x-show="sua === m.id" class="shrink-0 text-[11px] font-semibold text-blue-700 px-2">Đang sửa bên dưới</span>
+              </div>
+              <!-- 04/11 user «chuyển mục này sang …»: chọn mục checklist đích — giữ nguyên giờ, người gửi, ảnh/clip -->
+              <div x-show="chuyenId === m.id" x-cloak class="mb-2 rounded-xl border border-slate-200 bg-white p-2 space-y-1">
+                <p class="px-1 text-xs font-semibold text-slate-500">Chuyển lượt phản hồi này sang mục</p>
+                <template x-for="x in ds.filter(x => x !== dang && x.dong > 0)" :key="'cv' + x.dong">
+                  <button type="button" @click="chuyenSang(m, x)" class="w-full text-left rounded-lg px-2 min-h-[40px] text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100">
+                    <span class="text-[11px] font-semibold text-slate-500" x-text="(x.stt ? x.stt + ' · ' : '') + x.congViec"></span><br><span x-text="x.checklist"></span>
+                  </button>
+                </template>
               </div>
               <p x-show="m.ghiChu" class="text-sm text-slate-800 whitespace-pre-line" x-text="m.ghiChu"></p>
               <p x-show="m.deXuat" class="mt-1 text-sm text-indigo-800 whitespace-pre-line"><b>Đề xuất: </b><span x-text="m.deXuat"></span></p>
@@ -562,7 +572,7 @@
     return {
       noiBo: NOI_BO, coBo: !!BO,
       ds: [], loai: 'vl', tim: '', chiChua: false, moRong: false, dangTai: false, loiTai: '', luc: '',
-      dang: null, ghiChu: '', deXuat: '', dangXoay: false, dichTep: '', themCk: { mo: false, chu: '', loi: '', dang: false }, suaDm: false, dm: { loai: '', kv: '', dong: 0, ck: '', chu: '', chu2: '', dang: false, loi: false, tb: '' }, ten: '', files: [], tepCu: [], sua: null,
+      dang: null, ghiChu: '', deXuat: '', dangXoay: false, dichTep: '', chuyenId: '', themCk: { mo: false, chu: '', loi: '', dang: false }, suaDm: false, dm: { loai: '', kv: '', dong: 0, ck: '', chu: '', chu2: '', dang: false, loi: false, tb: '' }, ten: '', files: [], tepCu: [], sua: null,
       thongBao: { loai: '', noiDung: '' },
       canQuyen: false, tbBuoc: 'xin', tbTen: '', tbOtp: '', tbTb: '', tbLoi: false, tbDang: false,
       xemMedia: null, keoVao: false,
@@ -850,6 +860,23 @@
         return this._dmGoi(op === 'xoa_kv' ? { action: 'nt_sua', op, congViec: kv, ...ca } : { action: 'nt_sua', op, dong: d.dong, congViec: kv, checklist: d.checklist, ...ca },
           op === 'xoa_kv' ? 'Đã xoá hạng mục «' + kv + '».' : 'Đã xoá mục.',
           () => { this.ds = this.ds.filter(x => !bo.includes(x)); return () => { this.ds = this.ds.concat(bo.filter(x => !this.ds.includes(x))).sort((a, b) => Math.abs(a.dong) - Math.abs(b.dong)); }; });
+      },
+      /* 04/11: chuyển 1 lượt phản hồi sang mục khác — đổi ngay trên màn hình, GAS dựng lại ô phản hồi của cả 2 dòng */
+      async chuyenSang(m, den) {
+        const tu = this.dang; if (!tu || !den) return;
+        if (!confirm('Chuyển lượt phản hồi ' + (m.luc || '') + ' sang «' + den.congViec + ' › ' + den.checklist + '»?')) return;
+        this.chuyenId = '';
+        const k = tu.muc.indexOf(m); if (k >= 0) tu.muc.splice(k, 1); den.muc.push(m);
+        this.thongBao = { loai: 'info', noiDung: 'Đang chuyển…' };
+        try {
+          const j = await this.goi({ action: 'nt_sua', op: 'chuyen', dong: tu.dong, congViec: tu.congViec, checklist: tu.checklist, mucId: m.id, denCv: den.congViec, denCk: den.checklist, lay: 1 }, 3, 90000);
+          if (j.status !== 'success') throw new Error(j.message || 'Lỗi máy chủ');
+          await this.taiDs(j.lay && j.lay.status === 'success' ? j.lay : null, true);
+          this.thongBao = { loai: 'ok', noiDung: '✓ Đã chuyển sang «' + den.checklist + '».' };
+        } catch (e) {
+          const k2 = den.muc.indexOf(m); if (k2 >= 0) den.muc.splice(k2, 1); tu.muc.push(m);
+          this.thongBao = { loai: 'err', noiDung: 'Chưa chuyển được: ' + e.message };
+        }
       },
       /* 04/11: GAS chèn dòng ngay sau khu vực trên sheet checklist → tải lại danh sách, mở luôn hạng mục mới để chụp/ghi. */
       async guiThemCk() {
