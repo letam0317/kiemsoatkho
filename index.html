@@ -1687,13 +1687,15 @@ window.hxDoMayChu = function(){
         if (!ds.length) throw 0;
         /* 21/10 (Theo máy điện thoại «0 sự việc»): laptop thật + PC dự phòng chỉ xem cùng báo đường hầm → ping hết,
            máy KHÔNG dự phòng trả lời là lấy ngay; chỉ khi laptop im mới chịu bản chỉ xem (thiếu dữ liệu bãi xe, Theo máy trống) */
-        return new Promise(function(ok, hong){ var con = ds.length, that = null, du = null, duDia = -1, duMa = 0;
+        /* 05/11 user «máy dự phòng làm đủ»: nhiều máy dự phòng → máy có dữ liệu MỚI nhất (ping.luc = giờ bản mã vừa nhận), bằng nhau thì nhiều chỗ hơn */
+        return new Promise(function(ok, hong){ var con = ds.length, that = null, du = null, duDia = -1, duLuc = -1, duMa = 0;
           var chot = function(){ if (that) { window.__HX_DU_PHONG = 0; window.__HX_MA_HOA = 0; ok(that); }
             else if (du) { window.__HX_DU_PHONG = 1; window.__HX_MA_HOA = duMa; ok(du); } else hong(0); };
           ds.forEach(function(m){ var c = new AbortController(); setTimeout(function(){ c.abort(); }, 8000);
             fetch(m.xmHam + "/api/ping", { signal: c.signal }).then(function(r){ if (!r.ok) throw 0; return r.json().catch(function(){ return {}; }); })
               /* 22/10: nhiều bản dự phòng → máy nhiều chỗ (có gương clip đủ nhất, BANGCHUYEN-2) */
-              .then(function(x){ if (x && x.duPhong) { if (!du || (x.diaGB || 0) > duDia) { du = m.xmHam; duDia = x.diaGB || 0; duMa = x.maHoa ? 1 : 0; } }
+              .then(function(x){ if (x && x.duPhong) { var l = Math.floor((x.luc || 0) / 600e3);   // lệch < 10' coi như bằng nhau
+                  if (!du || l > duLuc || (l === duLuc && (x.diaGB || 0) > duDia)) { du = m.xmHam; duLuc = l; duDia = x.diaGB || 0; duMa = x.maHoa ? 1 : 0; } }
                 else { that = that || m.xmHam; con = 0; chot(); } }, function(){})
               .then(function(){ if (con > 0 && !--con) chot(); }); }); }); }); };
   var ham = function(){ var cu = ""; try { cu = localStorage.getItem("hx-ham") || ""; } catch(e){}
@@ -1701,11 +1703,14 @@ window.hxDoMayChu = function(){
       /* 20/10: bỏ tệp địa chỉ công khai summary/xm-may-chu.json — địa chỉ laptop cũng đi qua nhịp tim (xmHam) → pcBangPh sau đăng nhập */
       .catch(duPhong)
       .then(function(u){ if (!window.__HX_DU_PHONG) try { localStorage.setItem("hx-ham", u); } catch(e){} return u; }, duPhong)
-      .then(function(u){ window.__HX_QUA_HAM = 1;
-        var tb = "Laptop đang tắt — đang xem bản dự phòng" + (window.__HX_MA_HOA ? " mã hoá" : "") + " (chỉ xem, quyết định làm khi laptop bật)";
-        if (window.__HX_DU_PHONG && typeof toast === "function") setTimeout(function(){ if (window.TK && window.TK.nguoi) toast(tb, "loi"); }, 600);   // 26/10: phiên vừa hết hạn → chỉ báo «hết hạn», không báo thêm
-        return u; }); };
-  var p = window.__HX_KHONG_MAY ? ham() : ping("http://127.0.0.1:8591", 1500).catch(function(){ return ham(); });
+      .then(function(u){ window.__HX_QUA_HAM = 1; return u; }); };   // 05/11 user: bỏ thông báo «Laptop đang tắt…» — máy nào cũng xem đủ, không báo
+  /* 05/11: PC Windows tự chạy bản dự phòng ⇒ 127.0.0.1 trả duPhong. Trước dừng luôn ở đó (laptop bật vẫn xem bản dự phòng). Nay dò tiếp laptop;
+     laptop không trả lời thì mới dùng bản của chính máy này. */
+  var p = window.__HX_KHONG_MAY ? ham() : ping("http://127.0.0.1:8591", 1500).then(function(u){
+      if (!window.__HX_DU_PHONG) return u; var ma = window.__HX_MA_HOA;
+      return ham().then(function(v){ if (window.__HX_DU_PHONG) { window.__HX_MA_HOA = ma; window.__HX_QUA_HAM = 0; return u; } return v; },
+        function(){ window.__HX_DU_PHONG = 1; window.__HX_MA_HOA = ma; window.__HX_QUA_HAM = 0; return u; }); },
+    function(){ return ham(); });
   return window.__HX_DO = p.then(function(u){ window.HX_API = u; window.__HX_MAY_CHU = 1; if (window.hxGuongMa) window.hxGuongMa.capNhat(); document.body.classList.remove("hx-an"); if (typeof homeVeLai === "function") setTimeout(homeVeLai, 0);   /* 20/10 dò máy chủ/đường hầm xong → vẽ lại Tổng quan (thẻ Xác minh) */
       /* 30/10 user «laptop tắt thì CCTV không vô được»: phiên Xác minh (hx-phien) do TỪNG máy chủ 8591 cấp, lưu riêng ở máy đó — phiên laptop
          đưa sang máy dự phòng BANGCHUYEN-2 bị 401 (đo 30/10). Máy chủ đổi (laptop ⇄ dự phòng) mà có phiên tài khoản → đổi phiên NGAY ở máy mới. */
@@ -3933,7 +3938,7 @@ let _hxNap=null;
 function napXm(){
   if(!_hxNap){
     _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261030a';
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261105a';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
       document.body.appendChild(s);
     });
@@ -3990,9 +3995,13 @@ function moHasakiXacMinh(){
       /* 21/10 user «mất Theo tác vụ/Theo máy/Nhật ký trên điện thoại»: đường hầm laptop chết → trang lặng lẽ nhảy sang Máy trạm, không ai biết vì sao.
          Nay: nói rõ + «Thử lại» (dò lại từ đầu) + «Mở Máy trạm»; không tự chuyển tab. */
       window.__HX_DO = null;
-      pane.innerHTML = '<div class="panel xm-khoa"><div class="xm-khoa-s"><b>Chưa nối được máy chủ Xác minh.</b><br>Laptop đang tắt hoặc đường hầm chưa lên — Theo tác vụ / Theo máy / Nhật ký cần máy chủ này. Máy trạm vẫn xem được.</div>' +
+      /* 05/11 user «xoá thông báo laptop đang tắt / đường hầm»: chỉ còn câu ngắn, tự nối lại 30 s/lần (tối đa 10) khi khung còn đang hiện */
+      moHasakiXacMinh._lan = (moHasakiXacMinh._lan || 0) + 1;
+      if (moHasakiXacMinh._lan <= 10) setTimeout(function(){ if (!window.__HX_MAY_CHU && pane.offsetParent !== null && pane.querySelector('.xm-khoa')) moHasakiXacMinh(); }, 30e3);
+      pane.innerHTML = '<div class="panel xm-khoa"><div class="xm-khoa-s"><b>Đang nối lại…</b></div>' +
         '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px"><button type="button" class="xm-khoa-nut" onclick="moHasakiXacMinh()">Thử lại</button><button type="button" class="xm-khoa-nut xm-khoa-phu" onclick="setTab(\'maytram\')">Mở Máy trạm</button></div></div>';
     }); return; }   // 19/10: chờ dò máy chủ (laptop hoặc đường hầm); không có thì về Máy trạm (tránh ô đăng nhập lặp)
+  moHasakiXacMinh._lan = 0;
   napXm().then(()=>{ window.HXACMINH && window.HXACMINH.init(pane); })
     .catch(e=>{ _hxNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
 }
@@ -4035,12 +4044,11 @@ var HOME_MUC = [
     { t: "planogram", ten: "Planogram", cc: "var(--good)", mo: "Vệ sinh quầy kệ + bàn đóng gói theo sơ đồ: ai phụ trách, ô nào chưa báo cáo, ai đi làm mà chưa làm.",
       muc: ["Tiến độ hôm nay", "Sơ đồ khu vực", "Cần xử lý", "Nhân viên"] }
   ]},
-  { g: "Tồn kho", mo: "Số liệu kho đọc từ WMS mỗi ngày", items: [
+  /* 05/11 user: gộp «Tồn kho» + «Tài sản» thành 1 nhóm «Tồn kho và Tài sản cố định» — Bảo dưỡng ngang hàng, bên phải Tồn kho chính xác */
+  { g: "Tồn kho và Tài sản cố định", mo: "Số liệu kho đọc từ WMS mỗi ngày · kế hoạch bảo dưỡng thiết bị kho 170", items: [
     { t: "kk", ten: "Tồn kho chính xác", cc: "var(--info,var(--accent))", mo: "Kiểm kê thật (physical-count) theo SKU và mã vị trí, kèm SKU bất thường (Conflict · UID Temp · Not Found · Unsuitable · Committed).",
-      muc: ["Kiểm kê", "Tiến độ theo kho", "Lệch âm/dương", "Bất thường"] }
-  ]},
-  /* 27/10 Tài sản › Bảo dưỡng: số = tổng đầu việc trong kế hoạch (hasaki-baoduong.js ghi tqGhi «bd» khi vẽ xong; Tổng quan không tự tải) */
-  { g: "Tài sản", mo: "Kế hoạch bảo dưỡng thiết bị kho 170", items: [
+      muc: ["Kiểm kê", "Tiến độ theo kho", "Lệch âm/dương", "Bất thường"] },
+    /* 27/10 Tài sản › Bảo dưỡng: số = tổng đầu việc trong kế hoạch (hasaki-baoduong.js ghi tqGhi «bd» khi vẽ xong; Tổng quan không tự tải) */
     { t: "baoduong", ten: "Bảo dưỡng", cc: "var(--accent)", mo: "Kế hoạch bảo dưỡng thiết bị kho 170: hạng mục, tần suất, người thực hiện và từng đầu việc theo g-sheet.",
       muc: ["Mục lục", "Đầu việc", "Tần suất", "Người thực hiện"],
       so: function(){ var d=window.tqDoc&&tqDoc("bd"); return d&&d.dv?{ k: nf0(d.dv), l: "đầu việc · "+d.hm+" hạng mục" }:null; } }
@@ -4862,8 +4870,8 @@ document.addEventListener('click', ()=>csDongHet(null));
     /* 12/10 user chốt thứ tự + tên: 5S → Tồn kho → Xác minh; bỏ mục con Nhân viên + Nhắc QLTT (nhắc đã nằm trong Nhật ký, lọc ở đó) */
     { g: "", items: [["home","Tổng quan"]] },   // 12/10 trang Tổng quan đứng riêng trên đầu (không tiêu đề nhóm)
     { g: "Hạng mục 5S",   items: [["tong","Tổng kết"],["task","Vi phạm"],["hangmuc","Quy định"],["planogram","Planogram"]] },
-    { g: "Tồn kho", items: [["kk","Tồn kho chính xác"]] },
-    { g: "Tài sản", items: [["baoduong","Bảo dưỡng"]] },   // 27/10 user: hạng mục «Tài sản» ngang Tồn kho / Xác minh, mục con «Bảo dưỡng»   // 15/10 user: gộp Kiểm kê + Bất thường thành 1 mục (trong trang Kiểm kê trên, Bất thường dưới)
+    /* 05/11 user: gộp Tồn kho + Tài sản · 27/10 user: hạng mục «Tài sản» ngang Tồn kho / Xác minh, mục con «Bảo dưỡng» · 15/10 user: gộp Kiểm kê + Bất thường thành 1 mục (trong trang Kiểm kê trên, Bất thường dưới) */
+    { g: "Tồn kho và Tài sản cố định", items: [["kk","Tồn kho chính xác"],["baoduong","Bảo dưỡng"]] },
     /* 05/10 user chọn kiểu A: mục con Xác minh nằm ở thanh bên (thay dải chip trong tab). Chỉ hiện trên máy có máy chủ 8591. */
     { g: "Xác minh", hx: 1, items: [["xacminh","Theo tác vụ","treo"],["xacminh","Theo máy","cam"],["maytram","Máy trạm"],["xacminh","Nhật ký","tg"],["xacminh","CCTV","sodo"]] }   // 24/10 Sơ đồ camera: CHỈ tài khoản tamlc (lọc ở build, máy chủ cũng chặn)   // 15/10 user: Nhật ký xuống dưới Máy trạm   // 13/10 tối user: Máy trạm ở Xác minh, DƯỚI CÙNG, phải đăng nhập mới xem (điện thoại: nhóm chỉ còn mục này)
   ];
