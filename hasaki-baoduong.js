@@ -19,7 +19,7 @@
   if (window.HBAODUONG) return;
   var esc = window.hskTienIch.esc, $id = window.hskTienIch.$id;
   var APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec";
-  var TAB_DV = "BAO-DUONG-DAU-VIEC", TAB_YC = "BAO-DUONG-YEUCAU", TAB_KY = "BAO-DUONG-KY", TAB_GIAO = "BAO-DUONG-GIAO", TAB_LS = "BAO-DUONG-LICHSU", TAB_NGAY = "BAO-DUONG-NGAY", TAB_ANH = "BAO-DUONG-ANH-NV";
+  var TAB_DV = "BAO-DUONG-DAU-VIEC", TAB_YC = "BAO-DUONG-YEUCAU", TAB_KY = "BAO-DUONG-KY", TAB_GIAO = "BAO-DUONG-GIAO", TAB_LS = "BAO-DUONG-LICHSU", TAB_NGAY = "BAO-DUONG-NGAY";
   var GSHEET = "https://docs.google.com/spreadsheets/d/1ERdim9g4-BbJspzWhIfy6jWXFMMNya4zhhvWYF59GHc/edit?gid=481972207#gid=481972207";
   var STALE_MS = 5 * 60 * 1000, NGAY_DU_LIEU = 60;   // dữ liệu sync-bao-duong-yc (lưới hiện trọn 60 ngày — 29/10 bỏ bộ lọc ngày, đã có thước thời gian)
   var TOI_PC = 30, TOI_DT = 14;   // số ngày TỚI sau cột hôm nay ghim (29/10 phương án A2)
@@ -35,7 +35,8 @@
   var TK_THU = { "tamlc@hasaki.vn": 1 };
   var laDT = function () { return window.matchMedia("(max-width:768px)").matches; };
 
-  var PANE = null, S = { ok: false, loi: "", dv: [], yc: [], ky: [], giao: {}, ls: [], ts: 0, lastAt: 0, chon: "", soNgay: 0, luu: {}, moNhom: {}, locNay: "", cheNay: "nguoi", moNg: {}, chonVt: {}, locHm: "", locAi: "", moLocNay: false, khoang: null, cuonX: null };
+  var PANE = null, S = { ok: false, loi: "", dv: [], yc: [], ky: [], giao: {}, ls: [], ts: 0, lastAt: 0, chon: "", soNgay: 0, luu: {}, moNhom: {}, locNay: "",
+    cheNay: "nguoi", moNg: {}, chonVt: {}, locHm: "", locAi: "", moLocNay: false, khoang: null, cuonX: null };
 
   function napCss() {
     if ($id("bd-css")) return;
@@ -274,14 +275,19 @@
       B + " .bd-ngr-ten{display:flex;align-items:center;gap:8px;min-width:0}" + B + " .bd-ngr-tn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" + B + " .bd-ngr.thieu .bd-ngr-ten{font-weight:600}",
       B + " .bd-mui{flex:none;width:0;height:0;border:4px solid transparent;border-left:5px solid var(--muted);margin-right:-2px;transition:transform .2s var(--ez-apple,ease)}" + B + " .bd-ngr.mo .bd-mui{transform:rotate(90deg) translateX(2px)}",
       B + " .bd-av{flex:none;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface))}",
+      B + " .bd-dl-dt{display:none}",
+      B + " .bd-ngr-ds-ten{display:flex;flex-direction:column;gap:6px;min-width:0}" + B + " .bd-ngr-mot{display:flex;align-items:center;gap:8px;min-width:0;min-height:28px}" +
+        B + " .bd-ngr-dl{display:flex;flex-direction:column;gap:6px}",
       B + " .bd-ngr-hm{display:flex;flex-wrap:wrap;gap:2px 16px;min-width:0}" + B + " .bd-hmc{white-space:nowrap}" + B + " .bd-hmc b{font-weight:600;color:var(--muted)}",
       B + " .bd-tien{display:flex;align-items:center;gap:8px}" + B + " .bd-tien-r{flex:1;height:6px;border-radius:3px;background:var(--ad-nen2,var(--surface2));overflow:hidden}" +
         B + " .bd-tien-r i{display:block;height:100%;background:var(--good)}" + B + " .bd-tien b{min-width:36px;text-align:right;font-weight:400;font-variant-numeric:tabular-nums}",
-      B + " .bd-tk b{font-weight:400;font-variant-numeric:tabular-nums;margin-right:6px}" + B + " .bd-tk a," + B + " .bd-lk{color:var(--accent);text-decoration:none;font:inherit;font-size:13px;background:none;border:0;padding:0;cursor:pointer;white-space:nowrap}" +
+      B + " .bd-tk b{font-weight:400;font-variant-numeric:tabular-nums;margin-right:6px}" + B + " .bd-tk a," +
+        B + " .bd-lk{color:var(--accent);text-decoration:none;font:inherit;font-size:13px;background:none;border:0;padding:0;cursor:pointer;white-space:nowrap}" +
         B + " .bd-tk a:hover," + B + " .bd-lk:hover{text-decoration:underline}",
       B + " .bd-ngr-ds{padding:0 12px 8px 44px;background:var(--ad-re,var(--hover));border-bottom:1px solid var(--ad-chia,var(--border));animation:fadeUp .2s var(--ez-apple,ease) both}",
-      B + " .bd-vtn{padding:10px 0 2px;font-size:12px;color:var(--muted)}",
-      B + " .bd-vtd{display:grid;grid-template-columns:auto minmax(0,1fr) 80px 104px 84px;gap:12px;align-items:center;min-height:36px;padding:4px 0;border-bottom:1px solid var(--ad-chia,var(--border));font-size:13.5px}" +
+      B + " .bd-vtn{padding:12px 0 4px;font-size:14px;line-height:22px;font-weight:600;color:var(--text)}",
+      B + " .bd-vtd{display:grid;grid-template-columns:auto minmax(0,1fr) 80px 104px 84px;gap:12px;align-items:center;min-height:36px;padding:4px 0 4px 12px;border-bottom:1px solid var(--ad-chia,var(--border));font-size:13px;" +
+        "color:color-mix(in srgb,var(--text) 80%,var(--muted))}" +
         B + " .bd-vtd:last-child{border-bottom:0}",
       B + " .bd-vtd-ten{cursor:pointer;min-width:0}" + B + " .bd-vtd-ten:hover{color:var(--accent)}" + B + " .bd-vtd code," + "#bdDoiHop code{font:12px ui-monospace,Consolas,monospace;color:var(--muted);margin-left:6px}",
       B + " .bd-vtd-anh{color:var(--muted);font-size:12px;text-align:right;white-space:nowrap}" + B + " .bd-vtd .hsk-chip{justify-self:start}" + B + " .bd-vtd>:last-child{justify-self:end}",
@@ -291,29 +297,38 @@
       B + " .bd-ckl.bd-ckl-rong .bd-nk{margin:0 0 20px}" + B + " .bd-ckl.bd-ckl-rong .bd-nk-dau{display:flex;align-items:flex-start;gap:8px;padding:8px 4px;border-bottom:2px solid var(--ad-chia,var(--border))}",
       B + " .bd-ckl.bd-ckl-rong .bd-nk-tt{flex:1;min-width:0}" + B + " .bd-ckl.bd-ckl-rong .bd-nk-ten{display:block;font-size:14.5px;line-height:22px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--text)}",
       B + " .bd-ckl.bd-ckl-rong .bd-nk-ai{display:block;font-size:12px;line-height:18px;font-weight:400;color:var(--muted)}" + B + " .bd-ckl.bd-ckl-rong .bd-nk-so{font-size:13px;line-height:22px}",
-      B + " .bd-av{overflow:hidden}" + B + " .bd-av.co-anh," + "#bdDoiHop .bd-av.co-anh{background:var(--surface2)}" + B + " .bd-av img," + "#bdDoiHop .bd-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}" + "#bdDoiHop .bd-av{overflow:hidden}",
+      B + " .bd-av{overflow:hidden}" + B + " .bd-av.co-anh," + "#bdDoiHop .bd-av.co-anh{background:var(--surface2)}" + B + " .bd-av img," + "#bdDoiHop .bd-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}" +
+        "#bdDoiHop .bd-av{overflow:hidden}",
       /* hộp đổi người */
       /* vỏ tự đủ (CSS .hp-modal của Planogram chỉ có khi mô-đun đó đã nạp) */
       "#bdDoiHop{display:none;position:fixed;inset:0;z-index:1200;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.45);opacity:0;transition:opacity .2s}" + "#bdDoiHop.show{opacity:1}",
-      "#bdDoiHop .hp-modalbox{display:flex;flex-direction:column;max-height:90vh;background:var(--surface);color:var(--text);box-shadow:0 6px 16px rgba(0,0,0,.08),0 3px 6px -4px rgba(0,0,0,.12),0 9px 28px 8px rgba(0,0,0,.05);transform:translateY(8px);transition:transform .22s var(--ez-apple,ease)}" + "#bdDoiHop.show .hp-modalbox{transform:none}",
-      "#bdDoiHop .hp-modalhd{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 20px 0}" + "#bdDoiHop .hp-modalhd .mt{font-size:16px;font-weight:600}" + "#bdDoiHop .hp-modalbody{overflow:auto;overscroll-behavior:contain}",
+      "#bdDoiHop .hp-modalbox{display:flex;flex-direction:column;max-height:90vh;background:var(--surface);color:var(--text);box-shadow:0 6px 16px rgba(0,0,0,.08),0 3px 6px -4px rgba(0,0,0,.12),0 9px 28px 8px rgba(0,0,0,.05);" +
+        "transform:translateY(8px);transition:transform .22s var(--ez-apple,ease)}" +
+        "#bdDoiHop.show .hp-modalbox{transform:none}",
+      "#bdDoiHop .hp-modalhd{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 20px 0}" + "#bdDoiHop .hp-modalhd .mt{font-size:16px;font-weight:600}" +
+        "#bdDoiHop .hp-modalbody{overflow:auto;overscroll-behavior:contain}",
       "#bdDoiHop .hp-modalbox{width:min(480px,96vw);border-radius:8px}" + "#bdDoiHop .hp-modalbody{padding:0 20px 8px}",
       "#bdDoiHop .bd-hop-vt{margin-top:16px;padding:8px 12px;border-radius:6px;background:var(--surface2);font-size:13.5px;line-height:22px}",
       "#bdDoiHop .bd-hop-nh{margin:16px 0 6px;font-size:12px;color:var(--muted)}" + "#bdDoiHop .bd-hop-hien{font-size:13.5px}",
       "#bdDoiHop .bd-hop-tim{width:100%;height:32px;margin-bottom:8px;padding:4px 11px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font:inherit;font-size:13.5px}",
       "#bdDoiHop .bd-hop-tim:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}",
       "#bdDoiHop .bd-hop-ds{border:1px solid var(--border);border-radius:6px;max-height:300px;overflow:auto;overscroll-behavior:contain}",
-      "#bdDoiHop .bd-hop-ng[hidden],#bdDoiHop .bd-hop-trong[hidden]{display:none}" + "#bdDoiHop .bd-hop-ng{display:flex;flex-direction:row;text-align:left;margin:0;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);cursor:pointer;font-size:13.5px}" + "#bdDoiHop .bd-hop-ng:last-of-type{border-bottom:0}",
+      "#bdDoiHop .bd-hop-ng[hidden],#bdDoiHop .bd-hop-trong[hidden]{display:none}" +
+        "#bdDoiHop .bd-hop-ng{display:flex;flex-direction:row;text-align:left;margin:0;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);align-items:center;gap:8px;padding:8px 12px;" +
+          "border-bottom:1px solid var(--border);cursor:pointer;font-size:13.5px}" +
+        "#bdDoiHop .bd-hop-ng:last-of-type{border-bottom:0}",
       "#bdDoiHop .bd-hop-ng:has(input:checked){background:color-mix(in srgb,var(--accent) 10%,var(--surface))}" + "#bdDoiHop .bd-hop-ten{flex:1;min-width:0}" + "#bdDoiHop .bd-hop-trong{padding:8px 12px}",
       "#bdDoiHop .bd-seg{display:flex}" + "#bdDoiHop .bd-seg .hp-whtab{flex:1;justify-content:center;display:inline-flex;align-items:center;min-height:32px;font:inherit;font-size:13px;cursor:pointer}",
       "#bdDoiHop .bd-hop-chan{display:flex;align-items:center;gap:8px;padding:12px 20px 16px;border-top:1px solid var(--border)}" + "#bdDoiHop .bd-hop-bao{flex:1;font-size:12px}",
       "#bdDoiHop .bd-lk{color:var(--accent);background:none;border:0;padding:0;font:inherit;font-size:13px;cursor:pointer}" + "#bdDoiHop .bd-phu{color:var(--muted);font-size:12px}" + "#bdDoiHop .bd-do{color:var(--bad)}",
-      "#bdDoiHop .bd-av{flex:none;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface))}",
+      "#bdDoiHop .bd-av{flex:none;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--accent);" +
+        "background:color-mix(in srgb,var(--accent) 12%,var(--surface))}",
       /* điện thoại: hàng người = thẻ 2 dòng; dòng vị trí xuống 2 tầng; hộp = tấm trượt đáy */
       "@media(max-width:768px){" + B + " .bd-ngh{display:none}" + B + " .bd-ngb{border-top:0;display:flex;flex-direction:column;gap:8px}" +
         B + " .bd-ngr{border:1px solid var(--ad-chia,var(--border));border-radius:8px;overflow:hidden}" +
-        B + " .bd-ngr-h{grid-template-columns:minmax(0,1fr) 110px;grid-template-areas:'ten bc' 'dl dl' 'hm hm';gap:6px 12px;border-bottom:0;padding:12px;min-height:44px}" +
-        B + " .bd-ngr-ten{grid-area:ten}" + B + " .bd-ngr-bc{grid-area:bc}" + B + " .bd-ngr-dl{grid-area:dl;padding-left:34px}" + B + " .bd-ngr-dl:empty," + B + " .bd-ngr-dl:has(>.bd-phu){display:none}" +
+        B + " .bd-ngr-h{grid-template-columns:minmax(0,1fr) 96px;grid-template-areas:'ten ten' 'hm bc';align-items:start;gap:6px 12px;border-bottom:0;padding:12px;min-height:44px}" +
+        B + " .bd-ngr-ten{grid-area:ten}" + B + " .bd-ngr-bc{grid-area:bc}" + B + " .bd-ngr-dl{grid-area:dl;padding-left:34px}" + B + " .bd-ngr-dl:empty," + B + " .bd-ngr-dl{display:none!important}" +
+          B + " .bd-ngr-ten .bd-ngr-ds-ten{flex:1}" + B + " .bd-dl-dt{display:inline-flex;margin-left:auto}" + B + " .bd-dl-dt:not(:has(.hsk-chip)){display:none}" + B + " .bd-ngr-tn{flex:1;min-width:0}" +
         B + " .bd-ngr-hm{grid-area:hm;padding-left:34px;color:var(--muted)}" + B + " .bd-ngr-tk{grid-column:1/-1;padding-left:34px}" +
         B + " .bd-ngr-ds{padding:0 12px 8px;border-bottom:0}" +
         B + " .bd-vtd{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:'ck ten ten' 'ck anh tt' 'ck lk lk';gap:4px 8px;padding:8px 0}" +
@@ -321,7 +336,8 @@
         B + " .bd-vtd-anh{grid-area:anh;text-align:left}" + B + " .bd-vtd .hsk-chip{grid-area:tt}" + B + " .bd-vtd>:last-child:not(.hsk-chip):not(.bd-vtd-anh){grid-area:lk;justify-self:start;min-height:40px;display:inline-flex;align-items:center}" +
         B + " .bd-seg-dt{margin:0 0 12px}" + B + " .bd-seg-dt .bd-seg{display:flex}" + B + " .bd-seg-dt .bd-seg .hp-whtab{flex:1;justify-content:center}" + B + " .bd-seg .hp-whtab{min-height:40px}" + B + " .bd-chon-bar{flex-wrap:wrap}" +
         "#bdDoiHop{align-items:flex-end;padding:0}" + "#bdDoiHop .hp-modalbox{width:100%;max-height:92vh;border-radius:12px 12px 0 0}" +
-        "#bdDoiHop .bd-hop-ng{min-height:44px}" + "#bdDoiHop .bd-hop-tim{height:40px;font-size:16px}" + "#bdDoiHop .bd-seg .hp-whtab{min-height:40px}" + "#bdDoiHop .bd-hop-chan .hsk-nut{flex:1;min-height:44px}" + "#bdDoiHop .bd-hop-bao:empty{display:none}}",
+        "#bdDoiHop .bd-hop-ng{min-height:44px}" + "#bdDoiHop .bd-hop-tim{height:40px;font-size:16px}" + "#bdDoiHop .bd-seg .hp-whtab{min-height:40px}" + "#bdDoiHop .bd-hop-chan .hsk-nut{flex:1;min-height:44px}" +
+          "#bdDoiHop .bd-hop-bao:empty{display:none}}",
       /* vòng tiến độ + ô lọc */
       B + " .bd-nay-tong{display:flex;align-items:center;gap:20px;margin-bottom:16px}",
       B + " .bd-vong{position:relative;flex:none;width:88px;height:88px}",
@@ -482,7 +498,7 @@
     var btn = $id("bdReload"); if (btn) btn.disabled = true;
     S.lastAt = Date.now();
     if (PANE) PANE.innerHTML = '<div class="panel bd-panel"><div class="bd-trong"><div class="sk sk-line" style="width:60%;margin:0 auto 8px"></div><div class="sk sk-line" style="width:40%;margin:0 auto"></div></div></div>';
-    return Promise.all([readTabP(TAB_DV), readTabP(TAB_YC), readTabP(TAB_KY), readTabP(TAB_GIAO), readTabP(TAB_LS), readTabP(TAB_NGAY), readTabP(TAB_ANH)]).then(function (res) {
+    return Promise.all([readTabP(TAB_DV), readTabP(TAB_YC), readTabP(TAB_KY), readTabP(TAB_GIAO), readTabP(TAB_LS), readTabP(TAB_NGAY)]).then(function (res) {
       var dv = bang(res[0]);
       S.ok = !!(dv && dv.length);
       S.loi = S.ok ? "" : (res[0] && res[0].code === 403 ? "khoa" : res[0] && res[0].status === "success" ? "trong" : "gas");
@@ -491,8 +507,6 @@
       S.ls = bang(res[4]) || [];
       /* 31/10 bd-giao-ngay.mjs: việc Vận hành hôm nay giao task cho người CÓ CHẤM CÔNG trong g-sheet chia việc (chưa ai chấm công = chờ) */
       S.giaoNay = {}; (bang(res[5]) || []).forEach(function (r) { if (isoTuDmy(r["NGÀY"]) === isoVN(Date.now())) S.giaoNay[r["MÃ VỊ TRÍ"]] = r; });
-      /* 05/11 ảnh đại diện 64 px (bd-giao-ngay thu nhỏ từ hr-media) — tên → data URL; thiếu ảnh thì vòng chữ cái */
-      S.anh = {}; (bang(res[6]) || []).forEach(function (r) { if (/^data:image\//.test(r["ẢNH"])) S.anh[chuan(r["TÊN"])] = r["ẢNH"]; });
       S.ts = Math.max(Number(res[1] && res[1].ts) || 0, Number(res[0] && res[0].ts) || 0);
       if (S.ok) dungViTri();
       ve();
@@ -824,8 +838,8 @@
   var CHIP_O = { m: ["cho", "Chưa làm"], b: ["qua", "Quá hạn"], d: ["dang", "Đang làm"], x: ["xong", "Đã báo cáo"] };
   var CHUA_GIAO = "Chưa giao người";
   /* vòng đại diện: ảnh NV nếu có, không thì chữ cái cuối tên */
-  function avatar(ten) { var a = (S.anh || {})[chuan(ten)];
-    return '<span class="bd-av' + (a ? " co-anh" : "") + '" aria-hidden="true">' + (a ? '<img src="' + a + '" alt="" loading="lazy" decoding="async">' : esc(String(ten).split(" ").pop().charAt(0))) + "</span>"; }
+  function avatar(ten) {   // 05/11: ảnh do anh-nv.js (khuôn chung toàn dự án) tự gắn vào [data-anh-nv]; chưa có ảnh = chữ cái cuối tên
+    return '<span class="bd-av" data-anh-nv="' + esc(ten) + '" aria-hidden="true">' + esc(String(ten).split(" ").pop().charAt(0)) + "</span>"; }
   function khoaNay(b) { return khoaGiao(b, "VẬN HÀNH") + "|" + isoVN(Date.now()); }
   /* ứng viên «Tên · vào 06:56 / Tên · chưa chấm công / x · không tra được» (bd-giao-ngay) → [{ten, vao}] — vao: "06:56" · "" chưa chấm công · null không rõ */
   function tachUngVien(s) {
@@ -875,6 +889,13 @@
     return { the: the, dsNg: dsNg, vao: vao, coTask: Object.keys(task).length > 0 };
   }
 
+  /* người có cùng bộ việc hôm nay ⇒ 1 nhóm (giữ thứ tự dsNg: nhiều việc trước, «Chưa giao người» cuối) */
+  function nhomNguoi(dsNg) {
+    var m = {}, thu = [];
+    dsNg.forEach(function (p) { var k = p.thieu ? "~" : p.viec.map(function (t) { return t.b + "|" + t.ten; }).sort().join("¦");
+      if (!m[k]) { m[k] = { ds: [] }; thu.push(k); } m[k].ds.push(p); });
+    return thu.map(function (k) { return m[k]; });
+  }
   function veHomNay() {
     var D = duLieuNay(), the = D.the, sua = duocSua();
     /* bộ lọc Hạng mục · Người phụ trách (28/10) — lựa chọn lấy từ chính việc hôm nay */
@@ -907,7 +928,7 @@
         '<span class="bd-vtd-ten" role="button" tabindex="0">' + o(t.ten) + (t.doi ? " <code>" + esc(t.b) + "</code>" : "") + "</span>" +
         '<span class="bd-vtd-anh">' + anhSo(t) + "</span>" + chipTT(t) +
         (sua && t.doi ? '<button type="button" class="bd-lk bd-doi1" data-bin="' + esc(t.b) + '">' + (thieu ? "Phân công" : "Đổi người") + "</button>"
-          : t.ky ? '<a class="bd-lk" href="https://work.hasaki.vn/tasks?task_id=' + encodeURIComponent(t.ky) + '" target="_blank" rel="noopener">Task ↗</a>' : sua ? "<span></span>" : "") + "</div>";
+          : t.ky ? '<a class="bd-lk" href="https://work.hasaki.vn/tasks?task_id=' + encodeURIComponent(t.ky) + '" target="_blank" rel="noopener">Mở task ↗</a>' : sua ? "<span></span>" : "") + "</div>";
     };
     var dsVt = function (ds, thieu) { return gomHm(ds.slice().sort(function (a, c) { return THU_L[a.l] - THU_L[c.l]; })).map(function (x) {
       return '<div class="bd-vtn">' + o(x[0]) + "</div>" + x[1].map(function (t) { return dongVt(t, thieu); }).join(""); }).join(""); };
@@ -928,14 +949,22 @@
     } else {
       var cotTask = D.coTask;
       than = '<div class="bd-ngb' + (cotTask ? " co-task" : "") + '"><div class="bd-ngh"><span>Người phụ trách</span><span>Đi làm</span><span>Việc</span><span>Đã báo cáo</span>' + (cotTask ? "<span>Đã log task</span>" : "") + "</div>" +
-        D.dsNg.map(function (p) {
-          var ds = p.viec.filter(khop); if (!ds.length) return "";
-          var mo = !!S.moNg[p.ten], x = ds.filter(function (t) { return t.l === "x"; }).length;
-          var tk = p.task ? '<span class="bd-tk"><b>' + p.task.x + "/" + p.task.n + "</b>" + (p.task.cha ? ' <a href="https://work.hasaki.vn/tasks?task_id=' + encodeURIComponent(p.task.cha) + '" target="_blank" rel="noopener">Task ↗</a>' : "") + "</span>" : '<span class="bd-phu">—</span>';
-          return '<div class="bd-ngr' + (mo ? " mo" : "") + (p.thieu ? " thieu" : "") + '" data-ng="' + esc(p.ten) + '"><div class="bd-ngr-h" role="button" tabindex="0" aria-expanded="' + mo + '">' +
-            '<span class="bd-ngr-ten"><i class="bd-mui" aria-hidden="true"></i>' + (p.thieu ? '<span class="bd-do">' + CHUA_GIAO + "</span>" : avatar(p.ten) + "<span class=\"bd-ngr-tn\">" + o(p.ten) + "</span>") + "</span>" +
-            '<span class="bd-ngr-dl">' + diLam(p) + '</span><span class="bd-ngr-hm">' + hmChu(ds) + '</span><span class="bd-ngr-bc">' + tien(x, ds.length) + "</span>" + (cotTask ? '<span class="bd-ngr-tk">' + tk + "</span>" : "") + "</div>" +
-            (mo ? '<div class="bd-ngr-ds">' + (sua && p.thieu && ds.some(function (t) { return t.doi; }) ? '<label class="bd-chon-het"><input type="checkbox" class="bd-ck-het"' + (ds.every(function (t) { return !t.doi || S.chonVt[t.b]; }) ? " checked" : "") + "> Chọn tất cả</label>" : "") + dsVt(ds, p.thieu) + "</div>" : "") + "</div>";
+        /* 05/11 user «sao cả Cường và Phi phải báo cáo cùng 1 khu vực? cần nhóm lại»: người có CÙNG bộ việc gộp 1 hàng nhóm —
+           tên + ảnh xếp dọc, giờ vào từng người thẳng hàng tên; bấm mở danh sách vị trí chung 1 lần (trước: 2 hàng giống hệt nhau). */
+        nhomNguoi(D.dsNg).map(function (g) {
+          var p0 = g.ds[0], thieu = !!p0.thieu, ds = p0.viec.filter(khop); if (!ds.length) return "";
+          var khoa = g.ds.map(function (p) { return p.ten; }).join(" · "), mo = !!S.moNg[khoa], x = ds.filter(function (t) { return t.l === "x"; }).length;
+          var tkP = g.ds.filter(function (p) { return p.task; })[0];
+          var tk = tkP ? '<span class="bd-tk"><b>' + tkP.task.x + "/" + tkP.task.n + "</b>" + (tkP.task.cha ? ' <a href="https://work.hasaki.vn/tasks?task_id=' + encodeURIComponent(tkP.task.cha) +
+            '" target="_blank" rel="noopener">Mở task ↗</a>' : "") + "</span>" : '<span class="bd-phu">—</span>';
+          return '<div class="bd-ngr' + (mo ? " mo" : "") + (thieu ? " thieu" : "") + (g.ds.length > 1 ? " nhom" : "") + '" data-ng="' + esc(khoa) + '"><div class="bd-ngr-h" role="button" tabindex="0" aria-expanded="' + mo + '">' +
+            '<span class="bd-ngr-ten"><i class="bd-mui" aria-hidden="true"></i>' + (thieu ? '<span class="bd-do">' + CHUA_GIAO + "</span>"
+              : '<span class="bd-ngr-ds-ten">' + g.ds.map(function (p) { return '<span class="bd-ngr-mot">' + avatar(p.ten) + '<span class="bd-ngr-tn">' + o(p.ten) + '</span><span class="bd-dl-dt">' + diLam(p) +
+                "</span></span>"; }).join("") + "</span>") + "</span>" +
+            '<span class="bd-ngr-dl">' + g.ds.map(function (p) { return '<span class="bd-ngr-mot">' + diLam(p) + "</span>"; }).join("") + '</span><span class="bd-ngr-hm">' + hmChu(ds) + '</span><span class="bd-ngr-bc">' +
+              tien(x, ds.length) + "</span>" + (cotTask ? '<span class="bd-ngr-tk">' + tk + "</span>" : "") + "</div>" +
+            (mo ? '<div class="bd-ngr-ds">' + (sua && thieu && ds.some(function (t) { return t.doi; }) ? '<label class="bd-chon-het"><input type="checkbox" class="bd-ck-het"' +
+              (ds.every(function (t) { return !t.doi || S.chonVt[t.b]; }) ? " checked" : "") + "> Chọn tất cả</label>" : "") + dsVt(ds, thieu) + "</div>" : "") + "</div>";
         }).join("") + "</div>";
     }
     var nChon = Object.keys(S.chonVt).length;
@@ -970,7 +999,8 @@
     if (!m) { m = document.createElement("div"); m.id = "bdDoiHop"; m.className = "hp-modal"; document.body.appendChild(m); ganHop(m); }
     m.__bins = bins; m.__ngay = true;
     var tieuDe = tenHien.length ? "Đổi người phụ trách" + (bins.length > 1 ? " · " + bins.length + " vị trí" : "") : "Phân công " + bins.length + " vị trí";
-    m.innerHTML = '<div class="hp-modalbox" role="dialog" aria-modal="true" aria-label="' + esc(tieuDe) + '"><div class="hp-modalhd"><div class="mt">' + esc(tieuDe) + '</div><button type="button" class="hsk-nut phu nho bd-hop-dong">Đóng</button></div>' +
+    m.innerHTML = '<div class="hp-modalbox" role="dialog" aria-modal="true" aria-label="' + esc(tieuDe) + '"><div class="hp-modalhd"><div class="mt">' + esc(tieuDe) +
+      '</div><button type="button" class="hsk-nut phu nho bd-hop-dong">Đóng</button></div>' +
       '<div class="hp-modalbody"><div class="bd-hop-vt">' + bins.slice(0, 3).map(function (b) { var t = theoBin[b] || {}; return "<div>" + o(t.ten || b) + " <code>" + esc(b) + "</code></div>"; }).join("") +
         (bins.length > 3 ? '<div class="bd-phu">+ ' + (bins.length - 3) + " vị trí nữa</div>" : "") + "</div>" +
       '<div class="bd-hop-nh">Người phụ trách hiện tại</div><div class="bd-hop-hien">' + (tenHien.length ? tenHien.map(o).join(" / ") : '<span class="bd-do">' + CHUA_GIAO + "</span>") +
@@ -981,7 +1011,9 @@
         return '<label class="bd-hop-ng" data-ten="' + esc(u.ten) + '"><input type="radio" name="bdHopNg" value="' + esc(u.ten) + '">' + avatar(u.ten) +
           '<span class="bd-hop-ten">' + o(u.ten) + '</span><span class="hsk-chip xong khongcham">Vào ' + esc(u.vao) + '</span><span class="bd-phu">' + u.n + " việc</span></label>"; }).join("") +
         '<div class="bd-hop-trong bd-phu" hidden>Không có trong danh sách đi làm — lưu theo tên / mã NV đã gõ.</div></div>' +
-      '<div class="bd-hop-nh">Áp dụng</div><div class="bd-seg bd-hop-ad" role="group"><button type="button" class="hp-whtab active" data-ngay="1" aria-pressed="true">Chỉ hôm nay</button><button type="button" class="hp-whtab" data-ngay="0" aria-pressed="false">Từ nay về sau</button></div>' +
+      '<div class="bd-hop-nh">Áp dụng</div><div class="bd-seg bd-hop-ad" role="group">' +
+        '<button type="button" class="hp-whtab active" data-ngay="1" aria-pressed="true">Chỉ hôm nay</button>' +
+        '<button type="button" class="hp-whtab" data-ngay="0" aria-pressed="false">Từ nay về sau</button></div>' +
       "</div>" + '<div class="bd-hop-chan">' + (coNgay ? '<button type="button" class="bd-lk bd-hop-bo">Bỏ đổi hôm nay</button>' : "") + '<span class="bd-hop-bao bd-phu"></span>' +
         '<button type="button" class="hsk-nut phu bd-hop-dong">Huỷ</button><button type="button" class="hsk-nut chinh bd-hop-luu">Lưu</button></div></div>';
     m.style.display = "flex"; requestAnimationFrame(function () { m.classList.add("show"); });
