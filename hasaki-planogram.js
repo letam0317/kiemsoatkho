@@ -1153,6 +1153,7 @@ var CSS = [
 ".hp-modal .hp-vtcard .hd .hp-badge{max-width:none;white-space:normal;}",
 ".hp-vtcard .who{display:flex;align-items:center;gap:9px;min-width:0;}",
 ".hp-vtcard .who > div{min-width:0;}",
+".hp-vtcard .av.av-chi-anh:not(.co-anh){display:none;}",
 ".hp-vtcard .av{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:750;color:#fff;letter-spacing:.02em;}",
 ".hp-vtcard .who b{display:block;font-size:13px;font-weight:700;line-height:1.3;color:var(--text,#1f2937);}",
 ".hp-vtcard .who small{display:block;font-size:10.5px;font-weight:500;color:var(--muted,#9ca3af);line-height:1.4;word-break:break-all;}",
@@ -2408,6 +2409,8 @@ function ccTrangThai(email, code){
     subC: x.bk === "da" ? "" : "#dc2626", x: x };
 }
 /* Chữ đầu của tên (avatar) — bỏ dấu không cần, chỉ lấy 2 ký tự đầu của 2 từ cuối */
+/* 05/11 vòng ẢNH đại diện (anh-nv.js gắn ảnh qua data-anh-nv); chưa/không có ảnh ⇒ ẩn hẳn, không vẽ chữ cái */
+function avChiAnh(ten, em){ return (ten || em) ? '<span class="av av-chi-anh" data-anh-nv="' + esc(ten || "") + '"' + (em ? ' data-anh-em="' + esc(em) + '"' : '') + '></span>' : ""; }
 function chuDau(s){
   var w = String(s || "").trim().split(/\s+/).filter(Boolean);
   if (!w.length) return "?";
@@ -3877,7 +3880,8 @@ function renderVt(){
       '<div class="hd">Phụ trách <span class="hp-badge" style="background:color-mix(in srgb,' + mauNg + ' 14%,transparent);color:' + mauNg + '">' +
         esc(tuGS ? "Bảng phân công" : "Suy từ báo cáo gần nhất") + '</span></div>' +
       /* 21/10 user «làm gọn cụm»: bỏ vòng chữ cái + email, 1 dòng tên · mã */
-      '<div class="who"><div><b>' + esc(ten) + '</b>' + (pc.code ? '<small>' + esc(pc.code) + '</small>' : "") + '</div></div>' +
+      /* 05/11 user «bổ sung avatar trước cụm tên · mã»: chỉ ẢNH (không có ảnh thì ẩn — 21/10 đã bỏ vòng chữ cái ở đây) */
+      '<div class="who">' + avChiAnh(ten, pc.em) + '<div><b>' + esc(ten) + '</b>' + (pc.code ? '<small>' + esc(pc.code) + '</small>' : "") + '</div></div>' +
       '<div class="cc"><span class="hp-dot" style="background:' + cc.c + '"></span>' +
         '<div><b style="color:' + cc.c + '">' + esc(cc.lb) + '</b>' +
         (cc.sub ? '<small' + (cc.subC ? ' style="color:' + cc.subC + ';font-weight:650"' : "") + '>' + esc(cc.sub) + '</small>' : "") +
@@ -3954,7 +3958,7 @@ function renderVt(){
   cardBc = '<div class="hp-vtcard ref"><div class="hd">Báo cáo gần nhất <span class="hp-hint" style="font-size:10.5px;text-transform:none;letter-spacing:0;font-weight:500">tham khảo</span></div>';
   if (bcTen || bcEm){
     var tenBc = bcTen || bcEm;
-    cardBc += '<div class="who"><div><b>' + esc(tenBc) + '</b>' + (bcCode ? '<small>' + esc(bcCode) + '</small>' : "") + '</div></div>' +
+    cardBc += '<div class="who">' + avChiAnh(bcTen, bcEm) + '<div><b>' + esc(tenBc) + '</b>' + (bcCode ? '<small>' + esc(bcCode) + '</small>' : "") + '</div></div>' +
       '<div class="ln"><b>' + esc(thuVN(bcNgay)) + " " + esc(ngayVN(bcNgay)) + '</b>' +
         (bcGio ? ' lúc <b>' + esc(bcGio) + '</b>' : "") +
         (ptTuoiVt != null ? ' <span class="hp-hint">· ' + (ptTuoiVt > 0 ? ptTuoiVt + " ngày trước" : "hôm nay") + '</span>' : "") +
