@@ -338,13 +338,13 @@
   var tuB64 = function (x) { var b = atob(x), r = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) r[i] = b.charCodeAt(i); return r; };
   function moDuPhong(j) {
     if (GM) return taiMa("cctv:du-lieu", "application/json").then(function (b) { return b.text(); }).then(JSON.parse);
-    if (!MK_TAM) { setTimeout(function () { khoaLai("Laptop đang tắt — đang xem bản mã hoá trên máy dự phòng: nhập lại mật khẩu CCTV để mở."); }, 0); var e0 = new Error("cần mật khẩu"); e0.code = 428; return Promise.reject(e0); }
+    if (!MK_TAM) { setTimeout(function () { khoaLai("Nhập mật khẩu CCTV để mở."); }, 0); var e0 = new Error("cần mật khẩu"); e0.code = 428; return Promise.reject(e0); }
     var b = j.boc || {}, mk = MK_TAM; MK_TAM = "";
     if (!window.crypto || !crypto.subtle) return Promise.reject(new Error("Trình duyệt này không giải mã được (cần trang https)."));
     return crypto.subtle.importKey("raw", new TextEncoder().encode(mk), "PBKDF2", false, ["deriveKey"])
       .then(function (km) { return crypto.subtle.deriveKey({ name: "PBKDF2", salt: tuB64(b.salt), iterations: b.vong, hash: "SHA-256" }, km, { name: "AES-GCM", length: 256 }, false, ["decrypt"]); })
       .then(function (w) { return crypto.subtle.decrypt({ name: "AES-GCM", iv: tuB64(b.iv) }, w, tuB64(b.ct)); })
-      .catch(function () { var e = new Error("Không mở được hộp khoá — mật khẩu CCTV đã đổi trên laptop? Bật laptop 1 lần để cập nhật."); e.code = 409; throw e; })
+      .catch(function () { var e = new Error("Mật khẩu CCTV không mở được bản lưu — mật khẩu vừa đổi thì chờ khoảng 15 phút rồi thử lại."); e.code = 409; throw e; })
       .then(function (kc) { return napGiaiMa().then(function (G) { return G.nhapKhoa(new Uint8Array(kc)); }); })
       .then(function (kk) { GM = { kk: kk }; return moDuPhong(j); });
   }
@@ -385,6 +385,25 @@
         return r.text().then(function (t) { var j = {}; try { j = JSON.parse(t); } catch (e) {} throw new Error(j.loi || "HTTP " + r.status); }); })
       .then(function (b) { if (ANH[k]) URL.revokeObjectURL(ANH[k]); ANH[k] = URL.createObjectURL(b); return ANH[k]; });
   }
+  /* 05/11: «Lấy khung mới» trên máy dự phòng → { url: blob ảnh, chup: giờ chụp }. MP4 (có giờ chụp) ⇒ trích khung giây 1 bằng <video> + canvas. */
+  function khungDuPhong(k, body) {
+    return fetch(CTX.API() + "/api/so-do-camera/khung", { method: "POST", headers: Object.assign(tieuDe(), { "Content-Type": "application/json" }), body: JSON.stringify(body), signal: AbortSignal.timeout(200000) })
+      .then(function (r) { het428(r); var loai = r.headers.get("content-type") || "", chup = r.headers.get("x-khung-chup") || new Date().toISOString();
+        if (!r.ok || /json/.test(loai)) return r.text().then(function (t) { var j = {}; try { j = JSON.parse(t); } catch (e) {} var e2 = new Error(j.loi || "Máy chủ trả " + r.status); e2.code = r.status; throw e2; });
+        return r.blob().then(function (bl) { return /video/.test(loai) ? trichKhung(bl) : bl; }).then(function (anh) { return { url: URL.createObjectURL(anh), chup: chup }; }); });
+  }
+  function trichKhung(bl) {
+    return new Promise(function (ok, hong) {
+      var v = document.createElement("video"), u = URL.createObjectURL(bl), xong = function (e, kq) { URL.revokeObjectURL(u); v.removeAttribute("src"); if (e) hong(e); else ok(kq); };
+      v.muted = true; v.playsInline = true; v.preload = "auto";
+      v.onerror = function () { xong(new Error("Trình duyệt không đọc được đoạn video")); };
+      v.onloadeddata = function () { v.currentTime = Math.min(1, (v.duration || 2) / 2); };
+      v.onseeked = function () { var c = document.createElement("canvas"); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext("2d").drawImage(v, 0, 0);
+        c.toBlob(function (b2) { if (b2) xong(null, b2); else xong(new Error("Không trích được khung")); }, "image/jpeg", 0.9); };
+      setTimeout(function () { xong(new Error("Trích khung quá lâu")); }, 20000);
+      v.src = u;
+    });
+  }
   function napSoDo() {
     if (window.KHO170_SODO) return Promise.resolve(window.KHO170_SODO);
     return new Promise(function (ok, loi) { var s = document.createElement("script"); s.src = "kho170-sodo.js?v=20260916"; s.onload = function () { ok(window.KHO170_SODO); }; s.onerror = function () { loi(new Error("không tải được sơ đồ kho")); }; document.head.appendChild(s); });
@@ -415,6 +434,8 @@
       ".sdc-3d{position:relative;height:calc(100dvh - 128px);min-height:360px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface2)}",
       ".sdc-3d iframe{width:100%;height:100%;border:0;display:block;pointer-events:none;transition:opacity .25s var(--ez-apple,ease)}",
       ".sdc-3d.cho iframe{opacity:0}",
+      /* 05/11 khung 3D nạp NGẦM sau màn mật khẩu: cùng cỡ, ngoài màn, không nhận chạm */
+      ".sdc-3d.ngam{position:fixed!important;left:-300vw;top:0;opacity:0;pointer-events:none}",
       /* 25/10 user «cố định cứng sơ đồ, không cần di chuyển bằng tay»: lớp phủ trong suốt nuốt kéo / lăn / chụm — chỉ còn chạm chọn camera */
       ".sdc-che{position:absolute;inset:0;touch-action:pan-y;-webkit-tap-highlight-color:transparent}.sdc-che.tro{cursor:pointer}",
       ".sdc-3dtt{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;color:var(--muted);text-align:center;pointer-events:none}",
@@ -496,14 +517,16 @@
       .observe($id("modal"), { attributes: true, attributeFilter: ["class"] }); }
     if (!layThe()) return veKhoa(host);   // chưa mở khoá ⇒ chỉ màn mật khẩu, KHÔNG tải dữ liệu camera
     henKhoa();
-    if (!D) host.innerHTML = '<div class="sdc-3d"><div class="sdc-3dtt">Đang tải…</div></div>';
+    /* 05/11 user «mở CCTV vẫn thấy "Đang dựng mặt bằng…" ~1 s rồi mới sang mặt bằng chốt»: khung 3D đã nạp ngầm từ màn mật khẩu ⇒ mở khoá xong
+       hiện NGAY mặt bằng nhìn từ trên (chưa có dữ liệu camera thì biểu tượng vẽ thêm khi về) — bỏ chữ «Đang tải…» / «Đang dựng mặt bằng…» */
+    if (!D) hienKhung(host);
     if (!NAP) NAP = Promise.all([goi("/api/so-do-camera").then(function (j) { return j.duPhong ? moDuPhong(j) : (GM = null, j); }), napSoDo()]).then(function (kq) { D = kq[0]; SD = kq[1]; dungO(); DS = D.cams.map(tinh); })
       .catch(function (e) { NAP = null; throw e; });
     NAP.then(function () { if (HOST === host) veMan(); }).catch(function (e) {
       if (e.code === 428) return;   // het428 đã đưa về màn mật khẩu
       if (e.code === 409) return khoaLai(e.message);   // máy dự phòng: mật khẩu không mở được hộp khoá
       /* 410 = bản dự phòng mã hoá (laptop tắt) chặn bản rõ · 503 = bản dự phòng thường · 403 = không phải tamlc */
-      host.innerHTML = '<div class="panel"><div class="empty-row" style="padding:24px 16px">' + e_(e.code === 403 || e.code === 503 ? e.message : e.code === 410 ? "Laptop đang tắt — sơ đồ camera chỉ xem được khi laptop bật (dữ liệu chỉ nằm trên laptop)." : "Không tải được sơ đồ camera: " + e.message) +
+      host.innerHTML = '<div class="panel"><div class="empty-row" style="padding:24px 16px">' + e_(e.code === 403 || e.code === 503 ? e.message : "Không tải được sơ đồ camera: " + e.message) +
         (e.code === 403 ? "" : ' <button type="button" class="hx-nut nho" data-sdc="lai">Thử lại</button>') + "</div></div>";
       var b = host.querySelector('[data-sdc="lai"]'); if (b) b.onclick = function () { ve(host, ctx); };
     });
@@ -512,7 +535,9 @@
      che: "mo" nhập mật khẩu · "dat" đặt lần đầu · "doi" đổi mật khẩu. 25/10 đêm (2) user «đăng nhập rồi sao vẫn bắt lên laptop»: đặt lần đầu
      ngay tại chỗ (cả điện thoại / 4G); từ xa máy chủ đòi nhập lại MẬT KHẨU ĐĂNG NHẬP (canTk) để chắc là chính chủ tài khoản */
   function veKhoa(host, thongBao) {
-    host.innerHTML = '<div class="panel hx-dn sdc-khoa"><div class="panel-head"><span id="sdcKhoaTd">CCTV đang khoá</span></div><form id="sdcKhoaF" autocomplete="on"><p class="sdc-mt" id="sdcKhoaMt">Đang kiểm tra…</p></form></div>';
+    don(host);   // giữ khung 3D đang nạp (gỡ iframe khỏi trang = nạp lại từ đầu)
+    host.insertAdjacentHTML("afterbegin", '<div class="panel hx-dn sdc-khoa"><div class="panel-head"><span id="sdcKhoaTd">CCTV đang khoá</span></div><form id="sdcKhoaF" autocomplete="on"><p class="sdc-mt" id="sdcKhoaMt">Đang kiểm tra…</p></form></div>');
+    giuKhung(host, true);   // 05/11 nạp ngầm mặt bằng 3D trong lúc nhập mật khẩu (khung chỉ có mô hình kho — dữ liệu camera chỉ tải SAU khi mở khoá)
     var f = $id("sdcKhoaF");
     var tt = function (s, loi) { var o = $id("sdcKhoaSt"); if (o) { o.className = s ? (loi ? "hx-st loi" : "hx-st") : ""; o.textContent = s || ""; } };
     var o_ = function (id, nhan, ac) { return '<label><span class="lbl">' + nhan + '</span><input id="' + id + '" type="password" autocomplete="' + ac + '" required' + (ac === "new-password" ? ' minlength="6"' : "") + '></label>'; };
@@ -547,7 +572,7 @@
     goi("/api/so-do-camera/khoa", { khongKhoa: 1, ms: 15000 }).then(function (j) {
       canTk = !!j.canTk; dung(j.daDat ? "mo" : "dat");
     }).catch(function (e) {
-      $id("sdcKhoaMt").textContent = e.code === 403 || e.code === 503 ? e.message : "Không hỏi được máy chủ: " + e.message;
+      var mt = $id("sdcKhoaMt"); if (mt) mt.textContent = e.code === 403 || e.code === 503 ? e.message : "Không hỏi được máy chủ: " + e.message;
     });
   }
   function khoaLai(tb) {
@@ -568,11 +593,26 @@
   }
 
   function veMan() {
-    if (F && F.el && HOST.contains(F.el)) return veDiem3D();
-    HOST.innerHTML = '<div class="sdc-3d cho"><iframe id="sdc3d" title="CCTV — mặt bằng kho 170 và camera" tabindex="-1" src="kho170-3d.html?v=' + V3D + '"></iframe><div class="sdc-che" id="sdcChe"></div><div class="sdc-3dtt" id="sdc3dTt">Đang dựng mặt bằng…</div></div>';
-    var el = $id("sdc3d"); F = { el: el, diem: [] };
-    el.addEventListener("load", function () { choSan(el, 0); });
+    hienKhung(HOST);
+    if (F && F.w) { DS = D && D.cams ? D.cams.map(tinh) : DS; veDiem3D(); }   // khung đã dựng xong trước khi dữ liệu về ⇒ vẽ camera ngay; chưa xong thì choSan tự vẽ
   }
+  /* 05/11 khung 3D DUY NHẤT cho mỗi vùng chứa, tạo 1 lần và KHÔNG gỡ khỏi DOM (gỡ iframe = nạp lại từ đầu). ngam = nằm sau màn mật khẩu */
+  function coKhung(host) { return F && F.bo && F.bo.parentNode === host ? F.bo : null; }
+  function don(host) { var bo = coKhung(host); [].slice.call(host.childNodes).forEach(function (c) { if (c !== bo) host.removeChild(c); }); }
+  function giuKhung(host, ngam) {
+    if (!coKhung(host)) {
+      if (F) { window.removeEventListener("resize", F.vua); if (F.ro) F.ro.disconnect(); }
+      var bo = document.createElement("div"); bo.className = "sdc-3d cho";
+      bo.innerHTML = '<iframe id="sdc3d" title="CCTV — mặt bằng kho 170 và camera" tabindex="-1" src="kho170-3d.html?v=' + V3D + '"></iframe><div class="sdc-che" id="sdcChe"></div><div class="sdc-3dtt" id="sdc3dTt" hidden></div>';
+      var el = bo.querySelector("iframe"); F = { el: el, bo: bo, diem: [] };
+      el.addEventListener("load", function () { choSan(el, 0); });
+      host.appendChild(bo);
+    }
+    F.bo.classList.toggle("ngam", !!ngam);
+    F.bo.style.width = ngam ? (host.clientWidth || 800) + "px" : "";
+    return F.bo;
+  }
+  function hienKhung(host) { don(host); giuKhung(host, false); if (F && F.vua) F.vua(); }
   function tt3(s) { var o = $id("sdc3dTt"); if (o) { o.textContent = s || ""; o.hidden = !s; } }
   function choSan(el, n) {
     if (!F || F.el !== el) return; var w = el.contentWindow;
@@ -823,8 +863,8 @@
     h += '<div class="sdc-sec"><h4>Ô trong khung nhìn' + (oT.length ? " · " + oT.length + " ô, đã trừ ô bị kệ che" : "") + "</h4>" + (oT.length ? '<div class="sdc-tt sdc-kep" title="Bấm để xem hết">' + e_(oT.map(function (k) { return k.replace(/^F0-/, ""); }).join(", ")) + "</div>" : '<div class="sdc-tt">Có sau khi hiệu chỉnh ≥ 4 điểm.</div>') +
       '<div class="sdc-tt">' + (r.goiY ? "Tên kênh nói: <b>" + e_(r.goiY.mo) + "</b>" : "Tên kênh không chỉ ra ô / khu.") + (c.nguoiKiem ? "<br>Người kiểm thấy: <b>" + e_(c.nguoiKiem.o.slice(0, 6).join(", ")) + (c.nguoiKiem.o.length > 6 ? "…" : "") + "</b> — " + e_(c.nguoiKiem.nguon) + (c.nguoiKiem.luuY ? "<br>Lưu ý: " + e_(c.nguoiKiem.luuY) : "") : "") + "</div></div>";
     h += '<div class="sdc-sec"><h4>Ghi chú</h4><textarea class="sdc-gc" id="sdcGc" maxlength="300" placeholder="vd: camera gắn cột đầu dãy 501, nhìn về tủ 10">' + e_(hc.ghiChu) + "</textarea></div>";
-    h += '<div class="sdc-hang" style="justify-content:flex-end"><span class="sdc-tt" id="sdcLuuTt" style="margin-right:auto"></span>' + (c.hc || c.tay ? '<button type="button" class="hsk-nut nguy" data-a="xoa">Xoá hiệu chỉnh</button>' : "") +
-      '<button type="button" class="hsk-nut chinh" data-a="luu"' + (hc.doi ? "" : " disabled") + ">Lưu</button></div>";
+    h += '<div class="sdc-hang" style="justify-content:flex-end"><span class="sdc-tt" id="sdcLuuTt" style="margin-right:auto"></span>' + (c.hc || c.tay ? '<button type="button" class="hsk-nut nguy" data-a="xoa"' + (GM ? ' disabled title="Làm trên laptop"' : "") + '>Xoá hiệu chỉnh</button>' : "") +
+      '<button type="button" class="hsk-nut chinh" data-a="luu"' + (GM ? ' disabled title="Làm trên laptop"' : hc.doi ? "" : " disabled") + ">Lưu</button></div>";   // 05/11 máy dự phòng: lưu hiệu chỉnh làm trên laptop — nút mờ, không câu báo
     var mb = $id("mBody"); mb.innerHTML = h;
     noiThan(dg);
   }
@@ -832,9 +872,9 @@
     var mb = $id("mBody"), hc = S.hc, r = rHienTai();
     mb.querySelectorAll("[data-a]").forEach(function (b) { b.onclick = function () { hanhDong(b.dataset.a, b); }; });
     mb.querySelectorAll("[data-xoa]").forEach(function (b) { b.onclick = function () { hc.diem.splice(+b.dataset.xoa, 1); hc.doi = 1; hc.nguon = "nguoi"; veThan(); veAnhKhung(); }; });
-    mb.querySelectorAll("input[data-t]").forEach(function (i) { i.oninput = function () { hc.tay[i.dataset.t] = +i.value; hc.doi = 1; i.nextElementSibling.textContent = i.dataset.t === "tam" ? String(i.value).replace(".", ",") + " m" : Math.round(i.value) + "°"; veMini(); var b = mb.querySelector('[data-a="luu"]'); if (b) b.disabled = false; }; });
+    mb.querySelectorAll("input[data-t]").forEach(function (i) { i.oninput = function () { hc.tay[i.dataset.t] = +i.value; hc.doi = 1; i.nextElementSibling.textContent = i.dataset.t === "tam" ? String(i.value).replace(".", ",") + " m" : Math.round(i.value) + "°"; veMini(); var b = mb.querySelector('[data-a="luu"]'); if (b && !GM) b.disabled = false; }; });
     var kep = mb.querySelector(".sdc-kep"); if (kep) kep.onclick = function () { kep.classList.toggle("mo"); };
-    var gc = $id("sdcGc"); gc.oninput = function () { hc.ghiChu = gc.value; hc.doi = 1; var b = mb.querySelector('[data-a="luu"]'); if (b) b.disabled = false; };
+    var gc = $id("sdcGc"); gc.oninput = function () { hc.ghiChu = gc.value; hc.doi = 1; var b = mb.querySelector('[data-a="luu"]'); if (b && !GM) b.disabled = false; };
     /* sơ đồ nhỏ: khung quanh vùng camera (hiệu chỉnh → điểm; tên kênh → ô) */
     var vg = null, ds = hc.diem.map(function (d) { return d.m; }).concat(r.diem ? [r.diem] : []);
     if (r.vung) vg = { x0: r.vung.x0, y0: r.vung.y0, x1: r.vung.x1, y1: r.vung.y1 };
@@ -899,6 +939,10 @@
       /* 19:00–06:00 kho có thể tắt đèn khu kệ → mặc định lấy 10:00 gần nhất cho rõ sàn */
       var gio = new Date(Date.now() + 7 * 3600e3).getUTCHours(), body = { cam: hc.k };
       if (gio >= 19 || gio < 6) { var d = new Date(Date.now() + 7 * 3600e3); if (gio < 6) d.setUTCDate(d.getUTCDate() - 1); body.luc = d.toISOString().slice(0, 10) + "T03:00:00Z"; }
+      /* 05/11 user «máy dự phòng làm đủ»: máy dự phòng trả THẲNG ảnh (hoặc đoạn MP4 6 s khi có giờ chụp) — trình duyệt hiện ngay, không lưu ở máy đó */
+      if (GM) { khungDuPhong(hc.k, body).then(function (x) { if (ANH[hc.k]) URL.revokeObjectURL(ANH[hc.k]); ANH[hc.k] = x.url;
+          r.c.khung = Object.assign({}, r.c.khung || {}, { luc: new Date().toISOString(), chup: x.chup }); veThan(); veAnhKhung(); })
+        .catch(function (e) { if (kt) kt.textContent = e.message; }).finally(function () { b.disabled = false; }); return; }
       goi("/api/so-do-camera/khung", { method: "POST", body: body, ms: 200000 }).then(function (j) {
         r.c.khung = j.khung; D.han.conLuot = j.conLuot; var i = DS.indexOf(r); DS[i] = tinh(r.c);
         return napAnh(hc.k, true).then(function () { veThan(); veAnhKhung(); veDiem3D(); });
