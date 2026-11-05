@@ -327,6 +327,41 @@
   function datThe(t) { THE_MEM = t || ""; try { if (t) sessionStorage.setItem(THE_K, t); else sessionStorage.removeItem(THE_K); } catch (e) {} }
   var THE_MEM = "";
   function tieuDe() { var h = { "x-hx-phien": CTX.phien() }, t = layThe(); if (t) h["x-cctv"] = t; return h; }
+  /* ---------- KHUNG NEO trên máy này (05/11) — «Lấy khung mới» lúc laptop tắt: máy dự phòng không được lưu (chỉ giữ bản mã) ⇒ trình duyệt giữ khung
+     trong IndexedDB, MÃ HOÁ AES-GCM bằng khoá dẫn từ mật khẩu CCTV (PBKDF2). Khoá chỉ ở sessionStorage (như thẻ CCTV) — đóng thẻ trình duyệt là
+     không đọc được nữa tới lần nhập mật khẩu sau; đổi mật khẩu ⇒ khung neo cũ tự bỏ (giải không được). Khung máy chủ mới hơn thì thắng. ---------- */
+  var NEO_K = "sdc-neo", NEO = { key: null };
+  function neoKhoa(mk) {
+    if (!mk || !window.crypto || !crypto.subtle) return Promise.resolve();
+    return crypto.subtle.importKey("raw", new TextEncoder().encode(mk), "PBKDF2", false, ["deriveBits"])
+      .then(function (km) { return crypto.subtle.deriveBits({ name: "PBKDF2", salt: new TextEncoder().encode("hx-cctv-neo-v1"), iterations: 150000, hash: "SHA-256" }, km, 256); })
+      .then(function (bits) { var u = new Uint8Array(bits), t = ""; for (var i = 0; i < u.length; i++) t += String.fromCharCode(u[i]); try { sessionStorage.setItem(NEO_K, btoa(t)); } catch (e) {} NEO.key = null; })
+      .catch(function () {});
+  }
+  function neoKey() {
+    if (NEO.key) return Promise.resolve(NEO.key);
+    var r = ""; try { r = sessionStorage.getItem(NEO_K) || ""; } catch (e) {}
+    if (!r || !window.crypto || !crypto.subtle) return Promise.resolve(null);
+    return crypto.subtle.importKey("raw", tuB64(r), "AES-GCM", false, ["encrypt", "decrypt"]).then(function (k) { NEO.key = k; return k; }, function () { return null; });
+  }
+  function neoDb() {
+    return new Promise(function (ok) { try { var q = indexedDB.open("hx-cctv-neo", 1); q.onupgradeneeded = function () { q.result.createObjectStore("khung"); };
+      q.onsuccess = function () { ok(q.result); }; q.onerror = function () { ok(null); }; } catch (e) { ok(null); } });
+  }
+  function neoGhi(k, blob, chup) {
+    return Promise.all([neoKey(), neoDb(), blob.arrayBuffer()]).then(function (x) { var key = x[0], db = x[1]; if (!key || !db) return;
+      var iv = crypto.getRandomValues(new Uint8Array(12));
+      return crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, x[2]).then(function (ct) {
+        return new Promise(function (ok) { var t = db.transaction("khung", "readwrite"); t.objectStore("khung").put({ chup: chup, iv: iv, ct: ct }, k); t.oncomplete = ok; t.onerror = ok; }); });
+    }).catch(function () {});
+  }
+  function neoDoc(k) {
+    return Promise.all([neoKey(), neoDb()]).then(function (x) { var key = x[0], db = x[1]; if (!key || !db) return null;
+      return new Promise(function (ok) { var q = db.transaction("khung").objectStore("khung").get(k); q.onsuccess = function () { ok(q.result || null); }; q.onerror = function () { ok(null); }; })
+        .then(function (v) { if (!v) return null;
+          return crypto.subtle.decrypt({ name: "AES-GCM", iv: v.iv }, key, v.ct).then(function (b) { return { chup: v.chup, blob: new Blob([b], { type: "image/jpeg" }) }; }, function () { return null; }); });
+    }).catch(function () { return null; });
+  }
   /* ---------- CCTV khi LAPTOP TẮT (25/10 tối) — máy dự phòng chỉ có BẢN MÃ (khoá CCTV riêng Kc) + «hộp khoá» bọc Kc bằng mật khẩu CCTV.
      Mật khẩu vừa nhập (MK_TAM, chỉ trong bộ nhớ) → PBKDF2 → mở hộp → Kc → giải dữ liệu / khung hình đã lưu (giai-ma-guong.js dùng chung với gương
      Xác minh). Tải lại trang = mất Kc ⇒ hỏi lại mật khẩu. Máy dự phòng không bao giờ thấy Kc hay mật khẩu rõ. ---------- */
@@ -390,7 +425,7 @@
     return fetch(CTX.API() + "/api/so-do-camera/khung", { method: "POST", headers: Object.assign(tieuDe(), { "Content-Type": "application/json" }), body: JSON.stringify(body), signal: AbortSignal.timeout(200000) })
       .then(function (r) { het428(r); var loai = r.headers.get("content-type") || "", chup = r.headers.get("x-khung-chup") || new Date().toISOString();
         if (!r.ok || /json/.test(loai)) return r.text().then(function (t) { var j = {}; try { j = JSON.parse(t); } catch (e) {} var e2 = new Error(j.loi || "Máy chủ trả " + r.status); e2.code = r.status; throw e2; });
-        return r.blob().then(function (bl) { return /video/.test(loai) ? trichKhung(bl) : bl; }).then(function (anh) { return { url: URL.createObjectURL(anh), chup: chup }; }); });
+        return r.blob().then(function (bl) { return /video/.test(loai) ? trichKhung(bl) : bl; }).then(function (anh) { return { url: URL.createObjectURL(anh), chup: chup, blob: anh }; }); });
   }
   function trichKhung(bl) {
     return new Promise(function (ok, hong) {
@@ -564,7 +599,7 @@
         var duong = ch === "mo" ? "/api/so-do-camera/mo-khoa" : "/api/so-do-camera/dat-mk", than = ch === "mo" ? { mk: v("sdcMk") } : { cu: v("sdcCu"), moi: v("sdcMoi"), tk: v("sdcTk") };
         nut.disabled = true; tt("Đang kiểm tra…");
         goi(duong, { method: "POST", body: than, khongKhoa: 1, ms: 30000 })
-          .then(function (j) { datThe(j.the); MK_TAM = ch === "doi" ? v("sdcMoi") : ch === "mo" ? v("sdcMk") : v("sdcMoi"); GM = null; ve(host, CTX); })
+          .then(function (j) { datThe(j.the); MK_TAM = ch === "doi" ? v("sdcMoi") : ch === "mo" ? v("sdcMk") : v("sdcMoi"); GM = null; return neoKhoa(MK_TAM).then(function () { ve(host, CTX); }); })
           .catch(function (e) { nut.disabled = false; tt(e.name === "TimeoutError" || e.name === "AbortError" ? "Máy chủ không trả lời — thử lại." : e.message, true);
             var x = f.querySelector("input[type=password]"); if (x) x.select(); });
       };
@@ -576,7 +611,7 @@
     });
   }
   function khoaLai(tb) {
-    var t = layThe(); datThe("");
+    var t = layThe(); datThe(""); NEO.key = null; try { sessionStorage.removeItem(NEO_K); } catch (e) {}   // khoá lại CCTV = bỏ luôn khoá đọc khung neo
     if (t && CTX) fetch(CTX.API() + "/api/so-do-camera/khoa-lai", { method: "POST", headers: { "x-hx-phien": CTX.phien(), "x-cctv": t } }).catch(function () {});
     dungLive(); D = null; DS = []; NAP = null; GM = null; MK_TAM = ""; Object.keys(ANH).forEach(function (k) { URL.revokeObjectURL(ANH[k]); delete ANH[k]; });
     var m = $id("modal"); if ((S.chon || S.hc) && m && m.classList.contains("hx-ben") && typeof window.dongModal === "function") window.dongModal();
@@ -816,18 +851,15 @@
     $id("mTitle").innerHTML = '<span class="hx-mt1">' + e_(c.ten) + '</span><span class="hx-mt2">' + e_(c.dauGhi || c.ip) + " · kênh " + c.kenh + "</span>";
     veThan();
     window.hskThanhBen.xong(TB);
-    /* chưa có khung lưu ⇒ lấy 1 khung trực tiếp (1 lượt đầu ghi cho mỗi lần người mở kênh) thay vì để ô đen */
-    /* 28/10 user «top-review chụp khung ngay khi trỏ vào mắt cam»: khung lưu cũ > 10' ⇒ hiện khung lưu trước rồi thay bằng 1 khung trực tiếp
-       (1 lượt top-review mỗi lần mở — nhẹ hơn hẳn làm mới định kỳ cả 237 kênh). Hỏng (kênh ngoài số kênh top-review, máy dự phòng) ⇒ giữ khung lưu. */
-    var trucTiep = function () { return khungTrucTiep(k).then(function () { veAnhKhung(); var kt = $id("sdcKhungTt"); if (kt && S.hc && S.hc.k === k) kt.textContent = "Khung trực tiếp lúc " + new Date().toTimeString().slice(0, 5) + " (chưa lưu)"; }); };
-    var cu = !c.khung || Date.now() - Date.parse(c.khung.luc) > 10 * 60e3;
-    /* 02/11 user «khung camera luôn lỗi thời 8–36 giờ»: khung trực tiếp hỏng (top-review chặn mạng kho, máy dự phòng không giữ tài khoản…) trước đây
-       lặng lẽ giữ khung lưu ⇒ nay ghi rõ lý do ngay dòng giờ khung để không tưởng là khung mới */
-    var baoHong = function (e) {
-      veAnhKhung(); var kt = $id("sdcKhungTt"); if (!kt || !S.hc || S.hc.k !== k) return;
-      kt.textContent = (c.khung ? "Khung cũ lúc " + ngay(c.khung.chup) : "Chưa có khung hình") + " — không lấy được khung trực tiếp: " + ((e && e.message) || "lỗi mạng");
-    };
-    napAnh(k).then(function () { veAnhKhung(); if (cu && !GM) return trucTiep().catch(baoHong); }).catch(function () { return trucTiep().catch(baoHong); });
+    /* 05/11 user «không cần trực tiếp — nhấn vào thì hiện khung cũ; chỉ khi nhấn Lấy khung mới mới kéo khung mới về và NEO ở đó tới lần bấm sau»:
+       mở kênh KHÔNG gọi đầu ghi. Hiện khung mới hơn giữa khung máy chủ lưu và khung neo trên máy này (lấy lúc laptop tắt — máy dự phòng không lưu được). */
+    var ttK = function (iso) { var kt = $id("sdcKhungTt"); if (kt && S.hc && S.hc.k === k) kt.textContent = iso ? "Khung lúc " + ngay(iso) : "Chưa có khung hình"; };
+    Promise.all([napAnh(k).catch(function () { return null; }), neoDoc(k)]).then(function (x) {
+      var neo = x[1], chupMay = c.khung ? Date.parse(c.khung.chup) : 0;
+      if (neo && Date.parse(neo.chup) > chupMay) { if (ANH[k]) URL.revokeObjectURL(ANH[k]); ANH[k] = URL.createObjectURL(neo.blob); ttK(neo.chup); }
+      else ttK(c.khung && c.khung.chup);
+      if (S.hc && S.hc.k === k) veAnhKhung();
+    });
   }
   function rHienTai() { return DS.find(function (x) { return x.c.k === S.hc.k; }); }
   function veThan() {
@@ -837,7 +869,7 @@
     var osd = c.hc && c.hc.osd && boDau(c.hc.osd) !== boDau(c.ten) ? c.hc.osd : "";
     var h = '';   // 05/11 user «dẹp hết râu ria»: bỏ dòng trạng thái / chữ trên hình / cảnh báo
     h += '<div class="sdc-anh" id="sdcAnh"><div class="rong">Đang tải khung hình…</div></div>';
-    h += '<div class="sdc-hang"><button type="button" class="hsk-nut' + (LIVE.k === hc.k ? " chinh" : "") + '" data-a="live">' + (LIVE.k === hc.k ? "Dừng trực tiếp" : "Xem trực tiếp") + '</button><button type="button" class="hsk-nut" data-a="khung">Lấy khung mới</button><span class="sdc-tt" id="sdcKhungTt">' + (c.khung ? "Khung lúc " + e_(ngay(c.khung.chup)) : "Chưa có khung hình") + "</span></div>";
+    h += '<div class="sdc-hang"><button type="button" class="hsk-nut" data-a="khung">Lấy khung mới</button><span class="sdc-tt" id="sdcKhungTt">' + (c.khung ? "Khung lúc " + e_(ngay(c.khung.chup)) : "Chưa có khung hình") + "</span></div>";
     /* 05/11 user «hiệu chỉnh cần 2 điểm: 1 chỗ đặt camera, 2 là góc — tự chỉnh tay khi nhấn nút; dẹp râu ria»: bỏ gắn điểm sàn, ô trong khung, tên kênh nói, người kiểm, ghi chú */
     var t = hc.tay, buoc = hc.che === "tay1" ? "Chạm sơ đồ: chỗ đặt camera" : hc.che === "tay2" ? "Chạm sơ đồ: hướng camera nhìn tới" : "";
     h += '<div class="sdc-sec"><h4>Vị trí camera</h4><div class="sdc-hang"><button type="button" class="hsk-nut' + (hc.che ? " chinh" : "") + '" data-a="tay">' + (hc.che ? "Huỷ" : "Chỉnh") + '</button><span class="sdc-tt" id="sdcGanTt">' + buoc + "</span></div>";
@@ -920,7 +952,7 @@
       /* 19:00–06:00 kho có thể tắt đèn khu kệ → mặc định lấy 10:00 gần nhất cho rõ sàn */
       var body = { cam: hc.k };   // 05/11 user «nhấn lấy khung mới là luôn có khung mới»: bỏ luật đêm lấy 10:00 — luôn khung mới nhất
       /* 05/11 user «máy dự phòng làm đủ»: máy dự phòng trả THẲNG ảnh (hoặc đoạn MP4 6 s khi có giờ chụp) — trình duyệt hiện ngay, không lưu ở máy đó */
-      if (GM) { khungDuPhong(hc.k, body).then(function (x) { if (ANH[hc.k]) URL.revokeObjectURL(ANH[hc.k]); ANH[hc.k] = x.url;
+      if (GM) { khungDuPhong(hc.k, body).then(function (x) { if (ANH[hc.k]) URL.revokeObjectURL(ANH[hc.k]); ANH[hc.k] = x.url; neoGhi(hc.k, x.blob, x.chup);
           r.c.khung = Object.assign({}, r.c.khung || {}, { luc: new Date().toISOString(), chup: x.chup }); veThan(); veAnhKhung(); })
         .catch(function (e) { if (kt) kt.textContent = e.message; }).finally(function () { b.disabled = false; }); return; }
       goi("/api/so-do-camera/khung", { method: "POST", body: body, ms: 200000 }).then(function (j) {
