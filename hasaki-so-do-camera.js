@@ -397,7 +397,7 @@
       var v = document.createElement("video"), u = URL.createObjectURL(bl), xong = function (e, kq) { URL.revokeObjectURL(u); v.removeAttribute("src"); if (e) hong(e); else ok(kq); };
       v.muted = true; v.playsInline = true; v.preload = "auto";
       v.onerror = function () { xong(new Error("Trình duyệt không đọc được đoạn video")); };
-      v.onloadeddata = function () { v.currentTime = Math.min(1, (v.duration || 2) / 2); };
+      v.onloadeddata = function () { v.currentTime = Math.max(0, (v.duration || 1) - 0.3); };   // 05/11 khung CUỐI đoạn = mới nhất
       v.onseeked = function () { var c = document.createElement("canvas"); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext("2d").drawImage(v, 0, 0);
         c.toBlob(function (b2) { if (b2) xong(null, b2); else xong(new Error("Không trích được khung")); }, "image/jpeg", 0.9); };
       setTimeout(function () { xong(new Error("Trích khung quá lâu")); }, 20000);
@@ -835,34 +835,13 @@
     /* user 25/10: không chip, không nút «i» — trạng thái là 1 dòng chữ (màu theo mức), cảnh báo là dòng chữ đỏ / vàng */
     /* chữ camera tự in lên hình — chỉ nêu khi KHÁC tên kênh ở tiêu đề (không lặp thông tin, BO-CHUAN §6 luật 14) */
     var osd = c.hc && c.hc.osd && boDau(c.hc.osd) !== boDau(c.ten) ? c.hc.osd : "";
-    var h = '<div class="sdc-tt"><b style="color:' + mauVar(r.muc) + '">' + e_(r.nhan) + "</b>" + (osd ? "<br>Chữ trên hình: <b>" + e_(osd) + "</b>" : "") + r.canh.map(function (z) { return '<br><span style="color:var(--' + (z[0] === "bad" ? "bad" : "warn") + ')">' + e_(z[1]) + "</span>"; }).join("") + "</div>";
+    var h = '';   // 05/11 user «dẹp hết râu ria»: bỏ dòng trạng thái / chữ trên hình / cảnh báo
     h += '<div class="sdc-anh" id="sdcAnh"><div class="rong">Đang tải khung hình…</div></div>';
     h += '<div class="sdc-hang"><button type="button" class="hsk-nut' + (LIVE.k === hc.k ? " chinh" : "") + '" data-a="live">' + (LIVE.k === hc.k ? "Dừng trực tiếp" : "Xem trực tiếp") + '</button><button type="button" class="hsk-nut" data-a="khung">Lấy khung mới</button><span class="sdc-tt" id="sdcKhungTt">' + (c.khung ? "Khung lúc " + e_(ngay(c.khung.chup)) : "Chưa có khung hình") + "</span></div>";
-    /* hiệu chỉnh */
-    h += '<div class="sdc-sec"><h4>Hiệu chỉnh bằng điểm sàn</h4>';
-    h += '<div class="sdc-hang"><button type="button" class="hsk-nut' + (hc.cho ? " chinh" : "") + '" data-a="gan">' + (hc.cho ? "Đang gắn — bấm để dừng" : "Gắn điểm") + '</button><span class="sdc-tt" id="sdcGanTt">' + (hc.cho === "anh" ? "Chạm 1 điểm <b>trên sàn</b> ở khung hình (chân trụ kệ chạm sàn, vạch sơn)" : hc.cho === "sodo" ? "Chạm đúng điểm đó trên <b>sơ đồ</b>" : "") + "</span></div>";
-    h += '<div class="sdc-mini" id="sdcMini"><svg preserveAspectRatio="xMidYMid meet"><g>' + nenSvg() + '</g><g id="sdcMiniLop"></g></svg></div>';
-    /* điểm ẢO (tư thế ước / máy dò) không bày thành bảng: 16 dòng «lệch 0 px» không mang tin; bấm «Gắn điểm» là bắt đầu bộ điểm thật từ 0 */
-    if (hc.diem.length && !hc.ao) h += '<table class="sdc-cap">' + hc.diem.map(function (d, i) { var lo = dg && dg.H ? veAnh(dg.H, d.m) : null, e = lo ? Math.hypot(lo[0] - d.px[0], lo[1] - d.px[1]) : null;
-      return "<tr><td><b>" + (i + 1) + "</b></td><td>ảnh " + Math.round(d.px[0]) + ", " + Math.round(d.px[1]) + "</td><td>sơ đồ " + so(d.m[0], 2) + " · " + so(d.m[1], 2) + " m</td><td>" + (e != null ? "lệch " + Math.round(e) + " px" : "") + '</td><td style="text-align:right"><button type="button" class="hsk-nut nho nguy" data-xoa="' + i + '" aria-label="Bỏ điểm ' + (i + 1) + '">✕</button></td></tr>'; }).join("") + "</table>";
-    if (hc.ao) { /* mức đã nằm ở dòng trạng thái đầu thanh */ }
-    else if (dg && !dg.H) h += '<div class="sdc-tt">Mức: <b style="color:var(--bad)">Chưa khớp</b> · các điểm gần như thẳng hàng (vd cùng 1 dãy chân trụ) — không tính được, rải thêm điểm ra 2 bên / xa gần.</div>';
-    else if (dg) h += '<div class="sdc-tt">Mức: <b style="color:' + mauVar("hc-" + dg.muc) + '">' + { tot: "Khớp tốt", tam: "Tạm", kem: "Chưa khớp" }[dg.muc] + "</b> · " +
-      (dg.loiM != null ? "kiểm chéo lệch TB <b>" + so(dg.loiM, 2) + " m</b>" : dg.thangHang ? "nhiều điểm thẳng hàng — rải thêm điểm ra 2 bên / xa gần" : "4 điểm — thêm điểm thứ 5 để kiểm chéo") + " · chỗ lắp (ước) cao ≈ <b>" + so(dg.cam.cao) + " m</b> · góc nhìn ≈ <b>" + Math.round(dg.cam.goc) + "°</b>" +
-      (dg.thay ? "" : "") + "</div>";
-    else if (hc.diem.length) h += '<div class="sdc-tt">Còn thiếu ' + (4 - hc.diem.length) + " điểm để tính.</div>";
-    h += "</div>";
-    /* đặt tay */
-    var t = hc.tay;
-    h += '<div class="sdc-sec"><h4>Đặt tay (cảnh không thấy sàn)</h4>' +
-      '<div class="sdc-hang"><button type="button" class="hsk-nut' + (hc.che === "tay" ? " chinh" : "") + '" data-a="tay">' + (hc.che === "tay" ? "Chạm sơ đồ nhỏ để đặt" : t ? "Dời chỗ lắp" : "Đặt chỗ lắp") + "</button>" + (t ? '<button type="button" class="hsk-nut nguy" data-a="boTay">Bỏ đặt tay</button>' : "") + "</div>" +
-      (t ? '<div class="sdc-tr"><span>Hướng</span><input type="range" min="-180" max="180" step="1" data-t="huong" value="' + t.huong + '"><b>' + Math.round(t.huong) + '°</b><span>Góc</span><input type="range" min="20" max="150" step="1" data-t="goc" value="' + t.goc + '"><b>' + Math.round(t.goc) + '°</b><span>Tầm</span><input type="range" min="3" max="40" step="0.5" data-t="tam" value="' + t.tam + '"><b>' + so(+t.tam) + " m</b></div>" : "") + "</div>";
-    /* ô + nguồn */
-    var oT = hc.ao ? r.thay || [] : dg && dg.H ? oTrongKhung(dg.H, dg.cam) : r.thay || [];
-    /* danh sách ô dài ⇒ kẹp 3 dòng, bấm trải (mẫu .fld-dai:not(.mo) — BO-CHUAN §6 luật 9/11); bỏ dòng chỉ dẫn thường trực, ý «đã trừ ô bị che» vào tiêu đề */
-    h += '<div class="sdc-sec"><h4>Ô trong khung nhìn' + (oT.length ? " · " + oT.length + " ô, đã trừ ô bị kệ che" : "") + "</h4>" + (oT.length ? '<div class="sdc-tt sdc-kep" title="Bấm để xem hết">' + e_(oT.map(function (k) { return k.replace(/^F0-/, ""); }).join(", ")) + "</div>" : '<div class="sdc-tt">Có sau khi hiệu chỉnh ≥ 4 điểm.</div>') +
-      '<div class="sdc-tt">' + (r.goiY ? "Tên kênh nói: <b>" + e_(r.goiY.mo) + "</b>" : "Tên kênh không chỉ ra ô / khu.") + (c.nguoiKiem ? "<br>Người kiểm thấy: <b>" + e_(c.nguoiKiem.o.slice(0, 6).join(", ")) + (c.nguoiKiem.o.length > 6 ? "…" : "") + "</b> — " + e_(c.nguoiKiem.nguon) + (c.nguoiKiem.luuY ? "<br>Lưu ý: " + e_(c.nguoiKiem.luuY) : "") : "") + "</div></div>";
-    h += '<div class="sdc-sec"><h4>Ghi chú</h4><textarea class="sdc-gc" id="sdcGc" maxlength="300" placeholder="vd: camera gắn cột đầu dãy 501, nhìn về tủ 10">' + e_(hc.ghiChu) + "</textarea></div>";
+    /* 05/11 user «hiệu chỉnh cần 2 điểm: 1 chỗ đặt camera, 2 là góc — tự chỉnh tay khi nhấn nút; dẹp râu ria»: bỏ gắn điểm sàn, ô trong khung, tên kênh nói, người kiểm, ghi chú */
+    var t = hc.tay, buoc = hc.che === "tay1" ? "Chạm sơ đồ: chỗ đặt camera" : hc.che === "tay2" ? "Chạm sơ đồ: hướng camera nhìn tới" : "";
+    h += '<div class="sdc-sec"><h4>Vị trí camera</h4><div class="sdc-hang"><button type="button" class="hsk-nut' + (hc.che ? " chinh" : "") + '" data-a="tay">' + (hc.che ? "Huỷ" : "Chỉnh") + '</button><span class="sdc-tt" id="sdcGanTt">' + buoc + "</span></div>";
+    h += '<div class="sdc-mini" id="sdcMini"><svg preserveAspectRatio="xMidYMid meet"><g>' + nenSvg() + '</g><g id="sdcMiniLop"></g></svg></div></div>';
     h += '<div class="sdc-hang" style="justify-content:flex-end"><span class="sdc-tt" id="sdcLuuTt" style="margin-right:auto"></span>' + (c.hc || c.tay ? '<button type="button" class="hsk-nut nguy" data-a="xoa"' + (GM ? ' disabled title="Làm trên laptop"' : "") + '>Xoá hiệu chỉnh</button>' : "") +
       '<button type="button" class="hsk-nut chinh" data-a="luu"' + (GM ? ' disabled title="Làm trên laptop"' : hc.doi ? "" : " disabled") + ">Lưu</button></div>";   // 05/11 máy dự phòng: lưu hiệu chỉnh làm trên laptop — nút mờ, không câu báo
     var mb = $id("mBody"); mb.innerHTML = h;
@@ -874,19 +853,21 @@
     mb.querySelectorAll("[data-xoa]").forEach(function (b) { b.onclick = function () { hc.diem.splice(+b.dataset.xoa, 1); hc.doi = 1; hc.nguon = "nguoi"; veThan(); veAnhKhung(); }; });
     mb.querySelectorAll("input[data-t]").forEach(function (i) { i.oninput = function () { hc.tay[i.dataset.t] = +i.value; hc.doi = 1; i.nextElementSibling.textContent = i.dataset.t === "tam" ? String(i.value).replace(".", ",") + " m" : Math.round(i.value) + "°"; veMini(); var b = mb.querySelector('[data-a="luu"]'); if (b && !GM) b.disabled = false; }; });
     var kep = mb.querySelector(".sdc-kep"); if (kep) kep.onclick = function () { kep.classList.toggle("mo"); };
-    var gc = $id("sdcGc"); gc.oninput = function () { hc.ghiChu = gc.value; hc.doi = 1; var b = mb.querySelector('[data-a="luu"]'); if (b && !GM) b.disabled = false; };
+    var gc = $id("sdcGc"); if (gc) gc.oninput = function () { hc.ghiChu = gc.value; hc.doi = 1; var b = mb.querySelector('[data-a="luu"]'); if (b && !GM) b.disabled = false; };
     /* sơ đồ nhỏ: khung quanh vùng camera (hiệu chỉnh → điểm; tên kênh → ô) */
     var vg = null, ds = hc.diem.map(function (d) { return d.m; }).concat(r.diem ? [r.diem] : []);
     if (r.vung) vg = { x0: r.vung.x0, y0: r.vung.y0, x1: r.vung.x1, y1: r.vung.y1 };
     ds.forEach(function (p) { vg = vg ? { x0: Math.min(vg.x0, p[0]), y0: Math.min(vg.y0, p[1]), x1: Math.max(vg.x1, p[0]), y1: Math.max(vg.y1, p[1]) } : { x0: p[0], y0: p[1], x1: p[0], y1: p[1] }; });
     var mini = $id("sdcMini");
     S.mini = banDo(mini, S.miniVb && S.miniVb.k === hc.k ? S.miniVb.v : vg ? vbVua(vg, 5) : [0, 0, SD.W, SD.H], function (tl) { S.miniTl = tl; veMini(dg); if (S.mini) S.miniVb = { k: hc.k, v: S.mini.vb() }; }, function (m, tl) {
-      if (hc.che === "tay") { hc.tay = Object.assign({ huong: 0, goc: 90, tam: 12 }, hc.tay || {}, { x: +m[0].toFixed(2), y: +m[1].toFixed(2) }); hc.che = ""; hc.doi = 1; veThan(); return; }
+      if (hc.che === "tay1") { hc.tay = Object.assign({ huong: 0, goc: 90, tam: 12 }, hc.tay || {}, { x: +m[0].toFixed(2), y: +m[1].toFixed(2) }); hc.che = "tay2"; veThan(); veMini(); return; }
+      if (hc.che === "tay2") { var dx = m[0] - hc.tay.x, dy = m[1] - hc.tay.y; if (Math.hypot(dx, dy) < 0.3) return;   // điểm 2 = hướng nhìn: góc từ chỗ đặt tới điểm chạm, tầm = khoảng cách
+        hc.tay.huong = Math.round(Math.atan2(dy, dx) * 180 / Math.PI); hc.tay.tam = Math.min(40, Math.max(3, +Math.hypot(dx, dy).toFixed(1))); hc.che = ""; hc.doi = 1; veThan(); veMini(); veAnhKhung(); return; }
       if (hc.cho !== "sodo") return;
       var p = m, tot = null; GOC.forEach(function (g) { var d = Math.hypot(g[0] - m[0], g[1] - m[1]); if (d <= 0.35 && (!tot || d < tot.d)) tot = { d: d, g: g }; }); if (tot) p = tot.g;
       hc.diem.push({ px: hc.tamPx, m: [+p[0].toFixed(3), +p[1].toFixed(3)] }); hc.nguon = "nguoi"; hc.tamPx = null; hc.cho = "anh"; hc.doi = 1; veThan(); veAnhKhung();
     });
-    mini.classList.toggle("gan", hc.cho === "sodo" || hc.che === "tay");
+    mini.classList.toggle("gan", hc.cho === "sodo" || !!hc.che);
   }
   function veMini(dg) {
     var hc = S.hc, lop = $id("sdcMiniLop"), tl = S.miniTl || 10; if (!lop) return;
@@ -932,13 +913,12 @@
     /* camera đang theo tư thế ước (điểm ảo): bắt đầu gắn = bộ điểm THẬT từ 0 — trộn điểm người bấm với điểm ảo làm phép chiếu sai */
     if (a === "gan") { if (!hc.cho && hc.ao) { hc.diem = []; hc.ao = false; hc.nguon = "nguoi"; hc.doi = 1; }
       hc.cho = hc.cho ? null : "anh"; hc.tamPx = null; hc.che = ""; veThan(); veAnhKhung(); return; }
-    if (a === "tay") { hc.che = hc.che === "tay" ? "" : "tay"; hc.cho = null; veThan(); veAnhKhung(); return; }
+    if (a === "tay") { if (hc.che) { hc.che = ""; hc.tay = r.c.tay ? Object.assign({}, r.c.tay) : null; hc.diem = (r.c.hc && r.c.hc.diem ? r.c.hc.diem : []).map(function (d) { return { px: d.px.slice(), m: d.m.slice() }; }); } else { hc.che = "tay1"; hc.diem = []; hc.ao = false; } hc.cho = null; veThan(); veAnhKhung(); return; }
     if (a === "boTay") { hc.tay = null; hc.doi = 1; veThan(); veAnhKhung(); return; }
     if (a === "khung") {
       b.disabled = true; var kt = $id("sdcKhungTt"); if (kt) kt.textContent = "Đang lấy khung…";   // ban ngày: khung trực tiếp (< 1 s); 19:00–06:00: cắt video lúc 10:00 (~45 s)
       /* 19:00–06:00 kho có thể tắt đèn khu kệ → mặc định lấy 10:00 gần nhất cho rõ sàn */
-      var gio = new Date(Date.now() + 7 * 3600e3).getUTCHours(), body = { cam: hc.k };
-      if (gio >= 19 || gio < 6) { var d = new Date(Date.now() + 7 * 3600e3); if (gio < 6) d.setUTCDate(d.getUTCDate() - 1); body.luc = d.toISOString().slice(0, 10) + "T03:00:00Z"; }
+      var body = { cam: hc.k };   // 05/11 user «nhấn lấy khung mới là luôn có khung mới»: bỏ luật đêm lấy 10:00 — luôn khung mới nhất
       /* 05/11 user «máy dự phòng làm đủ»: máy dự phòng trả THẲNG ảnh (hoặc đoạn MP4 6 s khi có giờ chụp) — trình duyệt hiện ngay, không lưu ở máy đó */
       if (GM) { khungDuPhong(hc.k, body).then(function (x) { if (ANH[hc.k]) URL.revokeObjectURL(ANH[hc.k]); ANH[hc.k] = x.url;
           r.c.khung = Object.assign({}, r.c.khung || {}, { luc: new Date().toISOString(), chup: x.chup }); veThan(); veAnhKhung(); })
@@ -952,6 +932,7 @@
     if (a === "luu" || a === "xoa") {
       if (a === "xoa" && !confirm("Xoá hiệu chỉnh của kênh «" + r.c.ten + "»? (máy giữ bản sao lưu)")) return;
       var dg = hc.diem.length >= 4 ? danhGia(hc.diem) : null;
+      if (a === "luu" && !hc.diem.length && hc.tay) dg = null;   // 05/11 chỉnh tay 2 điểm ⇒ bỏ hiệu chỉnh điểm sàn cũ (hc: null) để vị trí tay có hiệu lực
       if (a === "luu" && hc.diem.length && hc.diem.length < 4) { tt("Cần ≥ 4 điểm (hoặc bỏ hết điểm để chỉ lưu đặt tay / ghi chú)."); return; }
       var body2 = a === "xoa" ? { cam: hc.k, hc: null, tay: null, ghiChu: "" } : { cam: hc.k, ghiChu: hc.ghiChu, tay: hc.tay || null,
         hc: dg ? Object.assign(dg.H ? { diem: hc.diem, loiM: dg.loiM == null ? undefined : dg.loiM, loiPx: dg.loiPx, cao: dg.cam.cao, f: dg.cam.f, muc: dg.muc } : { diem: hc.diem, muc: "kem" },
