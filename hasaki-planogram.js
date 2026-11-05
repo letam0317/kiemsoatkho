@@ -1728,8 +1728,8 @@ var NGUON = [
     build: function(H, rows, ts){ if (ts > 0) S.pc.ts = ts; S.pc.dang = false; buildPC(H, rows); },
     fail: function(){ S.pc.ok = false; S.pc.dang = false; } },
   { tab: TAB, cb: "hpgv_pt",
-    build: function(H, rows, ts){ if (ts > 0) S.tsData = ts; S.dangPT = false; buildMain(H, rows); if (!ts) loadMeta(); capNhatInfo(); },
-    fail: function(){ S.ok = false; S.dangPT = false; render(); } },
+    build: function(H, rows, ts){ if (ts > 0) S.tsData = ts; S.dangPT = false; buildMain(H, rows); if (!ts) loadMeta(); capNhatInfo(); if (_choPT) hienBac1(); },
+    fail: function(){ S.ok = false; S.dangPT = false; render(); if (_choPT) hienBac1(); } },
   { tab: TAB_AI, cb: "hpgv_ai",
     build: function(H, rows, ts){ if (ts > 0) S.ai.ts = ts; S.ai.dang = false; buildAI(H, rows); },
     fail: function(){ S.ai.ok = false; S.ai.dang = false; renderAI(); } },
@@ -1845,7 +1845,7 @@ function loadData(){
   var st = $id("hpState"); if (!st) return;
   var btn = $id("hpReload"); if (btn) btn.disabled = true;
   _daGoi = {}; S.lastAt = Date.now();
-  S.yc.dang = true; S.dangPT = true; S.ai.dang = true; S.pc.dang = true;
+  S.yc.dang = true; S.dangPT = true; S.ai.dang = true; S.pc.dang = true; _hetChoPT = false;
   /* 1) VẼ TỪ CACHE trước (đồng bộ): có cache là màn hình đủ dữ liệu ngay từ khung hình đầu —
         không spinner, không skeleton, không animation vào (tránh chớp trên nội dung đang có). */
   var coYc = tuCache(TAB_YC);
@@ -1988,8 +1988,7 @@ function buildYC(H, rows2d){
   if (!S.dDen || !arr.some(function(r){ return r.ngay >= (S.dTu || S.dDen) && r.ngay <= S.dDen; })){ S.dTu = ngay; S.dDen = ngay; }
   /* BẬC 1 xong = màn hình đã dùng được: tắt spinner, mở lại nút Làm mới, vẽ cả 3 khối
      (khối danh sách tự hiện trạng thái "đang tải" cho nguồn bậc 2/3 chưa về). */
-  xongTai();
-  renderWhBar(); renderToday(); renderList(); capNhatInfo();
+  hienBac1();
   /* NẠP TRƯỚC ẢNH BÁO CÁO (TAB_ANH): nạp ngay trong nền sau khi Bậc 1 xong (trễ nhẹ 200ms nhường UI),
      để khi người dùng mở bất kỳ ô nào thì ảnh đã sẵn sàng (< 0.1s), không phải chờ "đang tải ảnh báo cáo…". */
   setTimeout(function(){ canANH(); }, 200);
@@ -2751,6 +2750,17 @@ function renderTools(){
 }
 function moKhuMenu(e){ if (e && e.stopPropagation) e.stopPropagation(); var m = $id("hpKhuMenu"); if (m) m.classList.toggle("open"); }
 /* Bậc nào về trước cũng dùng chung: tắt spinner + mở lại nút Làm mới */
+/* 05/11 user «rà các mục như CCTV — hiện bản tạm rồi nhảy sang bản chốt»: đo thấy YEUCAU về trước PHU-TRACH (nguồn TÊN) ⇒ màn hình
+   hiện 2 nhịp (danh sách email trần / «Đang tải…» 0,1–0,6 s rồi mới ra tên). Nay giữ màn chờ chung tới khi nguồn tên về (hoặc hỏng),
+   rồi hiện 1 lần. Chốt an toàn 2,5 s: nguồn tên chậm hơn thì vẫn hiện, không bắt chờ. */
+var _choPT = 0, _hetChoPT = false;
+function hienBac1(){
+  if (!S.yc.ok) return;
+  if (S.dangPT && !_hetChoPT){ if (!_choPT) _choPT = setTimeout(function(){ _choPT = 0; _hetChoPT = true; hienBac1(); }, 2500); return; }
+  clearTimeout(_choPT); _choPT = 0;
+  xongTai();
+  renderWhBar(); renderToday(); renderList(); capNhatInfo();
+}
 function xongTai(){
   var st = $id("hpState"); if (st) st.style.display = "none";
   var btn = $id("hpReload"); if (btn) btn.disabled = false;
@@ -2907,7 +2917,9 @@ function renderCC(){ renderList(); }
  * (bản cũ nhãn nhảy dòng theo độ dài tên). Cột rỗng ("Giờ ra —", "Đã vệ sinh 0") không còn. */
 var NV_CAP_DT = 8;
 function htmlNhanVien(){
-  if (!S.yc.ok) return '<div class="hp-empty">Đang tải…</div>';
+  /* 05/11 user «rà các mục như CCTV — hiện bản tạm rồi 1 s sau nhảy sang bản chốt»: đo thấy danh sách vẽ lần đầu bằng EMAIL trần
+     (~0,3–0,6 s) khi VESINH-YEUCAU về trước PHU-TRACH (nguồn tên) ⇒ chờ nguồn tên về (hoặc hỏng) rồi mới vẽ — không có bản email tạm. */
+  if (!S.yc.ok || S.dangPT) return '<div class="hp-empty">Đang tải…</div>';
   var homNay = laHomNay();
   var L = nvTheoNgay().list;
   var nhom = {
