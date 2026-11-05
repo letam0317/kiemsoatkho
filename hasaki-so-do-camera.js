@@ -380,8 +380,28 @@
       .then(function (km) { return crypto.subtle.deriveKey({ name: "PBKDF2", salt: tuB64(b.salt), iterations: b.vong, hash: "SHA-256" }, km, { name: "AES-GCM", length: 256 }, false, ["decrypt"]); })
       .then(function (w) { return crypto.subtle.decrypt({ name: "AES-GCM", iv: tuB64(b.iv) }, w, tuB64(b.ct)); })
       .catch(function () { var e = new Error("Mật khẩu CCTV không mở được bản lưu — mật khẩu vừa đổi thì chờ khoảng 15 phút rồi thử lại."); e.code = 409; throw e; })
-      .then(function (kc) { return napGiaiMa().then(function (G) { return G.nhapKhoa(new Uint8Array(kc)); }); })
-      .then(function (kk) { GM = { kk: kk }; return moDuPhong(j); });
+      .then(function (kc) { return napGiaiMa().then(function (G) { return G.nhapKhoa(new Uint8Array(kc)).then(function (kk) { return napLopPc(G, new Uint8Array(kc), kk); }); }); })
+      .then(function (x) { GM = x; return moDuPhong(j); });
+  }
+  /* 05/11 LỚP PC CCTV (hasaki/cctv-lop-pc.mjs): laptop tắt nhiều ngày ⇒ máy dự phòng giữ top-review tự làm mới khung > 5 ngày, mã hoá bằng khoá
+     riêng Kp, Kp nằm trong PHONG BÌ bọc khoá công khai dẫn từ Kc. Trình duyệt có Kc ⇒ mở phong bì → khoá kép (giai-ma-guong chon: khoá
+     «cctv:anh-pc:<kênh>» dùng Kp). Không có / hỏng phong bì ⇒ chỉ dùng khung laptop như cũ. */
+  function napLopPc(G, kc, kk) {
+    var kcB = btoa(String.fromCharCode.apply(null, kc)), KH = "cctv-lop:phong-bi";
+    return G.khoaVo().then(function (kvo) {
+      return G.tenAn(kvo, KH).then(function (ten) { return fetch(CTX.API() + "/ma/" + ten, { headers: { "x-hx-phien": CTX.phien() }, cache: "no-store", signal: AbortSignal.timeout(30000) }); })
+        .then(function (r) { if (!r.ok) throw new Error("chưa có"); return G.docTron(r, KH, kvo); })
+        .then(function (x) { return new Blob(x.phan).text(); })
+        .then(function (t) { return G.moPhongBi(kcB, JSON.parse(t)); })
+        .then(function (pb) { var ds = pb.ds || {};
+          return G.nhapKhoa(kc, { kp: pb.kp, ds: Object.keys(ds).map(function (k) { return "cctv:anh-pc:" + k; }) }).then(function (kk2) { return { kk: kk2, lop: ds }; }); });
+    }).catch(function () { return { kk: kk, lop: {} }; });
+  }
+  function lopDoc(k) {
+    var x = GM && GM.lop && GM.lop[k]; if (!x) return Promise.resolve(null);
+    var mp4 = x.loai === "mp4";
+    return taiMa("cctv:anh-pc:" + k, mp4 ? "video/mp4" : "image/jpeg").then(function (b) { return mp4 ? trichKhung(b) : b; })
+      .then(function (b) { return { chup: x.chup, blob: b }; }, function () { return null; });
   }
   function taiMa(khoa, loai) {
     var G = window.hxGiaiMa;
@@ -854,9 +874,11 @@
     /* 05/11 user «không cần trực tiếp — nhấn vào thì hiện khung cũ; chỉ khi nhấn Lấy khung mới mới kéo khung mới về và NEO ở đó tới lần bấm sau»:
        mở kênh KHÔNG gọi đầu ghi. Hiện khung mới hơn giữa khung máy chủ lưu và khung neo trên máy này (lấy lúc laptop tắt — máy dự phòng không lưu được). */
     var ttK = function (iso) { var kt = $id("sdcKhungTt"); if (kt && S.hc && S.hc.k === k) kt.textContent = iso ? "Khung lúc " + ngay(iso) : "Chưa có khung hình"; };
-    Promise.all([napAnh(k).catch(function () { return null; }), neoDoc(k)]).then(function (x) {
-      var neo = x[1], chupMay = c.khung ? Date.parse(c.khung.chup) : 0;
-      if (neo && Date.parse(neo.chup) > chupMay) { if (ANH[k]) URL.revokeObjectURL(ANH[k]); ANH[k] = URL.createObjectURL(neo.blob); ttK(neo.chup); }
+    /* 3 nguồn, khung MỚI NHẤT thắng: laptop lưu (cũ nhất có thể) · khung neo trên máy này · lớp PC CCTV (máy dự phòng tự làm khi laptop tắt lâu) */
+    Promise.all([napAnh(k).catch(function () { return null; }), neoDoc(k), lopDoc(k)]).then(function (x) {
+      var chupMay = c.khung ? Date.parse(c.khung.chup) : 0, tot = null;
+      [x[1], x[2]].forEach(function (v) { if (v && Date.parse(v.chup) > Math.max(chupMay, tot ? Date.parse(tot.chup) : 0)) tot = v; });
+      if (tot) { if (ANH[k]) URL.revokeObjectURL(ANH[k]); ANH[k] = URL.createObjectURL(tot.blob); ttK(tot.chup); }
       else ttK(c.khung && c.khung.chup);
       if (S.hc && S.hc.k === k) veAnhKhung();
     });
