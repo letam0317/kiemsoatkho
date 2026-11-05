@@ -788,7 +788,7 @@
     var h = '<div class="hx-qd hx-qd-luot hx-tb-luoi" data-tb="may">' +
       tp("clip", '<div id="lvClip"><div class="hx-vwrap" data-khung><video id="hxV" playsinline muted preload="auto"></video><canvas id="hxOv" width="1280" height="720"></canvas></div>' +
         '<div class="hx-tl-hang"><div class="hx-tl" id="hxTl"></div><div class="hx-xdau"><span class="hx-vbar" id="lvCtl"><button id="hxPlay" aria-label="Phát / dừng">▶</button><span class="gio" id="hxGio">--:--:--</span>' +
-        '<span class="hx-toc"><button data-toc="auto" class="on">Tự động</button><button data-toc="1">×1</button><button data-toc="2">×2</button><button data-toc="3">×3</button></span></span></div></div></div>' +
+        '<span class="hx-toc"><button data-toc="auto" class="on">Tự động</button><button data-toc="0.5">×0,5</button><button data-toc="1">×1</button><button data-toc="2">×2</button><button data-toc="3">×3</button></span></span></div></div></div>' +
         /* 19/10 (7) user: «Ảnh ghi nhận» thành CHIP cùng hàng/kiểu với Theo tác vụ, ngay dưới clip — ảnh mặc định ẩn, bấm hiện DƯỚI clip (clip vẫn chạy) */
         /* 23/10 user: như Theo tác vụ — KHÔNG có ảnh ghi nhận thì không có chip/khung ảnh (trước luôn hiện, bấm ra khung trống) */
         '<div class="hx-qd-xem hx-xem-may"><div class="hx-xdau hx-ng-hang"><span class="hx-qd-nguon">' + (anhL ? '<button type="button" class="hx-ng-anh" data-anhgn aria-pressed="false">Ghi nhận</button>' : "") +   /* 20/10 user: như Theo tác vụ — chip «Ghi nhận» (điện thoại) gom ảnh + «Sẽ ghi nhận» */
@@ -1149,7 +1149,8 @@
         daVe.push([x, y, w]);
         if (y + 32 < b[1] - 4) { g.strokeStyle = "#e74c3c"; g.lineWidth = 3; g.beginPath(); g.moveTo(x + 14, y + 32); g.lineTo(Math.max(b[0], Math.min(b[2], x + 14)), b[1]); g.stroke(); }   // vạch nối nhãn bị dời lên với khung
         g.fillStyle = "#e74c3c"; g.fillRect(x, y, w, 32); g.fillStyle = "#fff"; g.fillText(chu, x + 8, y + 24); });
-      if (toc === "auto") { var r = trongNguoi(t) ? 1 : 3; if (v.playbackRate !== r) v.playbackRate = r; }
+      /* 05/11 user «đoạn có người đi qua tự động về 0.5 — nhanh quá sao t coi được»: có người (đoạn đã ghi HOẶC đang khoanh thấy) ×0,5 · trống ×3 */
+      if (toc === "auto") { var r = trongNguoi(t) || tracks.length ? 0.5 : 3; if (v.playbackRate !== r) v.playbackRate = r; }
       $id("hxGio").textContent = hms(t);   // 17/10 (2) user «có sẵn ×1 ×2 ×3 rồi hiện thêm ×3 làm gì — tô màu nút»: tốc độ đang chạy = nút được tô
       var dang = toc === "auto" && !v.paused ? String(v.playbackRate) : ""; if (dang !== tocTo) { tocTo = dang; document.querySelectorAll(".hx-vbar [data-toc]").forEach(function (x) { x.classList.toggle("dang", x.dataset.toc === dang); }); }
       var cur = $id("hxCur"); if (cur) cur.style.left = ((t - S) / tong * 100) + "%";
