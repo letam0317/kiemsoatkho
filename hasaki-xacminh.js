@@ -534,7 +534,7 @@
       .catch(function (e) { if (e && e.dangNhap) return; try { console.error("[xác minh] tải/vẽ lỗi:", e && e.stack || e); } catch (x) {} if (!PANE || D && PANE.querySelector("#hxBody")) return;   // tải nền (chưa mở tab) hỏng: không có khung để báo   /* đang có dữ liệu cũ (lượt tự tải lại hỏng) → giữ màn, không xoá trắng */
         D = null;
         if (maHoa_()) { PANE.innerHTML = '<div class="panel" style="margin-top:14px"><div class="hx-trong"><b>Không mở được bản dự phòng mã hoá.</b><br>' + e_((e && e.message) || "Lỗi giải mã") +
-          '<br>Laptop đang tắt — thử đăng xuất rồi đăng nhập lại, hoặc chờ laptop bật.</div></div>'; return; }
+          '<br>Thử đăng xuất rồi đăng nhập lại.</div></div>'; return; }
         PANE.innerHTML = '<div class="panel" style="margin-top:14px"><div class="hx-trong"><b>Tab này chỉ mở được trên máy quản lý.</b><br>Dữ liệu xác minh có hình người và ảnh cổng bảo vệ nên không đưa lên mạng — máy chủ nội bộ chưa chạy hoặc bạn đang mở từ máy khác.</div></div>'; });
   }
   function taiXong(j, im) { var ky = ""; try { ky = JSON.stringify(Object.assign({}, j, { capNhat: 0 })); } catch (e) {}
@@ -593,7 +593,7 @@
     var ctx = { API: function () { return API; }, phien: function () { return PHIEN; }, moThanhBen: moThanhBen, noiLai: noiLai };   // 30/10 noiLai: CCTV dò lại máy chủ khi đường hầm laptop đã chết
     if (window.HXSODO) return window.HXSODO.ve(b, ctx);
     b.innerHTML = '<div class="panel"><div class="hx-trong">Đang tải sơ đồ camera…</div></div>';
-    _sdcNap = _sdcNap || new Promise(function (ok, loi) { var s = document.createElement("script"); s.src = "hasaki-so-do-camera.js?v=20261102a"; s.onload = ok; s.onerror = function () { _sdcNap = null; loi(); }; document.head.appendChild(s); });
+    _sdcNap = _sdcNap || new Promise(function (ok, loi) { var s = document.createElement("script"); s.src = "hasaki-so-do-camera.js?v=20261105a"; s.onload = ok; s.onerror = function () { _sdcNap = null; loi(); }; document.head.appendChild(s); });
     _sdcNap.then(function () { if ($id("hxBody") === b) window.HXSODO.ve(b, ctx); }).catch(function () {
       b.innerHTML = '<div class="panel"><div class="hx-trong">Không tải được mô-đun sơ đồ camera (mất mạng?). <button type="button" class="hx-nut nho" id="sdcThuLai">Thử lại</button></div></div>';
       var t = $id("sdcThuLai"); if (t) t.onclick = veSoDo; });
@@ -1779,7 +1779,8 @@
     var LS = coSoan ? Object.assign({}, p.lsKho, { ds: dsTron }) : p.lsKho || null, lui20 = function (s0) { return new Date(Date.parse(String(s0).replace(" ", "T") + "+07:00") - 20e3 + 7 * 36e5).toISOString().slice(0, 19).replace("T", " "); };
     var nguon = [];
     /* 19/10 (4) user: hàng nguồn gom 1 hàng «Tác động WMS» (clip giờ kho — đổi tên từ «Clip camera giờ kho») / «Không qua WMS» / «Ảnh ghi nhận»; bỏ nút «Khung camera N» */
-    if (bc.clip) nguon.push({ k: "clip", ten: bc.truy ? "Clip lúc đồ vật xuất hiện" : "Tác động WMS", url: u_(bc.clip), video: 1, info: bc.clipInfo });
+    /* 04/11: clip camera-bao-cao (<id>_…_BAOCAO_CLIP-*) = camera lúc phụ trách nộp báo cáo vệ sinh, không phải giờ kho */
+    if (bc.clip) nguon.push({ k: "clip", ten: bc.truy ? "Clip lúc đồ vật xuất hiện" : /_BAOCAO_CLIP/i.test(bc.clip) ? "Camera lúc nộp báo cáo vệ sinh" : "Tác động WMS", url: u_(bc.clip), video: 1, info: bc.clipInfo });
     if (bc.chupLui) nguon.push({ k: "lui", ten: "Dải 72 giờ", url: u_(bc.chupLui) });
     /* 16/10 (4) user: Ảnh ghi nhận LÔI RA khỏi thanh nguồn, đứng riêng trên «Ai tác động» — xem camera và đối chiếu ảnh CÙNG LÚC (không lặp thành nút) */
     ((bc.vs && bc.vs.cam && bc.vs.cam.soi) || []).forEach(function (a) { nguon.push({ k: "soi", ten: "Camera lúc nộp báo cáo (ảnh soi)", url: u_(a) }); });   // 07/10
