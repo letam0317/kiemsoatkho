@@ -27,7 +27,7 @@
   var BONG1 = "0 1px 2px -2px rgba(0,0,0,.16),0 3px 6px 0 rgba(0,0,0,.12),0 5px 12px 4px rgba(0,0,0,.09)";
   var BONG2 = "0 6px 16px 0 rgba(0,0,0,.08),0 3px 6px -4px rgba(0,0,0,.12),0 9px 28px 8px rgba(0,0,0,.05)";
   var VONG = "0 0 0 2px color-mix(in srgb,var(--accent) 18%,transparent)";   // quầng focus của antd, theo màu theme
-  var SEG = "#hpWhBar .hp-wb1 .hp-whtab";   // thanh lọc "chọn 1 trong vài" kiểu Segmented (Kiểm kê/Bất thường nay dùng ô chọn)
+  var SEG = "#hpWhBar .hp-wb1 .hp-whtab,#bdNay .bd-seg .hp-whtab,#bdDoiHop .bd-seg .hp-whtab";   // 05/11 + Việc hôm nay (Theo người|Theo hạng mục) và hộp đổi người (Chỉ hôm nay|Từ nay về sau)   // thanh lọc "chọn 1 trong vài" kiểu Segmented (Kiểm kê/Bất thường nay dùng ô chọn)
   var H = "html.ad", B = "html.ad body";
   /* 16/10 nhịp chuyển dùng chung: khung tab chạy lại paneIn (đổi mục con trong tab — vd Xác minh Theo tác vụ ⇄ Theo máy) */
   window.nhipTab = function (el) { if (!el) return; el.style.animation = "none"; void el.offsetWidth; el.style.animation = ""; };
