@@ -2933,7 +2933,7 @@ function htmlNhanVien(){
     else if (p.diLam){ st = "đi làm · không có ô"; tone = "mut"; }
     else { st = p.so ? p.so + " ô" : ""; tone = "mut"; }
     return '<button type="button" class="hp-nvr"' + (p.em ? ' data-em="' + esc(p.em) + '" onclick="HPLANOGRAM.openNk(this.getAttribute(\'data-em\'))" title="Xem nhật ký vệ sinh theo ngày của ' + esc(p.ten) + '"' : '') + '>' +
-      '<span class="av" style="background:' + nmColor(p.ten) + '">' + esc(chuDau(p.ten)) + '</span>' +
+      '<span class="av" data-anh-nv="' + esc(p.ten) + '"' + (p.em ? ' data-anh-em="' + esc(p.em) + '"' : '') + ' style="background:' + nmColor(p.ten) + '">' + esc(chuDau(p.ten)) + '</span>' +
       '<span class="m"><b>' + esc(p.ten) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
       (st ? '<span class="st ' + tone + '">' + esc(st) + '</span>' : '') + '</button>';
   }).join("");
@@ -3936,7 +3936,7 @@ function renderVt(){
     if (dsPk.length){
       dsPk.slice(0, 3).forEach(function(p){
         var lech = pc && pc.em && tuGS && String(p.em).toLowerCase() !== String(pc.em).toLowerCase();
-        cardBc += '<div class="who"><span class="av" style="background:' + nmColor(p.ten) + '">' + esc(chuDau(p.ten)) + '</span>' +
+        cardBc += '<div class="who"><span class="av" data-anh-nv="' + esc(p.ten) + '"' + (p.em ? ' data-anh-em="' + esc(p.em) + '"' : '') + ' style="background:' + nmColor(p.ten) + '">' + esc(chuDau(p.ten)) + '</span>' +
           '<div><b>' + esc(p.ten) + '</b><small>' + esc(p.em) + '</small></div></div>' +
           '<div class="ln">đóng <b>' + p.n + '</b> phiếu · phiếu đầu <b>' + esc(p.dau || "?") + '</b> → phiếu cuối <b>' + esc(p.cuoi || "?") + '</b></div>' +
           (!(pc && pc.em && tuGS) ? "" : lech ? '<div class="ln" style="color:#d97706">⚠ khác người trong bảng phân công</div>'
