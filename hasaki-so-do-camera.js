@@ -577,10 +577,8 @@
     henKhoa();
     /* 05/11 user «mở CCTV vẫn thấy "Đang dựng mặt bằng…" ~1 s rồi mới sang mặt bằng chốt»: khung 3D đã nạp ngầm từ màn mật khẩu ⇒ mở khoá xong
        hiện NGAY mặt bằng nhìn từ trên (chưa có dữ liệu camera thì biểu tượng vẽ thêm khi về) — bỏ chữ «Đang tải…» / «Đang dựng mặt bằng…» */
-    if (!D) hienKhung(host);
-    if (!NAP) NAP = Promise.all([goi("/api/so-do-camera").then(function (j) { return j.duPhong ? moDuPhong(j) : (GM = null, j); }), napSoDo()]).then(function (kq) { D = kq[0]; SD = kq[1]; dungO(); DS = D.cams.map(tinh); })
-      .catch(function (e) { NAP = null; throw e; });
-    NAP.then(function () { if (HOST === host) veMan(); }).catch(function (e) {
+    if (!D) { hienKhung(host); if (F && F.bo.classList.contains("cho")) tt3("Đang tải sơ đồ camera…"); }   // 06/11 chưa đủ mô hình + camera: chữ chờ, không màn trắng / mặt bằng trống
+    napDL().then(function () { if (HOST === host) veMan(); }).catch(function (e) {
       if (e.code === 428) return;   // het428 đã đưa về màn mật khẩu
       if (e.code === 409) return khoaLai(e.message);   // máy dự phòng: mật khẩu không mở được hộp khoá
       /* 410 = bản dự phòng mã hoá (laptop tắt) chặn bản rõ · 503 = bản dự phòng thường · 403 = không phải tamlc */
@@ -588,6 +586,20 @@
         (e.code === 403 ? "" : ' <button type="button" class="hx-nut nho" data-sdc="lai">Thử lại</button>') + "</div></div>";
       var b = host.querySelector('[data-sdc="lai"]'); if (b) b.onclick = function () { ve(host, ctx); };
     });
+  }
+  function napDL() {
+    if (!NAP) NAP = Promise.all([goi("/api/so-do-camera").then(function (j) { return j.duPhong ? moDuPhong(j) : (GM = null, j); }), napSoDo()]).then(function (kq) { D = kq[0]; SD = kq[1]; dungO(); DS = D.cams.map(tinh); })
+      .catch(function (e) { NAP = null; throw e; });
+    return NAP;
+  }
+  /* 06/11: mở khoá xong → GIỮ màn mật khẩu («Đang mở…») tới khi dữ liệu camera đã về + mặt bằng (đang ngầm) đã vẽ xong biểu tượng, rồi mới chuyển
+     ⇒ không hiện mặt bằng trống / chữ chờ (QC 05/11 «mặt bằng hiện NGAY ở khung đầu tiên» + 06/11 «không bản tạm»). Trần 20 s: quá thì chuyển như cũ. */
+  function choDuSau() {
+    var het = new Promise(function (r) { setTimeout(r, 20000); });
+    var du = napDL().then(function () { return new Promise(function (r) {
+      (function cho() { if (!F || !F.w || !F.ve2) return setTimeout(cho, 100);
+        DS = D.cams.map(tinh); veDiem3D(); var w = F.w; w.requestAnimationFrame(function () { w.requestAnimationFrame(function () { hienRa(); r(); }); }); })(); }); });
+    return Promise.race([du.catch(function () {}), het]);
   }
   /* ---------- khoá mật khẩu CCTV (25/10 đêm) — khuôn .hx-dn của form đăng nhập Xác minh ----------
      che: "mo" nhập mật khẩu · "dat" đặt lần đầu · "doi" đổi mật khẩu. 25/10 đêm (2) user «đăng nhập rồi sao vẫn bắt lên laptop»: đặt lần đầu
@@ -622,7 +634,8 @@
         var duong = ch === "mo" ? "/api/so-do-camera/mo-khoa" : "/api/so-do-camera/dat-mk", than = ch === "mo" ? { mk: v("sdcMk") } : { cu: v("sdcCu"), moi: v("sdcMoi"), tk: v("sdcTk") };
         nut.disabled = true; tt("Đang kiểm tra…");
         goi(duong, { method: "POST", body: than, khongKhoa: 1, ms: 30000 })
-          .then(function (j) { datThe(j.the); MK_TAM = ch === "doi" ? v("sdcMoi") : ch === "mo" ? v("sdcMk") : v("sdcMoi"); GM = null; return neoKhoa(MK_TAM).then(function () { ve(host, CTX); }); })
+          .then(function (j) { datThe(j.the); MK_TAM = ch === "doi" ? v("sdcMoi") : ch === "mo" ? v("sdcMk") : v("sdcMoi"); GM = null;
+            return neoKhoa(MK_TAM).then(function () { tt("Đang mở…"); return choDuSau(); }).then(function () { ve(host, CTX); }); })
           .catch(function (e) { nut.disabled = false; tt(e.name === "TimeoutError" || e.name === "AbortError" ? "Máy chủ không trả lời — thử lại." : e.message, true);
             var x = f.querySelector("input[type=password]"); if (x) x.select(); });
       };
@@ -652,7 +665,8 @@
 
   function veMan() {
     hienKhung(HOST);
-    if (F && F.w) { DS = D && D.cams ? D.cams.map(tinh) : DS; veDiem3D(); }   // khung đã dựng xong trước khi dữ liệu về ⇒ vẽ camera ngay; chưa xong thì choSan tự vẽ
+    /* khung đã dựng xong trước khi dữ liệu về ⇒ vẽ camera rồi mới hiện; chưa xong thì choSan tự vẽ + hiện */
+    if (F && F.w) { DS = D && D.cams ? D.cams.map(tinh) : DS; veDiem3D(); var w = F.w; w.requestAnimationFrame(function () { w.requestAnimationFrame(hienRa); }); }
   }
   /* 05/11 khung 3D DUY NHẤT cho mỗi vùng chứa, tạo 1 lần và KHÔNG gỡ khỏi DOM (gỡ iframe = nạp lại từ đầu). ngam = nằm sau màn mật khẩu */
   function coKhung(host) { return F && F.bo && F.bo.parentNode === host ? F.bo : null; }
@@ -716,7 +730,14 @@
     veDiem3D(); vongCo();
     /* 25/10 tối user «vào mục vẫn thấy bản 3D 1–2 s rồi mới nhảy sang nhìn từ trên»: khung 3D bị GIẤU (.cho) từ lúc tạo; chỉ hiện khi đã đặt góc
        nhìn từ trên + biểu tượng và trang 3D vẽ xong 2 khung hình */
-    w.requestAnimationFrame(function () { w.requestAnimationFrame(function () { var b = el.parentNode; if (b) b.classList.remove("cho"); tt3(""); }); });
+    w.requestAnimationFrame(function () { w.requestAnimationFrame(function () { F.ve2 = true; hienRa(); }); });
+  }
+  /* 06/11 user (clip 18:37 «xin con cak, vẫn còn lỗi»): mở CCTV hiện MẶT BẰNG TRỐNG (chưa có camera) vài giây rồi camera mới nhảy ra = bản tạm rồi nhảy
+     (LUẬT 05/11). Nay khung 3D chỉ hiện khi ĐỦ CẢ HAI: mô hình đã vẽ xong + dữ liệu camera đã về và đã vẽ biểu tượng. Lần đầu phiên chờ thì
+     hiện chữ «Đang tải sơ đồ camera…» (không để màn trắng); lần sau trong phiên khung đã hiện sẵn ⇒ không chờ. */
+  function hienRa() {
+    if (!F || !F.el || !F.w || !F.ve2 || !D) return; var b = F.el.parentNode; if (!b || !b.classList.contains("cho")) return;
+    b.classList.remove("cho"); tt3("");
   }
   /* 25/10 user «không lấy cả sơ đồ 3D — chỉ lấy góc nhìn từ trên xuống»: chế độ BẢN ĐỒ (kéo = dời, lăn = phóng) + chiếu TRỰC GIAO, nhìn thẳng xuống,
      vừa khung. CAM là const cấp tệp của trang 3D (không lên window) ⇒ đọc qua w.eval (cùng gốc; CSP trang có 'unsafe-eval'). datMode/datChieu tự ghi
