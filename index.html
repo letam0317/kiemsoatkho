@@ -3569,13 +3569,24 @@ window.hskLop=(function(){
   let nuot=0;
   const dongEl=el=>{ el.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} });
     /* 26/10: bản regex mất dấu \ trước s ⇒ «hp-modal show» không khớp → chỉ gỡ .show → lớp phủ vô hình (đo trên điện thoại user) */
-    if(el.id==='lightbox') dongLB(); else if(el.id==='modal') dongModal(); else if(el.matches('.hp-modal,.hk-modal,.ht-modal')) anModalModule(el); else el.classList.remove('show');
+    if(el.id==='lightbox') dongLB(); else if(el.id==='modal') dongModal(); else if(el.matches('.hp-modal,.hk-modal,.ht-modal')) anModalModule(el);
+    else if(el.id==='pinModal') _dongPin(null); else if(el.id==='ghiModal') dongGhiNhan(); else if(el.id==='hmModal') dongHinhHangMuc(); else el.classList.remove('show');   // 06/11 đóng bằng hàm gốc (PIN trả lời người gọi, nút Ghi nhận mở khoá)
     if(!document.querySelector('#modal.show,#statModal.show,#hmModal.show,#ghiModal.show,#pinModal.show')) document.body.classList.remove('modal-open'); };
   const laDT=()=>matchMedia('(max-width:768px)').matches;
   function day(k, dong, el){ if(ds.some(x=>x.k===k)) return; ds.push({k, el:el||null, dong}); try{ history.pushState(Object.assign({}, history.state||{}, {hskLop:ds.length}), ''); }catch(e){} }
   function rut(k){ const i=ds.findIndex(x=>x.k===k); if(i<0) return; ds.splice(i,1);
     /* nấc của lớp này còn nằm trên cùng lịch sử → lùi 1 nấc (nuốt sự kiện). Đã có trang khác đẩy nấc lên trên (đổi tab) thì để nguyên */
     if(history.state && history.state.hskLop){ nuot++; history.back(); } }
+  /* 06/11 user «luật thoát từng màn hình, trở về thao tác trước đâu?»: trang chính + mỗi mô-đun tự nghe Esc riêng ⇒ 2 lớp chồng thì 1 lần Esc
+     đóng CẢ HAI (đo: Planogram ô kệ › Ghi nhận 5S → Esc mất luôn ô kệ). Từ 2 lớp trở lên: Esc = vuốt lùi — đóng ĐÚNG lớp trên cùng theo thứ tự mở,
+     chặn bộ nghe Esc khác. 1 lớp thì để như cũ. Ô chọn đang xổ (aria-expanded) / chú giải Planogram đang mở thì nhường chúng đóng trước. */
+  function dongTren(){ const x=ds.pop(); if(!x) return false; try{ x.dong(); }catch(er){}
+    if(history.state && history.state.hskLop){ nuot++; history.back(); } return true; }
+  window.addEventListener('keydown', e=>{
+    if(e.key!=='Escape' || ds.length<2) return;
+    if(document.querySelector('[aria-expanded="true"],.hp-legpop.open')) return;
+    e.preventDefault(); e.stopImmediatePropagation(); dongTren();
+  }, true);
   window.addEventListener('popstate', e=>{
     if(nuot){ nuot--; e.stopImmediatePropagation(); return; }
     const x=ds.pop(); if(!x) return;
@@ -3594,7 +3605,7 @@ window.hskLop=(function(){
   }
   let hen=0; new MutationObserver(ms=>{ if(hen) return; if(!ms.some(m=>m.target===document.body || (m.target.matches && m.target.matches(SEL)))) return;
     hen=requestAnimationFrame(()=>{ hen=0; quet(); }); }).observe(document.body,{attributes:true,attributeFilter:['class'],subtree:true});
-  return {day, rut, ds:()=>ds.map(x=>x.k)};
+  return {day, rut, dongTren, ds:()=>ds.map(x=>x.k)};
 })();
 
 /* ===== LIGHTBOX CAROUSEL (Next/Previous) ===== */
