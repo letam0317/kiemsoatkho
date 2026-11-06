@@ -1399,6 +1399,17 @@
       ds.forEach(function (td, i) { if (chu[i] != null) td.title = chu[i].replace(/\s*\n\s*/g, " · ").trim(); }); };
     if (window.requestIdleCallback) requestIdleCallback(ganTitle, { timeout: 1500 }); else setTimeout(ganTitle, 200);
   }
+  /* 06/11 user «Chưa có bằng chứng camera — máy đang tìm > thời hạn tìm ra? … phải nói được làm được, không bịa thời gian»:
+     p.timBC do máy chủ tính từ LỊCH THẬT của task máy tìm + vị trí hàng chờ (may-tim-du-kien.mjs). Máy đã dừng → nói lý do, KHÔNG nói «đang tìm».
+     Không có giờ (chưa đọc được lịch) → không nêu giờ. LUẬT 05/11: không nhắc laptop. */
+  function chuTim(p, coLui) {
+    var t = p.timBC, gio = function (s) { s = String(s || ""); return s.slice(11, 16) + " " + s.slice(8, 10) + "/" + s.slice(5, 7); };   // giờ + ngày không tách dòng
+    if (t && t.trangThai === "dung") return "Máy dừng tìm — " + t.lyDo + (coLui ? " · chọn khung sớm nhất đã thấy đồ vật trên Dải 72 giờ" : "");
+    if (coLui) return "Chưa biết đồ vật xuất hiện lúc nào — chọn khung sớm nhất đã thấy đồ vật trên Dải 72 giờ";
+    var c = "Chưa có bằng chứng camera — máy đang tìm";
+    if (!t || !t.luc) return c;
+    return c + " [" + gio(t.luc) + "]" + (t.tre ? " · trễ lượt " + gio(t.tre.luc) + (t.tre.lyDo ? " — " + t.tre.lyDo : "") : "");
+  }
   function coBC(p) { var b = bcPhieu(p); return !!(b.clip || b.moc.length || b.kho || b.trung || b.veSinh || (b.ls && b.ls.ds.some(function (x) { return x.clip; }))); }   // video thô KHÔNG tính — chưa dựng clip chuẩn thì chưa xem được
   var thu_ = function (url) {
     if (url && maHoa_()) return window.hxGuongMa.thu(url, API);   // 22/10 ảnh nhỏ bản mã (thiếu thì sw.js lùi về ảnh gốc); ảnh ngoài (hr-media) để nguyên
@@ -1818,13 +1829,13 @@
     if (p.bc && p.bc.clipTim) ctvNg(p.bc.clipTim.url, p.bc.clipTim.ten, p.bc.clipTim.info);
     /* tình trạng chỉ hiện khi CHƯA đủ / cần chú ý — "Đủ bằng chứng để quyết" trùng với nút Lưu đang bật nên bỏ */
     var tt = bc.vs && (bc.vs.bui || bc.vs.camSo || bc.vs.cam) ? "Kho bụi / camera giờ báo cáo — đã nhờ anh Tâm kiểm tra thực tế, xem rồi quyết" : co ? ""
-      : bc.chupLui ? "Chưa biết đồ vật xuất hiện lúc nào — chọn khung sớm nhất đã thấy đồ vật trên Dải 72 giờ" : "Chưa có bằng chứng camera — máy đang tìm";
+      : chuTim(p, !!bc.chupLui);
     /* 29/10 user (14394419 lỗi vệ sinh «vị trí dành cho clip trống rỗng»): phiếu vệ sinh tính đủ bằng chứng ⇒ tt rỗng, khung ẩn mà ô vẫn chừa chỗ trắng.
        Không có nguồn camera nào → nói lý do NGAY TRONG ô clip (dòng tình trạng không nhắc lại).
        Khu có camera gán = _kenh-luc-chup (A1/A2) + KENH_THEM tim-bang-chung-b1 (A9/A10 «Tong Quan PO 1») — đổi bên đó thì sửa danh sách này */
     var khuVT = (/^F0-(A\d+)-/.exec((LS && LS.bin) || p.viTri || "") || [])[1], trongCam = nguon.length ? ""
       : khuVT && ["A1", "A2", "A9", "A10"].indexOf(khuVT) < 0 ? "Khu " + khuVT + " chưa có camera gán — máy không cắt clip, đối chiếu bằng Ảnh ghi nhận"
-      : tt || (bc.veSinh ? "Chưa có clip camera — lỗi vệ sinh hằng ngày máy đã xử theo luật người phụ trách, không cần clip để quyết" : "Chưa có bằng chứng camera — máy đang tìm");
+      : tt || (bc.veSinh ? "Chưa có clip camera — lỗi vệ sinh hằng ngày máy đã xử theo luật người phụ trách, không cần clip để quyết" : chuTim(p, false));
     if (trongCam) tt = "";
     var nvp = String(p.ngayVP || "");   // 13/10 user: mã ô dòng trên · ngày giờ dòng dưới
     var nvpChu = nvp.length >= 16 ? nvp.slice(8, 10) + "/" + nvp.slice(5, 7) + "/" + nvp.slice(0, 4) + " " + nvp.slice(11, 16) : nvp, viTriChu = (LS && LS.bin) || p.viTri || "";
