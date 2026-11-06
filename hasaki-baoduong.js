@@ -299,18 +299,22 @@
       /* 06/11 Theo khu — bảng đối xứng hạng mục × SHOP | WH. Đầu bảng = khuôn hp-mtbl nguyên bản (nền nhấn, chữ trắng, sticky). Ô gọn 8/12px.
          Xuống dòng: chỉ tên hạng mục / tên vị trí được gói; số, đơn vị, tên người, chip = nowrap. */
       B + " .bd-kbang-w{overflow-x:auto}" + B + " .bd-kbang{table-layout:fixed;font-size:13px}" +
-        B + " .bd-kbang th[data-khu]," + B + " .bd-kbang td.bd-ko{border-left:1px solid var(--ad-chia,var(--border))}" + B + " .bd-kbang thead th{white-space:nowrap}",
+        B + " .bd-kbang th[data-khu]," + B + " .bd-kbang td.bd-ko{border-left:1px solid var(--ad-chia,var(--border))}",
+      /* 06/11 lượt 3 user «hạng mục dọc và ngang phải nổi bật hơn dữ liệu»: kiểu đầu bảng hp-mtbl của thư viện nằm trong hasaki-planogram.js (chỉ nạp khi mở Planogram)
+         ⇒ áp đúng giá trị đó ở đây: đầu cột nền màu nhấn + chữ sáng; cột Hạng mục nền nhấn nhạt + vạch nhấn trái — dữ liệu giữ nền trắng */
+      B + " .bd-kbang thead th{position:sticky;top:0;z-index:1;background:var(--accent);color:var(--accent-text,white);white-space:nowrap;padding:10px 12px;border-bottom:0}" +
+        B + " .bd-kbang thead th.bd-kh-hm{font-size:12px;font-weight:600;letter-spacing:.02em;text-transform:uppercase}",
       B + " .bd-kbang tbody th," + B + " .bd-kbang td{white-space:normal;vertical-align:top;padding:8px 12px;border-bottom:1px solid var(--ad-chia,var(--border));text-align:left}" +
-        B + " .bd-kbang th.bd-kh-hm{width:180px}" + B + " .bd-kbang tbody th.bd-kh-hm{font-weight:400;background:var(--surface)}",
-      B + " .bd-kh-d{display:flex;align-items:baseline;justify-content:space-between;gap:12px}" + B + " .bd-kh-t{font-size:13px;overflow:hidden;text-overflow:ellipsis}" +
-        B + " .bd-kh-so{font-weight:400;flex:none}" + B + " .bd-kh-so b{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}",
-      B + " .bd-kh-ql{display:flex;align-items:baseline;gap:8px;margin-top:2px;font-weight:400;font-size:12px;opacity:.85;overflow:hidden;text-overflow:ellipsis}" +
-        B + " .bd-kh-ql .bd-lk{color:inherit;font-size:12px;text-decoration:underline;margin-left:auto}",
-      B + " .bd-kh-ten{display:block;font-weight:600;font-size:13.5px;line-height:20px}" + B + " .bd-kh-n{display:block;font-size:12px;color:var(--muted);white-space:nowrap}" +
+        B + " .bd-kbang th.bd-kh-hm{width:190px}" + B + " .bd-kbang tbody th.bd-kh-hm{font-weight:400;background:color-mix(in srgb,var(--accent) 8%,var(--surface));box-shadow:inset 3px 0 0 var(--accent)}",
+      B + " .bd-kh-d{display:flex;align-items:baseline;justify-content:space-between;gap:12px}" + B + " .bd-kh-t{font-size:15.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis}" +
+        B + " .bd-kh-so{font-weight:400;flex:none;font-size:12.5px}" + B + " .bd-kh-so b{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}",
+      B + " .bd-kh-ql{display:flex;align-items:center;gap:6px;margin-top:4px;font-weight:400;font-size:12.5px;min-height:24px;overflow:hidden}" + B + " .bd-kh-ql .bd-kn{opacity:1}" +
+        B + " .bd-kh-ql .bd-lk{color:inherit;font-size:12px;text-decoration:underline;margin-left:auto}" + B + " .bd-kh-ql .bd-kh-chua{opacity:.8}",
+      B + " .bd-kh-ten{display:block;font-weight:700;font-size:14px;line-height:20px;color:var(--text)}" + B + " .bd-kh-n{display:block;font-size:12px;color:var(--muted);white-space:nowrap}" +
         B + " .bd-kh-ro{color:var(--warn);cursor:help}",
       B + " .bd-ko.trong{background:repeating-linear-gradient(45deg,var(--ad-nen2,var(--surface2)) 0 6px,transparent 6px 12px);white-space:nowrap}" + B + " .bd-ko.trong .bd-phu," + B +
         " .bd-ko.trong .bd-ka{display:inline;margin-left:0}" + B + " .bd-ko.trong .bd-ka{margin-left:12px}",
-      B + " .bd-kql{font-size:12px;color:var(--muted);margin-bottom:2px}",
+      B + " .bd-kql{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;font-size:12px;color:var(--muted);margin-bottom:4px}" + B + " .bd-kql .bd-kn{color:var(--text)}",
       B + " .bd-kg{display:flex;align-items:center;gap:8px;min-height:28px}" + B + " .bd-kg+.bd-kg{border-top:1px dashed var(--ad-chia,var(--border))}" +
         B + " .bd-kg-ng{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:2px 12px}" + B + " .bd-kn{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}" + B + " .bd-kn.vang{color:var(--bad)}",
       B + " .bd-kso{flex:none;min-width:36px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}" + B + " .bd-kso b{font-weight:600}" + B + " .bd-kso.du b{color:var(--good)}",
@@ -466,7 +470,7 @@
         B + " .bd-ko::before{content:attr(data-khu);display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}" + B + " .bd-ko-tt .bd-lk," + B + " .bd-kvt-lk .bd-lk," + B +
           " .bd-kql .bd-ka{min-height:40px;display:inline-flex;align-items:center}" +
         B + " .bd-kthem input{min-width:0;flex:1 1 100%;height:40px;font-size:16px}" +
-        B + " .bd-kvt{grid-template-columns:minmax(0,1fr) auto auto}" + B + " .bd-kvt-lk{grid-column:1/-1}" + B + " .bd-ko-h{min-height:44px}}",
+        B + " .bd-kvt{grid-template-columns:minmax(0,1fr) auto auto}" + B + " .bd-kh-d{flex-wrap:wrap;row-gap:0}" + B + " .bd-kh-t{white-space:normal}" + B + " .bd-kvt-lk{grid-column:1/-1}" + B + " .bd-ko-h{min-height:44px}}",
       "@media(max-width:560px){" + B + " .bd-panel>.panel-head{flex-wrap:wrap;row-gap:4px}" + B + " .bd-panel>.panel-head .ph-dem{white-space:normal}" + B + " .bd-panel>.panel-head .bd-phai{margin-left:0}" + B +
           " .bd-panel>.panel-head .bd-phai a," + B + " .bd-panel>.panel-head .bd-phai .cn-ngay{display:none}}"
     ].join("\n");
@@ -1048,7 +1052,8 @@
       var nut = function (act, chu, khu, hm, bin, lop) {
         return sua ? '<button type="button" class="bd-lk bd-ka' + (lop ? " " + lop : "") + '" data-act="' + act + '" data-khu="' + esc(khu || "") + '" data-hmuc="' + esc(hm || "") + '"' +
           (bin ? ' data-bin="' + esc(bin) + '"' : "") + ">" + chu + "</button>" : ""; };
-      var tenQL = function (ds) { return ds.map(function (x) { return o(tenNV(x)); }).join(", "); };
+      /* 06/11 lượt 3 user «bổ sung ảnh QL»: quản lý = ảnh đại diện + tên (khuôn chung anh-nv.js qua avatar(), như người phụ trách) */
+      var tenQL = function (ds) { return ds.map(function (x) { var t = tenNV(x); return '<span class="bd-kn">' + avatar(t) + o(t) + "</span>"; }).join(""); };
       var nguoiS = function (ds) { return ds.map(function (n) { var vang = n.vao === "";
         return '<span class="bd-kn' + (vang ? " vang" : "") + '"' + (vang ? ' title="Chưa chấm công"' : n.vao ? ' title="Vào ' + esc(n.vao) + '"' : "") + ">" + avatar(n.ten) + o(n.ten) + "</span>"; }).join(""); };
       var so = function (x, y) { return '<span class="bd-kso' + (y && x === y ? " du" : "") + '" title="Vị trí đã báo cáo hôm nay / vị trí có yêu cầu hôm nay"><b>' + x + "/" + y + "</b></span>"; };
@@ -1077,14 +1082,14 @@
         /* cả dòng ô = nút mở (khuôn hàng người «Theo người»: mũi tên đầu dòng, bấm dòng mở danh sách vị trí + thao tác) — không chiếm thêm dòng */
         return '<td class="bd-ko' + (mo ? " mo" : "") + '" data-khu="' + khu + '">' +
           '<div class="bd-ka bd-ko-h" role="button" tabindex="0" data-act="vt" data-o="' + esc(key) + '" aria-expanded="' + mo + '"><i class="bd-mui" aria-hidden="true"></i><div class="bd-ko-nd">' +
-            (q.cap === "hạng mục" ? '<div class="bd-kql">QL ' + tenQL(q.ds) + "</div>" : "") +
+            (q.cap === "hạng mục" ? '<div class="bd-kql">Quản lý ' + tenQL(q.ds) + "</div>" : "") +
             (vs.length ? nhom : '<div class="bd-kg bd-phu">' + (tong ? tong + " vị trí · hôm nay không có lịch" : "Chưa có vị trí") + "</div>") + "</div></div>" +
           (mo ? '<div class="bd-ko-ds">' + vs.map(function (t) { return dongVtK(t, thu.length > 1); }).join("") + chan + "</div>" : "") + "</td>";
       };
       var dauKhu = KHU_DS.map(function (k) { var vs = loc.filter(function (t) { return t.khu === k[0]; }), xk = vs.filter(function (t) { return t.l === "x"; }).length, q = qlCua(k[0]);
         return '<th scope="col" data-khu="' + k[0] + '"><div class="bd-kh-d"><span class="bd-kh-t">' + k[1] + '</span><span class="bd-kh-so" title="Vị trí đã báo cáo hôm nay / vị trí có yêu cầu hôm nay"><b>' +
           xk + "/" + vs.length + "</b> vị trí đã báo cáo</span></div>" +
-          '<div class="bd-kh-ql">' + (q.ds.length ? "Quản lý: " + tenQL(q.ds) : "Chưa có quản lý") + nut("ql", "Sửa", k[0]) + "</div></th>"; }).join("");
+          '<div class="bd-kh-ql">' + (q.ds.length ? "Quản lý" + tenQL(q.ds) : '<span class="bd-kh-chua">Chưa có quản lý</span>') + nut("ql", "Sửa", k[0]) + "</div></th>"; }).join("");
       var chuaRo = loc.filter(function (t) { return !t.khu; }).length;
       than = '<div class="bd-kbang-w"><table class="hp-mtbl bd-kbang"><thead><tr><th scope="col" class="bd-kh-hm">Hạng mục</th>' + dauKhu + "</tr></thead><tbody>" +
         hienHm.map(function (h) { var n = KHU_DS.reduce(function (s0, k) { return s0 + ((tatVt[h] || {})[k[0]] || []).length; }, 0), ro = ((tatVt[h] || {})["?"] || []).length;
