@@ -19,7 +19,7 @@
   if (window.HBAODUONG) return;
   var esc = window.hskTienIch.esc, $id = window.hskTienIch.$id;
   var APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec";
-  var TAB_DV = "BAO-DUONG-DAU-VIEC", TAB_YC = "BAO-DUONG-YEUCAU", TAB_KY = "BAO-DUONG-KY", TAB_GIAO = "BAO-DUONG-GIAO", TAB_LS = "BAO-DUONG-LICHSU", TAB_NGAY = "BAO-DUONG-NGAY";
+  var TAB_DV = "BAO-DUONG-DAU-VIEC", TAB_YC = "BAO-DUONG-YEUCAU", TAB_KY = "BAO-DUONG-KY", TAB_GIAO = "BAO-DUONG-GIAO", TAB_LS = "BAO-DUONG-LICHSU", TAB_NGAY = "BAO-DUONG-NGAY", TAB_TEN = "BAO-DUONG-DOI-TEN";
   var GSHEET = "https://docs.google.com/spreadsheets/d/1ERdim9g4-BbJspzWhIfy6jWXFMMNya4zhhvWYF59GHc/edit?gid=481972207#gid=481972207";
   var STALE_MS = 5 * 60 * 1000, NGAY_DU_LIEU = 60;   // dữ liệu sync-bao-duong-yc (lưới hiện trọn 60 ngày — 29/10 bỏ bộ lọc ngày, đã có thước thời gian)
   var TOI_PC = 30, TOI_DT = 14;   // số ngày TỚI sau cột hôm nay ghim (29/10 phương án A2)
@@ -267,7 +267,11 @@
       B + " .bd-seg{display:inline-flex}" + B + " .bd-seg .hp-whtab{display:inline-flex;align-items:center;min-height:32px;padding:0 12px;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}",
       B + " .bd-tom{display:flex;flex-wrap:wrap;gap:4px 24px;margin:0 0 12px;color:var(--muted);font-size:13px}" + B + " .bd-tom b{color:var(--text);font-weight:600}" + B + " .bd-tom .bd-do b{color:inherit}",
       B + " .bd-chon-bar{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,var(--accent) 8%,var(--surface));font-size:13px}" + B + " .bd-chon-bar>span{margin-right:auto}",
-      B + " .bd-ngb{--cot:minmax(180px,1.3fr) 130px minmax(0,2.4fr) 150px;border-top:1px solid var(--ad-chia,var(--border))}" + B + " .bd-ngb.co-task{--cot:minmax(180px,1.3fr) 130px minmax(0,2.2fr) 150px 120px}",
+      B + " .bd-ngb{--cot:minmax(180px,1.3fr) 130px minmax(0,2.2fr) 130px 150px;border-top:1px solid var(--ad-chia,var(--border))}" + B + " .bd-ngb.co-task{--cot:minmax(180px,1.3fr) 130px minmax(0,2fr) 130px 150px 120px}",
+      /* 06/11 cột «Lưu trình»: Chưa gán · Đã gán (task work) · Đang làm · Đã làm (chờ duyệt) · Hoàn thành (đã duyệt) — đếm vị trí theo trạng thái planogram */
+      B + " .bd-lt{display:flex;flex-direction:column;gap:2px;font-size:12.5px;line-height:18px}" + B + " .bd-lt>span{display:flex;align-items:center;gap:6px;white-space:nowrap}" +
+        B + " .bd-lt i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--muted)}" + B + " .bd-lt b{font-weight:600;font-variant-numeric:tabular-nums}" +
+        B + " .bd-lt .lt-gan i{background:var(--info)}" + B + " .bd-lt .lt-dg i{background:var(--warn)}" + B + " .bd-lt .lt-dl i{background:var(--accent)}" + B + " .bd-lt .lt-ht i{background:var(--good)}",
       B + " .bd-ngh," + B + " .bd-ngr-h{display:grid;grid-template-columns:var(--cot);gap:16px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--ad-chia,var(--border))}",
       B + " .bd-ngh{background:var(--ad-nen2,var(--surface2));font-size:12.5px;font-weight:600;color:var(--text)}",
       B + " .bd-ngr-h{cursor:pointer;font-size:13.5px;transition:background .15s}" + B + " .bd-ngr-h:hover," + B + " .bd-ngr.mo>.bd-ngr-h{background:var(--ad-re,var(--hover))}",
@@ -327,10 +331,10 @@
       /* điện thoại: hàng người = thẻ 2 dòng; dòng vị trí xuống 2 tầng; hộp = tấm trượt đáy */
       "@media(max-width:768px){" + B + " .bd-ngh{display:none}" + B + " .bd-ngb{border-top:0;display:flex;flex-direction:column;gap:8px}" +
         B + " .bd-ngr{border:1px solid var(--ad-chia,var(--border));border-radius:8px;overflow:hidden}" +
-        B + " .bd-ngr-h{grid-template-columns:minmax(0,1fr) 96px;grid-template-areas:'ten ten' 'hm bc';align-items:start;gap:6px 12px;border-bottom:0;padding:12px;min-height:44px}" +
+        B + " .bd-ngr-h{grid-template-columns:minmax(0,1fr) 96px;grid-template-areas:'ten ten' 'hm bc' 'lt lt';align-items:start;gap:6px 12px;border-bottom:0;padding:12px;min-height:44px}" +
         B + " .bd-ngr-ten{grid-area:ten}" + B + " .bd-ngr-bc{grid-area:bc}" + B + " .bd-ngr-dl{grid-area:dl;padding-left:34px}" + B + " .bd-ngr-dl:empty," + B + " .bd-ngr-dl{display:none!important}" +
           B + " .bd-ngr-ten .bd-ngr-ds-ten{flex:1}" + B + " .bd-dl-dt{display:inline-flex;margin-left:auto}" + B + " .bd-dl-dt:not(:has(.hsk-chip)){display:none}" + B + " .bd-ngr-tn{flex:1;min-width:0}" +
-        B + " .bd-ngr-hm{grid-area:hm;padding-left:34px;color:var(--muted)}" + B + " .bd-ngr-tk{grid-column:1/-1;padding-left:34px}" +
+        B + " .bd-ngr-hm{grid-area:hm;padding-left:34px;color:var(--muted)}" + B + " .bd-ngr-lt{grid-area:lt;padding-left:34px}" + B + " .bd-lt{flex-direction:row;flex-wrap:wrap;gap:2px 14px}" + B + " .bd-ngr-tk{grid-column:1/-1;padding-left:34px}" +
         B + " .bd-ngr-ds{padding:0 12px 8px;border-bottom:0}" +
         B + " .bd-vtd{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:'ck ten ten' 'ck anh tt' 'ck lk lk';gap:4px 8px;padding:8px 0}" +
         B + " .bd-vtd>.bd-ck," + B + " .bd-vtd>.bd-ck-tr{grid-area:ck;align-self:start;margin-top:3px}" + B + " .bd-vtd-ten{grid-area:ten}" + B + " .bd-vtd code{display:block;margin:0}" +
@@ -465,6 +469,9 @@
         if (r["CỤM / HỆ THỐNG"]) (CUM[m] = CUM[m] || {})[chuanK(r["CỤM / HỆ THỐNG"])] = r["TẦN SUẤT"];
       });
     });
+    /* 06/11 «Đổi tên»: tên hiển thị ở tab BAO-DUONG-DOI-TEN thắng TÊN VỊ TRÍ g-sheet (giữ tiền tố «Quạt hơi nước |» nếu có — trang chỉ hiện phần sau «|») */
+    Object.keys(S.doiTen || {}).forEach(function (b) { var v = VT[b], r = S.doiTen[b]; if (!v || r["TRẠNG THÁI"] === "Lỗi" && !v.ten) return;
+      var i = String(v.ten || "").lastIndexOf("|"); v.tenGs = v.ten; v.ten = (i >= 0 ? v.ten.slice(0, i + 1) : "") + r["TÊN MỚI"]; });
     S.vt = VT; S.thuTu = thuTu; S.cum = CUM; S.tsYc = {};
     /* task [BD] định kỳ (tab BAO-DUONG-KY) → ô lưới ở NGÀY ĐẦU KỲ của vị trí */
     S.kyNgay = {}; S.kySau = {};
@@ -499,13 +506,14 @@
     var btn = $id("bdReload"); if (btn) btn.disabled = true;
     S.lastAt = Date.now();
     if (PANE) PANE.innerHTML = '<div class="panel bd-panel"><div class="bd-trong"><div class="sk sk-line" style="width:60%;margin:0 auto 8px"></div><div class="sk sk-line" style="width:40%;margin:0 auto"></div></div></div>';
-    return Promise.all([readTabP(TAB_DV), readTabP(TAB_YC), readTabP(TAB_KY), readTabP(TAB_GIAO), readTabP(TAB_LS), readTabP(TAB_NGAY)]).then(function (res) {
+    return Promise.all([readTabP(TAB_DV), readTabP(TAB_YC), readTabP(TAB_KY), readTabP(TAB_GIAO), readTabP(TAB_LS), readTabP(TAB_NGAY), readTabP(TAB_TEN)]).then(function (res) {
       var dv = bang(res[0]);
       S.ok = !!(dv && dv.length);
       S.loi = S.ok ? "" : (res[0] && res[0].code === 403 ? "khoa" : res[0] && res[0].status === "success" ? "trong" : "gas");
       S.dv = dv || []; S.yc = bang(res[1]) || []; S.ky = bang(res[2]) || [];
       S.giao = {}; (bang(res[3]) || []).forEach(function (g) { S.giao[g["KHOÁ"]] = g; });
       S.ls = bang(res[4]) || [];
+      S.doiTen = {}; (bang(res[6]) || []).forEach(function (r) { var b = String(r["MÃ VỊ TRÍ"] || "").toUpperCase(); if (b && r["TÊN MỚI"]) S.doiTen[b] = r; });
       /* 31/10 bd-giao-ngay.mjs: việc Vận hành hôm nay giao task cho người CÓ CHẤM CÔNG trong g-sheet chia việc (chưa ai chấm công = chờ) */
       S.giaoNay = {}; (bang(res[5]) || []).forEach(function (r) { if (isoTuDmy(r["NGÀY"]) === isoVN(Date.now())) S.giaoNay[r["MÃ VỊ TRÍ"]] = r; });
       S.ts = Math.max(Number(res[1] && res[1].ts) || 0, Number(res[0] && res[0].ts) || 0);
@@ -768,7 +776,7 @@
         (gan["LÚC LÀM"] ? " lúc <b>" + esc(String(gan["LÚC LÀM"]).slice(11, 16)) + "</b>" : "") + ' <span class="hp-hint">· ' + (tuoi > 0 ? tuoi + " ngày trước" : "hôm nay") + "</span></div>"
       : '<div class="ln mut">chưa ai báo cáo vị trí này trong ' + NGAY_DU_LIEU + " ngày</div>") + "</div>";
     var ts = window.HPLANOGRAM && window.HPLANOGRAM.theTaiSan ? window.HPLANOGRAM.theTaiSan(b) : "";
-    return '<div class="bd-ben">' + veDai(b, d) + veNgay(b, v, d) + '<div class="hp-vtduo">' + vePhanCong(b) + cardBc + "</div>" + theLichSu(b) + lamGi + duong + ts + "</div>";
+    return '<div class="bd-ben">' + veDai(b, d) + veNgay(b, v, d) + '<div class="hp-vtduo">' + vePhanCong(b) + cardBc + "</div>" + theTen(b) + theLichSu(b) + lamGi + duong + ts + "</div>";
   }
 
   /* ===== PHÂN CÔNG THEO VỊ TRÍ =====
@@ -864,7 +872,9 @@
       if (dn && dn["CHẾ ĐỘ"] === "chi-dinh" && gn["NGUỒN"] !== "Đổi hôm nay") ng = String(dn["CHỈ ĐỊNH"]).split(/\s*[,\/]\s*/).filter(Boolean).map(tenVao);
       else ng = gn["NGUỒN"] === "" ? [] : tachUngVien(gn["ỨNG VIÊN (CHẤM CÔNG)"]);   // NGUỒN "" = vừa lưu trên trang ⇒ đọc chỉ định / g-sheet
       if (!ng.length) { var nv = nguoiVt(b, "VẬN HÀNH"); ng = nv.ten ? String(nv.ten).split(/\s*[\/,;]\s*/).filter(Boolean).map(tenVao) : []; }
-      the.push({ b: b, l: lopO(ds, homNay, homNay), hm: v.hm, ten: String(v.ten || b).split("|").pop().trim() || b, ng: ng, kh: kh, co: co, doi: true });
+      var st = Math.max.apply(null, ds.map(function (y) { return Number(y["STATUS ID"]) || 0; }));
+      the.push({ b: b, l: lopO(ds, homNay, homNay), hm: v.hm, ten: String(v.ten || b).split("|").pop().trim() || b, ng: ng, kh: kh, co: co, doi: true,
+        st: st, gan: !!String(gn["TASK CON"] || gn["TASK CHUNG"] || "").replace(/^'/, "").trim() });
     });
     /* task [BD] định kỳ đang trong kỳ, chưa xong — 1 dòng / nhóm việc (bỏ «Đã xoá — chờ thiết kế lại») */
     var kyMo = {}, thuKy = [];
@@ -925,6 +935,13 @@
     var tien = function (x, y) { return '<span class="bd-tien"><span class="bd-tien-r"><i style="width:' + (y ? (100 * x / y).toFixed(0) : 0) + '%"></i></span><b>' + x + "/" + y + "</b></span>"; };
     var gomHm = function (ds) { var m = {}, thu = []; ds.forEach(function (t) { if (!m[t.hm]) { m[t.hm] = []; thu.push(t.hm); } m[t.hm].push(t); });
       return thu.sort(function (a, c) { return m[c].length - m[a].length; }).map(function (h) { return [h, m[h]]; }); };
+    /* 06/11 «Lưu trình»: KPI tính ở planogram (Chờ duyệt / Đã duyệt) — task work chỉ là nhắc việc ⇒ trạng thái theo yêu cầu planogram, «Đã gán» = đã bắn task */
+    var LT = [["chua", "Chưa gán"], ["gan", "Đã gán"], ["dg", "Đang làm"], ["dl", "Đã làm"], ["ht", "Hoàn thành"]];
+    var buocLt = function (t) { if (t.doi) return t.st === 4 ? "ht" : t.st === 3 ? "dl" : t.st === 2 ? "dg" : t.gan ? "gan" : "chua";
+      return t.l === "x" ? "ht" : t.l === "d" ? "dg" : t.ky ? "gan" : "chua"; };
+    var luuTrinh = function (ds) { var dem = {}; ds.forEach(function (t) { var k = buocLt(t); dem[k] = (dem[k] || 0) + 1; });
+      return '<span class="bd-lt">' + LT.filter(function (x) { return dem[x[0]]; }).map(function (x) {
+        return '<span class="lt-' + x[0] + '"><i aria-hidden="true"></i>' + x[1] + " <b>" + dem[x[0]] + "</b></span>"; }).join("") + "</span>"; };
     var hmChu = function (ds) { return gomHm(ds).map(function (x) { return '<span class="bd-hmc">' + o(x[0]) + (x[1].length > 1 ? " <b>" + x[1].length + "</b>" : "") + "</span>"; }).join(""); };
     var dongVt = function (t, thieu) {
       var chon = !!S.chonVt[t.b] && t.doi;
@@ -953,7 +970,8 @@
               (anhSo(t) ? '<span class="bd-tn-so">' + anhSo(t) + "</span>" : "") + "</div>"; }).join("") + "</div></section>"; }).join("") + "</div>";
     } else {
       var cotTask = D.coTask;
-      than = '<div class="bd-ngb' + (cotTask ? " co-task" : "") + '"><div class="bd-ngh"><span>Người phụ trách</span><span>Đi làm</span><span>Việc</span><span>Đã báo cáo</span>' + (cotTask ? "<span>Đã log task</span>" : "") + "</div>" +
+      than = '<div class="bd-ngb' + (cotTask ? " co-task" : "") + '"><div class="bd-ngh"><span>Người phụ trách</span><span>Đi làm</span><span>Việc</span>' +
+        '<span>Lưu trình</span><span>Đã báo cáo</span>' + (cotTask ? "<span>Đã log task</span>" : "") + "</div>" +
         /* 05/11 user «sao cả Cường và Phi phải báo cáo cùng 1 khu vực? cần nhóm lại»: người có CÙNG bộ việc gộp 1 hàng nhóm —
            tên + ảnh xếp dọc, giờ vào từng người thẳng hàng tên; bấm mở danh sách vị trí chung 1 lần (trước: 2 hàng giống hệt nhau). */
         nhomNguoi(D.dsNg).map(function (g) {
@@ -966,7 +984,8 @@
             '<span class="bd-ngr-ten"><i class="bd-mui" aria-hidden="true"></i>' + (thieu ? '<span class="bd-do">' + CHUA_GIAO + "</span>"
               : '<span class="bd-ngr-ds-ten">' + g.ds.map(function (p) { return '<span class="bd-ngr-mot">' + avatar(p.ten) + '<span class="bd-ngr-tn">' + o(p.ten) + '</span><span class="bd-dl-dt">' + diLam(p) +
                 "</span></span>"; }).join("") + "</span>") + "</span>" +
-            '<span class="bd-ngr-dl">' + g.ds.map(function (p) { return '<span class="bd-ngr-mot">' + diLam(p) + "</span>"; }).join("") + '</span><span class="bd-ngr-hm">' + hmChu(ds) + '</span><span class="bd-ngr-bc">' +
+            '<span class="bd-ngr-dl">' + g.ds.map(function (p) { return '<span class="bd-ngr-mot">' + diLam(p) + "</span>"; }).join("") + '</span><span class="bd-ngr-hm">' + hmChu(ds) + '</span>' +
+              '<span class="bd-ngr-lt">' + luuTrinh(ds) + '</span><span class="bd-ngr-bc">' +
               tien(x, ds.length) + "</span>" + (cotTask ? '<span class="bd-ngr-tk">' + tk + "</span>" : "") + "</div>" +
             (mo ? '<div class="bd-ngr-ds">' + (sua && thieu && ds.some(function (t) { return t.doi; }) ? '<label class="bd-chon-het"><input type="checkbox" class="bd-ck-het"' +
               (ds.every(function (t) { return !t.doi || S.chonVt[t.b]; }) ? " checked" : "") + "> Chọn tất cả</label>" : "") + dsVt(ds, thieu) + "</div>" : "") + "</div>";
@@ -1094,6 +1113,42 @@
     Promise.resolve().then(mot).catch(function (e) { nut.disabled = false; bao.textContent = "Chưa lưu được" + (xg ? " (đã lưu " + xg + ")" : "") + ": " + e.message; });
   }
 
+  /* ===== ĐỔI TÊN HIỂN THỊ (06/11) — mã vị trí giữ nguyên; tên mới ghi tab riêng BAO-DUONG-DOI-TEN qua bd_doiten, máy trong mạng công ty
+     (bd-doi-ten.mjs, 5') sửa MÔ TẢ vị trí trên WMS ⇒ planogram + app quét đổi theo (đọc sống, kể cả yêu cầu cũ). Tên đang hiện ở tiêu đề
+     thanh bên nên thẻ không nhắc lại tên — chỉ trạng thái đồng bộ + ô sửa. ===== */
+  var TT_TEN = { "Chờ đẩy WMS": ["dang", "Chờ cập nhật WMS · planogram"], "Đã đổi WMS": ["xong", "Đã cập nhật WMS · planogram"], "Lỗi": ["qua", "Chưa cập nhật được WMS"] };
+  function theTen(b) {
+    var r = (S.doiTen || {})[b], sua = duocSua(); if (!r && !sua) return "";
+    var tt = r && TT_TEN[r["TRẠNG THÁI"]];
+    var dong = r ? '<div class="ln">' + (tt ? '<span class="hsk-chip ' + tt[0] + ' khongcham">' + tt[1] + "</span> " : "") +
+        '<span class="hp-hint">' + (r["TÊN CŨ"] ? "trước: " + o(r["TÊN CŨ"]) + " · " : "") + o(r["NGƯỜI ĐỔI"]) + " " + esc(r["LÚC ĐỔI"]) + "</span>" +
+        (r["TRẠNG THÁI"] === "Lỗi" && r["GHI CHÚ"] ? '<div class="hp-hint bd-do">' + o(r["GHI CHÚ"]) + "</div>" : "") + "</div>"
+      : '<div class="ln mut">Mã vị trí giữ nguyên — tên mới hiện ở đây, WMS, planogram và app quét.</div>';
+    var form = sua ? '<div class="bd-ls-form bd-ten-form" data-bin="' + esc(b) + '" hidden><label class="bd-ls-o"><span>Tên hiển thị mới</span>' +
+      '<input type="text" class="bd-ten-o" maxlength="120" autocomplete="off" enterkeyhint="done"></label>' +
+      '<div class="bd-ls-hang"><button type="button" class="hsk-nut chinh bd-ten-luu">Lưu</button><button type="button" class="hsk-nut phu bd-ten-bo">Đóng</button><span class="bd-dl bd-ten-bao"></span></div></div>' : "";
+    return '<div class="hp-vtcard bd-ten" data-bin="' + esc(b) + '"><div class="hd bd-ls-hd"><span>Tên hiển thị</span>' +
+      (sua ? '<button type="button" class="hsk-nut phu nho bd-ten-doi">Đổi tên</button>' : "") + "</div>" + form + dong + "</div>";
+  }
+  function luuTen(nut) {
+    var f = nut.closest(".bd-ten-form"), b = f.getAttribute("data-bin"), bao = f.querySelector(".bd-ten-bao"), o1 = f.querySelector(".bd-ten-o");
+    var ten = o1.value.replace(/\s+/g, " ").trim(), v = S.vt[b] || {}, cu = String(v.ten || "").split("|").pop().trim();
+    if (!ten) { bao.textContent = "Nhập tên mới."; o1.focus(); return; }
+    if (ten.indexOf("|") >= 0) { bao.textContent = "Tên không được chứa dấu |"; o1.focus(); return; }
+    if (ten === cu) { f.hidden = true; return; }
+    nut.disabled = true; bao.textContent = "Đang lưu…";
+    fetch(APPSCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "bd_doiten", phien: phien(), bin: b, ten: ten, tenCu: String(v.tenGs || v.ten || "").split("|").pop().trim() }), redirect: "follow" })
+      .then(function (r) { return r.json(); }).then(function (j) {
+        if (j.status !== "success") throw new Error(j.message || "Lỗi");
+        var d = j.dong || [], hd = ["MÃ VỊ TRÍ", "TÊN MỚI", "TÊN CŨ", "TRẠNG THÁI", "NGƯỜI ĐỔI", "LÚC ĐỔI", "LÚC ĐẨY WMS", "GHI CHÚ"], dong = {};
+        hd.forEach(function (h, i) { dong[h] = d[i] == null ? "" : String(d[i]); });
+        (S.doiTen = S.doiTen || {})[b] = dong; f.hidden = true;
+        dungViTri(); veLaiLuoi(); veLaiNay(); veLaiBen();
+        var m = $id("hpVtModal"), ph = $id("hpVtSub"); if (m && m.dataset.chu === "bd" && S.chon === b && ph) ph.textContent = ten + " · " + thuCua(S.chonNgay) + " " + dm(S.chonNgay);
+        if (window.hskTienIch && window.hskTienIch.toast) window.hskTienIch.toast("Đã lưu tên — WMS · planogram cập nhật trong vài phút", "ok");
+      }).catch(function (e) { nut.disabled = false; bao.textContent = "Chưa lưu được: " + e.message; });
+  }
+
   /* ===== LỊCH SỬ THIẾT BỊ — hư hỏng · sửa chữa · nâng cấp · thay thế vật tư (29/10, tab riêng BAO-DUONG-LICHSU, ghi qua bd_ls) ===== */
   var LOAI_LS = [["Hư hỏng", "ls-hh"], ["Sửa chữa", "ls-sc"], ["Nâng cấp", "ls-nc"], ["Thay thế vật tư", "ls-vt"]];
   var lopLs = function (loai) { var x = LOAI_LS.filter(function (l) { return l[0] === loai; })[0]; return x ? x[1] : "ls-sc"; };
@@ -1185,6 +1240,10 @@
       if (doi) { var h = doi.parentNode.querySelector(".bd-nhan"), mo = h.classList.toggle("mo"); doi.setAttribute("aria-expanded", mo); doi.textContent = mo ? "Thu lại" : "Đổi";
         if (mo) { var s = h.querySelector(".bd-cdo"); if (s && !s.__da && typeof window.enhanceSelect === "function") { s.__da = 1; try { window.enhanceSelect(s); } catch (er) {} } } return; }
       var luu = e.target.closest(".bd-luu"); if (luu) { luuGiao(luu); return; }
+      var dt = e.target.closest(".bd-ten-doi"); if (dt) { var ft = dt.closest(".bd-ten").querySelector(".bd-ten-form");
+        if (ft.hidden) { ft.hidden = false; var oT = ft.querySelector(".bd-ten-o"); oT.value = String((S.vt[ft.getAttribute("data-bin")] || {}).ten || "").split("|").pop().trim(); oT.focus(); oT.select(); } else ft.hidden = true; return; }
+      if (e.target.closest(".bd-ten-bo")) { e.target.closest(".bd-ten-form").hidden = true; return; }
+      var lt = e.target.closest(".bd-ten-luu"); if (lt) { luuTen(lt); return; }
       var th = e.target.closest(".bd-ls-them"); if (th) { var f = th.closest(".bd-ls").querySelector(".bd-ls-form"); if (f.hidden) moFormLs(f); else f.hidden = true; return; }
       if (e.target.closest(".bd-ls-bo")) { e.target.closest(".bd-ls-form").hidden = true; return; }
       var ll = e.target.closest(".bd-ls-luu"); if (ll) { luuLs(ll); return; }
@@ -1266,9 +1325,9 @@
     var m = $id("hpVtModal");
     if (!m || !m.classList.contains("show") || m.dataset.chu !== "bd" || !S.chon) return;
     /* form Lịch sử đang mở (đang gõ) thì giữ nguyên — vẽ lại lúc sổ tài sản nạp xong từng xoá chữ người dùng đang nhập */
-    var than = $id("hpVtBody"), dang = than.querySelector(".bd-ls-form:not([hidden])");
+    var than = $id("hpVtBody"), dang = than.querySelector(".bd-ls-form:not(.bd-ten-form):not([hidden])");
     than.innerHTML = veCachLam(S.chon, S.chonNgay);
-    var moi = dang && than.querySelector(".bd-ls-form"); if (moi) moi.parentNode.replaceChild(dang, moi);
+    var moi = dang && than.querySelector(".bd-ls-form:not(.bd-ten-form)"); if (moi) moi.parentNode.replaceChild(dang, moi);
   }
   /* bấm tên vị trí (không trỏ ngày) → ngày gần nhất có yêu cầu trong khoảng đang xem, không có thì ngày cuối khoảng */
   function ngayMacDinh(b) {
