@@ -626,6 +626,7 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
    đang mở vẫn bấm được dòng khác bên trái. Vỏ ở đây (Vi phạm + Xác minh cùng gọi window.hskThanhBen); NỘI DUNG mỗi mục tự lo. ===== */
 #modal.hx-ben{left:clamp(340px,26vw,420px)!important;backdrop-filter:none;-webkit-backdrop-filter:none;width:auto;background:transparent;padding:0;overflow:visible;pointer-events:none;display:flex;align-items:stretch;opacity:1;visibility:hidden;transition:visibility 0s .3s}
 #modal.hx-ben.show{visibility:visible;transition:none}
+#statModal.tb-nhuong,#hmModal.tb-nhuong{visibility:hidden!important;pointer-events:none!important}   /* 06/11 pop-up giữa nhường thanh bên (hskThanhBen) */
 #modal.hx-ben>*{pointer-events:auto}
 #modal.hx-ben .modal-box{pointer-events:auto;margin:0;max-width:none;height:100%;border-radius:0!important;border:0;border-left:1px solid var(--border);overflow-y:auto;overscroll-behavior:contain;container-type:inline-size;
   box-shadow:-10px 0 28px color-mix(in srgb,#000 16%,transparent);animation:none!important;transform:translate3d(100%,0,0);transition:transform .3s var(--ez-apple);display:flex;flex-direction:column}
@@ -3533,24 +3534,29 @@ function dongModal(){ $('modal').classList.remove('show'); }
 /* 16/10 THANH BÊN PHẢI dùng chung — mo(khoá, bộ chọn dòng) gắn lớp hx-ben + thu thanh trái (chỉ lần mở đầu); xong(tb) hiện + tô dòng;
    đóng (Đóng/Esc/đổi tab) → dừng clip, bỏ tô, trả thanh trái nếu chính thanh này đã thu, 320ms sau gỡ lớp (pop-up khác dùng #modal vẫn là hộp giữa). */
 window.hskThanhBen=(function(){
-  let khoa='', chon='', thuBen=0, hT=0, canh=0, hien=false;
+  let khoa='', chon='', thuBen=0, hT=0, canh=0, hien=false, nhuong=[];
+  /* 06/11 user «pop-up > chọn 1 vi phạm > thanh bên phải > thoát thanh bên > nhảy pop-up lại > thoát pop-up > về màn hình»:
+     lớp antd ép #modal/#statModal cùng z 90 ⇒ pop-up giữa (nằm sau trong DOM) ĐÈ thanh bên, Esc lại đóng thanh bên đang bị che.
+     Mở thanh bên từ pop-up giữa → pop-up NHƯỜNG (ẩn tạm, giữ .show + nấc hskLop + vị trí cuộn); thanh bên đóng → pop-up hiện lại. */
+  const traNhuong=()=>{ nhuong.forEach(e=>e.classList.remove('tb-nhuong')); nhuong=[]; };
   const M=()=>$('modal');
   function toDam(){ document.querySelectorAll('.tb-dangxem').forEach(e=>e.classList.remove('tb-dangxem'));
     if(!M().classList.contains('hx-ben')||!khoa||!chon) return; try{ document.querySelectorAll(chon).forEach(e=>e.classList.add('tb-dangxem')); }catch(e){} }
   function ganCanh(){ if(canh) return; canh=1; const m=M(); hien=m.classList.contains('show');
     new MutationObserver(()=>{ const dang=m.classList.contains('show'), vuaDong=hien&&!dang; hien=dang; if(!vuaDong||!m.classList.contains('hx-ben')) return;
-      m.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} }); khoa=''; chon=''; toDam(); const mt=$('hxMoTask'); if(mt) mt.remove();
+      m.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} }); khoa=''; chon=''; toDam(); traNhuong(); const mt=$('hxMoTask'); if(mt) mt.remove();
       if(thuBen){ thuBen=0; if(!document.body.classList.contains('side-open')&&$('sideToggle')) $('sideToggle').click(); }
       clearTimeout(hT); hT=setTimeout(()=>{ if(!m.classList.contains('show')) m.classList.remove('hx-ben'); },320);
     }).observe(m,{attributes:true,attributeFilter:['class']}); }
   function mo(k,sel){ const m=M(), dangMo=m.classList.contains('show')&&m.classList.contains('hx-ben'), doi=dangMo&&khoa!==k;
     ganCanh(); clearTimeout(hT); m.classList.add('hx-ben'); khoa=k; chon=sel||'';
+    document.querySelectorAll('#statModal.show,#hmModal.show').forEach(e=>{ if(!e.classList.contains('tb-nhuong')){ e.classList.add('tb-nhuong'); nhuong.push(e); } });
     if(!dangMo&&!thuBen&&matchMedia('(min-width:769px)').matches&&document.body.classList.contains('side-open')&&$('sideToggle')){ $('sideToggle').click(); thuBen=1; }
     return {doi}; }
   function xong(tb){ if(tb&&tb.doi){ const mb=$('mBody'); mb.classList.remove('hx-doi'); void mb.offsetWidth; mb.classList.add('hx-doi'); M().querySelector('.modal-box').scrollTop=0; }
     hienModal('modal'); toDam(); }
   function boc(){ clearTimeout(hT); M().classList.remove('hx-ben'); }
-  return {mo, xong, boc, toDam, khoa:()=>khoa};
+  return {mo, xong, boc, toDam, traNhuong, khoa:()=>khoa};
 })();
 
 /* 25/10 user «xem ở điện thoại, vào 1 mục mà cần thoát ra thì lướt qua phải → về giao diện trước đó 1 BƯỚC, chứ không phải thoát luôn ra trang chính
@@ -3719,7 +3725,8 @@ async function switchCompany(id){
 
 /* Mở modal MƯỢT: ép trình duyệt layout+paint nội dung TRƯỚC (offsetHeight), sang frame kế mới
    chạy animation -> frame đầu không bị việc dựng DOM đè lên, hết khựng. */
-function hienModal(id){ const el=$(id); el.style.display=''; void el.offsetHeight; requestAnimationFrame(()=>el.classList.add("show")); }
+function hienModal(id){ const el=$(id); if(el.classList.contains('tb-nhuong')){ hskThanhBen.traNhuong(); dongModal(); }
+  el.style.display=''; void el.offsetHeight; requestAnimationFrame(()=>el.classList.add("show")); }
 
 /* ===== TABS (Dynamic Contextual Tabs — khung tab đổi theo công ty) ===== */
 function renderTabs(){
@@ -4680,7 +4687,8 @@ $('lightbox').addEventListener('touchend', e=>{
 document.addEventListener('keydown', e=>{
   if(!$('lightbox').classList.contains('show')){
     if(e.key==='Escape'){
-      if($('hmModal').classList.contains('show')) dongHinhHangMuc();
+      if($('modal').classList.contains('show') && $('modal').classList.contains('hx-ben')) dongModal();   // 06/11 thanh bên phải là lớp trên cùng (pop-up giữa đang nhường)
+      else if($('hmModal').classList.contains('show')) dongHinhHangMuc();
       else if($('ghiModal').classList.contains('show')) dongGhiNhan();
       else if($('modal').classList.contains('show')) dongModal();
       else if($('statModal').classList.contains('show')) dongThongKe();
