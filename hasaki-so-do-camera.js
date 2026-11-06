@@ -663,7 +663,7 @@
       var bo = document.createElement("div"); bo.className = "sdc-3d cho";
       bo.innerHTML = '<iframe id="sdc3d" title="CCTV — mặt bằng kho 170 và camera" tabindex="-1" src="kho170-3d.html?v=' + V3D + '"></iframe><div class="sdc-che" id="sdcChe"></div><div class="sdc-3dtt" id="sdc3dTt" hidden></div>';
       var el = bo.querySelector("iframe"); F = { el: el, bo: bo, diem: [] };
-      el.addEventListener("load", function () { choSan(el, 0); });
+      el.addEventListener("load", function () { F.luot = (F.luot || 0) + 1; choSan(el, 0, F.luot); });   // 06/11 mỗi lần nạp (kể cả nạp lại) 1 lượt chờ — lượt cũ tự dừng
       host.appendChild(bo);
     }
     F.bo.classList.toggle("ngam", !!ngam);
@@ -672,9 +672,21 @@
   }
   function hienKhung(host) { don(host); giuKhung(host, false); if (F && F.vua) F.vua(); }
   function tt3(s) { var o = $id("sdc3dTt"); if (o) { o.textContent = s || ""; o.hidden = !s; } }
-  function choSan(el, n) {
-    if (!F || F.el !== el) return; var w = el.contentWindow;
-    if (!w || !w.__SAN_SANG || !w.scene || !w.THREE || !w.camera) { if (n > 200) return tt3("Không dựng được mô hình 3D (mất mạng thư viện đồ hoạ?)."); return setTimeout(function () { choSan(el, n + 1); }, 150); }
+  function choSan(el, n, luot) {
+    if (!F || F.el !== el || (luot && F.luot !== luot)) return; var w = el.contentWindow;
+    /* 06/11 user «VẪN GẶP LỖI "dựng bản 3D"»: trước đây quá 30 s (200 × 150 ms) là BỎ CUỘC — câu lỗi đứng mãi, lại đổ cho «mất mạng» dù không biết.
+       Nay: tệp nào hỏng (three.js / sơ đồ / thông số / vách) → nạp lại khung ngay (tối đa 2 lần, có số chống bộ nhớ đệm); quá 30 s chưa xong → nạp lại 1 lần;
+       vẫn chờ tiếp (mỗi 1 s) — xong lúc nào thì tự ẩn câu báo; câu báo nêu ĐÚNG phần chưa xong. */
+    if (!w || !w.__SAN_SANG || !w.scene || !w.THREE || !w.camera) {
+      var hong = w ? [w.__loiThree && "thư viện đồ hoạ three.js", w.__loiSoDo && "sơ đồ kho", w.__loiTs && "thông số kệ", w.__loiVach && "vách"].filter(Boolean) : [];
+      F.lai = F.lai || 0;
+      if ((hong.length || n === 200) && F.lai < 2 && el.contentDocument && el.contentDocument.readyState === "complete") {
+        F.lai++; tt3("Đang nạp lại mô hình 3D" + (hong.length ? " (tải hỏng: " + hong.join(", ") + ")" : "") + "…");
+        el.src = "kho170-3d.html?v=" + V3D + "&lai=" + Date.now(); return;   // sự kiện load gọi lại choSan(el, 0)
+      }
+      if (n > 200) tt3("Mô hình 3D chưa dựng xong" + (hong.length ? " — tải hỏng: " + hong.join(", ") : !w || !w.THREE ? " — chưa tải được thư viện đồ hoạ" : " — trang 3D đang chạy dở") + ". Máy vẫn đang thử…");
+      return setTimeout(function () { choSan(el, n + 1, luot); }, n > 200 ? 1000 : 150);
+    }
     var st = w.document.createElement("style"); st.textContent = CSS_NHUNG; w.document.head.appendChild(st);
     var bc = w.document.getElementById("bChieu"); if (bc && bc.classList.contains("on")) bc.click();   // chiếu trực giao (máy nhớ từ trang 3D) → phối cảnh: bấm chọn camera tính theo camera phối cảnh
     F.w = w; anChu(); var hAn = setInterval(function () { if (!F || F.w !== w || !document.contains(F.el)) return clearInterval(hAn); anChu(); }, 1000);
