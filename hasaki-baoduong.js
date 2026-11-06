@@ -317,7 +317,12 @@
       B + " .bd-ko.trong{background:repeating-linear-gradient(45deg,var(--ad-nen2,var(--surface2)) 0 6px,transparent 6px 12px);white-space:nowrap}" + B + " .bd-ko.trong .bd-phu," + B +
         " .bd-ko.trong .bd-ka{display:inline;margin-left:0}" + B + " .bd-ko.trong .bd-ka{margin-left:12px}",
       B + " .bd-kql{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;font-size:12px;color:var(--muted);margin-bottom:4px}" + B + " .bd-kql .bd-kn{color:var(--text)}",
-      B + " .bd-kg{display:flex;align-items:center;gap:8px;min-height:28px}" + B + " .bd-kg+.bd-kg{border-top:1px dashed var(--ad-chia,var(--border))}" +
+      B + " .bd-kg{display:flex;align-items:center;gap:8px;min-height:34px}" + B + " .bd-kg+.bd-kg{border-top:1px dashed var(--ad-chia,var(--border))}" +
+        /* 06/11 lượt 5: chồng ảnh 28px; vòng đỏ = chưa chấm công (đã chấm công không vòng); nền ô theo tiến độ (thắng nền hàng xen kẽ) */
+        B + " .bd-kav{display:inline-flex;align-items:center;padding-left:4px}" + B + " .bd-kav-1{display:inline-flex;border-radius:50%;margin-left:-4px;box-shadow:0 0 0 2px var(--surface)}" +
+        B + " .bd-kav-1 .bd-av{width:28px;height:28px}" + B + " .bd-kav-1.vang{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--bad);margin-right:2px;margin-left:0}" +
+        B + " .bd-kbang tbody tr>td.bd-ko.tt-do{background-color:color-mix(in srgb,var(--bad) 7%,var(--surface))}" + B + " .bd-kbang tbody tr>td.bd-ko.tt-xanh{background-color:color-mix(in srgb,var(--good) 10%,var(--surface))}" +
+        B + " .bd-kbang tbody tr>td.bd-ko.tt-vang{background-color:color-mix(in srgb,var(--warn) 10%,var(--surface))}" +
         B + " .bd-kg-ng{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:2px 12px}" + B + " .bd-kn{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}" + B + " .bd-kn.vang{color:var(--bad)}",
       B + " .bd-kso{flex:none;min-width:36px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}" + B + " .bd-kso b{font-weight:600}" + B + " .bd-kso.du b{color:var(--good)}",
       B + " .bd-pv{flex:none;font-size:11.5px;line-height:18px;padding:0 6px;border-radius:4px;white-space:nowrap}" + B + " .bd-pv.gom{background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent)}" +
@@ -1056,8 +1061,10 @@
           (bin ? ' data-bin="' + esc(bin) + '"' : "") + ">" + chu + "</button>" : ""; };
       /* 06/11 lượt 3 user «bổ sung ảnh QL»: quản lý = ảnh đại diện + tên (khuôn chung anh-nv.js qua avatar(), như người phụ trách) */
       var tenQL = function (ds) { return ds.map(function (x) { var t = tenNV(x); return '<span class="bd-kn">' + avatar(t) + o(t) + "</span>"; }).join(""); };
-      var nguoiS = function (ds) { return ds.map(function (n) { var vang = n.vao === "";
-        return '<span class="bd-kn' + (vang ? " vang" : "") + '"' + (vang ? ' title="Chưa chấm công"' : n.vao ? ' title="Vào ' + esc(n.vao) + '"' : "") + ">" + avatar(n.ten) + o(n.ten) + "</span>"; }).join(""); };
+      /* 06/11 lượt 5 user chọn kết hợp «nền ô theo tiến độ + CHỈ ẢNH ĐẠI DIỆN (vòng đỏ = chưa chấm công, đã chấm công thì không vòng), tên khi rê chuột
+         + ẩn «Toàn kho», chỉ báo khi Tách»: người trong ô = chồng ảnh 28px; tên + giờ vào ở title / aria-label */
+      var nguoiS = function (ds) { return '<span class="bd-kav">' + ds.map(function (n) { var vang = n.vao === "", tip = n.ten + (vang ? " · chưa chấm công" : n.vao ? " · vào " + n.vao : "");
+        return '<span class="bd-kav-1' + (vang ? " vang" : "") + '" title="' + esc(tip) + '" aria-label="' + esc(tip) + '">' + avatar(n.ten) + "</span>"; }).join("") + "</span>"; };
       var so = function (x, y) { return '<span class="bd-kso' + (y && x === y ? " du" : "") + '" title="Vị trí đã báo cáo hôm nay / vị trí có yêu cầu hôm nay"><b>' + x + "/" + y + "</b></span>"; };
       var dongVtK = function (t, tach) {
         /* 06/11 lượt 4 user «quá rối» (tên dính mã, Chưa gán · ảnh · Đổi người · Quản lý trên mọi dòng): chấm Lưu trình đầu dòng (chữ ở tooltip) ·
@@ -1081,11 +1088,13 @@
         vs.forEach(function (t) { var k = tenNg(t).join(" · "); if (!m[k]) { m[k] = []; thu.push(k); } m[k].push(t); });
         var nhom = thu.map(function (k) { var a = m[k], xa = a.filter(function (t) { return t.l === "x"; }).length, gom = a.length === vs.length;
           return '<div class="bd-kg"><span class="bd-kg-ng">' + (a[0].ng.length ? nguoiS(a[0].ng) : '<span class="bd-do b">' + CHUA_GIAO + "</span>") + "</span>" +
-            '<span class="bd-pv ' + (gom ? "gom" : "tach") + '">' + (gom ? "Toàn kho" : "Tách " + a.length + "/" + vs.length) + "</span>" + so(xa, a.length) + "</div>"; }).join("");
+            (gom ? "" : '<span class="bd-pv tach" title="Người này lo ' + a.length + "/" + vs.length + ' vị trí của kho">Tách ' + a.length + "/" + vs.length + "</span>") + so(xa, a.length) + "</div>"; }).join("");
+        /* nền ô theo tiến độ: còn vị trí chưa giao người = đỏ nhạt · đủ = xanh nhạt · đã báo cáo một phần = vàng nhạt · chưa ai báo cáo = không tô */
+        var xo = vs.filter(function (t) { return t.l === "x"; }).length, nen = !vs.length ? "" : vs.some(function (t) { return !t.ng.length; }) ? " tt-do" : xo === vs.length ? " tt-xanh" : xo ? " tt-vang" : "";
         var chan = sua ? '<div class="bd-ko-tt">' + nut("pt", cfgGt("pt", khu, hm) ? "Sửa phụ trách cả kho" : "Phụ trách cả kho", khu, hm) + nut("ql", "Quản lý " + hm, khu, hm) +
           nut("bo", S.xacBo === key ? "Bấm lần nữa để bỏ" : "Bỏ khỏi " + khu, khu, hm, "", S.xacBo === key ? "bd-do" : "") + "</div>" : "";
         /* cả dòng ô = nút mở (khuôn hàng người «Theo người»: mũi tên đầu dòng, bấm dòng mở danh sách vị trí + thao tác) — không chiếm thêm dòng */
-        return '<td class="bd-ko' + (mo ? " mo" : "") + '" data-khu="' + khu + '">' +
+        return '<td class="bd-ko' + nen + (mo ? " mo" : "") + '" data-khu="' + khu + '">' +
           '<div class="bd-ka bd-ko-h" role="button" tabindex="0" data-act="vt" data-o="' + esc(key) + '" aria-expanded="' + mo + '"><i class="bd-mui" aria-hidden="true"></i><div class="bd-ko-nd">' +
             (q.cap === "hạng mục" ? '<div class="bd-kql">Quản lý ' + tenQL(q.ds) + "</div>" : "") +
             (vs.length ? nhom : '<div class="bd-kg bd-phu">' + (tong ? tong + " vị trí · hôm nay không có lịch" : "Chưa có vị trí") + "</div>") + "</div></div>" +
