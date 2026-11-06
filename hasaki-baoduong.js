@@ -345,9 +345,15 @@
         "@media (hover:hover){" + B + " .bd-kvt-lk{opacity:0;transition:opacity .12s}" + B + " .bd-kvt:hover .bd-kvt-lk," + B + " .bd-kvt:focus-within .bd-kvt-lk{opacity:1}}",
       /* 06/11 lượt 6 (mẫu 5): dòng con = vạch trái + nền nhạt theo Lưu trình · tên (+ bút đổi tên, «chờ WMS») · ảnh người + nút đổi người sát ảnh · số ảnh · nhãn Lưu trình */
       B + " .bd-ko-ds .bd-kvt{grid-template-columns:minmax(0,1fr) auto auto auto auto;gap:0 12px;padding:6px 8px;margin:0 -8px;border-top:0;border-radius:4px;" +
-          "box-shadow:inset 3px 0 0 var(--lt-m);background:color-mix(in srgb,var(--lt-m) 7%,transparent);--lt-m:var(--muted)}" + B + " .bd-ko-ds .bd-kvt+.bd-kvt{margin-top:4px}" +
-        B + " .bd-kvt.lt-gan{--lt-m:var(--info)}" + B + " .bd-kvt.lt-dg{--lt-m:var(--warn)}" + B + " .bd-kvt.lt-dl{--lt-m:var(--accent)}" + B + " .bd-kvt.lt-ht{--lt-m:var(--good)}",
-      B + " .bd-kvt-tt{font-size:12px;white-space:nowrap;color:color-mix(in srgb,var(--lt-m) 75%,var(--text))}" + B + " .bd-kvt.qh .bd-kvt-tt::after{content:' · Quá hạn';color:var(--bad)}" +
+          "box-shadow:inset 3px 0 0 var(--lt-m);background:color-mix(in srgb,var(--lt-m) 9%,transparent);--lt-m:var(--muted)}" + B + " .bd-ko-ds .bd-kvt+.bd-kvt{margin-top:4px}" +
+        /* 06/11 lượt 8 user «lấy theo màu status của workflow ở work.hasaki.vn» — bảng colorProjectTaskStatus trong mã trang work (đọc 06/11 khi đã đăng nhập):
+           0 Chưa bắt đầu rgb(204,204,204) · 1 Đang xử lý rgb(32,170,234) · 2 Hoàn thành rgb(98,210,111) · 3 Trễ hạn rgb(253,97,44) · 5 Chờ duyệt rgb(246,153,63).
+           Ánh xạ: Đã giao·chưa làm = 0 · Đang làm = 1 · Đã làm·chờ duyệt = 5 · Hoàn thành = 2 · Quá hạn = 3. «Chưa giao task» (chưa có task work) = xám nhạt --muted.
+           Khai báo 1 lần thành biến (--wk-*) — màu thương hiệu ngoài như palette biểu đồ, không phải màu tự chọn. */
+        B + "{--wk-0:rgb(204,204,204);--wk-1:rgb(32,170,234);--wk-2:rgb(98,210,111);--wk-3:rgb(253,97,44);--wk-5:rgb(246,153,63)}" +
+        B + " .bd-kvt.lt-gan{--lt-m:var(--wk-0)}" + B + " .bd-kvt.lt-dg{--lt-m:var(--wk-1)}" + B + " .bd-kvt.lt-dl{--lt-m:var(--wk-5)}" + B + " .bd-kvt.lt-ht{--lt-m:var(--wk-2)}" +
+        B + " .bd-kvt.qh:not(.lt-ht):not(.lt-dl){--lt-m:var(--wk-3)}" + B + " .bd-kvt.lt-chua:not(.qh){--lt-m:color-mix(in srgb,var(--muted) 60%,transparent)}",
+      B + " .bd-kvt-tt{font-size:12px;white-space:nowrap;color:color-mix(in srgb,var(--lt-m) 75%,var(--text))}" + B + " .bd-ko-ds .bd-kvt-tt{text-align:right}" +
         B + " .bd-kvt-ngs{display:inline-flex;align-items:center;gap:4px}" + B + " .bd-kvt-ma{display:flex;align-items:center;gap:2px;white-space:nowrap}" + B + " .bd-kvt-ma code{display:inline}" + B +
           " .bd-kvt-ma .bd-kvt-but{width:22px;height:22px}" + B + " .bd-kvt-ngs .bd-kav{gap:2px;padding:0}" +
         B + " .bd-kvt-doi," + B + " .bd-kvt-but{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;color:var(--muted);vertical-align:middle}" +
@@ -1044,7 +1050,9 @@
       return thu.sort(function (a, c) { return m[c].length - m[a].length; }).map(function (h) { return [h, m[h]]; }); };
     /* 06/11 «Lưu trình»: KPI tính ở planogram (Chờ duyệt / Đã duyệt) — task work chỉ là nhắc việc ⇒ trạng thái theo yêu cầu planogram, «Đã gán» = đã bắn task */
     /* 06/11 lượt 6 user: «chưa bắn task / đã gán task-chưa làm / đang làm / đã làm-chờ duyệt / hoàn thành» — nhãn dùng chung mọi chế độ xem */
-    var LT = [["chua", "Chưa giao task"], ["gan", "Đã giao · chưa làm"], ["dg", "Đang làm"], ["dl", "Đã làm · chờ duyệt"], ["ht", "Hoàn thành"]];
+    /* 06/11 lượt 9 user «trạng thái ghi tương ứng GỐC trên work, không dài dòng, căn phải»: nhãn = chữ của work.hasaki.vn (taskStatusKey / i18n vi):
+       chưa có task = «Chưa giao» · status 0 «Chưa bắt đầu» · 1 «Đang xử lý» · 5 «Chờ duyệt» · 2 «Hoàn thành» · quá hạn = 3 «Trễ hạn» */
+    var LT = [["chua", "Chưa giao"], ["gan", "Chưa bắt đầu"], ["dg", "Đang xử lý"], ["dl", "Chờ duyệt"], ["ht", "Hoàn thành"]];
     var buocLt = function (t) { if (t.doi) return t.st === 4 ? "ht" : t.st === 3 ? "dl" : t.st === 2 ? "dg" : t.gan ? "gan" : "chua";
       return t.l === "x" ? "ht" : t.l === "d" ? "dg" : t.ky ? "gan" : "chua"; };
     var luuTrinh = function (ds) { var dem = {}; ds.forEach(function (t) { var k = buocLt(t); dem[k] = (dem[k] || 0) + 1; });
@@ -1054,7 +1062,7 @@
     /* 06/11 user «mục cha/mục con căn ngay ngắn, không lệch»: dòng vị trí dùng CHUNG lưới cột (--cot) với hàng người —
        tên vị trí trải 3 cột đầu · Lưu trình (cùng chấm màu của hàng cha) · Đã báo cáo (cùng thanh tiến độ, đơn vị «ảnh») · [Đã log task] · thao tác. */
     var motLt = function (t) { var k = buocLt(t), x = LT.filter(function (z) { return z[0] === k; })[0];
-      return '<span class="bd-lt"><span class="lt-' + k + '"><i aria-hidden="true"></i>' + x[1] + (t.l === "b" ? ' <span class="lt-qh">· Quá hạn</span>' : "") + "</span></span>"; };
+      return '<span class="bd-lt"><span class="lt-' + k + '"><i aria-hidden="true"></i>' + (t.l === "b" && !/ht|dl/.test(k) ? "Trễ hạn" : x[1]) + "</span></span>"; };
     var dongVt = function (t, thieu) {
       var chon = !!S.chonVt[t.b] && t.doi;
       var moTask = t.ky ? '<a class="bd-lk" href="https://work.hasaki.vn/tasks?task_id=' + encodeURIComponent(t.ky) + '" target="_blank" rel="noopener">Mở task ↗</a>' : "";
@@ -1107,7 +1115,7 @@
         return '<span class="bd-kav-1 chua' + (c ? " nho" : "") + '" title="' + tip + '" aria-label="' + tip + '"><span class="bd-av bd-av-chua">' + SVG_NG + "</span>" + (n != null ? '<b class="bd-kbad">' + n + "</b>" : "") + "</span>"; };
       var so = function (x, y) { return '<span class="bd-kso' + (y && x === y ? " du" : "") + '" title="Vị trí đã báo cáo hôm nay / vị trí có yêu cầu hôm nay"><b>' + x + "/" + y + "</b></span>"; };
       var dongVtK = function (t) {
-        var q = qlCua(t.khu, t.hm, t.b), bl = buocLt(t), nl = LT.filter(function (z) { return z[0] === bl; })[0][1] + (t.l === "b" ? " · Quá hạn" : "");
+        var q = qlCua(t.khu, t.hm, t.b), bl = buocLt(t), nl = t.l === "b" && !/ht|dl/.test(bl) ? "Trễ hạn" : LT.filter(function (z) { return z[0] === bl; })[0][1];   // work: quá hạn = «Trễ hạn»
         var dt = (S.doiTen || {})[t.b], cho = dt && dt["TRẠNG THÁI"] !== "Đã đổi WMS";
         /* 06/11 lượt 7 user: «bút cạnh mã → tưởng đổi mã; mã vị trí luôn cố định» ⇒ bút đứng cuối TÊN (đổi tên hiển thị, mã giữ nguyên);
            «mục con kích thước cố định, không hiện số ảnh; trạng thái lên trên cùng bên phải; ảnh + icon xuống dưới cùng bên phải; tên chiếm 2/3, dài thì xuống dòng» */
