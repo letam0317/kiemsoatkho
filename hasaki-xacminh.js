@@ -1200,6 +1200,9 @@
   /* 30/10 phiếu đã qua B1 chỉ hiện khi tìm — ghi rõ đang ở bước nào */
   function daQuaB1(p) { return p.buoc && p.buoc !== "B1" ? '<div class="muted" style="font-size:12px">Đang ở ' + e_(p.buoc) + '</div>' : ""; }
   function veTreo() {
+    /* 06/11 user «Lưu quyết định → Lỗi: Cannot set properties of null (setting 'innerHTML')»: thanh bên mở từ Vi phạm › «Theo tác vụ ›» — trang
+       không có khung danh sách #hxBody; lưu đã xong mà vẽ lại danh sách vắng mặt ném lỗi ⇒ không có khung thì không vẽ */
+    if (!$id("hxBody")) return;
     var demM = {}, THU = ["chac", "vua", "chon", "nhan", "tam", "cam", "tudong", "tra", "soi", "quyet", "khong", "xong"];
     var pB1 = D.phieu.filter(function (p) { return p.buoc === "B1"; });   // 23/10: phiếu đã qua B1 không còn việc xác minh → không hiện, bỏ lọc «Đang ở bước»
     pB1.forEach(function (p) { var m = mucMay(p); demM[m] = (demM[m] || 0) + 1; });
