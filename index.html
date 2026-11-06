@@ -4560,7 +4560,7 @@ const bbFull =u=>{const id=bbDriveId(u);return id?`https://drive.google.com/thum
   const SO = new Map(); let hen = 0;
   const dong = (t) => [].reduce.call(t.tBodies, (a, b) => a + [].filter.call(b.rows, (r) => r.cells.length > 1 && r.offsetParent !== null).length, 0);
   function khoa(t){
-    if(!t.tHead || !t.tHead.rows.length || !t.offsetParent || t.closest('#pane-task')) return;
+    if(!t.tHead || !t.tHead.rows.length || !t.offsetParent || t.closest('#pane-task') || t.closest('[data-khong-khoa]')) return;   // 06/11 bảng tự lo bề rộng (Lịch bảo dưỡng: tiêu đề 3 tầng, cột ghim) — khoá theo hàng tiêu đề cuối làm mất cột tên
     const th = [].slice.call(t.tHead.rows[t.tHead.rows.length - 1].cells), p = t.closest('[id^=pane-]');
     if(!th.length || !th[0].offsetParent || getComputedStyle(t).display !== 'table') return;   // bảng đã thành THẺ (điện thoại) — không khoá
     const sig = (p ? p.id : '') + '|' + th.map((c) => c.className + ':' + c.textContent.trim().replace(/\d+/g, '#')).join('|'), cw = t.parentElement.clientWidth, n = dong(t);
