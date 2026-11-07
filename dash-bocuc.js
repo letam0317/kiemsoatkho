@@ -32,7 +32,7 @@ window.DASH_BOCUC = {
   {
    "k": "kk",
    "ten": "Tồn kho chính xác",
-   "nhom": "Tồn kho, tài sản"
+   "nhom": "Tồn kho & tài sản"
   },
   {
    "k": "xacminh:treo",
