@@ -180,7 +180,6 @@ var CSS = [
 "#pane-kk .hk-span2{grid-column:1/-1;display:block;}",
 "#pane-kk .hk-hang1{display:grid;grid-template-columns:280px minmax(0,1fr);gap:12px;align-items:stretch;}",
 "#pane-kk .hk-hang1 > .hk-panel{margin:0;min-width:0;}",
-"#pane-kk .hk-dau-panel{margin:0 0 16px;border-radius:12px;}",
 "#pane-kk .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;align-items:end;}",
 "#pane-kk .filters label{min-width:0;}",
 "#pane-kk .filters input,#pane-kk .filters select{width:100%;min-width:0;}",
@@ -289,6 +288,8 @@ var CSS = [
 ".hk-note{padding:8px 2px 0;font-size:11.5px;color:var(--muted,#9ca3af);}",
 /* 22/10 thanh lọc: Kho · Trạng thái · Tìm theo mã · Ngày kiểm · Ngày kế hoạch — 5 ô 1 hàng trên web */
 "#pane-kk #hkWhBar{grid-template-columns:1fr 1fr 1.6fr 1fr 1fr;}",
+/* 07/11 khối lọc nằm trong khung SKU: ≥1280 khung chỉ nửa màn ⇒ 2 cột như điện thoại (Kho | Trạng thái · Mã trọn hàng · Ngày kiểm | Ngày kế hoạch) */
+"@media(min-width:1024px){#pane-kk #hkWhBar{grid-template-columns:repeat(2,minmax(0,1fr));}#pane-kk #hkWhBar .hk-ma{grid-column:1/-1;}}",
 "@media(max-width:768px){#pane-kk #hkWhBar{grid-template-columns:repeat(2,minmax(0,1fr));}#pane-kk #hkWhBar .hk-ma{grid-column:1/-1;}}",   // điện thoại: ô mã trọn hàng, đủ chỗ gõ
 ".hk-ma{display:flex;flex-direction:column;gap:4px;min-width:0;}",
 ".hk-ma-o{display:flex;min-width:0;}",
@@ -333,37 +334,54 @@ var CSS = [
    răng cưa. Còn ~130px. */
 ".hk-mfilters{padding:10px 12px;gap:6px 6px;}",
 ".hk-mfilters .fld{flex:1 1 calc(50% - 3px);min-width:0;}",
-".hk-mfilters .fld.q{flex:1 1 100%;}}"
+".hk-mfilters .fld.q{flex:1 1 100%;}}",
+/* 07/11 user «gom lại thành 3 khung: Kiểm kê theo SKU / Kiểm kê theo mã vị trí / Tồn kho bất thường — tối ưu không gian»:
+   #pane-kk thôi là 1 khung bọc ngoài (luật antd 15/10 «1 Card / phần» chỉ đổi ở trang này) — mỗi khối là 1 khung .panel, đầu khung
+   .panel-head 40px (điện thoại 38px) cùng khuôn đầu khung có nút Bộ lọc của thư viện; khung 3 dựng cùng số đo ở hasaki-tonbatthuong.js. */
+"html body #pane-kk:not(.hidden){border:0!important;border-radius:0!important;background:transparent!important;padding:0!important;margin-bottom:16px}",
+"html body #pane-kk .hk-grid2{gap:16px!important;align-items:stretch}",
+"html body #pane-kk .hk-grid2 > .hk-panel{border:1px solid var(--ad-chia,var(--border))!important;border-radius:8px!important;background:var(--surface)!important;" +
+  "box-shadow:none!important;padding:0!important;margin:0!important;display:flex;flex-direction:column;min-width:0}",
+"html body #pane-kk .hk-grid2 > .hk-panel > .panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap;height:40px;" +
+  "min-height:40px;padding:0 16px;border-bottom:1px solid var(--ad-chia,var(--border));font-size:14px;line-height:20px;box-sizing:border-box}",
+"html body #pane-kk .hk-pbody{padding:0 16px 12px;min-width:0}",
+"@media(max-width:768px){html body #pane-kk:not(.hidden){margin-bottom:12px}html body #pane-kk .hk-grid2{gap:12px!important}html body #pane-kk .hk-grid2 > .hk-panel > .panel-head{height:38px;min-height:38px;padding:0 12px;gap:6px}" +
+  "html body #pane-kk .hk-pbody{padding:0 12px 10px}}",
+"@media(max-width:560px){html body #pane-kk .hk-grid2 > .hk-panel > .panel-head{padding:0 8px;gap:4px}html body #pane-kk .hk-pbody{padding:0 8px 8px}}"
 ].join("\n");
 
 /* ===== KHUNG HTML ===== */
 var KHUNG =
-/* 15/10 user (Retail + Factory cùng khuôn): HÀNG 1 = [Bộ lọc] [Tiến độ theo kho] · HÀNG 2 = [Kiểm kê theo SKU] [Kiểm kê theo mã vị trí] */
-'<div class="panel hk-dau-panel">' +
-'  <div class="panel-head"><span class="ph-trai"><span class="ph-td">Kiểm kê</span><span class="ph-dem" id="hkDemTxt"></span></span>' +
-'    <button type="button" class="hk-fcg btn-filter" id="hkBtnLoc" onclick="HKIEMKE.toggleLoc()">Bộ lọc</button></div>' +
-'  <div class="filters collapsed" id="hkWhBar" data-mb-rangcua="luoi-1-cot-gap-mac-dinh">' +
-'    <label><span class="lbl">Kho</span><select id="hkWhSel"></select></label>' +
-'    <label><span class="lbl">Trạng thái</span><select id="hkStSel"></select></label>' +
-'    ' + oMaHtml() +
-'    <div class="date-filter" id="hkCdateSlot"><span class="lbl">Ngày kiểm</span></div>' +
-'    <div class="date-filter" id="hkPlanSlot"><span class="lbl">Ngày kế hoạch</span></div>' +
-'  </div>' +
-'</div>' +
+/* 07/11 user (ảnh điện thoại screenshot-1794019498890): «lãng phí không gian — dời Bộ lọc xuống ngang hàng "Kiểm kê theo SKU (type SKU)",
+   BỎ dòng tiêu đề "Kiểm kê (7.131 phiếu)"; gom thành 3 khung: Kiểm kê theo SKU / Kiểm kê theo mã vị trí / Tồn kho bất thường».
+   ⇒ Mỗi khối = 1 khung thư viện (.panel + .panel-head + .filters): khung SKU mang nút Bộ lọc ở đầu khung, khối lọc trượt ngay dưới;
+   số phiếu đã có trong ô «Tất cả kho (n)» nên không lặp ở tiêu đề. Khung 3 (Tồn kho bất thường) = #pane-htonbat (hasaki-tonbatthuong.js). */
 '<div class="hk-grid2" id="hkGrid" style="display:none">' +
-'  <section class="hk-panel">' +
-'    <h2>Kiểm kê theo SKU <span class="hk-hint">(type SKU)</span> <span class="hk-scope" id="hkScope-sku" hidden></span></h2>' +
-'    <div class="hk-strip" id="hkStrip-sku"></div>' +
-'    <div id="hkStatus-sku"></div>' +
-'    <div class="hk-dhead">Đã kiểm theo ngày <span class="hk-legend" id="hkLegend-sku"></span></div>' +
-'    <div class="hk-daily" id="hkHist-sku"></div>' +
+'  <section class="panel hk-panel">' +
+'    <div class="panel-head"><span class="ph-trai"><span class="ph-td">Kiểm kê theo SKU</span><span class="ph-dem">(type SKU)</span><span class="hk-scope" id="hkScope-sku" hidden></span></span>' +
+'      <button type="button" class="hk-fcg btn-filter" id="hkBtnLoc" onclick="HKIEMKE.toggleLoc()">Bộ lọc</button></div>' +
+'    <div class="filters collapsed" id="hkWhBar" data-mb-rangcua="luoi-1-cot-gap-mac-dinh">' +
+'      <label><span class="lbl">Kho</span><select id="hkWhSel"></select></label>' +
+'      <label><span class="lbl">Trạng thái</span><select id="hkStSel"></select></label>' +
+'      ' + oMaHtml() +
+'      <div class="date-filter" id="hkCdateSlot"><span class="lbl">Ngày kiểm</span></div>' +
+'      <div class="date-filter" id="hkPlanSlot"><span class="lbl">Ngày kế hoạch</span></div>' +
+'    </div>' +
+'    <div class="hk-pbody">' +
+'      <div class="hk-strip" id="hkStrip-sku"></div>' +
+'      <div id="hkStatus-sku"></div>' +
+'      <div class="hk-dhead">Đã kiểm theo ngày <span class="hk-legend" id="hkLegend-sku"></span></div>' +
+'      <div class="hk-daily" id="hkHist-sku"></div>' +
+'    </div>' +
 '  </section>' +
-'  <section class="hk-panel">' +
-'    <h2>Kiểm kê theo mã vị trí <span class="hk-hint">(type Location · Full location)</span> <span class="hk-scope" id="hkScope-loc" hidden></span></h2>' +
-'    <div class="hk-strip" id="hkStrip-loc"></div>' +
-'    <div id="hkStatus-loc"></div>' +
-'    <div class="hk-dhead">Đã kiểm theo ngày <span class="hk-legend" id="hkLegend-loc"></span></div>' +
-'    <div class="hk-daily" id="hkHist-loc"></div>' +
+'  <section class="panel hk-panel">' +
+'    <div class="panel-head"><span class="ph-trai"><span class="ph-td">Kiểm kê theo mã vị trí</span><span class="ph-dem">(type Location · Full location)</span><span class="hk-scope" id="hkScope-loc" hidden></span></span></div>' +
+'    <div class="hk-pbody">' +
+'      <div class="hk-strip" id="hkStrip-loc"></div>' +
+'      <div id="hkStatus-loc"></div>' +
+'      <div class="hk-dhead">Đã kiểm theo ngày <span class="hk-legend" id="hkLegend-loc"></span></div>' +
+'      <div class="hk-daily" id="hkHist-loc"></div>' +
+'    </div>' +
 '  </section>' +
 '</div>' +
 '<div id="hkState" class="hk-state"><div class="hk-spin"></div>Đang tải dữ liệu kiểm kê…</div>' +
@@ -627,8 +645,7 @@ function renderWhBar(){
   var ws = Object.keys(dem).sort();
   var tong = ws.reduce(function(a, w){ return a + dem[w]; }, 0);
 
-  var demEl = $id("hkDemTxt");
-  if (demEl) demEl.textContent = tong ? "(" + nf(tong) + " phiếu)" : "";
+  /* 07/11: bỏ dòng «Kiểm kê (n phiếu)» — tổng phiếu đã nằm trong ô «Tất cả kho (n)» */
 
   var stDem = {};
   ["sku", "loc"].forEach(function(k){
