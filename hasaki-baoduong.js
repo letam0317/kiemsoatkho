@@ -60,6 +60,7 @@
       /* 07/11 bản thử kính lúp: cột tên +7 cm (web) / +2 cm (điện thoại); dải bắt dính giữa kính; kính = khung nhấn nổi, nền đặc che cột dưới */
       /* 07/11 thanh bên: lưới chip đối xứng 2 cột + phần thân của chip đang mở; ô đổi tên 1 hàng */
       B + " .bd-chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}" +
+        B + " .bd-chips.hai-ben{grid-auto-flow:row dense}" + B + " .bd-chips.hai-ben>.bd-chip{grid-column:1}" + B + " .bd-chips.hai-ben>.bd-chip.phai{grid-column:2}" +
         B + " .bd-chips .bd-chip{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'n m' 't m';align-items:center;gap:0 6px;min-height:52px;padding:7px 10px 7px 12px;" +
           "border:1px solid var(--ad-chia,var(--border));border-radius:10px;background:var(--surface);color:var(--text);font:inherit;text-align:left;cursor:pointer;" +
           "transition:border-color .15s,background .15s}" + B + " .bd-chips .bd-chip:hover{border-color:var(--accent)}" +
@@ -145,7 +146,7 @@
         B + " .bd-kav.bd-kav-cot>.bd-kav-vh{flex:0 0 78px;overflow:visible}" + B + " .bd-kav.bd-kav-cot>.bd-kav-kt{flex:1 1 0;padding-left:6px}",
       "#hpVtModal:not([data-chu=bd]) #bdVtKy{display:none}#bdVtKy{margin-right:8px;white-space:nowrap}#bdDoiHop .bd-hop-ad[hidden],#bdDoiHop [hidden]{display:none!important}",
       B + " .bd-hm-w{position:relative}" + B + " .bd-hm.kl{scroll-snap-type:x mandatory;scroll-padding-left:var(--bd-wvt,0)}" + B + " .bd-hm.kl thead th.th-ngay{scroll-snap-align:center}" +
-        B + " .bd-hm.kl td.vt{min-width:0;max-width:240px}" + B + " .bd-hm.kl :is(td,th):not(.vt):not(.th-goc){min-width:18px}",
+        B + " .bd-hm.kl td.vt{width:200px;min-width:200px;max-width:200px;box-sizing:border-box}"   /* 07/11 user «web rộng lên 200px» */ + B + " .bd-hm.kl :is(td,th):not(.vt):not(.th-goc){min-width:18px}",
       B + " .bd-kinh{position:absolute;top:0;width:60px;z-index:7;border-radius:10px;cursor:pointer;background:color-mix(in srgb,var(--accent) 6%,var(--surface));" +
           "box-shadow:0 0 0 1.5px var(--accent),0 8px 22px -6px rgba(0,0,0,.22);overflow:hidden}" +
         B + " .bd-kinh-dau{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:4px;color:var(--accent);" +
@@ -442,12 +443,17 @@
         B + " .bd-kav{display:inline-flex;align-items:center;padding-left:4px}" + B + " .bd-kav-1{display:inline-flex;border-radius:50%;margin-left:-4px;box-shadow:0 0 0 2px var(--surface)}" +
         B + " .bd-kav-1 .bd-av{width:28px;height:28px}" + B + " .bd-kav-1.vang{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--bad);margin-right:2px;margin-left:0}" +
         /* 06/11 lượt 6: chấm số yêu cầu dính góc trên-phải ảnh (kiểu tin nhắn Messenger); ảnh cách nhau đủ chỗ cho chấm số */
-        B + " .bd-ko-nd .bd-kav{gap:10px;padding:6px 0 2px}" + B + " .bd-ko-nd .bd-kav-1," + B + " .bd-pn-h .bd-kav-1{position:relative;margin-left:0}" +
+        B + " .bd-ko-nd .bd-kav{gap:8px;padding:2px 0 0}" + B + " .bd-ko-nd .bd-kav-1 .bd-av{width:20px;height:20px;font-size:10px}" +
+        B + " .bd-ko-nd .bd-kav-1 .bd-av svg{width:12px;height:12px}" + B + " .bd-ko-nd .bd-kbad{top:-6px;right:-8px;min-width:15px;height:15px;line-height:15px;font-size:9.5px}" +
+        B + " .bd-ko-nd .bd-kg{min-height:22px}" + B + " .bd-kbang tbody td.bd-ko{padding-top:6px;padding-bottom:6px}" +
+        B + " .bd-kbang tbody .bd-ko-h{margin:-6px -12px;padding:6px 12px}" + B + " .bd-kbang tbody .bd-ko-h .bd-mui{margin-top:6px}" + B + " .bd-kbang tbody th.bd-kh-hm{padding-top:6px;padding-bottom:6px}" +
+        B + " .bd-kbang tbody th.bd-kh-hm .bd-kh-ten{display:inline}" + B + " .bd-kbang tbody th.bd-kh-hm .bd-kh-n{display:inline;margin-left:8px}" +   /* 07/11 user «khung mục cha nhỏ lại 0,6 · avatar 0,7» */
+        B + " .bd-ko-nd .bd-kav-1," + B + " .bd-pn-h .bd-kav-1{position:relative;margin-left:0}" +
         B + " .bd-kbad{position:absolute;top:-5px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--bad);color:var(--accent-text,white);" +
           "font-size:10.5px;line-height:17px;font-weight:700;text-align:center;box-shadow:0 0 0 2px var(--surface);font-variant-numeric:tabular-nums}" +
         B + " .bd-av.bd-av-chua{background:var(--surface);color:var(--bad);border:1.5px dashed var(--bad);box-sizing:border-box}" + B + " .bd-kav-1.chua{box-shadow:none}" +
         /* 07/11 KT bảo trì = ảnh VUÔNG; chấm số theo màu trạng thái work (colorProjectTaskStatus) */
-        B + " .bd-kav-1.vuong .bd-av{border-radius:6px}" + B + " .bd-kav-1.vuong.vang .bd-av{border-radius:6px}" +
+        B + " .bd-kav-1.vuong .bd-av{border-radius:6px}" + B + " :is(.bd-kav-1,.bd-pc-ng).vuong .bd-av img{border-radius:6px}" + B + " .bd-kav-1.vuong{border-radius:8px}" + B + " .bd-kav-1.vuong.vang .bd-av{border-radius:6px}" +
         B + " .bd-kav:has(>.bd-kav-kt)," + B + " .bd-pn.bd-ph .bd-kav:has(>.bd-kav-kt){flex:1 1 auto;min-width:0;display:flex;align-items:center}" +
         B + " .bd-kav>.bd-kav-vh{flex:0 0 66.667%;display:flex;align-items:center;gap:inherit;min-width:0}" +
         B + " .bd-kav>.bd-kav-kt{flex:1 1 0;display:flex;align-items:center;justify-content:flex-start;gap:inherit;min-width:0;padding-left:4px}" +
@@ -490,12 +496,14 @@
         B + " .bd-kvt-cho{display:inline-block;margin-left:4px;padding:0 6px;border-radius:4px;font-size:11px;line-height:16px;color:color-mix(in srgb,var(--warn) 70%,var(--text));" +
           "background:color-mix(in srgb,var(--warn) 14%,transparent);cursor:help}",
       /* 06/11 lượt 7: thẻ mục con CỐ ĐỊNH 64px — trái 2/3 (tên tối đa 2 dòng + bút cuối tên · dòng mã) | phải 1/3: trạng thái TRÊN, ảnh + đổi người DƯỚI */
-      B + " .bd-ko-ds .bd-kvt{grid-template-columns:minmax(0,2fr) minmax(0,1fr);grid-template-areas:'trai tt' 'trai ngs';height:64px;gap:0 10px;align-items:stretch;padding:6px 8px 6px 10px;overflow:hidden}" +
+      B + " .bd-ko-ds .bd-kvt{grid-template-columns:minmax(0,2fr) minmax(0,1fr);grid-template-areas:'trai ngs';height:64px;gap:0 10px;align-items:stretch;padding:6px 8px 6px 10px;overflow:hidden}" +
         B + " .bd-kvt-trai{grid-area:trai;min-width:0;display:flex;flex-direction:column;justify-content:center}" +
         B + " .bd-ko-ds .bd-kvt-ten{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:18px;white-space:normal}" +
         B + " .bd-kvt-ten .bd-kvt-but{width:20px;height:20px;margin-left:2px}" + B + " .bd-kvt-ql{color:var(--muted);margin-left:6px;font-size:11.5px}",
-      B + " .bd-ko-ds .bd-kvt-tt{grid-area:tt;justify-self:end;align-self:start;line-height:18px}" +
-        B + " .bd-ko-ds .bd-kvt-ngs{grid-area:ngs;justify-self:end;align-self:end;gap:2px}" + B + " .bd-kvt-qlb{font-size:11.5px;margin-right:6px}" +
+      /* 07/11 user «bỏ trạng thái chưa giao / đã giao… ở mục con; ảnh người làm căn phải + giữa khung, to ×1,5» */
+      B + " .bd-ko-ds .bd-kvt-tt{display:none}" +
+        B + " .bd-ko-ds .bd-kvt-ngs{grid-area:ngs;justify-self:end;align-self:center;gap:2px}" + B + " .bd-ko-ds .bd-kav-1.nho .bd-av{width:33px;height:33px;font-size:14px}" +
+        B + " .bd-ko-ds .bd-kav-1.nho .bd-av svg{width:19px;height:19px}" + B + " .bd-kvt-qlb{font-size:11.5px;margin-right:6px}" +
         "@media (hover:hover){" + B + " .bd-kvt-qlb{opacity:0}" + B + " .bd-kvt:hover .bd-kvt-qlb," + B + " .bd-kvt:focus-within .bd-kvt-qlb{opacity:1}}",
       B + " .bd-ko-tt{display:flex;flex-wrap:wrap;gap:4px 16px;padding-top:6px;border-top:1px solid var(--ad-chia,var(--border));font-size:12.5px}" + B + " .bd-ko-tt .bd-do{color:var(--bad)}",
       /* 06/11 lượt 12 — đầu kho 3 dòng căn trái «Tên kho / Quản lý / N hạng mục | x/y đã hoàn thành» (dùng chung bảng, thẻ kho điện thoại, Theo người) */
@@ -674,7 +682,7 @@
         B + " .bd-than{padding:10px 12px 12px}" +
         /* điện thoại: tên xuống tối đa 2 dòng thay vì cắt «Đèn LED Nhà …»; ngày cuộn ngang dưới cột tên khoá */
         B + " .bd-hm td.vt{min-width:118px;max-width:132px;padding-right:4px;white-space:normal}" +
-        B + " .bd-hm.kl td.vt{min-width:calc(118px + 2cm);max-width:calc(132px + 2cm)}" + B + " .bd-kinh{width:46px}" + B + " .bd-kinh-o .bd-o{height:min(22px,calc(100% - 6px))}" +
+        B + " .bd-hm.kl td.vt{width:1%;min-width:118px;max-width:132px}"   /* 07/11 «điện thoại chưa sát tên» */ + B + " .bd-kinh{width:46px}" + B + " .bd-kinh-o .bd-o{height:min(22px,calc(100% - 6px))}" +
         B + " .bd-hm td.vt .bd-ten{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:16px;white-space:normal}" +
         B + " .bd-hm tr.gd td.vt{font-size:12.5px;padding:4px 6px 4px 4px}" + B + " .bd-hm tr.vtr.con td.vt{padding-left:20px;font-size:12px}" +
         B + " .bd-hm tr.vtr.con td.vt::before," + B + " .bd-hm tr.vtr.con td.vt::after{left:8px}" + B + " .bd-hm tr.vtr.con td.vt::after{width:7px}" +
@@ -1154,7 +1162,7 @@
             esc(y["REQUEST ID"]) + " ↗</a>" + '<span class="hp-hint">lịch ' + esc(y["SCHEDULE ID"] || "?") + " · " + kh.length + " khung ảnh</span></div>" : "") +
         (lech ? dong("Cảnh báo", badge("Khung ảnh của lịch là khung quạt — không khớp thiết bị, cần sửa lịch planogram", "var(--warn)")) : "") +
         dong("Trạng thái", badge(CHU_O[l] || y["TRẠNG THÁI"], MAU_O[l] || "var(--muted)") + (TT_YC[st] ? " " + badge(TT_YC[st], "var(--info)") : "") +
-          (tsCuaYc(y) ? " " + badge("Định kỳ " + nhanTs(tsCuaYc(y)), "var(--accent)") : "")) +
+          "") +   /* 07/11 tần suất đã ở chip cạnh Đóng — không lặp */
         (y["NGƯỜI LÀM"] ? dong(xong(st) ? "Người báo cáo" : st === 2 ? "Đang làm" : "Đã mở, chưa nộp", nguoiLam(y) +
           (y["LÚC LÀM"] ? ' <span class="hp-hint">lúc ' + esc(String(y["LÚC LÀM"]).slice(11, 16) + " " + dm(String(y["LÚC LÀM"]).slice(0, 10))) + "</span>" : "")) : "") +
         dong("Ảnh báo cáo (" + anh.length + "/" + kh.length + ")", '<div class="bd-anh-dau">' + (suaBen(b) && y["SCHEDULE ID"] ? butSua("khung", S.suaKhung === y["SCHEDULE ID"],
@@ -1251,8 +1259,10 @@
       if (su) su.remove(); var dt0 = tam.querySelector("details"); if (dt0) dt0.setAttribute("open", "");
       muc.push({ k: "ts", n: "Tài sản tại vị trí", t: ((su && su.querySelector(".hp-vttsn")) || { textContent: tt0 }).textContent.trim(), than: tam.innerHTML }); }
     var mo = S.moTen === b ? "ten" : S.chipMo; if (!muc.some(function (m) { return m.k === mo; })) mo = "";
-    var chips = '<div class="bd-chips" role="group" aria-label="Thông tin vị trí">' + muc.map(function (m) {
-      return '<button type="button" class="bd-lk bd-chip' + (m.k === mo ? " mo" : "") + '" data-chip="' + esc(m.k) + '" aria-expanded="' + (m.k === mo) + '"><span class="bd-chip-n">' + m.n +
+    /* 07/11 user «tuần ngày tháng bên phải, các mục còn lại đối xứng bên trái» */
+    var coLam = muc.some(function (m) { return /^lam\|/.test(m.k); });
+    var chips = '<div class="bd-chips' + (coLam ? " hai-ben" : "") + '" role="group" aria-label="Thông tin vị trí">' + muc.map(function (m) {
+      return '<button type="button" class="bd-lk bd-chip' + (/^lam\|/.test(m.k) ? " phai" : "") + (m.k === mo ? " mo" : "") + '" data-chip="' + esc(m.k) + '" aria-expanded="' + (m.k === mo) + '"><span class="bd-chip-n">' + m.n +
         '</span><span class="bd-chip-t">' + m.t + '</span><i class="bd-chip-mui" aria-hidden="true"></i></button>'; }).join("") + "</div>" +
       (mo ? '<div class="bd-chip-than" data-chip-than="' + esc(mo) + '">' + muc.filter(function (m) { return m.k === mo; })[0].than + "</div>" : "");
     return '<div class="bd-ben">' + veDai(b, d) + veNgay(b, v, d) + '<div class="hp-vtduo">' + vePhanCong(b) + cardBc + "</div>" + chips + "</div>";
@@ -1313,7 +1323,7 @@
       var gn = nhom === "VẬN HÀNH" ? S.giaoNay[b] : null;   // 31/10: task hôm nay (bd-giao-ngay) hoặc chữ đỏ khi chưa ai trong ô chấm công
       var nay = !gn ? "" : gn["TASK ID"] ? '<span class="bd-phu"><a href="https://work.hasaki.vn/tasks?task_id=' + encodeURIComponent(gn["TASK ID"]) + '" target="_blank" rel="noopener">Task hôm nay ↗</a></span>'
         : /^(Chờ người có chấm công|Không ai trong ca)$/.test(gn["TRẠNG THÁI"]) ? '<span class="bd-phu bd-do">' + esc(gn["TRẠNG THÁI"]) + "</span>" : "";
-      var khi = '<span class="bd-pc-khi"><b>' + esc(Object.keys(n.ts).join(" · ")) + "</b>" + nay + (k ? '<span class="bd-phu">kỳ tới ' + esc(k["KỲ TỚI"] || "—") + "</span>" +
+      var khi = '<span class="bd-pc-khi">' + nay +   /* 07/11 user: tần suất đã lên chip cạnh Đóng — không lặp ở đây */ (k ? '<span class="bd-phu">kỳ tới ' + esc(k["KỲ TỚI"] || "—") + "</span>" +
           (k["TASK ID"] && !/Đã xoá/.test(k["TRẠNG THÁI"]) ?
             '<span class="bd-phu"><a href="https://work.hasaki.vn/tasks?task_id=' + encodeURIComponent(k["TASK ID"]) + '" target="_blank" rel="noopener">Task ' + esc(k["TASK ID"]) + " ↗</a></span>" : "") : "") + "</span>";
       /* 07/11 user «các mục này ngoài mục con bố trí thế nào mà thanh bên hiện như vậy»: cùng khuôn mục con — người = ảnh (VH tròn · KT vuông) + tên,
@@ -1589,11 +1599,11 @@
             "</span></span>" +
           '<span class="bd-kvt-tt">' + esc(nl) + "</span>" +
           '<span class="bd-kvt-ngs">' +   /* 06/11 lượt 10 user «xoá mục QL ở mục con — không cần thiết» */
-            '<span class="bd-kav">' + (t.ng.length ? t.ng.map(function (p) { return anhSo1({ ten: p.ten, vao: p.vao }, 1, t.kt); }).join("") : anhChua(null, 1, t.kt)) + "</span>" +
             (sua && t.doi ? '<button type="button" class="bd-lk bd-doi1 bd-kvt-doi' + anSua(t) + '" data-bin="' + esc(t.b) + '" title="' + (t.ng.length ? "Đổi người" : "Phân công") + '" aria-label="' + (t.ng.length ? "Đổi người " : "Phân công ") +
               esc(t.ten) + '">' + SVG_DOI + "</button>" : "") +
             (sua && t.doi && t.khu ? '<button type="button" class="bd-lk bd-ka bd-kvt-ck' + anSua(t) + '" data-act="ckvt" data-bin="' + esc(t.b) + '" data-khu="' + esc(t.khu) + '" data-hmuc="' + esc(t.hm) +
-              '" title="Chuyển sang ' + (t.khu === "SHOP" ? "WH" : "SHOP") + '" aria-label="Chuyển ' + esc(t.ten) + " sang " + (t.khu === "SHOP" ? "WH" : "SHOP") + '">' + SVG_CK + "</button>" : "") + "</span>" +
+              '" title="Chuyển sang ' + (t.khu === "SHOP" ? "WH" : "SHOP") + '" aria-label="Chuyển ' + esc(t.ten) + " sang " + (t.khu === "SHOP" ? "WH" : "SHOP") + '">' + SVG_CK + "</button>" : "") +
+            '<span class="bd-kav">' + (t.ng.length ? t.ng.map(function (p) { return anhSo1({ ten: p.ten, vao: p.vao }, 1, t.kt); }).join("") : anhChua(null, 1, t.kt)) + "</span>" + "</span>" +
             (sua && t.doi ? '<button type="button" class="bd-lk bd-ka bd-kvt-x' + anSua(t) + (S.xacBo === "vt|" + t.b ? " xn" : "") + '" data-act="bovt" data-bin="' + esc(t.b) +
               '" data-hmuc="' + esc(t.hm) + '" title="' +
               (S.xacBo === "vt|" + t.b ? "Bấm lần nữa để bỏ " : "Bỏ ") + esc(t.ten) + ' khỏi Việc hôm nay" aria-label="Bỏ ' + esc(t.ten) + '">' + SVG_X_N + "</button>" : "") + "</div>";
@@ -1704,7 +1714,8 @@
           var dsN = thuN.map(function (kk) { return mN[kk]; }).sort(function (a0, c) { return c.n - a0.n || a0.ten.localeCompare(c.ten, "vi"); });
           if (chuaN.length) dsN.push({ chua: true, ten: CHUA_GIAO, n: chuaN.reduce(function (s0, t) { return s0 + (t.nyc || 1); }, 0), ds: chuaN });
           ds1 = dsN.map(function (p) {
-            var dau = soTruoc(xOf(p.ds), p.ds.length) + '<span class="bd-kav">' + (p.chua ? anhChua(p.n, 0, false, ltGop(p.ds.map(ltViec))) : anhSo1({ ten: p.ten, vao: p.vao, n: p.n, lt: ltGop(p.ds.map(ltViec)) })) + "</span>" +
+            var chiKt = function (ds) { return ds.length && ds.every(function (t) { return t.kt; }); };   // 07/11 người chỉ làm việc bảo trì = ảnh vuông
+            var dau = soTruoc(xOf(p.ds), p.ds.length) + '<span class="bd-kav">' + (p.chua ? anhChua(p.n, 0, false, ltGop(p.ds.map(ltViec))) : anhSo1({ ten: p.ten, vao: p.vao, n: p.n, lt: ltGop(p.ds.map(ltViec)) }, 0, chiKt(p.ds))) + "</span>" +
               '<span class="bd-pn-ten' + (p.chua ? " bd-do" : "") + '" title="' + esc(p.ten) + '">' + o(p.chua ? "Chưa giao" : String(p.ten).split(" ").slice(-2).join(" ")) + "</span>" +
               '<span class="bd-kg-fl"></span>';
             return gap1("ng|" + p.ten, dau, function () { return gomHm(p.ds).map(function (g) {
