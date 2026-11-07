@@ -515,17 +515,31 @@
       "@media not all and (max-width:768px){" + B + " .bd-kbang-w{overflow:visible}" + B + " .bd-kbang .bd-ko.mo .bd-ko-h{margin-bottom:-8px}" +   /* ô cha giữ đúng cỡ lúc đóng (trước +6px đẩy hàng dưới) */
         /* 07/11 (clip 17.30.31 «lỗi và không tiện»): ngăn chạm xuống Lịch bị cột ghim HÔM NAY / kính lúp (z 6–7) đè lên ⇒ khung Việc hôm nay
            nổi lên trên khung Lịch khi đang mở ngăn; ngăn z 30 */
-        B + " #bdNay:has(.bd-kbang td.bd-ko>.bd-ko-ds){position:relative;z-index:20}" +
-        B + " .bd-kbang td.bd-ko>.bd-ko-ds{position:absolute;left:-1px;right:-1px;top:100%;z-index:30;margin:0;padding:6px 12px 10px;background:var(--surface);" +
-          "border:1px solid var(--ad-chia,var(--border));border-top:0;border-radius:0 0 8px 8px;box-shadow:0 6px 16px rgba(0,0,0,.08),0 3px 6px -4px rgba(0,0,0,.12),0 9px 28px 8px rgba(0,0,0,.05);" +
-          "max-height:min(60vh,560px);overflow:auto;overscroll-behavior:contain}" +
-        B + " .bd-kbang td.bd-ko>.bd-ko-ds.vua-mo{animation:bdKeoRa .3s var(--ez-apple,ease) both}" + B + " .bd-kbang td.bd-ko>.bd-ko-ds.vua-mo>.bd-kvt{animation:bdKeoCon .3s var(--ez-apple,ease) both}" +
-        B + " .bd-kbang td.bd-ko>.bd-ko-ds.dang-dong{animation:bdKeoVao .22s cubic-bezier(.4,0,1,1) both;pointer-events:none}" +
-        B + " .bd-kbang td.bd-ko>.bd-ko-ds.dang-dong>.bd-kvt{animation:bdKeoCon .22s cubic-bezier(.4,0,1,1) reverse both}}" +
+        /* 07/11 (3) «đồng bộ cả 3 chế độ»: cùng ngăn nổi cho ô bảng Theo kho VÀ thẻ cấp 1 lưới Theo hạng mục / Theo người (N = vỏ ngăn) */
+        B + " #bdNay:has(:is(.bd-kbang td.bd-ko,.bd-pl>.bd-pn)>.bd-ko-ds){position:relative;z-index:20}" +
+        B + " .bd-pl>.bd-pn.mo{overflow:visible;position:relative;z-index:2;border-radius:8px 8px 0 0}" +
+        B + " :is(.bd-kbang td.bd-ko,.bd-pl>.bd-pn)>.bd-ko-ds{position:absolute;left:-1px;right:-1px;top:100%;z-index:30;margin:0;padding:6px 12px 10px;background:var(--surface);" +
+          "border:1px solid var(--lk,var(--ad-chia,var(--border)));border-top:0;border-radius:0 0 8px 8px;box-shadow:0 6px 16px rgba(0,0,0,.08),0 3px 6px -4px rgba(0,0,0,.12),0 9px 28px 8px rgba(0,0,0,.05);" +
+          "max-height:min(60vh,560px);overflow:auto;overscroll-behavior:contain}" + B + " .bd-kbang td.bd-ko>.bd-ko-ds{left:0;right:0}" +
+        /* 07/11 (2) user «mục cha và mục con phải có hiệu ứng liên kết để biết ngăn thuộc mục cha nào»: ô cha đang mở + ngăn = MỘT khối
+           (ô cha nền nhấn nhạt, viền nhấn 3 cạnh trên/trái/phải nối liền viền ngăn — như thẻ tab + ngăn); viền + nền sáng dần khi mở, tắt dần khi đóng */
+        B + " :is(.bd-kbang td.bd-ko,.bd-pl>.bd-pn).mo{--lk:color-mix(in srgb,var(--accent) 45%,transparent);--lk-nen:color-mix(in srgb,var(--accent) 6%,var(--surface))}" +
+        B + " .bd-kbang td.bd-ko.mo{background:var(--lk-nen);box-shadow:inset 1px 0 0 var(--lk),inset -1px 0 0 var(--lk),inset 0 1px 0 var(--lk)}" +
+        B + " .bd-pl>.bd-pn.mo{border-color:var(--lk)}" + B + " .bd-pl>.bd-pn.mo>.bd-pn-h{background:var(--lk-nen)}" +
+        B + " .bd-kbang td.bd-ko:has(>.bd-ko-ds.vua-mo)," + B + " .bd-pl>.bd-pn:has(>.bd-ko-ds.vua-mo)>.bd-pn-h{animation:bdLienKet .3s var(--ez-apple,ease) both}" +
+        B + " .bd-pl>.bd-pn:has(>.bd-ko-ds.vua-mo){animation:bdLienVien .3s var(--ez-apple,ease) both}" +
+        B + " .bd-kbang td.bd-ko:has(>.bd-ko-ds.dang-dong)," + B + " .bd-pl>.bd-pn:has(>.bd-ko-ds.dang-dong)>.bd-pn-h{animation:bdLienKetRa .22s cubic-bezier(.4,0,1,1) both}" +
+        B + " .bd-pl>.bd-pn:has(>.bd-ko-ds.dang-dong){animation:bdLienVienRa .22s cubic-bezier(.4,0,1,1) both}" +
+        B + " :is(.bd-kbang td.bd-ko,.bd-pl>.bd-pn)>.bd-ko-ds.vua-mo{animation:bdKeoRa .3s var(--ez-apple,ease) both}" + B + " :is(.bd-kbang td.bd-ko,.bd-pl>.bd-pn)>.bd-ko-ds.vua-mo>*{animation:bdKeoCon .3s var(--ez-apple,ease) both}" +
+        B + " :is(.bd-kbang td.bd-ko,.bd-pl>.bd-pn)>.bd-ko-ds.dang-dong{animation:bdKeoVao .22s cubic-bezier(.4,0,1,1) both;pointer-events:none}" +
+        B + " :is(.bd-kbang td.bd-ko,.bd-pl>.bd-pn)>.bd-ko-ds.dang-dong>*{animation:bdKeoCon .22s cubic-bezier(.4,0,1,1) reverse both}}" +
       "@keyframes bdKeoRa{from{clip-path:inset(0 -24px 100% -24px)}to{clip-path:inset(0 -24px -40px -24px)}}" +
       "@keyframes bdKeoVao{from{clip-path:inset(0 -24px -40px -24px)}to{clip-path:inset(0 -24px 100% -24px)}}" +
       "@keyframes bdKeoCon{from{transform:translateY(-18px)}to{transform:none}}" +
-      "@media(prefers-reduced-motion:reduce){" + B + " .bd-kbang td.bd-ko>.bd-ko-ds," + B + " .bd-kbang td.bd-ko>.bd-ko-ds>.bd-kvt{animation:none!important}}",
+      "@keyframes bdLienKet{from{background-color:var(--surface);box-shadow:none}}@keyframes bdLienKetRa{to{background-color:var(--surface);box-shadow:none}}" +
+      "@keyframes bdLienVien{from{border-color:var(--ad-chia,var(--border))}}@keyframes bdLienVienRa{to{border-color:var(--ad-chia,var(--border))}}" +
+      "@media(prefers-reduced-motion:reduce){" + B + " :is(.bd-kbang td.bd-ko,.bd-pl>.bd-pn)," + B + " :is(.bd-kbang td.bd-ko,.bd-pl>.bd-pn)>.bd-pn-h," + B + " :is(.bd-kbang td.bd-ko,.bd-pl>.bd-pn)>.bd-ko-ds," +
+        B + " :is(.bd-kbang td.bd-ko,.bd-pl>.bd-pn)>.bd-ko-ds>*{animation:none!important}}",
       B + " .bd-ko-tt{display:flex;flex-wrap:wrap;gap:4px 16px;padding-top:6px;border-top:1px solid var(--ad-chia,var(--border));font-size:12.5px}" + B + " .bd-ko-tt .bd-do{color:var(--bad)}",
       /* 06/11 lượt 12 — đầu kho 3 dòng căn trái «Tên kho / Quản lý / N hạng mục | x/y đã hoàn thành» (dùng chung bảng, thẻ kho điện thoại, Theo người) */
       B + " .bd-kd{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-width:0}" + B + " .bd-kd-t{font-size:15.5px;font-weight:700;line-height:22px;color:var(--accent);white-space:normal}" +
@@ -1335,6 +1349,10 @@
   function nguoiVt(b, nhom) {
     var cd = cheDoCua(khoaGiao(b, nhom)), gy = goiY(b, nhom);
     if (cd.v.indexOf("chi-dinh") === 0) return { ten: cd.chiDinh, nguon: "Chỉ định" };
+    /* 07/11 user «mục con là tamlc mà thanh bên Phụ trách lại là Lâm và Nguyễn Kiệm»: nhóm Bảo trì / KT do bd-task-ky phân giải người nhận
+       (Điều phối KT cơ điện — không theo ô g-sheet) ⇒ Phụ trách đọc CÙNG nguồn với mục con: cột Người nhận của tab BAO-DUONG-KY */
+    if (nhom !== "VẬN HÀNH") { var kyN = (S.ky || []).filter(function (k) { return k["MÃ VỊ TRÍ"] === b && nhomCua(k["NHÓM THỰC HIỆN"]) === nhom && k["NGƯỜI NHẬN"]; })[0];
+      if (kyN) return { ten: String(kyN["NGƯỜI NHẬN"]).split(/\s*,\s*/).map(function (t) { return t.replace(/\s*\(\d+\)\s*$/, "").trim(); }).filter(Boolean).join(", "), nguon: kyN["NGUỒN NGƯỜI NHẬN"] || "" }; }
     var chon = cd.v.split("|")[1] || "phan-cong", thu = [chon].concat(["phan-cong", "work", "lan-truoc"].filter(function (x) { return x !== chon; }));
     for (var i = 0; i < thu.length; i++) if (gy[thu[i]]) return { ten: gy[thu[i]], nguon: TEN_NGUON[thu[i]] };
     return { ten: "", nguon: "" };
@@ -1918,8 +1936,11 @@
     var act = el.getAttribute("data-act"), khu = el.getAttribute("data-khu") || "", hm = el.getAttribute("data-hmuc") || "", bin = el.getAttribute("data-bin") || "";
     if (act === "vt") { var k = el.getAttribute("data-o");
       /* 07/11 ngăn kéo nổi (máy tính): bấm lần 2 = đẩy ngăn vào (bdKeoVao) XONG mới vẽ lại; mở ô khác = gập ô đang mở (mỗi lúc 1 ngăn — ngăn nổi đè hàng dưới) */
-      var noi = !laDT() && el.closest(".bd-kbang");
-      if (noi && S.moO[k]) { if (S.dangDong) return; var td0 = el.closest("td"), ds0 = td0 && td0.querySelector(".bd-ko-ds");
+      /* 07/11 user «đồng bộ hiệu ứng / thiết kế cho cả Theo kho / Theo người / Theo hạng mục»: ngăn nổi = ô bảng kho HOẶC thẻ cấp 1 của lưới thẻ (.bd-pl>.bd-pn);
+         cấp trong (hạng mục trong ngăn của 1 người) vẫn mở tại chỗ bên trong ngăn */
+      var vo = el.closest(".bd-kbang") ? el.closest("td.bd-ko") : (el.classList.contains("bd-pn-h") && el.parentNode.parentNode && el.parentNode.parentNode.classList.contains("bd-pl") ? el.parentNode : null);
+      var noi = !laDT() && !!vo;
+      if (noi && S.moO[k]) { if (S.dangDong) return; var ds0 = vo.querySelector(":scope>.bd-ko-ds");
         var giam = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         if (ds0 && !giam) { S.dangDong = k; ds0.classList.remove("vua-mo"); ds0.classList.add("dang-dong");
           var xongDong = function () { if (S.dangDong !== k) return; S.dangDong = ""; S.moO[k] = false; S.muiDoi = k; veLaiNay(); S.muiDoi = ""; };
@@ -2495,9 +2516,9 @@
     /* 07/11 (clip «không tiện»): ngăn kéo nổi đè hàng dưới ⇒ bấm RA NGOÀI ngăn hoặc Esc cũng đẩy ngăn vào (như bấm lần 2).
        Bỏ qua: bấm trong ô đang mở, bấm đầu ô khác (bộ bắt của bảng tự đổi ngăn), hộp / thanh bên đang mở, phần tử vừa bị vẽ lại. */
     if (!S.ganNgoai) { S.ganNgoai = 1;
-      var dongNgan = function () { var h = document.querySelector('#bdNay .bd-kbang td.bd-ko.mo .bd-ko-h[aria-expanded="true"]'); if (h && !laDT()) h.click(); };
+      var dongNgan = function () { var h = document.querySelector('#bdNay .bd-kbang td.bd-ko.mo .bd-ko-h[aria-expanded="true"], #bdNay .bd-pl>.bd-pn.mo>.bd-pn-h[aria-expanded="true"]'); if (h && !laDT()) h.click(); };
       document.addEventListener("click", function (e) { var t = e.target;
-        if (!document.contains(t) || t.closest(".bd-kbang td.bd-ko.mo, .bd-kbang .bd-ko-h, .hp-modal.show, [role=dialog], .hx-ben, .bd-ben, .cs-list")) return;
+        if (!document.contains(t) || t.closest(".bd-kbang td.bd-ko.mo, .bd-kbang .bd-ko-h, .bd-pl>.bd-pn.mo, .bd-pn-h, .hp-modal.show, [role=dialog], .hx-ben, .bd-ben, .cs-list")) return;
         dongNgan(); });
       document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !document.querySelector(".hp-modal.show, .hx-ben.show, .bd-ben.show")) dongNgan(); }); }
     S.segTr = datTr(khung.querySelector(".bd-seg"), S.segTr) || S.segTr; xoayMui(khung);
