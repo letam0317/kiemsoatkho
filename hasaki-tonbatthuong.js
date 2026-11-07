@@ -211,7 +211,36 @@ var CSS = [
 "  #pane-htonbat .ht-whbar>*{flex:0 0 auto;}",
 "}",
 /* mobile: modal tràn màn hình, touch ≥44px */
-"@media(max-width:768px){.ht-modal{padding:0;align-items:stretch;justify-content:stretch;}.ht-modalbox{width:100vw!important;max-height:100vh!important;height:100vh;border-radius:0;}.ht-mclose{font-size:30px;min-width:48px;min-height:48px;}.ht-mfilters input{min-height:44px;}#pane-htonbat .ht-whtab{min-height:44px;}#htReload{min-height:44px;}}",
+"@media(max-width:768px){.ht-modal{padding:0;align-items:stretch;justify-content:stretch;}.ht-modalbox{width:100vw!important;max-height:100vh!important;" +
+  "height:100vh;border-radius:0;}.ht-mclose{font-size:30px;min-width:48px;min-height:48px;}.ht-mfilters input{min-height:44px;}#pane-htonbat .ht-whtab{min-height:44px;" +
+  "}#htReload{min-height:44px;}}",,
+/* 07/11 user (ảnh screenshot-1794019624529 khung «Bất thường»: «hiển thị gọn lại luôn đi» + «3 khung: … / Tồn kho bất thường»):
+   ① đầu khung = tên «Tồn kho bất thường», cùng số đo đầu khung .panel-head của 2 khung Kiểm kê (40px · điện thoại 38px, lề 16/12/8);
+   ② ô lọc kho đã bỏ từ 12/10 nhưng vỏ trống vẫn chừa 16px ⇒ trống thì ẩn;
+   ③ 7 ô số: 1 hàng trên máy tính, 4 cột ở 769–1024, 3 cột trên điện thoại (trước 2 cột tự thương lượng ⇒ vạch ngăn lệch, 4 hàng ~720px);
+      nhãn/số/dòng phụ thẳng hàng giữa các ô (subgrid như .abntiles Factory); số + đơn vị không xuống dòng. */
+"html body #pane-htonbat:not(.hidden){padding:0 16px 4px}",
+"html body #pane-htonbat:not(.hidden)::before{content:\"Tồn kho bất thường\";display:flex;align-items:center;height:40px;box-sizing:border-box;margin:0 -16px;" +
+  "padding:0 16px;font-size:14px;line-height:20px;font-weight:600;white-space:nowrap;overflow:hidden}",
+"#pane-htonbat .ht-locbar:empty{display:none}",
+"html body #pane-htonbat #htContent .ht-tiles{display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr));gap:0!important;margin:12px 0!important}",
+"html body #pane-htonbat #htContent .ht-tiles > .ht-tile{grid-row:span 3;display:grid!important;grid-template-rows:subgrid;row-gap:0;align-content:start;" +
+  "min-width:0;padding:4px 12px!important;border-left:1px solid var(--ad-chia,var(--border))!important}",
+"html body #pane-htonbat #htContent .ht-tiles > .ht-tile:first-child{border-left:0!important;padding-left:0!important}",
+"html body #pane-htonbat #htContent .ht-tile > .l{font-size:12px!important;line-height:18px!important;align-items:flex-start;margin:0 0 2px!important}",
+"html body #pane-htonbat #htContent .ht-tile > .l::before{margin-top:6px}",
+"html body #pane-htonbat #htContent .ht-tile > .k{font-size:20px!important;line-height:28px!important;white-space:nowrap}",
+"html body #pane-htonbat #htContent .ht-tile > .s{margin-top:0!important;line-height:16px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
+"html body #pane-htonbat .ht-grid2{grid-template-columns:minmax(0,1fr)!important}",
+"@media(min-width:769px) and (max-width:1024px){html body #pane-htonbat #htContent .ht-tiles{grid-template-columns:repeat(4,minmax(0,1fr))}html body #pane-htonbat #htContent .ht-tiles > .ht-tile:nth-child(4n+1){border-left:0!important;" +
+  "padding-left:0!important}" +
+  "html body #pane-htonbat #htContent .ht-tiles > .ht-tile:nth-child(n+5){padding-top:8px!important}}",
+"@media(max-width:768px){html body #pane-htonbat:not(.hidden){padding:0 12px 8px}html body #pane-htonbat:not(.hidden)::before{height:38px;margin:0 -12px;padding:0 12px;font-size:13px}",
+"  html body #pane-htonbat #htContent .ht-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}",
+"  html body #pane-htonbat #htContent .ht-tiles > .ht-tile{padding:4px 8px!important}",
+"  html body #pane-htonbat #htContent .ht-tiles > .ht-tile:nth-child(3n+1){border-left:0!important;padding-left:0!important}",
+"  html body #pane-htonbat #htContent .ht-tiles > .ht-tile:nth-child(n+4){padding-top:10px!important}}",
+"@media(max-width:640px){html body #pane-htonbat:not(.hidden){padding:0 8px 8px}html body #pane-htonbat:not(.hidden)::before{margin:0 -8px;padding:0 8px;font-size:11.5px;letter-spacing:-.015em}}"
 ].join("\n");
 
 /* ===== KHUNG HTML ===== */
@@ -424,7 +453,8 @@ function render(){
 
   if (!S.wh && window.tqGhi) window.tqGhi("abn", { n: nSku });   // 13/10 Tổng quan phương án B đọc số này (không tự tải)
   var tiles = '<div class="ht-tile tot" onclick="HTONBAT.openAll()" title="Xem tất cả SKU bất thường">' +
-      '<div class="k">' + nf(nSku) + '</div><div class="l">SKU bất thường' + (typeof tipMuc === "function" ? tipMuc(TIP_TONG) : "") + '</div><div class="s">Product Type = Normal · ' + nf(nWh) + ' kho</div></div>' +
+      /* 07/11: «Product Type = Normal» đã có trong nút i — không lặp */
+      '<div class="k">' + nf(nSku) + '</div><div class="l">SKU bất thường' + (typeof tipMuc === "function" ? tipMuc(TIP_TONG) : "") + '</div><div class="s">' + nf(nWh) + ' kho</div></div>' +
     TYPES.map(function(t){
       return '<div class="ht-tile" style="--cc:' + t.c + '" data-k="' + t.k + '" onclick="HTONBAT.openType(this.getAttribute(\'data-k\'))" title="Xem SKU có ' + t.lb + '">' +
         '<div class="k">' + nf(tot[t.k]) + '</div><div class="l">' + t.lb + '</div><div class="s">' + nf(cnt[t.k]) + ' SKU</div></div>';
@@ -447,19 +477,10 @@ function render(){
       '<span class="ht-track"><span class="ht-fill" data-w="' + wp.toFixed(2) + '">' + segs + '</span></span>' +
       '<span class="ht-rv"><b>' + nf(t) + '</b><small>' + nf(o.n) + ' SKU</small></span></div>';
   }).join("");
-  // Chart 2 — theo loại
-  var maxT = 1; TYPES.forEach(function(t){ maxT = Math.max(maxT, tot[t.k]); });
-  var typeBars = TYPES.map(function(t){
-    var wp = tot[t.k] / maxT * 100;
-    return '<div class="ht-row" data-k="' + t.k + '" onclick="HTONBAT.openType(this.getAttribute(\'data-k\'))" title="Bấm xem SKU có ' + t.lb + '">' +
-      '<span class="ht-rl"><span class="ht-dot" style="background:' + t.c + '"></span>' + t.lb + '</span>' +
-      '<span class="ht-track"><span class="ht-fill" data-w="' + wp.toFixed(2) + '" style="background:' + t.c + '"></span></span>' +
-      '<span class="ht-rv"><b>' + nf(tot[t.k]) + '</b><small>' + nf(cnt[t.k]) + ' SKU</small></span></div>';
-  }).join("");
 
   html += '<div class="ht-grid2 ht-fade">' +
     '<section class="ht-panel"><h2>Theo kho <span class="ht-legend">' + legend + '</span></h2><div class="ht-chart">' + whBars + '</div></section>' +
-    '<section class="ht-panel"><h2>Theo loại</h2><div class="ht-chart">' + typeBars + '</div></section>' +
+    /* 07/11 bỏ «Theo loại»: lặp y nguyên 6 ô số ngay trên (cùng số lượng + số SKU) — luật không lặp thông tin */
   '</div>';
   cont.innerHTML = html;
   requestAnimationFrame(function(){ requestAnimationFrame(function(){
