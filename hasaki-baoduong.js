@@ -513,7 +513,10 @@
       /* 07/11 user «dạng ngăn kéo oke, nhưng xổ mục con ra mà không đẩy các mục cha bên dưới — vẫn cố định các mục cha khác» (mẫu 8, Hieu-ung-mo-dong-muc-con):
          máy tính — khung mục con NỔI ngay dưới ô cha (đè lên hàng dưới, hàng dưới đứng yên); mở = kéo ngăn ra, bấm lần 2 = đẩy ngăn vào rồi mới đóng (xuLyKhu) */
       "@media not all and (max-width:768px){" + B + " .bd-kbang-w{overflow:visible}" + B + " .bd-kbang .bd-ko.mo .bd-ko-h{margin-bottom:-8px}" +   /* ô cha giữ đúng cỡ lúc đóng (trước +6px đẩy hàng dưới) */
-        B + " .bd-kbang td.bd-ko>.bd-ko-ds{position:absolute;left:-1px;right:-1px;top:100%;z-index:6;margin:0;padding:6px 12px 10px;background:var(--surface);" +
+        /* 07/11 (clip 17.30.31 «lỗi và không tiện»): ngăn chạm xuống Lịch bị cột ghim HÔM NAY / kính lúp (z 6–7) đè lên ⇒ khung Việc hôm nay
+           nổi lên trên khung Lịch khi đang mở ngăn; ngăn z 30 */
+        B + " #bdNay:has(.bd-kbang td.bd-ko>.bd-ko-ds){position:relative;z-index:20}" +
+        B + " .bd-kbang td.bd-ko>.bd-ko-ds{position:absolute;left:-1px;right:-1px;top:100%;z-index:30;margin:0;padding:6px 12px 10px;background:var(--surface);" +
           "border:1px solid var(--ad-chia,var(--border));border-top:0;border-radius:0 0 8px 8px;box-shadow:0 6px 16px rgba(0,0,0,.08),0 3px 6px -4px rgba(0,0,0,.12),0 9px 28px 8px rgba(0,0,0,.05);" +
           "max-height:min(60vh,560px);overflow:auto;overscroll-behavior:contain}" +
         B + " .bd-kbang td.bd-ko>.bd-ko-ds.vua-mo{animation:bdKeoRa .3s var(--ez-apple,ease) both}" + B + " .bd-kbang td.bd-ko>.bd-ko-ds.vua-mo>.bd-kvt{animation:bdKeoCon .3s var(--ez-apple,ease) both}" +
@@ -554,6 +557,9 @@
       B + " .bd-chu{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;color:var(--text)}" +
         B + " .bd-chu-it{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:3px 10px;border-radius:999px;border:1px solid var(--border);" +
           "background:var(--surface);font-size:11.5px;font-weight:600;line-height:16px;white-space:nowrap}" + B + " .bd-chu .bd-chu-it i{margin:0;flex:none}" + B + " .bd-chu-it .bd-xam{font-weight:600}",
+      /* 07/11 user «web: chú giải căn phải, ngang hàng Lịch thực hiện»: chú giải nằm trong đầu khung; điện thoại xuống hàng dưới tiêu đề */
+      B + " #bdLich>.panel-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px}" + B + " #bdLich>.panel-head>.bd-chu{margin:0 0 0 auto;justify-content:flex-end;font-weight:400}" +
+      "@media(max-width:768px){" + B + " #bdLich>.panel-head>.bd-chu{margin:0;flex:1 1 100%;justify-content:flex-start}}",
       "@media(max-width:768px){" + B + " .bd-chu{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}" + B + " .bd-chu::-webkit-scrollbar{display:none}" +
         B + " .bd-pk-ds{border:1px solid var(--ad-chia,var(--border));border-radius:8px;overflow:hidden;background:var(--surface)}}",
       B + " .bd-kchan{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;padding:10px 0 0;font-size:13px}" + B + " .bd-kthem{display:flex;flex-wrap:wrap;gap:8px;align-items:center}" +
@@ -1020,15 +1026,15 @@
         '<span class="bd-thuoc-nut"><button type="button" class="hsk-nut phu nho" data-thuoc="-7" aria-label="Lùi 7 ngày">‹ 7 ngày</button>' +
         '<button type="button" class="hsk-nut phu nho" data-thuoc="0">Hôm nay</button>' +
         '<button type="button" class="hsk-nut phu nho" data-thuoc="7" aria-label="Tới 7 ngày">7 ngày ›</button></span></div>' : "";
-    return '<div class="panel bd-panel" id="bdLich"><div class="panel-head"><span class="ph-trai"><span class="ph-td">Lịch thực hiện</span><span class="ph-dem">' +
-      S.thuTu.length + " vị trí · " + (qua.length + 1) + " ngày" + (toi.length ? " + " + toi.length + " ngày tới" : "") + " · " + bc + "/" + tong + " yêu cầu đã báo cáo</span></span>" +
-      "</div>" +
-      '<div class="bd-than"><div class="bd-chu" role="group" aria-label="Chú giải Lịch thực hiện">' + [["x", "Đã báo cáo", ""], ["d", "Đang làm", ""], ["m", "Chưa làm", "Hôm nay / còn hạn"],
+    /* 07/11 user: bỏ dòng đếm «38 vị trí · 60 ngày + 95 ngày tới · 4/487 yêu cầu đã báo cáo»; web: chú giải lên CÙNG HÀNG tiêu đề, căn phải
+       (điện thoại: chú giải xuống hàng dưới tiêu đề, vẫn là dải cuộn ngang như cũ) */
+    return '<div class="panel bd-panel" id="bdLich"><div class="panel-head"><span class="ph-trai"><span class="ph-td">Lịch thực hiện</span></span>' +
+      '<div class="bd-chu" role="group" aria-label="Chú giải Lịch thực hiện">' + [["x", "Đã báo cáo", ""], ["d", "Đang làm", ""], ["m", "Chưa làm", "Hôm nay / còn hạn"],
           ["b", "Không làm", ""], ["co-ls ls-hh", "Hư hỏng", "Có hư hỏng · sửa chữa (chấm góc)"], ["p", "Sắp tới", ""], ["", "Không yêu cầu", "Không có yêu cầu"],
           ["x co-ky\" data-ky=\"3", "Định kỳ", "Số trong ô = 1 · 3 · 6 tháng/lần (T = hàng tuần)"]].map(function (c) {
             return '<span class="bd-chu-it"' + (c[2] ? ' title="' + c[2] + '"' : "") + '><i class="' + c[0] + '"></i>' + c[1] + "</span>"; }).join("") +
-          '<span class="bd-chu-it" title="Tên vị trí màu xám = chưa có lịch planogram"><b class="bd-xam">Tên xám</b>Chưa có lịch</span></div>' +
-      thuoc + (KINH ? '<div class="bd-hm-w">' : "") + '<div class="bd-hm' + (KINH ? " kl" : "") + '" data-khong-khoa><table><thead>' + dau + "</thead><tbody>" + hang + "</tbody></table></div>" +
+          '<span class="bd-chu-it" title="Tên vị trí màu xám = chưa có lịch planogram"><b class="bd-xam">Tên xám</b>Chưa có lịch</span></div></div>' +
+      '<div class="bd-than">' + thuoc + (KINH ? '<div class="bd-hm-w">' : "") + '<div class="bd-hm' + (KINH ? " kl" : "") + '" data-khong-khoa><table><thead>' + dau + "</thead><tbody>" + hang + "</tbody></table></div>" +
       (KINH ? '<div class="bd-kinh" role="group" aria-label="Kính lúp ngày"><div class="bd-kinh-dau"></div><div class="bd-kinh-ds"></div></div></div>' : "") + "</div></div>";
   }
   /* sau mỗi lần vẽ lưới: đặt chỗ ghim cột hôm nay (= bề rộng cột tên), cuộn dải về NGÀY MAI (hoặc chỗ cũ khi chỉ gập/mở), nối thước ↔ cuộn */
@@ -1178,8 +1184,10 @@
     if (S.chonKt === "1") { ds = []; if (!ks.length) ks = S.ky.filter(function (k) { return k["MÃ VỊ TRÍ"] === b && k["KỲ HIỆN TẠI"] && nhomCua(k["NHÓM THỰC HIỆN"]) !== "VẬN HÀNH"; }).slice(0, 1); }
     /* task [BD] định kỳ bắt đầu kỳ ngày này (đã gom từ khung Việc theo kỳ cũ vào lưới) */
     var kyHtml = ks.map(function (k) { var l = lopKy(k), tid = /Đã xoá/.test(k["TRẠNG THÁI"]) ? "" : k["TASK ID"];   // task đã xoá: không link
-      return '<div class="bd-ycdau">' + nhanNhom(k["NHÓM THỰC HIỆN"]) +
-          (tid ? '<a href="https://work.hasaki.vn/tasks?task_id=' + encodeURIComponent(tid) + '" target="_blank" rel="noopener">Task ' + esc(tid) + " ↗</a>" : "") + "</div>" +
+      /* 07/11 user «Bảo trì lặp lại — Phụ trách đã ghi Bảo trì»: nhãn nhóm ở đầu khối kỳ chỉ khi ngày đó có từ 2 nhóm (cần phân biệt) */
+      var dau = (ks.length > 1 ? nhanNhom(k["NHÓM THỰC HIỆN"]) : "") +
+          (tid ? '<a href="https://work.hasaki.vn/tasks?task_id=' + encodeURIComponent(tid) + '" target="_blank" rel="noopener">Task ' + esc(tid) + " ↗</a>" : "");
+      return (dau ? '<div class="bd-ycdau">' + dau + "</div>" : "") +
         dong("Trạng thái", badge(/Đã xoá/.test(k["TRẠNG THÁI"]) ? "Chưa có task" : (k["TRẠNG THÁI"] || CHU_O[l]), MAU_O[l] || "var(--muted)") + (k["HẠN"] ? ' <span class="hp-hint">hạn ' + esc(k["HẠN"]) + "</span>" : "")) +
         dong("Người nhận", k["NGƯỜI NHẬN"] ? o(k["NGƯỜI NHẬN"]) : '<span class="bd-do">Chưa giao người</span>') +
         dong("Số đầu việc", esc(k["SỐ ĐẦU VIỆC"] || "—"));
@@ -1696,7 +1704,7 @@
             KHU_DS.map(function (k) { return oKhu(h, k[0]); }).join("") + "</tr>"; }).join("") +
         "</tbody></table></div>" +
         '<div class="bd-kchan">' +
-          (daBo.length && dangSuaK ? '<span class="bd-phu">Đã bỏ: ' + daBo.map(function (h) { return o(tHm(h)) + (sua ? " " + nut("molai2", "Thêm lại", "", h) : ""); }).join(" · ") + "</span>" : "") +
+          /* 07/11 user «Đã bỏ: Máy Nén Khí · Thêm lại — không hiện khi nhấn bút: muốn thêm đã có hộp Thêm» (hộp Thêm chọn lại hạng mục ⇒ bật lại kho đó) */
           (Object.keys(S.boVt || {}).length && dangSuaK ? '<span class="bd-phu">Đã bỏ vị trí: ' + Object.keys(S.boVt).map(function (b0) { var v0 = S.vt[b0] || {};
             return o(String(v0.ten || b0).split("|").pop().trim()) + " " +
               '<button type="button" class="bd-lk bd-ka" data-act="molaivt" data-bin="' + esc(b0) + '" data-hmuc="' + esc(v0.hm || "") + '">Thêm lại</button>'; }).join(" · ") + "</span>" : "") +
@@ -2484,6 +2492,14 @@
   }
   function ganNay() {
     var khung = $id("bdNay"); if (!khung) return;
+    /* 07/11 (clip «không tiện»): ngăn kéo nổi đè hàng dưới ⇒ bấm RA NGOÀI ngăn hoặc Esc cũng đẩy ngăn vào (như bấm lần 2).
+       Bỏ qua: bấm trong ô đang mở, bấm đầu ô khác (bộ bắt của bảng tự đổi ngăn), hộp / thanh bên đang mở, phần tử vừa bị vẽ lại. */
+    if (!S.ganNgoai) { S.ganNgoai = 1;
+      var dongNgan = function () { var h = document.querySelector('#bdNay .bd-kbang td.bd-ko.mo .bd-ko-h[aria-expanded="true"]'); if (h && !laDT()) h.click(); };
+      document.addEventListener("click", function (e) { var t = e.target;
+        if (!document.contains(t) || t.closest(".bd-kbang td.bd-ko.mo, .bd-kbang .bd-ko-h, .hp-modal.show, [role=dialog], .hx-ben, .bd-ben, .cs-list")) return;
+        dongNgan(); });
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !document.querySelector(".hp-modal.show, .hx-ben.show, .bd-ben.show")) dongNgan(); }); }
     S.segTr = datTr(khung.querySelector(".bd-seg"), S.segTr) || S.segTr; xoayMui(khung);
     /* Bộ lọc (khuôn .btn-filter + .filters của thư viện, như Kiểm kê): nút mở/đóng khối lọc; ô chọn enhanceSelect (mở xuống, popIn, ✕) */
     var xoaL = khung.querySelector('[data-bl-xoa="bdNayNut"]'); if (xoaL) xoaL.addEventListener("click", function (e) { e.stopPropagation(); S.locHm = ""; S.locAi = ""; veLaiNay(); });
