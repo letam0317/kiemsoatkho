@@ -456,6 +456,7 @@
         B + " .bd-kav-1.vuong .bd-av{border-radius:6px}" + B + " :is(.bd-kav-1,.bd-pc-ng).vuong .bd-av img{border-radius:6px}" + B + " .bd-kav-1.vuong{border-radius:8px}" + B + " .bd-kav-1.vuong.vang .bd-av{border-radius:6px}" +
         B + " .bd-kav:has(>.bd-kav-kt)," + B + " .bd-pn.bd-ph .bd-kav:has(>.bd-kav-kt){flex:1 1 0;min-width:0;display:flex;align-items:center}"   /* 07/11 vạch | thẳng cột */ +
         B + " .bd-kav>.bd-kav-vh{flex:0 0 66.667%;display:flex;align-items:center;gap:inherit;min-width:0}" +
+        B + " .bd-kav>.bd-kav-vh:has(>:nth-child(4)){gap:0}" + B + " .bd-kav>.bd-kav-vh:has(>:nth-child(4))>.bd-kav-1+.bd-kav-1{margin-left:-8px}" +
         B + " .bd-kav>.bd-kav-kt{flex:1 1 0;display:flex;align-items:center;justify-content:flex-start;gap:inherit;min-width:0;padding-left:4px}" +
         B + " .bd-kav>.bd-kav-vach{flex:none;align-self:stretch;width:1px;margin:4px 0;background:var(--ad-chia,var(--border))}" +
         B + " .bd-kbad.lt-chua{background:var(--muted)}" + B + " .bd-kbad.lt-gan{background:var(--wk-0,var(--muted))}" + B + " .bd-kbad.lt-dg{background:var(--wk-1,var(--info))}" +
@@ -713,6 +714,21 @@
         B + " .bd-kvt{grid-template-columns:auto minmax(0,1fr) auto}" + B +
           " .bd-kh-d{flex-wrap:wrap;row-gap:0}" + B + " .bd-kh-t{white-space:normal}" + B + " .bd-kvt-lk{grid-column:2/-1}" + B + " .bd-ko-h{min-height:44px}}",
       /* 06/11 lượt 11 điện thoại — đi sâu Kho › Hạng mục › Vị trí: thẻ viền --ad-chia bo 8px (khuôn thẻ người Theo người), vùng chạm ≥ 44px */
+      /* 07/11 user «mũi tên mục con đổi thành dạng TIMELINE để biết là con của hạng mục cha»: Lịch — trục dọc màu nhấn chạy thẳng từ mũi tên cha,
+         mỗi vị trí con 1 chấm tròn trên trục, tên con thụt vào SAU tên cha; dòng đang chọn = chấm đặc */
+      B + " .bd-hm tr.vtr.con td.vt{padding-left:34px}" +
+        B + " .bd-hm tr.vtr.con td.vt::before{left:11px;top:0;bottom:0;border-left:2px solid color-mix(in srgb,var(--accent) 40%,transparent)}" +
+        B + " .bd-hm tr.vtr.con.cuoi td.vt::before{bottom:50%}" +
+        B + " .bd-hm tr.vtr.con td.vt::after{left:8px;top:50%;width:8px;height:8px;margin-top:-4px;border:2px solid var(--accent);border-radius:50%;background:var(--surface);box-sizing:border-box}" +
+        B + " .bd-hm tr.vtr.con.on td.vt::after{background:var(--accent)}" +
+        "@media(max-width:768px){" + B + " .bd-hm tr.vtr.con td.vt{padding-left:30px}" + B + " .bd-hm tr.vtr.con td.vt::before{left:9px}" +
+          B + " .bd-hm tr.vtr.con td.vt::after{left:6px;width:8px}" +
+          /* 07/11 user «thu hẹp khung cha/con trên điện thoại — sát chữ / ảnh, chừa lại 10px» */
+          B + " .bd-kdt-hm>.bd-pn>.bd-pn-h{min-height:0;padding:10px}" +
+          B + " .bd-kdt-hm>.bd-pn>.bd-pn-h .bd-kav{padding-top:0;padding-bottom:0}" +
+          B + " .bd-kdt-hm>.bd-pn>.bd-pn-h .bd-kav-1 .bd-av{width:20px;height:20px;font-size:10px}" + B + " .bd-kdt-hm>.bd-pn>.bd-pn-h .bd-kbad{top:-6px;right:-8px;min-width:15px;height:15px;line-height:15px;font-size:9.5px}" +
+          B + " .bd-ko-ds .bd-kvt{height:auto;min-height:0;padding:10px!important}" +
+          B + " .bd-ko-ds .bd-kvt-x{top:2px;right:2px}}",
       "@media(max-width:768px){" + B + " .bd-kdt-khos," + B + " .bd-kdt-ds{display:flex;flex-direction:column;gap:8px}" +
         B + " .bd-kdt-kho{border:1px solid var(--ad-chia,var(--border));border-radius:8px;padding:12px;background:var(--surface);min-height:44px;cursor:pointer}" +
         B + " .bd-kdt-kho:active{background:var(--ad-re,var(--hover))}" + B + " .bd-kdt-kh{display:flex;align-items:center;justify-content:space-between;gap:8px}" +
@@ -1655,9 +1671,8 @@
       var chuaRo = loc.filter(function (t) { return !t.khu; }).length;
       var dangSuaK = sua && KHU_DS.some(function (k) { return S.suaKho[k[0]]; });   // 07/11 user «Đã bỏ … Thêm lại: chỉ hiện khi bấm icon bút»
       than = '<div class="bd-kbang-w"><table class="hp-mtbl bd-kbang"><thead><tr><th scope="col" class="bd-kh-hm">Hạng mục</th>' + dauKhu + "</tr></thead><tbody>" +
-        hienHm.map(function (h) { var n = KHU_DS.reduce(function (s0, k) { return s0 + ((tatVt[h] || {})[k[0]] || []).length; }, 0), ro = ((tatVt[h] || {})["?"] || []).length;
-          return '<tr><th scope="row" class="bd-kh-hm"><span class="bd-kh-ten">' + o(tHm(h)) + '</span><span class="bd-kh-n">' + n + " vị trí" +
-            (ro ? ' <span class="bd-kh-ro" title="' + ro + ' vị trí chưa rõ kho — chưa có lịch planogram">⚠ ' + ro + "</span>" : "") + "</span></th>" +
+        hienHm.map(function (h) {
+          return '<tr><th scope="row" class="bd-kh-hm"><span class="bd-kh-ten">' + o(tHm(h)) + "</span></th>" +   // 07/11 user bỏ «n vị trí ⚠ n»
             KHU_DS.map(function (k) { return oKhu(h, k[0]); }).join("") + "</tr>"; }).join("") +
         "</tbody></table></div>" +
         '<div class="bd-kchan">' +
