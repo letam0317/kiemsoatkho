@@ -63,13 +63,29 @@ var PAL = ["#f59e0b", "#8b5cf6", "#ef4444", "#10b981", "#ec4899", "#6366f1", "#0
 var NHOM_TEN = { PL: "Phụ liệu", NVL: "Nguyên liệu", KHAC: "Nhóm khác", ALL: "chung" };
 
 /* ===== STATE ===== */
-var S = { ok: false, data: { sku: [], loc: [] }, wh: "", cdate: null, plan: null, id: "", src: "", req: "", maLoai: "id", st: "", lastAt: 0, tsData: 0 };
+var S = { ok: false, data: { sku: [], loc: [] }, lastAt: 0, tsData: 0 };
+/* 07/11 user «mỗi khung đều có bộ lọc riêng của khung đó — áp dụng khi lọc mỗi khung đó»: điều kiện lọc tách theo khung
+   (F.sku = khung Kiểm kê theo SKU, F.loc = khung Kiểm kê theo mã vị trí) — lọc khung này không đổi số khung kia. */
+function locTrong(){ return { wh: "", st: "", id: "", src: "", req: "", maLoai: "id", cdate: null, plan: null }; }
+var F = { sku: locTrong(), loc: locTrong() };
+function coLoc(kind){ var f = F[kind]; return !!(f.wh || f.st || f.id || f.src || f.req || f.cdate || f.plan); }
 var MA_LOAI = { id: "ID", src: "Source code", req: "Request code" };
-function oMaHtml(){
-  var v = S[S.maLoai] || "";
-  return '<div class="hk-ma"><span class="lbl">Tìm theo mã</span><div class="hk-ma-o"><select id="hkMaLoai" aria-label="Loại mã">' +
-    Object.keys(MA_LOAI).map(function(k){ return '<option value="' + k + '"' + (S.maLoai === k ? " selected" : "") + '>' + MA_LOAI[k] + '</option>'; }).join("") +
-    '</select><input type="search" id="hkMaInp" autocomplete="off" placeholder="Nhập ' + MA_LOAI[S.maLoai] + '…" value="' + esc(v) + '"></div></div>';
+function oMaHtml(kind){
+  var f = F[kind], v = f[f.maLoai] || "";
+  return '<div class="hk-ma"><span class="lbl">Tìm theo mã</span><div class="hk-ma-o"><select id="hkMaLoai-' + kind + '" aria-label="Loại mã">' +
+    Object.keys(MA_LOAI).map(function(k){ return '<option value="' + k + '"' + (f.maLoai === k ? " selected" : "") + '>' + MA_LOAI[k] + '</option>'; }).join("") +
+    '</select><input type="search" id="hkMaInp-' + kind + '" autocomplete="off" placeholder="Nhập ' + MA_LOAI[f.maLoai] + '…" value="' + esc(v) + '"></div></div>';
+}
+/* Khối ô lọc của 1 khung (khuôn thư viện .filters ngay dưới .panel-head) — Kho · Trạng thái · Tìm theo mã · Ngày kiểm · Ngày kế hoạch */
+function oLocHtml(kind){
+  return '<div class="filters collapsed hk-loc5" id="hkWhBar-' + kind + '" data-mb-rangcua="luoi-1-cot-gap-mac-dinh">' +
+    '<label><span class="lbl">Kho</span><select id="hkWhSel-' + kind + '"></select></label>' +
+    '<label><span class="lbl">Trạng thái</span><select id="hkStSel-' + kind + '"></select></label>' + oMaHtml(kind) +
+    '<div class="date-filter" id="hkCdateSlot-' + kind + '"><span class="lbl">Ngày kiểm</span></div>' +
+    '<div class="date-filter" id="hkPlanSlot-' + kind + '"><span class="lbl">Ngày kế hoạch</span></div></div>';
+}
+function nutLocHtml(kind){
+  return '<button type="button" class="hk-fcg btn-filter" id="hkBtnLoc-' + kind + '" onclick="HKIEMKE.toggleLoc(\'' + kind + '\')">Bộ lọc</button>';
 }
 var MODAL = { kind: null, metric: null, rows: [] };
 var FC = { kind: null, fc: null, U: "" };
@@ -287,10 +303,10 @@ var CSS = [
 ".hk-wlink:hover{text-decoration:underline;} .hk-wlink svg{width:11px;height:11px;}",
 ".hk-note{padding:8px 2px 0;font-size:11.5px;color:var(--muted,#9ca3af);}",
 /* 22/10 thanh lọc: Kho · Trạng thái · Tìm theo mã · Ngày kiểm · Ngày kế hoạch — 5 ô 1 hàng trên web */
-"#pane-kk #hkWhBar{grid-template-columns:1fr 1fr 1.6fr 1fr 1fr;}",
+"#pane-kk .hk-loc5{grid-template-columns:1fr 1fr 1.6fr 1fr 1fr;}",
 /* 07/11 khối lọc nằm trong khung SKU: ≥1280 khung chỉ nửa màn ⇒ 2 cột như điện thoại (Kho | Trạng thái · Mã trọn hàng · Ngày kiểm | Ngày kế hoạch) */
-"@media(min-width:1024px){#pane-kk #hkWhBar{grid-template-columns:repeat(2,minmax(0,1fr));}#pane-kk #hkWhBar .hk-ma{grid-column:1/-1;}}",
-"@media(max-width:768px){#pane-kk #hkWhBar{grid-template-columns:repeat(2,minmax(0,1fr));}#pane-kk #hkWhBar .hk-ma{grid-column:1/-1;}}",   // điện thoại: ô mã trọn hàng, đủ chỗ gõ
+"@media(min-width:1024px){#pane-kk .hk-loc5{grid-template-columns:repeat(2,minmax(0,1fr));}#pane-kk .hk-loc5 .hk-ma{grid-column:1/-1;}}",
+"@media(max-width:768px){#pane-kk .hk-loc5{grid-template-columns:repeat(2,minmax(0,1fr));}#pane-kk .hk-loc5 .hk-ma{grid-column:1/-1;}}",   // điện thoại: ô mã trọn hàng, đủ chỗ gõ
 ".hk-ma{display:flex;flex-direction:column;gap:4px;min-width:0;}",
 ".hk-ma-o{display:flex;min-width:0;}",
 ".hk-ma-o .cs{flex:0 0 auto;width:auto;min-width:0;}",
@@ -339,12 +355,16 @@ var CSS = [
    #pane-kk thôi là 1 khung bọc ngoài (luật antd 15/10 «1 Card / phần» chỉ đổi ở trang này) — mỗi khối là 1 khung .panel, đầu khung
    .panel-head 40px (điện thoại 38px) cùng khuôn đầu khung có nút Bộ lọc của thư viện; khung 3 dựng cùng số đo ở hasaki-tonbatthuong.js. */
 "html body #pane-kk:not(.hidden){border:0!important;border-radius:0!important;background:transparent!important;padding:0!important;margin-bottom:16px}",
-"html body #pane-kk .hk-grid2{gap:16px!important;align-items:stretch}",
+"html body #pane-kk .hk-grid2{gap:16px!important;align-items:start}",
 "html body #pane-kk .hk-grid2 > .hk-panel{border:1px solid var(--ad-chia,var(--border))!important;border-radius:8px!important;background:var(--surface)!important;" +
   "box-shadow:none!important;padding:0!important;margin:0!important;display:flex;flex-direction:column;min-width:0}",
 "html body #pane-kk .hk-grid2 > .hk-panel > .panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap;height:40px;" +
   "min-height:40px;padding:0 16px;border-bottom:1px solid var(--ad-chia,var(--border));font-size:14px;line-height:20px;box-sizing:border-box}",
 "html body #pane-kk .hk-pbody{padding:0 16px 12px;min-width:0}",
+/* 07/11 mỗi khung có nút Bộ lọc riêng: đầu khung chật thì «(type …)» co trước, rồi đến chip «Kho: …» — tên khung không bị cắt */
+"#pane-kk .hk-panel > .panel-head .ph-td{flex:0 0 auto}",
+"#pane-kk .hk-panel > .panel-head .ph-dem{flex:0 1000 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}",
+"#pane-kk .hk-panel > .panel-head .hk-scope{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
 "@media(max-width:768px){html body #pane-kk:not(.hidden){margin-bottom:12px}html body #pane-kk .hk-grid2{gap:12px!important}html body #pane-kk .hk-grid2 > .hk-panel > .panel-head{height:38px;min-height:38px;padding:0 12px;gap:6px}" +
   "html body #pane-kk .hk-pbody{padding:0 12px 10px}}",
 "@media(max-width:560px){html body #pane-kk .hk-grid2 > .hk-panel > .panel-head{padding:0 8px;gap:4px}html body #pane-kk .hk-pbody{padding:0 8px 8px}}"
@@ -359,14 +379,7 @@ var KHUNG =
 '<div class="hk-grid2" id="hkGrid" style="display:none">' +
 '  <section class="panel hk-panel">' +
 '    <div class="panel-head"><span class="ph-trai"><span class="ph-td">Kiểm kê theo SKU</span><span class="ph-dem">(type SKU)</span><span class="hk-scope" id="hkScope-sku" hidden></span></span>' +
-'      <button type="button" class="hk-fcg btn-filter" id="hkBtnLoc" onclick="HKIEMKE.toggleLoc()">Bộ lọc</button></div>' +
-'    <div class="filters collapsed" id="hkWhBar" data-mb-rangcua="luoi-1-cot-gap-mac-dinh">' +
-'      <label><span class="lbl">Kho</span><select id="hkWhSel"></select></label>' +
-'      <label><span class="lbl">Trạng thái</span><select id="hkStSel"></select></label>' +
-'      ' + oMaHtml() +
-'      <div class="date-filter" id="hkCdateSlot"><span class="lbl">Ngày kiểm</span></div>' +
-'      <div class="date-filter" id="hkPlanSlot"><span class="lbl">Ngày kế hoạch</span></div>' +
-'    </div>' +
+'      ' + nutLocHtml("sku") + '</div>' + oLocHtml("sku") +
 '    <div class="hk-pbody">' +
 '      <div class="hk-strip" id="hkStrip-sku"></div>' +
 '      <div id="hkStatus-sku"></div>' +
@@ -375,7 +388,8 @@ var KHUNG =
 '    </div>' +
 '  </section>' +
 '  <section class="panel hk-panel">' +
-'    <div class="panel-head"><span class="ph-trai"><span class="ph-td">Kiểm kê theo mã vị trí</span><span class="ph-dem">(type Location · Full location)</span><span class="hk-scope" id="hkScope-loc" hidden></span></span></div>' +
+'    <div class="panel-head"><span class="ph-trai"><span class="ph-td">Kiểm kê theo mã vị trí</span><span class="ph-dem">(type Location · Full location)</span><span class="hk-scope" id="hkScope-loc" hidden></span></span>' +
+'      ' + nutLocHtml("loc") + '</div>' + oLocHtml("loc") +
 '    <div class="hk-pbody">' +
 '      <div class="hk-strip" id="hkStrip-loc"></div>' +
 '      <div id="hkStatus-loc"></div>' +
@@ -516,20 +530,20 @@ function capNhatInfo(){
 
 /* ===== MÔ HÌNH DỮ LIỆU (cross-filter kho + khử trùng phiếu — port từ factory) ===== */
 function rowsScope(kind){
-  var rs = S.data[kind];
+  var rs = S.data[kind], f = F[kind];   // 07/11 chỉ áp bộ lọc của CHÍNH khung này
   return rs.filter(function(r){
-    if (S.wh && r.wh !== S.wh) return false;
-    if (S.st && stKey(r) !== S.st) return false;
-    if (S.id && String(r.id || "").toLowerCase().indexOf(S.id.toLowerCase()) < 0) return false;
-    if (S.src && String(r.src || "").toLowerCase().indexOf(S.src.toLowerCase()) < 0) return false;
-    if (S.req && String(r.req || "").toLowerCase().indexOf(S.req.toLowerCase()) < 0) return false;
-    if (S.cdate && S.cdate[0]){
+    if (f.wh && r.wh !== f.wh) return false;
+    if (f.st && stKey(r) !== f.st) return false;
+    if (f.id && String(r.id || "").toLowerCase().indexOf(f.id.toLowerCase()) < 0) return false;
+    if (f.src && String(r.src || "").toLowerCase().indexOf(f.src.toLowerCase()) < 0) return false;
+    if (f.req && String(r.req || "").toLowerCase().indexOf(f.req.toLowerCase()) < 0) return false;
+    if (f.cdate && f.cdate[0]){
       var iso = dateIsoVN(parseDate(r.cdate));
-      if (!iso || iso < S.cdate[0] || iso > (S.cdate[1] || S.cdate[0])) return false;
+      if (!iso || iso < f.cdate[0] || iso > (f.cdate[1] || f.cdate[0])) return false;
     }
-    if (S.plan && S.plan[0]){
+    if (f.plan && f.plan[0]){
       var iso = dateIsoVN(parseDate(r.plan));
-      if (!iso || iso < S.plan[0] || iso > (S.plan[1] || S.plan[0])) return false;
+      if (!iso || iso < f.plan[0] || iso > (f.plan[1] || f.plan[0])) return false;
     }
     return true;
   });
@@ -593,7 +607,8 @@ function totalRows(kind){
   });
   return out.concat(remainRows(kind));
 }
-function setWh(w){ if (S.wh === w) w = ""; S.wh = w; render(); }   // bấm lại kho đang chọn = bỏ lọc
+/* bấm lại kho đang chọn = bỏ lọc; không nêu khung = đặt cho cả 2 khung kiểm kê */
+function setWh(w, kind){ (kind ? [kind] : ["sku", "loc"]).forEach(function(k){ F[k].wh = (F[k].wh === w) ? "" : w; }); render(); }
 
 /* ===== RENDER ===== */
 document.addEventListener("tk-doi", function(){ if (S.loi === "khoa") loadData(); });   // vừa đăng nhập mà đang báo thiếu quyền → tải lại
@@ -618,73 +633,70 @@ function render(){
   renderWh();
   capNhatInfo();
 }
-var CDATE_LOC = null, PLAN_LOC = null, _locBuilt = false;
-function resetLoc(){
-  S.wh = ""; S.cdate = null; S.plan = null; S.id = ""; S.src = ""; S.req = ""; S.st = "";
-  if (CDATE_LOC) CDATE_LOC.dat("", "");
-  if (PLAN_LOC) PLAN_LOC.dat("", "");
-  var maInp = $id("hkMaInp"); if (maInp) maInp.value = "";
+/* 07/11 mỗi khung kiểm kê 1 bộ ô lọc riêng: lịch ngày + cờ đã gắn sự kiện cũng tách theo khung */
+var NGAY = { sku: {}, loc: {} }, _locBuilt = { sku: false, loc: false };
+function resetLoc(kind){
+  (kind ? [kind] : ["sku", "loc"]).forEach(function(k){
+    var maLoai = F[k].maLoai; F[k] = locTrong(); F[k].maLoai = maLoai;
+    if (NGAY[k].cd) NGAY[k].cd.dat("", "");
+    if (NGAY[k].pl) NGAY[k].pl.dat("", "");
+    var maInp = $id("hkMaInp-" + k); if (maInp) maInp.value = "";
+  });
   render();
 }
-/* Thanh lọc kiểm kê chuẩn dự án: .filters + enhanceSelect + taoBoLocNgay */
-function renderWhBar(){
-  var bar = $id("hkWhBar"); if (!bar) return;
-  if (!bar.querySelector("#hkWhSel")){
-    bar.innerHTML =
-      '<label><span class="lbl">Kho</span><select id="hkWhSel"></select></label>' +
-      '<label><span class="lbl">Trạng thái</span><select id="hkStSel"></select></label>' +
-      oMaHtml() +
-      '<div class="date-filter" id="hkCdateSlot"><span class="lbl">Ngày kiểm</span></div>' +
-      '<div class="date-filter" id="hkPlanSlot"><span class="lbl">Ngày kế hoạch</span></div>';
-    _locBuilt = false;
-  }
-  var dem = {};
-  ["sku", "loc"].forEach(function(k){
-    S.data[k].forEach(function(r){ if (r.wh) dem[r.wh] = (dem[r.wh] || 0) + 1; });
+function renderWhBar(){ renderLocBar("sku"); renderLocBar("loc"); }
+function nhanNgay(a, b){
+  if (!a) return "Tất cả";
+  var fa = a.slice(8, 10) + "/" + a.slice(5, 7), fb = b ? b.slice(8, 10) + "/" + b.slice(5, 7) : fa;
+  return (b && b !== a) ? fa + " → " + fb : fa;
+}
+/* Thanh lọc kiểm kê chuẩn dự án: .filters + enhanceSelect + taoBoLocNgay — số đếm trong ô chọn = phiếu của CHÍNH khung */
+function renderLocBar(kind){
+  var bar = $id("hkWhBar-" + kind); if (!bar) return;
+  var f = F[kind];
+  var dem = {}, stDem = {};
+  S.data[kind].forEach(function(r){
+    if (r.wh) dem[r.wh] = (dem[r.wh] || 0) + 1;
+    var s = stKey(r); if (s) stDem[s] = (stDem[s] || 0) + 1;
   });
   var ws = Object.keys(dem).sort();
   var tong = ws.reduce(function(a, w){ return a + dem[w]; }, 0);
-
   /* 07/11: bỏ dòng «Kiểm kê (n phiếu)» — tổng phiếu đã nằm trong ô «Tất cả kho (n)» */
-
-  var stDem = {};
-  ["sku", "loc"].forEach(function(k){
-    S.data[k].forEach(function(r){ var s = stKey(r); if (s) stDem[s] = (stDem[s] || 0) + 1; });
-  });
   var stList = ST_ORDER.filter(function(s){ return stDem[s]; });
   Object.keys(stDem).forEach(function(s){ if (stList.indexOf(s) < 0) stList.push(s); });
 
-  var whSel = $id("hkWhSel");
+  var whSel = $id("hkWhSel-" + kind);
   if (whSel){
     whSel.innerHTML = '<option value="">Tất cả kho (' + nf(tong) + ')</option>' +
       ws.map(function(w){
-        return '<option value="' + esc(w) + '"' + (S.wh === w ? " selected" : "") + '>' + esc(w) + ' (' + nf(dem[w]) + ')</option>';
+        return '<option value="' + esc(w) + '"' + (f.wh === w ? " selected" : "") + '>' + esc(w) + ' (' + nf(dem[w]) + ')</option>';
       }).join("");
     if (typeof window.enhanceSelect === "function") window.enhanceSelect(whSel);
     if (whSel._csWrap && typeof whSel._csWrap._csDongBo === "function") whSel._csWrap._csDongBo();
   }
 
-  var stSel = $id("hkStSel");
+  var stSel = $id("hkStSel-" + kind);
   if (stSel){
     stSel.innerHTML = '<option value="">Tất cả trạng thái</option>' +
       stList.map(function(s){
-        return '<option value="' + esc(s) + '"' + (S.st === s ? " selected" : "") + '>' + esc(s) + ' (' + nf(stDem[s]) + ')</option>';
+        return '<option value="' + esc(s) + '"' + (f.st === s ? " selected" : "") + '>' + esc(s) + ' (' + nf(stDem[s]) + ')</option>';
       }).join("");
     if (typeof window.enhanceSelect === "function") window.enhanceSelect(stSel);
     if (stSel._csWrap && typeof stSel._csWrap._csDongBo === "function") stSel._csWrap._csDongBo();
   }
 
-  if (!_locBuilt){
-    _locBuilt = true;
-    if (whSel) whSel.addEventListener("change", function(){ S.wh = this.value; render(); });
-    if (stSel) stSel.addEventListener("change", function(){ S.st = this.value; render(); });
+  if (!_locBuilt[kind]){
+    _locBuilt[kind] = true;
+    if (whSel) whSel.addEventListener("change", function(){ F[kind].wh = this.value; render(); });
+    if (stSel) stSel.addEventListener("change", function(){ F[kind].st = this.value; render(); });
 
     /* 22/10 user: ID / Source code / Request code gom 1 ô — chọn loại mã ở đầu ô (kiểu WMS), gõ mã bên phải; chỉ lọc theo loại đang chọn */
-    var maSel = $id("hkMaLoai"), maInp = $id("hkMaInp");
-    var datMa = function(){ var v = maInp ? maInp.value.trim() : ""; S.id = S.src = S.req = ""; S[S.maLoai] = v; render(); };
+    var maSel = $id("hkMaLoai-" + kind), maInp = $id("hkMaInp-" + kind), henMa = null;
+    var datMa = function(){ var v = maInp ? maInp.value.trim() : "", g = F[kind]; g.id = g.src = g.req = ""; g[g.maLoai] = v; render(); };
     if (maSel){
       if (typeof window.enhanceSelect === "function") window.enhanceSelect(maSel);
-      /* 22/10 user: khung chọn loại mã khít chữ, KHOÁ CỨNG bề rộng theo chữ dài nhất («Request code») — đổi loại không làm ô nhảy */
+      /* 22/10 user: khung chọn loại mã khít chữ, KHOÁ CỨNG bề rộng theo chữ dài nhất («Request code») — đổi loại không làm ô nhảy.
+         07/11: khối lọc đang gập (display:none) thì đo chữ vẫn đúng vì đo bằng span tạm gắn ở body. */
       var wr = maSel._csWrap, tg = wr && wr.querySelector(".cs-trigger");
       if (tg){
         var cs = getComputedStyle(tg), sp = document.createElement("span"), dai = Object.keys(MA_LOAI).reduce(function(a, k){ return MA_LOAI[k].length > a.length ? MA_LOAI[k] : a; }, "");
@@ -692,49 +704,37 @@ function renderWhBar(){
         var px = sp.getBoundingClientRect().width + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth) + 10 + (parseFloat(cs.columnGap) || 8) + 2;
         sp.remove(); wr.style.flex = "0 0 " + Math.ceil(px) + "px";
       }
-      maSel.addEventListener("change", function(){ S.maLoai = this.value; if (maInp) maInp.placeholder = "Nhập " + MA_LOAI[S.maLoai] + "…"; datMa(); });
+      maSel.addEventListener("change", function(){ F[kind].maLoai = this.value; if (maInp) maInp.placeholder = "Nhập " + MA_LOAI[this.value] + "…"; datMa(); });
     }
-    if (maInp) maInp.addEventListener("input", function(){ clearTimeout(_debT); _debT = setTimeout(datMa, 250); });
+    if (maInp) maInp.addEventListener("input", function(){ clearTimeout(henMa); henMa = setTimeout(datMa, 250); });
 
     if (typeof window.taoBoLocNgay === "function"){
-      var cdRoot = $id("hkCdateSlot");
-      if (cdRoot){
-        CDATE_LOC = window.taoBoLocNgay({
-          root: cdRoot, idNut: "hkCdateBtn", idPop: "hkCdatePop",
-          homNay: function(){ return dateIsoVN(Date.now()); },
-          nhan: function(a, b){
-            if (!a) return "Tất cả";
-            var fa = a.slice(8, 10) + "/" + a.slice(5, 7), fb = b ? b.slice(8, 10) + "/" + b.slice(5, 7) : fa;
-            return (b && b !== a) ? fa + " → " + fb : fa;
-          },
-          onApply: function(a, b){ S.cdate = a ? [a, b || a] : null; render(); }
-        });
-      }
-      var plRoot = $id("hkPlanSlot");
-      if (plRoot){
-        PLAN_LOC = window.taoBoLocNgay({
-          root: plRoot, idNut: "hkPlanBtn", idPop: "hkPlanPop",
-          homNay: function(){ return dateIsoVN(Date.now()); },
-          nhan: function(a, b){
-            if (!a) return "Tất cả";
-            var fa = a.slice(8, 10) + "/" + a.slice(5, 7), fb = b ? b.slice(8, 10) + "/" + b.slice(5, 7) : fa;
-            return (b && b !== a) ? fa + " → " + fb : fa;
-          },
-          onApply: function(a, b){ S.plan = a ? [a, b || a] : null; render(); }
-        });
-      }
+      var cdRoot = $id("hkCdateSlot-" + kind);
+      if (cdRoot) NGAY[kind].cd = window.taoBoLocNgay({
+        root: cdRoot, idNut: "hkCdateBtn-" + kind, idPop: "hkCdatePop-" + kind,
+        homNay: function(){ return dateIsoVN(Date.now()); }, nhan: nhanNgay,
+        onApply: function(a, b){ F[kind].cdate = a ? [a, b || a] : null; render(); }
+      });
+      var plRoot = $id("hkPlanSlot-" + kind);
+      if (plRoot) NGAY[kind].pl = window.taoBoLocNgay({
+        root: plRoot, idNut: "hkPlanBtn-" + kind, idPop: "hkPlanPop-" + kind,
+        homNay: function(){ return dateIsoVN(Date.now()); }, nhan: nhanNgay,
+        onApply: function(a, b){ F[kind].plan = a ? [a, b || a] : null; render(); }
+      });
     }
   }
 
-  var btn = $id("hkBtnLoc");
+  var btn = $id("hkBtnLoc-" + kind);
   if (btn){
-    var coLoc = !!(S.wh || S.cdate || S.plan || S.id || S.src || S.req || S.st);
-    btn.classList.toggle("dang-loc", coLoc);
-    btn.textContent = coLoc ? "Bộ lọc · đang lọc" : "Bộ lọc";
+    var co = coLoc(kind), chu = co ? "Bộ lọc · đang lọc" : "Bộ lọc";
+    btn.classList.toggle("dang-loc", co);
+    if (btn.firstChild && btn.firstChild.nodeType === 3){ if (btn.firstChild.nodeValue !== chu) btn.firstChild.nodeValue = chu; }   // giữ ✕ (tat-loc.js) — chỉ đổi chữ
+    else btn.textContent = chu;
   }
 }
-function toggleLoc(){
-  var bar = $id("hkWhBar"), btn = $id("hkBtnLoc");
+function toggleLoc(kind){
+  kind = kind || "sku";
+  var bar = $id("hkWhBar-" + kind), btn = $id("hkBtnLoc-" + kind);
   if (!bar || !btn) return;
   var col = bar.classList.toggle("collapsed");
   btn.classList.toggle("mo", !col);
@@ -779,7 +779,7 @@ function renderPanel(kind){
     it("positive", "pos", pos, "Lệch dương") +
     fcHtml;
   strip.innerHTML = tachNhanKs(strip.innerHTML);
-  if (!S.wh && window.tqGhi) window.tqGhi("kk-" + kind, { dem: counted, tong: denom, eta: fc.eta || "" });   // 13/10 Tổng quan phương án B
+  if (!F[kind].wh && window.tqGhi) window.tqGhi("kk-" + kind, { dem: counted, tong: denom, eta: fc.eta || "" });   // 13/10 Tổng quan phương án B
   swap(strip);
   /* Tầng 2: thanh trạng thái 100% + chips đếm theo PHIẾU */
   var keys = ST_ORDER.filter(function(s){ return stc[s]; })
@@ -799,7 +799,7 @@ function renderPanel(kind){
   swap(stEl);
   /* Chip phạm vi: panel đang tính theo kho nào (cross-filter) */
   var sc = $id("hkScope-" + kind);
-  if (sc){ sc.hidden = !S.wh; sc.textContent = S.wh ? ("Kho: " + S.wh) : ""; }
+  if (sc){ var wK = F[kind].wh; sc.hidden = !wK; sc.textContent = wK ? ("Kho: " + wK) : ""; }
   /* Tầng 3: chart mini "Đã kiểm theo ngày" */
   renderDaily(kind);
 }
@@ -859,7 +859,7 @@ function renderWh(){
     var a = agg[w];
     var totS = a.sku.uni.size, cntS = a.sku.chk.size, totL = a.loc.uni.size, cntL = a.loc.chk.size;
     var rs = totS ? cntS / totS * 100 : 0, rl = totL ? cntL / totL * 100 : 0;
-    return '<div class="hk-whcard' + (S.wh === w ? " active" : "") + '" data-w="' + esc(w) + '" onclick="HKIEMKE.setWh(this.getAttribute(\'data-w\'))" title="Bấm để lọc toàn tab Kiểm kê theo kho này (bấm lại để bỏ lọc)">' +
+    return '<div class="hk-whcard' + (F.sku.wh === w ? " active" : "") + '" data-w="' + esc(w) + '" onclick="HKIEMKE.setWh(this.getAttribute(\'data-w\'))" title="Bấm để lọc toàn tab Kiểm kê theo kho này (bấm lại để bỏ lọc)">' +
       '<div class="hk-whtop"><span class="hk-whname"><span class="hk-dot" style="background:' + whColor(w) + '"></span>' + esc(w) + "</span>" +
       '<span class="hk-whnum">SKU <b>' + nf(cntS) + "</b>/" + nf(totS) + " · VT <b>" + nf(cntL) + "</b>/" + nf(totL) + "</span></div>" +
       '<div class="hk-prog"><div class="hk-progf" style="width:' + rs.toFixed(1) + "%;background:" + whColor(w) + '"></div></div>' +
@@ -985,7 +985,7 @@ function fcOpen(kind){
   var U = (kind === "loc") ? "mã vị trí" : "SKU";
   FC = { kind: kind, fc: fc, U: U };
   $id("hkFcTitle").textContent = "Dự báo hoàn thành kiểm kê · " + U;
-  $id("hkFcSub").textContent = S.wh ? ("Kho " + S.wh) : "";   // 26/10 AD-07 (user dán nguyên dòng): bỏ «Toàn bộ kho · còn lại N chưa kiểm · lịch làm việc bỏ qua Chủ nhật»
+  $id("hkFcSub").textContent = F[kind].wh ? ("Kho " + F[kind].wh) : "";   // 26/10 AD-07 (user dán nguyên dòng): bỏ «Toàn bộ kho · còn lại N chưa kiểm · lịch làm việc bỏ qua Chủ nhật»
   var htmlA = "", htmlB = "";
   if (fc.done){
     htmlA = '<div class="hk-fcsec"><h3>Trạng thái</h3><div class="hk-fchero"><span class="d ok">✓ 100%</span><span class="n">Toàn bộ ' + U + " trong phạm vi đã được kiểm.</span></div></div>";
@@ -1191,7 +1191,7 @@ function openModal(kind, metric){
   MODAL = { kind: kind, metric: metric, rows: rows };
   var U = (kind === "loc") ? "Mã vị trí" : "SKU";
   var lab = (metric.indexOf("st:") === 0) ? ("trạng thái " + stMeta(metric.slice(3))[0]) : METRIC_LABEL[metric];
-  $id("hkKkTitle").textContent = U + " · " + lab + (S.wh ? (" · kho " + S.wh) : "") + " — " + nf(rows.length) + " dòng";
+  $id("hkKkTitle").textContent = U + " · " + lab + (F[kind].wh ? (" · kho " + F[kind].wh) : "") + " — " + nf(rows.length) + " dòng";
   /* 26/10 user «dòng giải nghĩa, le ve xoá hết — bộ luật đâu» (AD-07 không dòng mô tả dưới tiêu đề · AD-10 không chữ dạy thao tác):
      bỏ câu «Mẫu số / Anti-join / Đã khử trùng phiếu… · bấm ID để mở WMS»; kho đã nằm trên tiêu đề. */
   $id("hkKkSub").textContent = "";
