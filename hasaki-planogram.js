@@ -1435,8 +1435,7 @@ var CSS = [
 "#hpBtnLoc::after{content:'';display:inline-block;width:5.5px;height:5.5px;border-right:1.5px solid currentColor;" +
 "border-bottom:1.5px solid currentColor;transform:translateY(-1.5px) rotate(45deg);transition:transform .22s var(--ez-apple,ease);}",
 "#hpBtnLoc.mo::after{transform:translateY(1.5px) rotate(-135deg);}",
-"#hpBtnLoc:hover,#hpBtnLoc.mo{border-color:var(--accent);color:var(--accent);" +
-"background:color-mix(in srgb,var(--accent) 8%,var(--surface));}",
+"#hpBtnLoc:hover,#hpBtnLoc.mo{border-color:var(--border);color:var(--text);background:var(--ad-re,var(--hover));}",   /* 07/11 nút Bộ lọc mới: màu thường; đang lọc = tat-loc.js */
 "#hpLocSlot.collapsed{display:none!important;}",
 "#hpLocSlot:not(.collapsed){transform-origin:top center;animation:popIn .22s var(--ez-spring,cubic-bezier(.16,1,.3,1));margin-bottom:12px;}",
 "#hpVtModal.hp-modal{align-items:stretch;justify-content:flex-end;padding:0;}" +
