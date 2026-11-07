@@ -89,9 +89,11 @@
       /* 07/11 bút sửa nhỏ · + / ✕ trong chế độ sửa · đầu kho 1 hàng trên web */
       B + " .bd-lk.bd-but-sua{display:inline-flex;align-items:center;justify-content:center;width:22px;height:20px;margin:-2px 0;padding:0;border-radius:6px;color:var(--muted);vertical-align:middle}" +
         B + " .bd-lk.bd-but-sua:hover{background:var(--ad-re,var(--hover));color:var(--accent)}" + B + " .bd-lk.bd-but-sua.mo{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}" +
-        B + " .bd-ko{position:relative}" + B + " .bd-lk.bd-ko-x{position:absolute;top:1px;right:1px;z-index:2;width:16px;height:16px;padding:0;border-radius:50%;display:inline-flex;align-items:center;" +
-          "justify-content:center;color:var(--muted);background:var(--surface);box-shadow:0 0 0 1px var(--ad-chia,var(--border))}" +
-        B + " .bd-lk.bd-ko-x:hover," + B + " .bd-lk.bd-ko-x.xn{color:var(--surface);background:var(--bad);box-shadow:none}" +
+        B + " .bd-ko{position:relative}" + B + " td.bd-ko{padding-right:26px!important}" +
+        B + " .bd-lk.bd-ko-x{position:absolute;top:4px;right:4px;min-height:0!important;z-index:2;width:16px;height:16px;padding:0;border-radius:50%;display:inline-flex;align-items:center;" +
+          "justify-content:center;color:var(--surface);background:var(--bad)}" +
+        /* 07/11 user: ✕ đỏ tròn của nút «Đang lọc» = KHUÔN ✕ CHUẨN cho mọi dấu ✕ (Bảo dưỡng: ô kho · khung ảnh · bỏ người trong hộp) */
+        B + " :is(.bd-lk.bd-ko-x,.bd-lk.bd-sk-x):hover{filter:brightness(.9)}" + B + " :is(.bd-lk.bd-ko-x,.bd-lk.bd-sk-x).xn{box-shadow:0 0 0 3px color-mix(in srgb,var(--bad) 30%,transparent)}" +
         B + " .bd-lk.bd-ko-cong{display:inline-flex;align-items:center;justify-content:center;width:20px;height:18px;margin:-2px 0;padding:0;border-radius:6px;color:var(--accent);vertical-align:middle}" +
         B + " .bd-lk.bd-ko-cong:hover{background:var(--ad-re,var(--hover))}" + /* 07/11 LUẬT «bấm bất kỳ cái gì không được nhảy mục khác»: nút chế độ sửa không đổi lề / chiều cao; ô bảng neo đỉnh (ô cạnh mở ra không đẩy ô này) */
         B + " .bd-kbang :is(td.bd-ko,th.bd-kh-hm){vertical-align:top}" +
@@ -108,7 +110,7 @@
         B + " .bd-sk-it{position:relative;display:inline-flex;align-items:center;padding:3px 22px 3px 8px;border:1px solid var(--ad-chia,var(--border));border-radius:6px;font-size:12px;background:var(--surface)}" +
         B + " .bd-sk-it.bo{padding-right:8px;text-decoration:line-through;color:var(--muted)}" +
         B + " .bd-lk.bd-sk-x{position:absolute;top:-6px;right:-6px;width:16px;height:16px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;" +
-          "color:var(--surface);background:var(--muted)}" + B + " .bd-lk.bd-sk-x:hover," + B + " .bd-lk.bd-sk-x.xn{background:var(--bad)}" +
+          "color:var(--surface);background:var(--bad)}" +
         B + " .bd-lk.bd-sk-cong{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;padding:0;border-radius:6px;border:1px dashed var(--accent);color:var(--accent)}",
       B + " .bd-sk-form{display:flex;flex-direction:column;gap:8px;margin-top:8px}" + B + " .bd-sk-form :is(input[type=text],textarea){width:100%;padding:6px 8px;border:1px solid var(--border);" +
           "border-radius:6px;font:inherit;font-size:13px;background:var(--surface);color:var(--text)}" +
@@ -519,8 +521,9 @@
       "#bdChonHop .bd-chon-mt{font-size:13px;margin:0 0 12px}" + "#bdChonHop .bd-chon-ds{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}" +
         "#bdDoiHop .bd-hop-giu{display:flex;flex-wrap:wrap;gap:6px;align-items:center}" +
           "#bdChonHop .bd-ng-chon,#bdDoiHop .bd-ng-chon{display:inline-flex;align-items:center;gap:6px;padding:2px 4px 2px 2px;border:1px solid var(--border);border-radius:16px;font-size:13px}" +
-        "#bdChonHop .bd-ng-chon .bd-bo-chon,#bdDoiHop .bd-ng-chon .bd-bo-chon{color:var(--muted);width:24px;height:24px;border-radius:50%;font-size:12px;text-align:center}" +
-        "#bdChonHop .bd-ng-chon .bd-bo-chon:hover,#bdDoiHop .bd-ng-chon .bd-bo-chon:hover{background:var(--hover);color:var(--text);text-decoration:none}" +
+        "#bdChonHop .bd-ng-chon .bd-bo-chon,#bdDoiHop .bd-ng-chon .bd-bo-chon{display:inline-flex;align-items:center;justify-content:center;flex:none;width:18px;height:18px!important;min-height:0!important;margin:0 3px;padding:0;line-height:0;" +
+          "border-radius:50%;background:var(--bad);color:var(--surface)}" +
+        "#bdChonHop .bd-ng-chon .bd-bo-chon:hover,#bdDoiHop .bd-ng-chon .bd-bo-chon:hover{filter:brightness(.9);text-decoration:none}" +
           "#bdChonHop .bd-chon-xoa{color:var(--bad);background:none;border:0;padding:0;font:inherit;font-size:13px;cursor:pointer;margin-right:auto}",
       B + " .bd-ck," + B + " .bd-ck-het," + "#bdDoiHop input[type=radio]{width:16px;height:16px;margin:0;accent-color:var(--accent);cursor:pointer}" + B + " .bd-ck-tr{width:16px}",
       B + " .bd-chon-het{display:inline-flex;flex-direction:row;align-items:center;gap:8px;margin:0;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);padding:10px 0 0;font-size:13px;cursor:pointer}",
@@ -1754,7 +1757,7 @@
   /* người phụ trách đang có: mỗi người 1 ô + ✕ để bỏ (bỏ hết + không thêm ai = «Chưa giao người») */
   function veGiu(m) {
     m.querySelector(".bd-hop-giu").innerHTML = m.__giu.length ? m.__giu.map(function (t, i) {
-      return '<span class="bd-ng-chon">' + avatar(t) + o(t) + '<button type="button" class="bd-lk bd-bo-chon" data-i-giu="' + i + '" aria-label="Bỏ ' + esc(t) + '" title="Bỏ người này">✕</button></span>'; }).join("")
+      return '<span class="bd-ng-chon">' + avatar(t) + o(t) + '<button type="button" class="bd-lk bd-bo-chon" data-i-giu="' + i + '" aria-label="Bỏ ' + esc(t) + '" title="Bỏ người này">' + SVG_X_N + '</button></span>'; }).join("")
       : '<span class="bd-do">' + CHUA_GIAO + "</span>" + (m.__goc.length ? ' <small class="bd-phu">(bỏ hết — Lưu để thôi giao, hoặc thêm người bên dưới)</small>' : "");
   }
   /* bỏ dấu để gõ «kim yen» / «Yến» đều ra */
@@ -1999,7 +2002,7 @@
   }
   function veChon(m, q) {
     m.querySelector(".bd-chon-ds").innerHTML = m.__chon.length ? m.__chon.map(function (x, i) {
-      return '<span class="bd-ng-chon">' + avatar(tenNV(x)) + o(tenNV(x)) + '<button type="button" class="bd-lk bd-bo-chon" data-i-bo="' + i + '" aria-label="Bỏ ' + esc(tenNV(x)) + '">✕</button></span>'; }).join("")
+      return '<span class="bd-ng-chon">' + avatar(tenNV(x)) + o(tenNV(x)) + '<button type="button" class="bd-lk bd-bo-chon" data-i-bo="' + i + '" aria-label="Bỏ ' + esc(tenNV(x)) + '">' + SVG_X_N + '</button></span>'; }).join("")
       : '<span class="bd-phu">Chưa có ai</span>';
     var A = window.hskAnhNV, tim = khongDau(q), co = {}, ds = [];
     m.__chon.forEach(function (x) { co[x] = 1; co[chuan(tenNV(x))] = 1; });
