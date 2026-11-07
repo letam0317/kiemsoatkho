@@ -81,7 +81,6 @@ function typeByLb(lb){ for (var i = 0; i < TYPES.length; i++) if (TYPES[i].lb ==
 function typeOrder(lb){ for (var i = 0; i < TYPES.length; i++) if (TYPES[i].lb === lb) return i; return 99; }
 function idxOf(H, aliases){ for (var i = 0; i < aliases.length; i++){ var j = H.indexOf(aliases[i]); if (j >= 0) return j; } return -1; }
 function num(v){ if (v == null || v === "") return 0; var n = Number(String(v).replace(/,/g, "")); return isNaN(n) ? 0 : n; }
-function whTot(o){ var s = 0; TYPES.forEach(function(t){ s += (o[t.k] || 0); }); return s; }
 /* Lý do chọn (ghi vào giỏ HPC lúc tick) — liệt kê loại bất thường >0 của SKU */
 function abnReasonStr(r){ var a = []; TYPES.forEach(function(t){ if (r[t.k] > 0) a.push(t.lb + " " + nf(r[t.k])); }); return a.length ? ("Bất thường: " + a.join(" · ")) : "Bất thường"; }
 
@@ -97,8 +96,6 @@ var CSS = [
 "#pane-htonbat .ht-hint{color:var(--muted,#9ca3af);font-size:11.5px;font-weight:400;}",
 /* chip lọc kho */
 "#pane-htonbat .ht-whbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;}",
-"#pane-htonbat .ht-locbar{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,260px));gap:12px;margin:0 0 16px;}",
-"#pane-htonbat .ht-locbar label{display:flex;flex-direction:column;gap:4px;}",
 "#pane-htonbat .ht-whtab{border:1px solid var(--border,#e8ecf1);background:var(--surface,#fff);color:var(--text,#374151);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;min-height:32px;display:inline-flex;align-items:center;gap:7px;transition:background .16s ease,border-color .16s ease;}",
 "#pane-htonbat .ht-whtab:hover{background:color-mix(in srgb, var(--accent,#326e51) 8%, transparent);}",
 "#pane-htonbat .ht-whtab.active{background:var(--accent,#326e51);color:var(--accent-text,#fff);border-color:var(--accent,#326e51);}",
@@ -112,24 +109,7 @@ var CSS = [
 "#pane-htonbat .ht-tile.tot .k{color:var(--text,#1f2937);}",
 "#pane-htonbat .ht-tile .l{font-size:11px;color:var(--text,#374151);margin-top:4px;font-weight:650;line-height:1.2;}",
 "#pane-htonbat .ht-tile .s{font-size:10px;color:var(--muted,#9ca3af);margin-top:1px;}",
-/* 2 chart cạnh nhau */
-"#pane-htonbat .ht-grid2{display:grid;grid-template-columns:1.55fr 1fr;gap:12px;}",
-"@media(max-width:1024px){#pane-htonbat .ht-grid2{grid-template-columns:1fr;}}",
 "#pane-htonbat .ht-panel{background:var(--surface,#fff);border:1px solid var(--border,#e8ecf1);border-radius:14px;padding:14px 16px;}",
-"#pane-htonbat .ht-panel h2{margin:0 0 12px;font-size:14px;font-weight:680;color:var(--text,#374151);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}",
-"#pane-htonbat .ht-legend{display:inline-flex;flex-wrap:wrap;gap:3px 10px;font-weight:400;font-size:10.5px;color:var(--muted,#6b7280);}",
-"#pane-htonbat .ht-legend span{display:inline-flex;align-items:center;gap:5px;}",
-"#pane-htonbat .ht-legend i{width:9px;height:9px;border-radius:3px;display:inline-block;flex:none;}",
-"#pane-htonbat .ht-chart{display:flex;flex-direction:column;gap:1px;max-height:330px;overflow-y:auto;padding-right:6px;}",
-"#pane-htonbat .ht-row{display:grid;grid-template-columns:210px 1fr 92px;align-items:center;gap:10px;padding:5px 6px;border-radius:8px;cursor:pointer;transition:background .16s ease;}",
-"#pane-htonbat .ht-row:hover{background:color-mix(in srgb, var(--accent,#326e51) 7%, transparent);}",
-"#pane-htonbat .ht-rl{font-size:11.5px;font-weight:600;color:var(--text,#1f2937);white-space:normal;word-break:break-word;line-height:1.3;display:flex;align-items:center;gap:7px;}",
-"#pane-htonbat .ht-track{background:color-mix(in srgb, var(--muted,#9ca3af) 20%, transparent);border-radius:6px;height:16px;overflow:hidden;}",
-"#pane-htonbat .ht-fill{height:100%;display:flex;width:0;border-radius:6px;overflow:hidden;transition:width .85s cubic-bezier(.4,0,.2,1);}",
-"#pane-htonbat .ht-fill i{display:block;height:100%;min-width:1px;}",
-"#pane-htonbat .ht-rv{text-align:right;font-variant-numeric:tabular-nums;font-size:12px;line-height:1.15;}",
-"#pane-htonbat .ht-rv b{font-size:13px;color:var(--text,#1f2937);} #pane-htonbat .ht-rv small{display:block;color:var(--muted,#9ca3af);font-size:10px;font-weight:500;}",
-"@media(max-width:640px){#pane-htonbat .ht-row{grid-template-columns:1fr 84px;grid-template-areas:'l l' 't v';row-gap:5px;gap:8px;padding:7px 6px;}#pane-htonbat .ht-rl{grid-area:l;}#pane-htonbat .ht-track{grid-area:t;}#pane-htonbat .ht-rv{grid-area:v;}}",
 "#pane-htonbat .ht-empty{color:var(--muted,#9ca3af);font-size:12.5px;padding:18px 2px;text-align:center;}",
 "#pane-htonbat .ht-state{padding:56px 20px;text-align:center;color:var(--muted,#6b7280);}",
 "#pane-htonbat .ht-spin{width:32px;height:32px;border:3px solid var(--border,#d5dbe4);border-top-color:var(--accent,#326e51);border-radius:50%;margin:0 auto 16px;animation:ht-sp .8s linear infinite;}",
@@ -216,13 +196,17 @@ var CSS = [
   "}#htReload{min-height:44px;}}",,
 /* 07/11 user (ảnh screenshot-1794019624529 khung «Bất thường»: «hiển thị gọn lại luôn đi» + «3 khung: … / Tồn kho bất thường»):
    ① đầu khung = tên «Tồn kho bất thường», cùng số đo đầu khung .panel-head của 2 khung Kiểm kê (40px · điện thoại 38px, lề 16/12/8);
-   ② ô lọc kho đã bỏ từ 12/10 nhưng vỏ trống vẫn chừa 16px ⇒ trống thì ẩn;
+   ② (07/11 lượt sau) mỗi khung có bộ lọc riêng ⇒ khung = .panel thật bên trong #pane-htonbat (vỏ #pane-htonbat trong suốt như #pane-kk):
+      .panel-head 40px (điện thoại 38px) mang nút «Bộ lọc» thư viện, khối .filters ngay dưới — ✕ Tắt lọc (tat-loc.js) chỉ xoá lọc khung này;
    ③ 7 ô số: 1 hàng trên máy tính, 4 cột ở 769–1024, 3 cột trên điện thoại (trước 2 cột tự thương lượng ⇒ vạch ngăn lệch, 4 hàng ~720px);
       nhãn/số/dòng phụ thẳng hàng giữa các ô (subgrid như .abntiles Factory); số + đơn vị không xuống dòng. */
-"html body #pane-htonbat:not(.hidden){padding:0 16px 4px}",
-"html body #pane-htonbat:not(.hidden)::before{content:\"Tồn kho bất thường\";display:flex;align-items:center;height:40px;box-sizing:border-box;margin:0 -16px;" +
-  "padding:0 16px;font-size:14px;line-height:20px;font-weight:600;white-space:nowrap;overflow:hidden}",
-"#pane-htonbat .ht-locbar:empty{display:none}",
+"html body #pane-htonbat:not(.hidden){border:0!important;border-radius:0!important;background:transparent!important;padding:0!important}",
+"html body #pane-htonbat:not(.hidden)::before{display:none!important;content:\"\"}",
+"html body #pane-htonbat:not(.hidden) > .ht-khung{border:1px solid var(--ad-chia,var(--border))!important;border-radius:8px!important;background:var(--surface)!important;" +
+  "box-shadow:none!important;padding:0!important;margin:0!important;min-width:0}",
+"html body #pane-htonbat:not(.hidden) > .ht-khung > .panel-head{border-bottom:1px solid var(--ad-chia,var(--border))}",
+"html body #pane-htonbat .ht-khung > .filters{grid-template-columns:repeat(4,minmax(0,1fr))}",
+"html body #pane-htonbat .ht-pbody{padding:0 16px 12px;min-width:0}",
 "html body #pane-htonbat #htContent .ht-tiles{display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr));gap:0!important;margin:12px 0!important}",
 "html body #pane-htonbat #htContent .ht-tiles > .ht-tile{grid-row:span 3;display:grid!important;grid-template-rows:subgrid;row-gap:0;align-content:start;" +
   "min-width:0;padding:4px 12px!important;border-left:1px solid var(--ad-chia,var(--border))!important}",
@@ -231,23 +215,29 @@ var CSS = [
 "html body #pane-htonbat #htContent .ht-tile > .l::before{margin-top:6px}",
 "html body #pane-htonbat #htContent .ht-tile > .k{font-size:20px!important;line-height:28px!important;white-space:nowrap}",
 "html body #pane-htonbat #htContent .ht-tile > .s{margin-top:0!important;line-height:16px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
-"html body #pane-htonbat .ht-grid2{grid-template-columns:minmax(0,1fr)!important}",
 "@media(min-width:769px) and (max-width:1024px){html body #pane-htonbat #htContent .ht-tiles{grid-template-columns:repeat(4,minmax(0,1fr))}html body #pane-htonbat #htContent .ht-tiles > .ht-tile:nth-child(4n+1){border-left:0!important;" +
   "padding-left:0!important}" +
   "html body #pane-htonbat #htContent .ht-tiles > .ht-tile:nth-child(n+5){padding-top:8px!important}}",
-"@media(max-width:768px){html body #pane-htonbat:not(.hidden){padding:0 12px 8px}html body #pane-htonbat:not(.hidden)::before{height:38px;margin:0 -12px;padding:0 12px;font-size:13px}",
+"@media(max-width:768px){html body #pane-htonbat .ht-pbody{padding:0 12px 10px}html body #pane-htonbat .ht-khung > .filters{grid-template-columns:repeat(2,minmax(0,1fr))}",
 "  html body #pane-htonbat #htContent .ht-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}",
 "  html body #pane-htonbat #htContent .ht-tiles > .ht-tile{padding:4px 8px!important}",
 "  html body #pane-htonbat #htContent .ht-tiles > .ht-tile:nth-child(3n+1){border-left:0!important;padding-left:0!important}",
 "  html body #pane-htonbat #htContent .ht-tiles > .ht-tile:nth-child(n+4){padding-top:10px!important}}",
-"@media(max-width:640px){html body #pane-htonbat:not(.hidden){padding:0 8px 8px}html body #pane-htonbat:not(.hidden)::before{margin:0 -8px;padding:0 8px;font-size:11.5px;letter-spacing:-.015em}}"
+"@media(max-width:640px){html body #pane-htonbat .ht-pbody{padding:0 8px 8px}}"
 ].join("\n");
 
 /* ===== KHUNG HTML ===== */
+/* 07/11 user «mỗi khung đều có bộ lọc riêng của khung đó»: khung = .panel thư viện — đầu khung + nút Bộ lọc, khối .filters (gập sẵn) ngay dưới */
 var KHUNG =
-'<div class="ht-locbar" id="htWhBar"></div>' +
-'<div id="htContent"></div>' +
-'<div id="htState" class="ht-state"><div class="ht-spin"></div>Đang tải dữ liệu tồn kho bất thường…</div>' +
+'<section class="panel ht-khung">' +
+'  <div class="panel-head"><span class="ph-trai"><span class="ph-td">Tồn kho bất thường</span></span>' +
+'    <button type="button" class="btn-filter" id="htBtnLoc" onclick="HTONBAT.toggleLoc()">Bộ lọc</button></div>' +
+'  <div class="filters collapsed" id="htWhBar"><label><span class="lbl">Kho</span><select id="htWhSel"></select></label></div>' +
+'  <div class="ht-pbody">' +
+'    <div id="htContent"></div>' +
+'    <div id="htState" class="ht-state"><div class="ht-spin"></div>Đang tải dữ liệu tồn kho bất thường…</div>' +
+'  </div>' +
+'</section>' +
 '<div class="ht-srcfoot">' +
 /* 12/10 user: chip nguồn + đếm + "dữ liệu WMS lúc" + Làm mới → MỘT viên "Cập nhật" dùng chung (hskCapNhat); bấm viên = Làm mới */
 '  <div class="cn-wrap" id="htLoadinfo"></div>' +
@@ -283,7 +273,7 @@ function loadData(){
   var btn = $id("htReload"); if (btn) btn.disabled = true;
   st.style.display = "block";
   st.innerHTML = '<div class="ht-spin"></div>Đang tải dữ liệu tồn kho bất thường…';
-  $id("htContent").innerHTML = ""; $id("htWhBar").innerHTML = "";
+  $id("htContent").innerHTML = "";   // 07/11 giữ khối lọc (ô Kho) — chỉ xoá số liệu
   S.lastAt = Date.now();
   S.agg = null; _daNapTho = false; _dangNapTho = null;
   /* ĐO THẬT 15/08: tab thô = 690 KB / 1.887 dòng, trong khi màn hình chính chỉ cần vài chục ô
@@ -415,29 +405,43 @@ function canDong(tiep){
   window.htgv_data = function(resp){ onData(resp); xong(); };
 }
 function setWh(w){ if (S.wh === w) w = ""; S.wh = w; render(); }
+/* 07/11 user «mỗi khung đều có bộ lọc riêng của khung đó»: dựng lại ô Kho (12/10 từng bỏ vì «xấu quá · không cần» — khi đó là ô trơ trọi
+   chiếm 1 hàng đầu khung + đã có biểu đồ «Theo kho» để bấm lọc). Nay biểu đồ Theo kho đã bỏ và ô nằm trong khối «Bộ lọc» gập sẵn của khung
+   (không chiếm chỗ khi không lọc) ⇒ lý do cũ không còn. Lọc kho chạy NGAY TRÊN TRÌNH DUYỆT: tab tổng đã có sẵn từng dòng kho × loại
+   (soLieu lọc theo S.wh) — không gọi thêm lượt tải nào. Số trong ngoặc = số SKU bất thường của kho. */
 function renderWhBar(){
-  /* 12/10 user bỏ hẳn bộ lọc Kho ("xấu quá" · không cần) — lọc kho vẫn bằng bấm thẻ/biểu đồ theo kho */
-  var el0 = $id("htWhBar"); if (el0) el0.innerHTML = ""; return;
-  /* 12/10 user: bỏ dải chip "Lọc kho" — chuyển sang Ô CHỌN kiểu bộ lọc chung (nhãn + combo như Xác minh › Nhật ký) */
-  var el = $id("htWhBar"); if (!el) return;
+  var sel = $id("htWhSel"); if (!sel) return;
   var ws = {};
   if (S.agg) S.agg.forEach(function(o){ if (o.type === "__all__") ws[o.wh] = o.n; });
   else S.rows.forEach(function(r){ if (r.wh) ws[r.wh] = (ws[r.wh] || 0) + 1; });
   var keys = Object.keys(ws).sort();
-  if (!keys.length){ el.innerHTML = ""; return; }
+  if (S.wh && keys.indexOf(S.wh) < 0) S.wh = "";
   var tong = keys.reduce(function(a, w){ return a + ws[w]; }, 0);
-  el.innerHTML = '<label><span class="lbl">Kho</span><select id="htWhSel"><option value="">Tất cả kho (' + nf(tong) + ')</option>' +
-    keys.map(function(w){ return '<option value="' + esc(w) + '"' + (S.wh === w ? " selected" : "") + '>' + esc(w) + ' (' + nf(ws[w]) + ')</option>'; }).join("") + '</select></label>';
-  var sel = $id("htWhSel");
-  sel.onchange = function(){ S.wh = sel.value; render(); };
+  sel.innerHTML = '<option value="">Tất cả kho (' + nf(tong) + ')</option>' +
+    keys.map(function(w){ return '<option value="' + esc(w) + '"' + (S.wh === w ? " selected" : "") + '>' + esc(w) + ' (' + nf(ws[w]) + ')</option>'; }).join("");
+  if (!sel._htGan){ sel._htGan = 1; sel.addEventListener("change", function(){ S.wh = sel.value; render(); }); }
   if (typeof window.enhanceSelect === "function") window.enhanceSelect(sel);
+  if (sel._csWrap && typeof sel._csWrap._csDongBo === "function") sel._csWrap._csDongBo();
+  var btn = $id("htBtnLoc");
+  if (btn){
+    var chu = S.wh ? "Bộ lọc · đang lọc" : "Bộ lọc";
+    btn.classList.toggle("dang-loc", !!S.wh);
+    if (btn.firstChild && btn.firstChild.nodeType === 3){ if (btn.firstChild.nodeValue !== chu) btn.firstChild.nodeValue = chu; }   // giữ ✕ (tat-loc.js)
+    else btn.textContent = chu;
+  }
+}
+function toggleLoc(){
+  var bar = $id("htWhBar"), btn = $id("htBtnLoc");
+  if (!bar || !btn) return;
+  var col = bar.classList.toggle("collapsed");
+  btn.classList.toggle("mo", !col);
 }
 function render(){
   var st = $id("htState"), cont = $id("htContent");
   if (!st || !cont) return;
   var btn = $id("htReload"); if (btn) btn.disabled = false;
   if (!S.ok){
-    $id("htWhBar").innerHTML = ""; cont.innerHTML = "";
+    cont.innerHTML = "";
     st.style.display = "block";
     st.innerHTML = '<div style="max-width:720px;margin:0 auto;text-align:left;line-height:1.75;color:var(--muted,#6b7280)">' +
       '<b style="color:var(--text,#1f2937)">Chưa có dữ liệu tồn kho bất thường trong Google Sheet.</b><br>' +
@@ -449,7 +453,7 @@ function render(){
   st.style.display = "none";
   renderWhBar();
   var _so = soLieu();
-  var tot = _so.tot, cnt = _so.cnt, byWh = _so.byWh, nSku = _so.nSku, nWh = _so.nWh;
+  var tot = _so.tot, cnt = _so.cnt, nSku = _so.nSku, nWh = _so.nWh;
 
   if (!S.wh && window.tqGhi) window.tqGhi("abn", { n: nSku });   // 13/10 Tổng quan phương án B đọc số này (không tự tải)
   var tiles = '<div class="ht-tile tot" onclick="HTONBAT.openAll()" title="Xem tất cả SKU bất thường">' +
@@ -459,33 +463,14 @@ function render(){
       return '<div class="ht-tile" style="--cc:' + t.c + '" data-k="' + t.k + '" onclick="HTONBAT.openType(this.getAttribute(\'data-k\'))" title="Xem SKU có ' + t.lb + '">' +
         '<div class="k">' + nf(tot[t.k]) + '</div><div class="l">' + t.lb + '</div><div class="s">' + nf(cnt[t.k]) + ' SKU</div></div>';
     }).join("");
-  var legend = TYPES.map(function(t){ return '<span><i style="background:' + t.c + '"></i>' + t.lb + '</span>'; }).join("");
 
   var html = '<div class="ht-tiles">' + tiles + '</div>';
   if (!nSku){
     html += '<section class="ht-panel"><div class="ht-empty">Không có SKU bất thường (Product Type = Normal) trong phạm vi' + (S.wh ? (' kho “' + esc(S.wh) + '”') : ' này') + '.</div></section>';
     cont.innerHTML = html; capNhatInfo(); return;
   }
-  // Chart 1 — theo kho: thanh ngang xếp chồng (độ dài = tổng SL bất thường, màu = loại)
-  var whKeys = Object.keys(byWh).sort(function(a, b){ return whTot(byWh[b]) - whTot(byWh[a]); });
-  var maxWh = 1; whKeys.forEach(function(w){ maxWh = Math.max(maxWh, whTot(byWh[w])); });
-  var whBars = whKeys.map(function(w){
-    var o = byWh[w], t = whTot(o), wp = t / maxWh * 100;
-    var segs = TYPES.map(function(ty){ var v = o[ty.k] || 0; if (!v || !t) return ""; return '<i style="width:' + (v / t * 100).toFixed(3) + '%;background:' + ty.c + '" title="' + ty.lb + ': ' + nf(v) + '"></i>'; }).join("");
-    return '<div class="ht-row" data-w="' + esc(w) + '" onclick="HTONBAT.openWh(this.getAttribute(\'data-w\'))" title="Bấm xem chi tiết SKU của kho ' + esc(w) + '">' +
-      '<span class="ht-rl"><span class="ht-dot" style="background:' + whColor(w) + '"></span>' + esc(w) + '</span>' +
-      '<span class="ht-track"><span class="ht-fill" data-w="' + wp.toFixed(2) + '">' + segs + '</span></span>' +
-      '<span class="ht-rv"><b>' + nf(t) + '</b><small>' + nf(o.n) + ' SKU</small></span></div>';
-  }).join("");
-
-  html += '<div class="ht-grid2 ht-fade">' +
-    '<section class="ht-panel"><h2>Theo kho <span class="ht-legend">' + legend + '</span></h2><div class="ht-chart">' + whBars + '</div></section>' +
-    /* 07/11 bỏ «Theo loại»: lặp y nguyên 6 ô số ngay trên (cùng số lượng + số SKU) — luật không lặp thông tin */
-  '</div>';
+  /* 07/11 user: BỎ hẳn phần «Theo kho» (tiêu đề + chú giải 6 loại + thanh theo kho) — xem theo kho bằng Bộ lọc › Kho của khung */
   cont.innerHTML = html;
-  requestAnimationFrame(function(){ requestAnimationFrame(function(){
-    cont.querySelectorAll(".ht-fill").forEach(function(f){ f.style.width = f.getAttribute("data-w") + "%"; });
-  }); });
   capNhatInfo();
 }
 
@@ -639,7 +624,7 @@ function init(pane){
 }
 
 window.HTONBAT = {
-  init: init, reload: loadData, setWh: setWh,
+  init: init, reload: loadData, setWh: setWh, toggleLoc: toggleLoc,
   openAll: openAll, openWh: openWh, openType: openType, closeModal: closeModal,
   comboInput: comboInput, comboMenu: comboMenu, quick: quick
 };
