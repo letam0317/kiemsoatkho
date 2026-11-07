@@ -4062,8 +4062,8 @@ var HOME_MUC = [
     { t: "planogram", ten: "Planogram", cc: "var(--good)", mo: "Vệ sinh quầy kệ + bàn đóng gói theo sơ đồ: ai phụ trách, ô nào chưa báo cáo, ai đi làm mà chưa làm.",
       muc: ["Tiến độ hôm nay", "Sơ đồ khu vực", "Cần xử lý", "Nhân viên"] }
   ]},
-  /* 05/11 user: gộp «Tồn kho» + «Tài sản» thành 1 nhóm «Tồn kho và Tài sản cố định» — Bảo dưỡng ngang hàng, bên phải Tồn kho chính xác */
-  { g: "Tồn kho và Tài sản cố định", mo: "Số liệu kho đọc từ WMS mỗi ngày · kế hoạch bảo dưỡng thiết bị kho 170", items: [
+  /* 05/11 user: gộp «Tồn kho» + «Tài sản» thành 1 nhóm «Tồn kho và Tài sản cố định» (07/11 user đổi tên «Tồn kho, tài sản») — Bảo dưỡng ngang hàng, bên phải Tồn kho chính xác */
+  { g: "Tồn kho, tài sản", mo: "Số liệu kho đọc từ WMS mỗi ngày · kế hoạch bảo dưỡng thiết bị kho 170", items: [
     { t: "kk", ten: "Tồn kho chính xác", cc: "var(--info,var(--accent))", mo: "Kiểm kê thật (physical-count) theo SKU và mã vị trí, kèm SKU bất thường (Conflict · UID Temp · Not Found · Unsuitable · Committed).",
       muc: ["Kiểm kê", "Tiến độ theo kho", "Lệch âm/dương", "Bất thường"] },
     /* 27/10 Tài sản › Bảo dưỡng: số = tổng đầu việc trong kế hoạch (hasaki-baoduong.js ghi tqGhi «bd» khi vẽ xong; Tổng quan không tự tải) */
@@ -4890,7 +4890,7 @@ document.addEventListener('click', ()=>csDongHet(null));
     { g: "", items: [["home","Tổng quan"]] },   // 12/10 trang Tổng quan đứng riêng trên đầu (không tiêu đề nhóm)
     { g: "Hạng mục 5S",   items: [["tong","Tổng kết"],["task","Vi phạm"],["hangmuc","Quy định"],["planogram","Planogram"]] },
     /* 05/11 user: gộp Tồn kho + Tài sản · 27/10 user: hạng mục «Tài sản» ngang Tồn kho / Xác minh, mục con «Bảo dưỡng» · 15/10 user: gộp Kiểm kê + Bất thường thành 1 mục (trong trang Kiểm kê trên, Bất thường dưới) */
-    { g: "Tồn kho và Tài sản cố định", items: [["kk","Tồn kho chính xác"],["baoduong","Bảo dưỡng"]] },
+    { g: "Tồn kho, tài sản", items: [["kk","Tồn kho chính xác"],["baoduong","Bảo dưỡng"]] },
     /* 05/10 user chọn kiểu A: mục con Xác minh nằm ở thanh bên (thay dải chip trong tab). Chỉ hiện trên máy có máy chủ 8591. */
     { g: "Xác minh", hx: 1, items: [["xacminh","Theo tác vụ","treo"],["xacminh","Theo máy","cam"],["maytram","Máy trạm"],["xacminh","Nhật ký","tg"],["xacminh","CCTV","sodo"]] }   // 24/10 Sơ đồ camera: CHỈ tài khoản tamlc (lọc ở build, máy chủ cũng chặn)   // 15/10 user: Nhật ký xuống dưới Máy trạm   // 13/10 tối user: Máy trạm ở Xác minh, DƯỚI CÙNG, phải đăng nhập mới xem (điện thoại: nhóm chỉ còn mục này)
   ];
