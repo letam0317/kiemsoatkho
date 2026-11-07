@@ -412,7 +412,8 @@ html body .panel > .panel-head:has(.btn-filter){display:flex!important; align-it
 .panel-head .btn-filter::after{content:""; display:inline-block; width:5.5px; height:5.5px; border-right:1.5px solid currentColor;
   border-bottom:1.5px solid currentColor; transform:translateY(-1.5px) rotate(45deg); transition:transform .22s var(--ez-apple,ease); flex:0 0 auto;}
 .panel-head .btn-filter.mo::after{transform:translateY(1.5px) rotate(-135deg);}
-.panel-head .btn-filter:hover,.panel-head .btn-filter.mo,.panel-head .btn-filter.dang-loc{border-color:var(--accent); color:var(--accent); background:color-mix(in srgb,var(--accent) 8%,var(--surface));}
+/* 07/11 nút Bộ lọc mới (user duyệt): KHÔNG lọc = màu thường kể cả khi khối lọc đang mở, rê chỉ nền nhạt; đang lọc = đỏ «Đang lọc» + ✕ do tat-loc.js (.tl-dang) */
+.panel-head .btn-filter:hover,.panel-head .btn-filter.mo{border-color:var(--border); color:var(--text); background:var(--ad-re,var(--hover));}
 .panel > .filters{position:relative; z-index:30; margin:0!important; border:0!important; border-bottom:1px solid var(--ad-chia,var(--border))!important; border-radius:0!important;
   transform-origin:top center; animation:popIn .22s var(--ez-spring,cubic-bezier(.16,1,.3,1));}
 .panel > .filters.collapsed{display:none!important; animation:none!important;}
@@ -1059,6 +1060,13 @@ th.kpi-col-prev, td.kpi-col-prev{text-align:right; white-space:nowrap;}
 .kpi-down{color:var(--good); font-weight:800; font-size:12.5px;}
 .kpi-eq{color:var(--muted); font-weight:700;}
 .kpi-prev-non{color:var(--muted); font-size:12px;}
+/* 07/11 lõi «không nhảy khi bấm»: đổi tháng (3 → 17 dòng) bảng tự chia cột lại ⇒ cột Họ tên +76 px. Máy tính: cột cố định theo tỉ lệ */
+@media(min-width:769px){
+  .kpi-wrap table{table-layout:fixed;}
+  .kpi-wrap th.kpi-rank{width:56px;} .kpi-wrap th.kpi-id{width:120px;}
+  .kpi-wrap th.kpi-col-luot{width:21%;} .kpi-wrap th.kpi-col-val{width:17%;} .kpi-wrap th.kpi-col-prev{width:18%;}
+  .kpi-wrap td{overflow:hidden; text-overflow:ellipsis;}
+}
 .th-short{display:none;}
 /* ===== MÀN HẸP: HỌ TÊN ĐẦY ĐỦ, KHÔNG xuống dòng — bảng gọn tối đa,
    rộng quá khung thì .kpi-wrap tự cuộn ngang (dữ liệu không tràn, không gãy dòng). ===== */
@@ -1631,8 +1639,8 @@ body.side-anim:has(.wrap :is([class*="modal"],[id$="modal"],[id$="Modal"],#light
 <script src="tien-ich.js?v=20261020a"></script><script src="anh-nv.js?v=20261105a"></script><!-- 05/11 ảnh đại diện NV toàn dự án: vòng tròn [data-anh-nv] tự thay ảnh --><!-- 20/10 tiện ích chung: esc/$id/hm/ngayVN — nạp TRƯỚC mọi mô-đun -->
 <script src="hasaki-giaodien-antd.js?v=20261029a"></script>
 <script src="tai-khoan.js?v=20261030a"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
-<script src="tat-loc.js?v=20261026a" defer></script>
-<script src="loc-popup.js?v=20261026a" defer></script>
+<script src="tat-loc.js?v=20261107b" defer></script>
+<script src="loc-popup.js?v=20261107b" defer></script>
 <!-- 26/10 điện thoại: khối lọc trong pop-up gập sau nút «Bộ lọc» (cùng mẫu nút trang) -->
 <!-- 22/10 nút «✕ Tắt lọc» · 23/10 dời vào TRONG nút «Bộ lọc», đỏ khi đang lọc, ẩn khi không lọc (dùng chung Retail/Factory) -->
 <link rel="stylesheet" href="thanh-phan.css?v=20261021a"><!-- 21/10 chip trạng thái + nút dùng chung mọi tab (Mẫu 1 đánh giá 20/10) -->
@@ -4062,8 +4070,8 @@ var HOME_MUC = [
     { t: "planogram", ten: "Planogram", cc: "var(--good)", mo: "Vệ sinh quầy kệ + bàn đóng gói theo sơ đồ: ai phụ trách, ô nào chưa báo cáo, ai đi làm mà chưa làm.",
       muc: ["Tiến độ hôm nay", "Sơ đồ khu vực", "Cần xử lý", "Nhân viên"] }
   ]},
-  /* 05/11 user: gộp «Tồn kho» + «Tài sản» thành 1 nhóm «Tồn kho và Tài sản cố định» (07/11 user đổi tên «Tồn kho, tài sản») — Bảo dưỡng ngang hàng, bên phải Tồn kho chính xác */
-  { g: "Tồn kho, tài sản", mo: "Số liệu kho đọc từ WMS mỗi ngày · kế hoạch bảo dưỡng thiết bị kho 170", items: [
+  /* 05/11 user: gộp «Tồn kho» + «Tài sản» thành 1 nhóm «Tồn kho và Tài sản cố định» (07/11 user đổi tên «Tồn kho, tài sản» → «Tồn kho & tài sản») — Bảo dưỡng ngang hàng, bên phải Tồn kho chính xác */
+  { g: "Tồn kho & tài sản", mo: "Số liệu kho đọc từ WMS mỗi ngày · kế hoạch bảo dưỡng thiết bị kho 170", items: [
     { t: "kk", ten: "Tồn kho chính xác", cc: "var(--info,var(--accent))", mo: "Kiểm kê thật (physical-count) theo SKU và mã vị trí, kèm SKU bất thường (Conflict · UID Temp · Not Found · Unsuitable · Committed).",
       muc: ["Kiểm kê", "Tiến độ theo kho", "Lệch âm/dương", "Bất thường"] },
     /* 27/10 Tài sản › Bảo dưỡng: số = tổng đầu việc trong kế hoạch (hasaki-baoduong.js ghi tqGhi «bd» khi vẽ xong; Tổng quan không tự tải) */
@@ -4130,7 +4138,7 @@ function homeRender(){
       var s=so(it), m={ k: it.t+(it.sub?":"+it.sub:""), ten: it.ten, mo: it.mo, mauSo: MAU[it.t] };
       if(s){ m.so=s.k; m.dv=s.l.replace(/ tháng \d\d\/\d{4}$/,""); }
       else if(it.t==="planogram"&&plg&&plg.tong){ m.so=pctVN(plg.da,plg.tong)+"%"; m.dv="đã vệ sinh hôm nay"; m.tien=plg.da/plg.tong*100; }
-      else if(it.t==="kk"&&kk&&kk.tong){ m.so=pctVN(kk.dem,kk.tong)+"%"; m.dv="vị trí đã kiểm"; m.tien=kk.dem/kk.tong*100; }
+      /* 07/11 user «bỏ 100%»: thẻ Tồn kho chính xác không còn số % (số kiểm kê vẫn ở ô chỉ số đầu trang) */
       else if(it.t==="htonbat"&&abn&&abn.n!=null){ m.so=nf0(abn.n); m.dv="SKU bất thường"; }
       m.bam=function(){ var nut=document.querySelector('#sideNav .s-item[data-tab="'+it.t+'"]'+(it.sub?'[data-sub="'+it.sub+'"]':''));
         if(nut) nut.click(); else setTab(it.t); };
@@ -4565,7 +4573,9 @@ const bbFull =u=>{const id=bbDriveId(u);return id?`https://drive.google.com/thum
     if(!th.length || !th[0].offsetParent || getComputedStyle(t).display !== 'table') return;   // bảng đã thành THẺ (điện thoại) — không khoá
     const sig = (p ? p.id : '') + '|' + th.map((c) => c.className + ':' + c.textContent.trim().replace(/\d+/g, '#')).join('|'), cw = t.parentElement.clientWidth, n = dong(t);
     let s = SO.get(sig); if(s && (s.cw !== cw || s.w.length !== th.length)) { SO.delete(sig); s = null; }
-    if(!s || n >= s.n){
+    /* 07/11 (lõi «không nhảy khi bấm»): đổi tháng / lọc ra SỐ DÒNG TƯƠNG ĐƯƠNG trước đây mở khoá rồi chia cột lại ⇒ cột nhảy (qc-nhay-o: Tổng kết đổi tháng
+       cột Họ tên +76 px). Nay chỉ đo lại khi dữ liệu THẬT SỰ nhiều hơn hẳn (>1,5 lần + 2 dòng: khung xương → dữ liệu thật); còn lại giữ khoá. */
+    if(!s || n > s.n * 1.5 + 2){
       if(t.dataset.khoaCot){ t.style.removeProperty('table-layout'); th.forEach((c) => c.style.removeProperty('width')); delete t.dataset.khoaCot; void t.offsetWidth; }
       SO.set(sig, { n, cw, w: th.map((c) => c.getBoundingClientRect().width) }); return;
     }
@@ -4890,7 +4900,7 @@ document.addEventListener('click', ()=>csDongHet(null));
     { g: "", items: [["home","Tổng quan"]] },   // 12/10 trang Tổng quan đứng riêng trên đầu (không tiêu đề nhóm)
     { g: "Hạng mục 5S",   items: [["tong","Tổng kết"],["task","Vi phạm"],["hangmuc","Quy định"],["planogram","Planogram"]] },
     /* 05/11 user: gộp Tồn kho + Tài sản · 27/10 user: hạng mục «Tài sản» ngang Tồn kho / Xác minh, mục con «Bảo dưỡng» · 15/10 user: gộp Kiểm kê + Bất thường thành 1 mục (trong trang Kiểm kê trên, Bất thường dưới) */
-    { g: "Tồn kho, tài sản", items: [["kk","Tồn kho chính xác"],["baoduong","Bảo dưỡng"]] },
+    { g: "Tồn kho & tài sản", items: [["kk","Tồn kho chính xác"],["baoduong","Bảo dưỡng"]] },
     /* 05/10 user chọn kiểu A: mục con Xác minh nằm ở thanh bên (thay dải chip trong tab). Chỉ hiện trên máy có máy chủ 8591. */
     { g: "Xác minh", hx: 1, items: [["xacminh","Theo tác vụ","treo"],["xacminh","Theo máy","cam"],["maytram","Máy trạm"],["xacminh","Nhật ký","tg"],["xacminh","CCTV","sodo"]] }   // 24/10 Sơ đồ camera: CHỈ tài khoản tamlc (lọc ở build, máy chủ cũng chặn)   // 15/10 user: Nhật ký xuống dưới Máy trạm   // 13/10 tối user: Máy trạm ở Xác minh, DƯỚI CÙNG, phải đăng nhập mới xem (điện thoại: nhóm chỉ còn mục này)
   ];
