@@ -40,7 +40,13 @@ a{color:var(--nhan)}
       var m = {}, n = 0;
       try { for (var i = 0; i < ls.length; i++) { var k = ls.key(i), v = ls.getItem(k); if (v != null && v.length < 4000 && n < 30000) { m[k] = v; n += v.length + k.length; } } } catch (e) {}
       var g = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(m)))));
-      location.replace(j.url + "/" + app + "/" + duong + "#mang=" + g);
+      /* 07/11 user «ép xuống 2/10 giây»: đang mở NGAY TRÊN LAPTOP chạy bản xem trước ⇒ đi thẳng 127.0.0.1:8123 (~0,35 s mỗi lần lưu);
+         máy khác / điện thoại ⇒ qua đường hầm. Dò 600 ms. */
+      var di = function (goc, them) { location.replace(goc + "/" + app + "/" + duong + them + "#mang=" + g); };
+      var ac = window.AbortController ? new AbortController() : null, hen = setTimeout(function () { if (ac) ac.abort(); }, 600);
+      fetch("http://127.0.0.1:8123/__cho?pb=do", { cache: "no-store", signal: ac ? ac.signal : undefined }).then(function (r) {
+        clearTimeout(hen); if (r.ok) di("http://127.0.0.1:8123", "?tailai=1"); else di(j.url, "");
+      }, function () { clearTimeout(hen); di(j.url, ""); });
     })
     .catch(function () { bao('Mạng lỗi — <a href="">thử lại</a>.'); });
 })();
