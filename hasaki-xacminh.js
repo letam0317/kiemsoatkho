@@ -228,7 +228,20 @@
         "#modal.hx-ben .hx-qd-luot.hx-tb-luoi .hx-act{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}" +
         "#modal.hx-ben .hx-qd-luot.hx-tb-luoi .hx-act button{width:100%;min-width:0;padding:4px 2px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px!important}#modal.hx-ben .hx-qd-luot.hx-tb-luoi .hx-act button.chinh,#modal.hx-ben .hx-qd-luot.hx-tb-luoi .hx-act button[data-qd='-1']{grid-column:1/-1!important}" +
         "#modal.hx-ben .hx-qd-luot.hx-tb-luoi .hx-act button.chinh{min-height:36px}" +
-        "#modal.hx-ben .hx-tb-luoi .hx-tl{height:22px!important;overflow:visible}#modal.hx-ben .hx-tb-luoi .hx-tl .dn{background:color-mix(in srgb,var(--bad) 55%,transparent);border-left:0;border-radius:2px}" +
+        /* 08/11 mẫu 6: thanh cao 11 px (1/2), chip tốc độ cao bằng thanh, giờ nổi trên con trỏ, ghi chú dưới thanh ≤ 2 dòng */
+        "#modal.hx-ben .hx-tb-luoi .hx-tl-hang{position:relative}#modal.hx-ben .hx-tl-hang .hx-tl-gio{position:absolute;top:auto;bottom:calc(100% + 3px);transform:translateX(-50%);z-index:3;" +
+          "padding:0 4px;border-radius:3px;background:var(--text);color:var(--surface);font-size:10px!important;line-height:14px;min-width:0!important;white-space:nowrap;pointer-events:none}" +
+        "#modal.hx-ben .hx-toc-chip{position:relative;flex:none;height:11px;min-height:0!important;padding:0 6px;border:1px solid var(--ad-chia,var(--border));border-radius:3px;" +
+          "background:var(--surface);color:var(--text);font-size:9px;line-height:9px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;cursor:pointer}" +
+        "#modal.hx-ben .hx-toc-chip::after{content:'';position:absolute;left:-6px;right:-6px;top:-14px;bottom:-14px}" +
+        "#modal.hx-ben .hx-tb-luoi .hx-tl-hang .hx-vbar .hx-toc-chip{height:11px!important;min-height:0!important;padding:0 6px!important;font-size:9px!important;line-height:9px!important}" +
+        "#modal.hx-ben .hx-tl-hang .hx-vbar{position:relative}#modal.hx-ben .hx-toc.hx-toc-ds{position:absolute;right:0;bottom:calc(100% + 6px);z-index:9;display:flex;flex-direction:column;" +
+          "padding:4px;border:1px solid var(--ad-chia,var(--border));border-radius:6px;background:var(--surface);box-shadow:0 6px 16px color-mix(in srgb,var(--text) 18%,transparent)}" +
+        "#modal.hx-ben .hx-toc.hx-toc-ds[hidden]{display:none!important}#modal.hx-ben .hx-toc.hx-toc-ds button{height:28px!important;min-height:28px!important;padding:0 12px!important;text-align:left;border-radius:4px}" +
+        "#modal.hx-ben .hx-tb-luoi :is(.hx-pd,.hx-vl-tt){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}" +
+        "#modal.hx-ben .hx-tb-luoi .hx-vwrap,#modal.hx-ben .hx-tb-luoi #qdKhung{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}" +
+        "#modal.hx-ben .hx-tb-luoi .hx-tl .mk.ng{background:var(--bad);width:2px}" +
+        "#modal.hx-ben .hx-tb-luoi .hx-tl{height:11px!important;overflow:visible}#modal.hx-ben .hx-tb-luoi .hx-tl .dn{background:color-mix(in srgb,var(--bad) 55%,transparent);border-left:0;border-radius:2px}" +
         "#modal.hx-ben .hx-tb-luoi .hx-tl .mk{top:0;bottom:0;width:1px;background:color-mix(in srgb,var(--text) 45%,transparent)}" +
         "#modal.hx-ben .hx-tb-luoi .hx-tl .mkn{position:absolute;top:50%;z-index:2;transform:translate(-50%,-50%);width:18px;height:18px;min-height:0!important;padding:0;border-radius:50%;border:1px solid var(--surface);background:var(--text);color:var(--surface);font-size:11px;line-height:16px;font-weight:600;cursor:pointer}" +
         "#modal.hx-ben .hx-tb-luoi .hx-tl .mkn.ng{background:var(--bad);color:#fff}#modal.hx-ben .hx-tb-luoi .hx-tl .cur{z-index:1}" +
@@ -1072,7 +1085,7 @@
     var tl = $id("hxTl"), veTl = function () { tl.innerHTML = dn.filter(function (d) { return d[1] >= S - 4 && d[0] <= E; }).map(function (d) { return '<div class="dn" style="left:' + ((d[0] - S) / tong * 100) + '%;width:' + Math.max(0.6, (d[1] - d[0] + 4) / tong * 100) + '%"></div>'; }).join("") +
       (l.buocAnh || []).map(function (b, i) { if (opt.phu && (giay(b.luc) < S || giay(b.luc) > E)) return "";   /* góc phụ: mốc ngoài đoạn thì không vẽ (ép mép là sai giờ) */
         var x = Math.max(1.5, Math.min(98.5, (giay(b.luc) - S) / tong * 100));
-        return '<div class="mk" style="left:' + x + '%"></div><button class="mkn' + (b.doNguoi ? " ng" : "") + '" data-tmk="' + i + '" style="left:' + x + '%" title="' + e_(b.nhan) + ' — bấm để tua tới">' + (i + 1) + '</button>'; }).join("") + '<div class="cur" id="hxCur"></div>';
+        return '<div class="mk' + (b.doNguoi ? " ng" : "") + '" style="left:' + x + '%" title="' + e_(b.nhan) + '"></div>'; }).join("") + '<div class="cur" id="hxCur"></div>';   // 08/11 user: chỉ vạch màu, bỏ số
     /* 17/10 (2) user «① trước ② sau này là gì — hiển thị ở thanh thời gian clip luôn»: mốc = các ảnh máy chụp (trước / lúc gửi xe / sau) → số tròn trên thanh, bấm tua tới */
     tl.querySelectorAll("[data-tmk]").forEach(function (m) { m.onclick = function (ev) { ev.stopPropagation(); tuaToi(giay(l.buocAnh[Number(m.dataset.tmk)].luc)); }; }); };
     veTl();
@@ -1150,7 +1163,7 @@
         if (y + 32 < b[1] - 4) { g.strokeStyle = "#e74c3c"; g.lineWidth = 3; g.beginPath(); g.moveTo(x + 14, y + 32); g.lineTo(Math.max(b[0], Math.min(b[2], x + 14)), b[1]); g.stroke(); }   // vạch nối nhãn bị dời lên với khung
         g.fillStyle = "#e74c3c"; g.fillRect(x, y, w, 32); g.fillStyle = "#fff"; g.fillText(chu, x + 8, y + 24); });
       /* 05/11 user «đoạn có người đi qua tự động về 0.5 — nhanh quá sao t coi được»: có người (đoạn đã ghi HOẶC đang khoanh thấy) ×0,5 · trống ×3 */
-      if (toc === "auto") { var r = trongNguoi(t) || tracks.length ? 0.5 : 3; if (v.playbackRate !== r) v.playbackRate = r; }
+      if (toc === "auto" && !window.__hxGiu) { var r = trongNguoi(t) || tracks.length ? 0.5 : 3; if (v.playbackRate !== r) v.playbackRate = r; }
       $id("hxGio").textContent = hms(t);   // 17/10 (2) user «có sẵn ×1 ×2 ×3 rồi hiện thêm ×3 làm gì — tô màu nút»: tốc độ đang chạy = nút được tô
       var dang = toc === "auto" && !v.paused ? String(v.playbackRate) : ""; if (dang !== tocTo) { tocTo = dang; document.querySelectorAll(".hx-vbar [data-toc]").forEach(function (x) { x.classList.toggle("dang", x.dataset.toc === dang); }); }
       var cur = $id("hxCur"); if (cur) cur.style.left = ((t - S) / tong * 100) + "%";
@@ -1160,11 +1173,57 @@
     v.addEventListener("seeked", function () { if (cu()) return; prevXam = null; doTim(); });
     v.addEventListener("play", function () { if (cu()) return; $id("hxPlay").textContent = "⏸"; }); v.addEventListener("pause", function () { if (cu()) return; $id("hxPlay").textContent = "▶"; veOv(); });
     v.addEventListener("ended", function () { if (cu()) return; if (idx + 1 < src.length) nap(idx + 1, giay(src[idx + 1].bd)); });
-    $id("hxPlay").onclick = function () { if (!v.src) nap(0, dn.length ? Math.max(S, dn[0][0] - 6) : S); else if (v.paused) v.play(); else v.pause(); };
+    $id("hxPlay").onclick = function () { if (!v.src) nap(0, dn.length ? Math.max(S, dn[0][0] - 6) : S); else if (v.paused) v.play().catch(function () {}); else v.pause(); };
     document.querySelectorAll(".hx-vbar [data-toc]").forEach(function (b) { b.onclick = function () { toc = b.dataset.toc; document.querySelectorAll(".hx-vbar [data-toc]").forEach(function (x) { x.classList.toggle("on", x === b); }); if (toc !== "auto") v.playbackRate = Number(toc); veOv(); }; });
     tl.onclick = function (ev) { var r = tl.getBoundingClientRect(); window.__hxTua(S + (ev.clientX - r.left) / r.width * tong); };
     document.querySelectorAll(".hx-tlg [data-tua]").forEach(function (b) { b.onclick = function () { window.__hxTua(Number(b.dataset.tua) - 4); }; });
     if (opt.tu != null) nap(0, opt.tu); else nap(0, dn.length ? Math.max(S, dn[0][0] - 6) : S);
+    if (!opt.phu) nangCapTl(document.querySelector("#lvClip .hx-tl-hang"), v.closest(".hx-vwrap"), v);
+  }
+  /* ===== 08/11 user — thanh thời gian MẪU 6 (Theo máy + Theo tác vụ):
+     · thanh chỉ vạch màu (bỏ số), cao 1/2; giờ NỔI theo con trỏ (không chiếm chỗ); ▶ bỏ khỏi hàng
+     · tốc độ = 1 CHIP cao bằng thanh, ngang hàng, bấm mở danh sách Tự động / ×0,5 / ×1 / ×2 / ×3; chip luôn hiện TỐC ĐỘ ĐANG CHẠY
+     · chạm clip = dừng, chạm lần 2 = chạy tiếp; GIỮ nửa phải = tua nhanh (×2, như Telegram), GIỮ nửa trái = tua lùi — chip hiện «Tua tới / Tua lùi» trong lúc giữ */
+  function nangCapTl(hang, khung, v) {
+    if (!hang || !khung || !v) return;
+    var tl = hang.querySelector(".hx-tl"), gio = hang.querySelector("#hxGio"), toc = hang.querySelector(".hx-toc"), play = hang.querySelector("#hxPlay");
+    if (play) play.hidden = true;
+    if (gio && gio.parentNode !== hang) { hang.appendChild(gio); gio.classList.add("hx-tl-gio"); }   // giờ nổi nằm ở HÀNG (thanh vẽ lại innerHTML không xoá mất)
+    var so = function (r) { return "×" + String(Math.round(r * 100) / 100).replace(".", ","); };
+    var chip = hang.querySelector(".hx-toc-chip");
+    if (toc && !chip) { chip = document.createElement("button"); chip.type = "button"; chip.className = "hx-toc-chip"; chip.setAttribute("aria-haspopup", "true"); chip.setAttribute("aria-expanded", "false");
+      toc.parentNode.insertBefore(chip, toc); toc.classList.add("hx-toc-ds"); toc.hidden = true;
+      chip.onclick = function (ev) { ev.stopPropagation(); toc.hidden = !toc.hidden; chip.setAttribute("aria-expanded", String(!toc.hidden)); };
+      toc.addEventListener("click", function () { toc.hidden = true; chip.setAttribute("aria-expanded", "false"); setTimeout(veChip, 0); });
+      document.addEventListener("click", function (ev) { if (!toc.hidden && !ev.target.closest(".hx-toc-ds,.hx-toc-chip")) { toc.hidden = true; chip.setAttribute("aria-expanded", "false"); } }); }
+    var giu = "";
+    function veChip() { if (!chip) return; var on = toc && toc.querySelector("[data-toc].on");
+      chip.textContent = giu === "toi" ? "Tua tới " + so(v.playbackRate) : giu === "lui" ? "Tua lùi" : (on && on.dataset.toc === "auto" ? "Tự động " : "") + so(v.playbackRate); }
+    v.addEventListener("ratechange", veChip); v.addEventListener("play", veChip); veChip();
+    var dongGio = function () { var t2 = hang.querySelector(".hx-tl"), cur = hang.querySelector("#hxCur"); if (!cur || !gio || !t2) return;
+      gio.hidden = !/\d/.test(gio.textContent);   // chưa có giờ («--:--:--») thì không nổi
+      var x = t2.offsetLeft + (parseFloat(cur.style.left) || 0) / 100 * t2.offsetWidth, w = gio.offsetWidth / 2;
+      gio.style.left = Math.max(w, Math.min(hang.clientWidth - w, x)) + "px"; };   // không tràn mép hàng
+    dongGio();
+    v.addEventListener("timeupdate", dongGio); v.addEventListener("seeked", dongGio);
+    if (khung.__hxCham) return; khung.__hxCham = 1;
+    /* chạm / giữ trên khung clip — bỏ các cú bấm cũ trên video (tránh đảo phát 2 lần) */
+    v.onclick = null;
+    var hen = 0, lap = 0, nua = "", tocCu = 1, x0 = 0, y0 = 0;
+    var thoiGiu = function () { if (giu === "toi") v.playbackRate = tocCu; clearInterval(lap); giu = ""; window.__hxGiu = false; veChip(); };
+    khung.addEventListener("pointerdown", function (ev) { if (ev.button > 0 || ev.target.closest("button,a,.hx-pd,.hx-tl-hang")) return;
+      var r = khung.getBoundingClientRect(); nua = ev.clientX - r.left > r.width / 2 ? "toi" : "lui"; x0 = ev.clientX; y0 = ev.clientY;
+      hen = setTimeout(function () { hen = 0; giu = nua; window.__hxGiu = true;
+        if (giu === "toi") { tocCu = v.playbackRate; v.playbackRate = Math.max(2, tocCu * 2); if (v.paused) v.play().catch(function () {}); }
+        else lap = setInterval(function () { v.currentTime = Math.max(0, v.currentTime - 0.6); }, 150);
+        veChip(); }, 380); });
+    khung.addEventListener("pointermove", function (ev) { if (hen && Math.abs(ev.clientX - x0) + Math.abs(ev.clientY - y0) > 12) { clearTimeout(hen); hen = 0; } });
+    var nha = function (ev) { if (hen) { clearTimeout(hen); hen = 0; if (ev && ev.type === "pointerup") { khung.classList.remove("hx-cham-phat");
+        if (play && play.onclick) play.onclick(); else if (v.paused) v.play().catch(function () {}); else v.pause(); } }   // nút ▶ ẩn vẫn giữ luật nạp đoạn đầu (Theo máy)
+      else if (giu) thoiGiu(); };
+    khung.addEventListener("pointerup", nha); khung.addEventListener("pointercancel", nha); khung.addEventListener("pointerleave", function () { if (giu) thoiGiu(); });
+    khung.addEventListener("click", function (ev) { if (!ev.target.closest("button,a,.hx-pd,.hx-tl-hang")) ev.stopPropagation(); }, true);
+    khung.addEventListener("contextmenu", function (ev) { ev.preventDefault(); });
   }
   function tuaToi(t) { if (window.__hxTua) window.__hxTua(t - 2); }
 
@@ -1917,10 +1976,10 @@
       var ve = function () { var D2 = v.duration; if (!isFinite(D2) || !D2) return;
         moc = moc.filter(function (x) { return gs(x) <= D2; });   // lượt tác động sau đuôi clip thì không vẽ (đo thật 13774186: đoạn đỏ tràn ra ngoài thanh)
         tl.innerHTML = moc.map(function (x) { var a = Math.max(0, gs(x) - 3), b2 = Math.min(D2, gs(x) + 8); return '<div class="dn" style="left:' + (a / D2 * 100) + '%;width:' + Math.max(0.6, (b2 - a) / D2 * 100) + '%"></div>'; }).join("") +
-          moc.map(function (x, j) { var xx = Math.max(1.5, Math.min(98.5, gs(x) / D2 * 100)); return '<div class="mk" style="left:' + xx + '%"></div><button class="mkn' + (x.vl ? " ng" : "") + '" data-tmk="' + j + '" style="left:' + xx + '%" title="' + e_(x.chu) + ' — bấm để tua tới">' + (j + 1) + '</button>'; }).join("") + '<div class="cur" id="hxCur"></div>';
+          moc.map(function (x) { var xx = Math.max(1.5, Math.min(98.5, gs(x) / D2 * 100)); return '<div class="mk' + (x.vl ? " ng" : "") + '" style="left:' + xx + '%" title="' + e_(x.chu) + '"></div>'; }).join("") + '<div class="cur" id="hxCur"></div>';
         tl.querySelectorAll("[data-tmk]").forEach(function (m) { m.onclick = function (ev) { ev.stopPropagation(); v.currentTime = Math.max(0, gs(moc[Number(m.dataset.tmk)]) - 2); v.play().catch(function () {}); }; }); };
       var cap = function () { var t = v.currentTime || 0, D2 = v.duration;
-        if (toc === "auto") { var r = !moc.length || gan(t) ? 1 : 3; if (v.playbackRate !== r) v.playbackRate = r; }
+        if (toc === "auto" && !window.__hxGiu) { var r = !moc.length || gan(t) ? 1 : 3; if (v.playbackRate !== r) v.playbackRate = r; }
         $id("hxGio").textContent = hms2(t); var cur = $id("hxCur"); if (cur && D2) cur.style.left = (t / D2 * 100) + "%";
         var dang = toc === "auto" && !v.paused ? String(v.playbackRate) : ""; if (dang !== tocTo) { tocTo = dang; th.querySelectorAll("[data-toc]").forEach(function (x) { x.classList.toggle("dang", x.dataset.toc === dang); }); } };
       v.addEventListener("loadedmetadata", ve); if (v.readyState >= 1) ve();
@@ -1929,7 +1988,7 @@
       $id("hxPlay").onclick = function () { if (v.paused) v.play().catch(function () {}); else v.pause(); };
       th.querySelectorAll("[data-toc]").forEach(function (b) { b.onclick = function () { toc = b.dataset.toc; th.querySelectorAll("[data-toc]").forEach(function (x) { x.classList.toggle("on", x === b); }); if (toc !== "auto") v.playbackRate = Number(toc); cap(); }; });
       tl.onclick = function (ev) { var r = tl.getBoundingClientRect(), D2 = v.duration; if (D2) v.currentTime = Math.max(0, Math.min(D2, (ev.clientX - r.left) / r.width * D2)); };
-      v.onclick = function () { if (v.paused) v.play().catch(function () {}); else v.pause(); };
+      nangCapTl(th, $id("qdKhung"), v);   // 08/11 mẫu 6: chạm / giữ trên khung clip (thay v.onclick cũ)
     }
     function xem(i) {
       var n = nguon[i], k = $id("qdKhung"); dangXem = null; k.hidden = false; k.classList.remove("trong"); var th0 = $id("qdTlHang"); if (th0) th0.hidden = true; var pd0 = $id("qdPd"); if (pd0) pd0.remove();
