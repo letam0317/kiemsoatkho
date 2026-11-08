@@ -2273,7 +2273,7 @@
         hd.forEach(function (h, i) { dong[h] = d[i] == null ? "" : String(d[i]); });
         (S.doiTen = S.doiTen || {})[b] = dong; f.hidden = true; S.moTen = ""; S.chipMo = "";
         dungViTri(); veLaiLuoi(); veLaiNay(); veLaiBen();
-        var m = $id("hpVtModal"), ph = $id("hpVtSub"); if (m && m.dataset.chu === "bd" && S.chon === b && ph) ph.textContent = ten + " · " + thuCua(S.chonNgay) + " " + dm(S.chonNgay);
+        var m = $id("hpVtModal"), ph = $id("hpVtSub"); if (m && m.dataset.chu === "bd" && S.chon === b && ph) ph.textContent = ten;   // 08/11 không lặp ngày (dải ô ngày đã hiện)
         var gsC = j.gs ? " · g-sheet đã đổi " + j.gs + " ô" : j.gsLoi ? " · g-sheet chưa đổi: " + j.gsLoi : "";
         if (window.hskTienIch && window.hskTienIch.toast) window.hskTienIch.toast("Đã lưu tên" + gsC + " — WMS · planogram cập nhật trong vài phút", j.gsLoi ? "warn" : "ok");
       }).catch(function (e) { nut.disabled = false; bao.textContent = "Chưa lưu được: " + e.message; });
