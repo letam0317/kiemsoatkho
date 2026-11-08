@@ -414,8 +414,14 @@ html body .panel > .panel-head:has(.btn-filter){display:flex!important; align-it
 .panel-head .btn-filter.mo::after{transform:translateY(1.5px) rotate(-135deg);}
 /* 07/11 nút Bộ lọc mới (user duyệt): KHÔNG lọc = màu thường kể cả khi khối lọc đang mở, rê chỉ nền nhạt; đang lọc = đỏ «Đang lọc» + ✕ do tat-loc.js (.tl-dang) */
 .panel-head .btn-filter:hover,.panel-head .btn-filter.mo{border-color:var(--border); color:var(--text); background:var(--ad-re,var(--hover));}
-.panel > .filters{position:relative; z-index:30; margin:0!important; border:0!important; border-bottom:1px solid var(--ad-chia,var(--border))!important; border-radius:0!important;
+/* 08/11 user «toàn bộ Bộ lọc dạng NGĂN KÉO khi nhấn — không xô đẩy khung dữ liệu xuống» (TK-28): khối lọc NỔI đè lên dữ liệu
+   ngay dưới đầu khung (--loc-top do tat-loc.js đặt), bảng/khung bên dưới đứng yên; bấm ra ngoài / Esc đẩy ngăn vào (tat-loc.js) */
+.panel:has(> .filters){position:relative;}
+.panel > .filters{position:absolute; left:0; right:0; top:var(--loc-top,40px); z-index:30; margin:0!important;
+  border:1px solid var(--ad-chia,var(--border))!important; border-top:0!important; border-radius:0 0 8px 8px!important;
+  background:var(--surface); box-shadow:0 6px 16px 0 color-mix(in srgb,var(--text) 8%,transparent),0 9px 28px 8px color-mix(in srgb,var(--text) 5%,transparent);
   transform-origin:top center; animation:popIn .22s var(--ez-spring,cubic-bezier(.16,1,.3,1));}
+@media (max-width:768px){.panel > .filters{top:var(--loc-top,38px);}}
 .panel > .filters.collapsed{display:none!important; animation:none!important;}
 .panel:has(> .filters:not(.collapsed)){overflow:visible;}
 @media (max-width:768px){
@@ -439,8 +445,6 @@ html body .panel > .panel-head:has(.btn-filter){display:flex!important; align-it
 .panel-head #dem{color:var(--muted); font-weight:400; font-size:12px;}
 .table-wrap{overflow-x:auto; max-height:calc(100vh - 124px); scrollbar-gutter:stable;}   /* 29/10 (9) lọc còn ít dòng → mất thanh cuộn dọc khung bảng → cột dời 4–8 px: chừa sẵn chỗ */
 @supports (height:100dvh){.table-wrap{max-height:calc(100dvh - 124px);}}
-.panel:has(.filters:not(.collapsed)) .table-wrap{max-height:calc(100vh - 188px);}
-@supports (height:100dvh){.panel:has(.filters:not(.collapsed)) .table-wrap{max-height:calc(100dvh - 188px);}}
 table{width:100%; border-collapse:collapse; font-size:12.5px;}
 thead th{position:sticky; top:0; background:var(--surface2); text-align:left; color:var(--muted); font-weight:600; padding:9px 12px; white-space:nowrap; z-index:2;}
 tbody td{padding:9px 12px; border-top:1px solid var(--border); vertical-align:middle; white-space:nowrap; font-size:inherit;}
@@ -1639,8 +1643,8 @@ body.side-anim:has(.wrap :is([class*="modal"],[id$="modal"],[id$="Modal"],#light
 <script src="tien-ich.js?v=20261020a"></script><script src="anh-nv.js?v=20261105a"></script><!-- 05/11 ảnh đại diện NV toàn dự án: vòng tròn [data-anh-nv] tự thay ảnh --><!-- 20/10 tiện ích chung: esc/$id/hm/ngayVN — nạp TRƯỚC mọi mô-đun -->
 <script src="hasaki-giaodien-antd.js?v=20261029a"></script>
 <script src="tai-khoan.js?v=20261030a"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
-<script src="tat-loc.js?v=20261107b" defer></script>
-<script src="loc-popup.js?v=20261107b" defer></script>
+<script src="tat-loc.js?v=20261108a" defer></script>
+<script src="loc-popup.js?v=20261108a" defer></script>
 <!-- 26/10 điện thoại: khối lọc trong pop-up gập sau nút «Bộ lọc» (cùng mẫu nút trang) -->
 <!-- 22/10 nút «✕ Tắt lọc» · 23/10 dời vào TRONG nút «Bộ lọc», đỏ khi đang lọc, ẩn khi không lọc (dùng chung Retail/Factory) -->
 <link rel="stylesheet" href="thanh-phan.css?v=20261021a"><!-- 21/10 chip trạng thái + nút dùng chung mọi tab (Mẫu 1 đánh giá 20/10) -->
