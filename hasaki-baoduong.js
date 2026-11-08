@@ -145,6 +145,12 @@
       B + " .bd-so-truoc{margin-right:6px;font-size:11.5px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}" + B + " .bd-so-truoc.du{color:var(--good)}" +
         B + " .bd-pn-h .bd-kav.bd-kav-cot{flex:0 0 132px!important;width:132px;display:flex;align-items:center;margin-left:auto}" +
         B + " .bd-kav.bd-kav-cot>.bd-kav-vh{flex:0 0 78px;overflow:visible}" + B + " .bd-kav.bd-kav-cot>.bd-kav-kt{flex:1 1 0;padding-left:6px}",
+      /* 08/11 user «mã · tên vị trí · Yêu cầu khít với nhau, cỡ chữ dòng 2 = dòng 3»: chip tần suất trước đây không có ô lưới ⇒ tự rơi vào hàng 1 kéo hàng cao 30 px
+         (khe 11 px dưới mã) ⇒ gán ô «ghi», nút Đóng + chip trải 3 hàng (máy tính lẫn điện thoại) — 3 dòng chữ sát nhau 20/16/16 px */
+      "#hpVtModal[data-chu=bd] #bdVtKy{grid-area:ghi;align-self:start}#hpVtModal[data-chu=bd] .hp-mdong{align-self:start}" +
+      "#hpVtModal[data-chu=bd] .hp-modalhd{row-gap:0!important}#hpVtModal[data-chu=bd] #hpVtTitle{line-height:20px}" +
+      "#hpVtModal[data-chu=bd] #hpVtSub,#hpVtModal[data-chu=bd] #hpVtPg{font-size:12px!important;line-height:16px!important;margin:0!important}" +
+      "@media(max-width:768px){#hpVtModal[data-chu=bd] .hp-modalhd{grid-template-areas:'ma ghi dong' 'cam ghi dong' 'yc ghi dong'}#hpVtModal[data-chu=bd] .hp-mdong,#hpVtModal[data-chu=bd] #bdVtKy{margin-bottom:0!important}}" +
       "#hpVtModal:not([data-chu=bd]) #bdVtKy{display:none}#bdVtKy{margin-right:8px;white-space:nowrap}#bdDoiHop .bd-hop-ad[hidden],#bdDoiHop [hidden]{display:none!important}",
       B + " .bd-hm-w{position:relative}" + B + " .bd-hm.kl{scroll-snap-type:x mandatory;scroll-padding-left:var(--bd-wvt,0)}" + B + " .bd-hm.kl thead th.th-ngay{scroll-snap-align:center}" +
         B + " .bd-hm.kl td.vt{width:200px;min-width:200px;max-width:200px;box-sizing:border-box}"   /* 07/11 user «web rộng lên 200px» */ + B + " .bd-hm.kl :is(td,th):not(.vt):not(.th-goc){min-width:18px}",
@@ -1364,7 +1370,9 @@
     /* 07/11 user «mục con là tamlc mà thanh bên Phụ trách lại là Lâm và Nguyễn Kiệm»: nhóm Bảo trì / KT do bd-task-ky phân giải người nhận
        (Điều phối KT cơ điện — không theo ô g-sheet) ⇒ Phụ trách đọc CÙNG nguồn với mục con: cột Người nhận của tab BAO-DUONG-KY */
     if (nhom !== "VẬN HÀNH") { var kyN = (S.ky || []).filter(function (k) { return k["MÃ VỊ TRÍ"] === b && nhomCua(k["NHÓM THỰC HIỆN"]) === nhom && k["NGƯỜI NHẬN"]; })[0];
-      if (kyN) return { ten: String(kyN["NGƯỜI NHẬN"]).split(/\s*,\s*/).map(function (t) { return t.replace(/\s*\(\d+\)\s*$/, "").trim(); }).filter(Boolean).join(", "), nguon: kyN["NGUỒN NGƯỜI NHẬN"] || "" }; }
+      /* 08/11: nhóm kết hợp VH + BT có cả người vận hành lẫn KT — cột «Phân bộ phận» («VH: A (mã), B · KT: C») cho biết ai thuộc bộ phận nào */
+      if (kyN) { var vhN = {}; String(kyN["PHÂN BỘ PHẬN"] || "").split(" · ").forEach(function (p) { if (/^VH:/.test(p)) p.slice(3).split(/\s*,\s*/).forEach(function (t) { vhN[t.replace(/\s*\(\d+\)\s*$/, "").trim()] = 1; }); });
+        return { ten: String(kyN["NGƯỜI NHẬN"]).split(/\s*,\s*/).map(function (t) { return t.replace(/\s*\(\d+\)\s*$/, "").trim(); }).filter(Boolean).join(", "), nguon: kyN["NGUỒN NGƯỜI NHẬN"] || "", vh: vhN }; } }
     var chon = cd.v.split("|")[1] || "phan-cong", thu = [chon].concat(["phan-cong", "work", "lan-truoc"].filter(function (x) { return x !== chon; }));
     for (var i = 0; i < thu.length; i++) if (gy[thu[i]]) return { ten: gy[thu[i]], nguon: TEN_NGUON[thu[i]] };
     return { ten: "", nguon: "" };
@@ -1405,7 +1413,7 @@
       /* 07/11 user «các mục này ngoài mục con bố trí thế nào mà thanh bên hiện như vậy»: cùng khuôn mục con — người = ảnh (VH tròn · KT vuông) + tên,
          chưa giao = hình người nét đứt đỏ; «Đổi» = icon đổi người như ngoài mục con; không xuống dòng */
       var kt = nhom !== "VẬN HÀNH", ten = ng.ten ? String(ng.ten).split(/\s*[\/,;]\s*/).filter(Boolean) : [];
-      var ai = ten.length ? ten.map(function (t) { var tn = tenNV(t); return '<span class="bd-pc-ng' + (kt ? " vuong" : "") + '" title="' + esc(tn) + '">' + avatar(tn) + '<span class="bd-pc-tn">' +
+      var ai = ten.length ? ten.map(function (t) { var tn = tenNV(t); return '<span class="bd-pc-ng' + (kt && !(ng.vh && ng.vh[tn]) ? " vuong" : "") + '" title="' + esc(tn) + '">' + avatar(tn) + '<span class="bd-pc-tn">' +
           o(String(tn).split(" ").slice(-2).join(" ")) + "</span></span>"; }).join("")
         : '<span class="bd-pc-ng chua' + (kt ? " vuong" : "") + '"><span class="bd-av bd-av-chua">' + SVG_NG_N + '</span><span class="bd-pc-tn bd-do">Chưa giao người</span></span>';
       return '<div class="bd-pc-dong"><div class="bd-pc-dau">' + (mot ? "" : nhanNhom(nhom)) + khi + '</div><div class="bd-pc-ai"><div class="bd-pc-than">' + ai +
@@ -2426,7 +2434,7 @@
   function dienBen(V, b, d) {
     var v = S.vt[b], y = ycCua(b).filter(function (r) { return r["NGÀY"] === d; })[0];
     V.tieu.innerHTML = '<span class="hp-vt-tday">' + esc(b) + '</span><span class="hp-vt-tgon">' + esc(b.replace(/^F0-/, "")) + "</span>";
-    V.phu.title = ""; V.phu.textContent = (String(v.ten || "").split("|").pop().trim() || tHm(v.hm)) + " · " + thuCua(d) + " " + dm(d);
+    V.phu.title = ""; V.phu.textContent = String(v.ten || "").split("|").pop().trim() || tHm(v.hm);   // 08/11 user: bỏ «· T7 07/11» — dải ô ngày ngay dưới đã hiện ngày đang chọn (luật không lặp)
     if (S.chonKt === "1") y = null;   // mục con KT: không gắn link yêu cầu planogram (việc VH)
     /* 07/11 user «Việc định kỳ 3 tháng/lần hay Hàng ngày đem lên bên phải, ngang hàng chữ Đóng» */
     var hang1 = V.m.querySelector(".hp-vtr1"), chip = $id("bdVtKy");
