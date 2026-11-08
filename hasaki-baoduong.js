@@ -1504,7 +1504,11 @@
       ((S.vt[b] || {}).rows || []).forEach(function (r) { var nh = nhomCua(r["NHÓM THỰC HIỆN"]); if (nhs.indexOf(nh) < 0 || chuan(r["TẦN SUẤT"]) !== ts) return;
         var t = String(r["HẠNG MỤC KIỂM TRA"] || r["CỤM / HỆ THỐNG"] || "").trim(); if (!t) return;
         if (!gom[t]) { gom[t] = { ten: t, mo: "", tg: 0, nh: [] }; ds.push(gom[t]); } if (gom[t].nh.indexOf(nh) < 0) gom[t].nh.push(nh);   // nh = nhóm của đầu mục (riêng / phối hợp)
-        gom[t].mo += (gom[t].mo ? "\n" : "") + String(r["NỘI DUNG CÔNG VIỆC"] || ""); gom[t].tg += parseInt(r["THỜI GIAN"], 10) || 0; });
+        /* 08/11 user «lỗi lặp lại đầu mục»: cùng hạng mục nhiều dòng g-sheet (mỗi nhóm phối hợp 1 dòng, CÙNG nội dung) ⇒ nội dung trùng ghi 1 lần,
+           phút của nội dung trùng tính 1 lần (làm chung); nội dung khác mới cộng dồn */
+        var nd = String(r["NỘI DUNG CÔNG VIỆC"] || "").trim(), ph = parseInt(r["THỜI GIAN"], 10) || 0, kN = nd.replace(/\s+/g, " ").toLowerCase(); gom[t].daCo = gom[t].daCo || {};
+        if (!(kN in gom[t].daCo)) { gom[t].daCo[kN] = ph; if (nd) gom[t].mo += (gom[t].mo ? "\n" : "") + nd; gom[t].tg += ph; }
+        else if (ph > gom[t].daCo[kN]) { gom[t].tg += ph - gom[t].daCo[kN]; gom[t].daCo[kN] = ph; } });
       return ds;
     }
     var l = (S.lich || {})[e.sid], kh = l && l.khung.length ? l.khung : String(e.y["KHUNG ẢNH"] || "").split("|").map(function (x) { return { ten: x.trim(), mo: "" }; }).filter(function (x) { return x.ten; });
@@ -1975,7 +1979,13 @@
       var anhNhom = function (vs, nho, cot) {
         var ve = function (ds, laKt) { var dn = demNg(ds); return dn.ds.map(function (p) { return anhSo1(nho ? { ten: p.ten, vao: p.vao, lt: p.lt } : p, nho, laKt); }).join("") +
           (dn.chua ? anhChua(nho ? null : dn.chua, nho, laKt, dn.ltChua) : ""); };
-        var vh = vs.filter(function (t) { return !t.kt; }), kt = vs.filter(function (t) { return t.kt; });
+        var vh = vs.filter(function (t) { return !t.kt; }), kt = [];
+        /* 08/11 user «không gom PTCH / Đóng gói cùng bên vách với Bảo trì / KT cơ điện»: việc kỳ nhóm phối hợp (VH + BT) tách TỪNG NGƯỜI —
+           người PTCH / Đóng gói sang TRÁI vách (tròn), Bảo trì / KT cơ điện ở PHẢI vách (vuông); vách giữ mốc cố định như các hàng khác */
+        vs.forEach(function (t) { if (!t.kt) return; var m = t.nhomK ? nguoiVt(t.b, t.nhomK).vh || {} : {};
+          var pt = t.ng.filter(function (p) { return m[tenNV(p.ten)]; }), bt = t.ng.filter(function (p) { return !m[tenNV(p.ten)]; });
+          if (pt.length) vh.push(Object.assign({}, t, { kt: false, ng: pt }));
+          if (bt.length || !t.ng.length) kt.push(pt.length ? Object.assign({}, t, { ng: bt }) : t); });
         if (!kt.length && !cot) return ve(vh, false);   // cot: luôn chia 2 vùng VH | BT để các hàng thẳng cột
         /* 07/11 user: không chữ VH / KT — «●● | ■»: ảnh VH căn trái trong 2/3 vùng ảnh, vạch | cố định ở mốc 2/3, ảnh KT chỉ nằm sau vạch */
         return '<span class="bd-kav-vh">' + ve(vh, false) + '</span><span class="bd-kav-vach' + (kt.length ? "" : " chi-sua") + '" aria-hidden="true"></span><span class="bd-kav-kt">' +
@@ -2772,7 +2782,8 @@
     PANE.innerHTML = veHomNay() + veLuoi() + chanTrang();
     ganSuKien();
     PANE.scrollTop = cuon;
-    if (typeof window.tqGhi === "function") window.tqGhi("bd", { dv: S.dv.length, vt: S.thuTu.length });
+    if (typeof window.tqGhi === "function") window.tqGhi("bd", { dv: S.dv.length, vt: S.thuTu.length,   // 08/11: Tổng quan hiện «undefined hạng mục» — thiếu trường hm
+      hm: Object.keys(S.thuTu.reduce(function (m, b) { var h = (S.vt[b] || {}).hm; if (h) m[h] = 1; return m; }, {})).length });
   }
 
   function xemAnhNut(a) { var y = S.yc.filter(function (r) { return String(r["REQUEST ID"]) === a.getAttribute("data-rid"); })[0]; xemAnh(y, Number(a.getAttribute("data-so")) || 0); }
@@ -2827,10 +2838,12 @@
   }
   function moBen(b, d, giuLoai) {
     if (!S.vt[b]) return; if (!giuLoai) S.chonKt = null;   // mở từ Lịch / dải ngày = cả VH lẫn KT
+    var binCu = S.chon;
     S.chon = b; S.chonNgay = d;
     PANE.querySelectorAll("#bdLich tr.vtr.on").forEach(function (x) { x.classList.remove("on"); });
     var tr = PANE.querySelector('#bdLich tr.vtr[data-bin="' + b + '"]'); if (tr) tr.classList.add("on");
     var m0 = $id("hpVtModal"), dangMo = !!(m0 && m0.classList.contains("show") && m0.dataset.chu === "bd");
+    if ((!dangMo || binCu !== b) && S.moTen !== b) S.tabBen = "tq";   // 08/11 user: thanh bên mở lên mặc định tab Tổng quan
     napPlg().then(function () { var V = window.HPLANOGRAM.moVoVt("bd"); if (!dangMo) V.m.dataset.nac = "nua"; dienBen(V, b, d); })
       .catch(function (e) { if (typeof window.toast === "function") window.toast(e.message, "loi"); });
   }
