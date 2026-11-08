@@ -1203,19 +1203,21 @@ var CSS = [
 ".hp-vtacts{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}",
 /* 08/11 user chọn MẪU 6 + chữ 5S giữa cờ: ô VUÔNG nền đỏ nhạt, viền đỏ nhạt, cờ đuôi nheo đỏ đặc có chữ «5S» — ám hiệu ghi nhận 5S cho mục
    đang xem. Đủ phiếu luỹ tiến ⇒ huy hiệu «3/3» / số phiếu góc trên phải. Chữ «Ghi nhận 5S…» nằm ở aria-label + title. */
-".hp-vtghi{position:relative;display:inline-grid;place-items:center;box-sizing:border-box;width:16px;height:16px;min-height:0;padding:0;margin:0;flex:none;" +
-  "border-radius:6px;border:1px solid color-mix(in srgb,var(--bad) 35%,var(--surface));background:color-mix(in srgb,var(--bad) 10%,var(--surface));color:var(--bad);cursor:pointer;line-height:0;}",
-".hp-vtghi svg{width:14px;height:14px;display:block;pointer-events:none}.hp-vtghi::after{content:'';position:absolute;inset:-8px}",   /* 08/11 user «khung Ghi nhận 5S còn 1/2» — ô 16 px, vùng bấm nới 32 px bằng lớp vô hình */
+/* 08/11 user «chuyển icon cờ thành khung CHỮ NHẬT ĐỎ, bên trong icon cờ đã chọn + chữ 5S kế bên — to 1,2 so với hiện tại» */
+".hp-vtghi{position:relative;display:inline-flex;align-items:center;gap:3px;box-sizing:border-box;width:auto;height:20px;min-height:0;padding:0 6px 0 5px;margin:0;flex:none;" +
+  "border-radius:4px;border:0;background:var(--bad);color:var(--surface);cursor:pointer;line-height:1;font:700 11px/1 system-ui,'Segoe UI',sans-serif;white-space:nowrap}",
+".hp-vtghi svg{width:12px;height:12px;display:block;pointer-events:none}.hp-vtghi .hp-vtghi-chu{pointer-events:none}" +
+  ".hp-vtghi::after{content:'';position:absolute;inset:-8px}",
 ".hp-vtghi .hp-vtghi-huy{position:absolute;top:-6px;right:-8px;min-width:18px;height:14px;padding:0 3px;border-radius:7px;background:var(--bad);color:var(--surface);" +
   "font:700 9.5px/14px system-ui,sans-serif;box-shadow:0 0 0 1.5px var(--surface);pointer-events:none;white-space:nowrap}",
-".hp-vtghi:hover{background:color-mix(in srgb,var(--bad) 18%,var(--surface));border-color:color-mix(in srgb,var(--bad) 55%,var(--surface));}",
+".hp-vtghi:hover{filter:brightness(.9);}",
 ".hp-vtghi:disabled{opacity:.55;cursor:progress;}",
 ".hp-vtghi:focus-visible{outline:0;box-shadow:0 0 0 3px color-mix(in srgb, var(--accent,#326e51) 28%, transparent);}",
 /* Dòng đếm luỹ tiến thay chỗ nút khi CHƯA đủ 3 lần ("Đi làm không báo cáo · lần 2/3") — cùng màu đỏ, nhỏ hơn, không bấm được */
 ".hp-vtlt{font-size:11px;font-weight:700;color:#dc2626;white-space:nowrap;line-height:1.3;padding:2px 0;cursor:help;}",
 ".hp-vtlt:empty{display:none;}",
 /* điện thoại: ô cờ cùng cỡ ✕ (28) để đầu thanh không cao thêm; vùng chạm nới ra 44 px bằng lớp ::after vô hình */
-"@media(max-width:768px){.hp-vtghi{width:14px;height:14px}.hp-vtghi svg{width:12px;height:12px}" +
+"@media(max-width:768px){.hp-vtghi{height:18px;padding:0 5px 0 4px;font-size:10.5px}.hp-vtghi svg{width:11px;height:11px}" +
   ".hp-vtghi::after{content:'';position:absolute;inset:-14px}.hp-vtghi .hp-vtghi-huy{font-size:10.5px}}",   // 17/10 QC: pop-up khác đè lên thì pop-up vị trí thu nhỏ nhẹ → 40px còn 39 ⇒ 44 cho dư
 
 /* ===== KHUÔN THẺ DI ĐỘNG `table.mbcard` + dọn thanh điều khiển (21/08/2026) =====================
@@ -1456,7 +1458,13 @@ var CSS = [
 "#hpVtModal .hp-modalhd>div:first-child,#hpVtModal .hp-vtacts,#hpVtModal .hp-vtr1{display:contents;}" +
 "#hpVtTitle{grid-area:ma;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}#hpVtSub{grid-area:cam;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}" +
 "#hpVtModal #hpVtGhi,#hpVtModal #hpVtLt{grid-area:ghi;justify-self:end;margin:0;white-space:nowrap;}" +
-"#hpVtModal .hp-mdong{grid-area:dong;justify-self:end;}#hpVtModal .hp-mdong.x-do-dong{min-width:0!important;}#hpVtModal #hpVtPg{grid-area:yc;justify-self:end;}",
+"#hpVtModal #hpVtTitle,#hpVtModal #hpVtSub{display:flex;align-items:center;justify-content:flex-end;gap:8px;}" +
+  ".hp-chipdau{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:18px;padding:0 6px;border:1px solid transparent;border-radius:4px;box-sizing:border-box;" +
+  "font-size:11.5px;line-height:16px;font-weight:600;white-space:nowrap;text-decoration:none;}.hp-chipdau.tt{color:rgb(255,255,255);}a.hp-chipdau:hover{filter:brightness(.92);}" +
+  ".hp-chipdau.ts{background:var(--surface2,var(--nen2));color:var(--text);border-color:var(--ad-chia,var(--border));}" +
+  "@media(max-width:768px){#hpVtModal #hpVtTitle,#hpVtModal #hpVtSub{flex-direction:row-reverse;justify-content:flex-end;}}" +
+"#hpVtModal .hp-mdong{grid-area:dong;justify-self:end;}" +
+  "#hpVtModal .hp-mdong.x-do-dong{min-width:0!important;width:28px!important;height:28px!important;min-height:0!important;aspect-ratio:auto!important;}#hpVtModal #hpVtPg{grid-area:yc;justify-self:end;}",
 /* 22/10 user lần 4 — WEB: cụm «Đóng · Ghi nhận 5S» căn TRÁI thanh bên; cụm «mã vị trí / camera|băng chuyền / Yêu cầu #… ↗» căn PHẢI,
    3 dòng sát nhau. Điện thoại (22/10 lần 5 user «xemtruoc điện thoại chưa làm theo»): ĐẢO trái/phải so với web — cụm «mã / dòng phụ / Yêu cầu» căn TRÁI; «Ghi nhận 5S» «Đóng» CÙNG HÀNG (Đóng bên phải) căn PHẢI (lần 6). */
 "@media(min-width:769px){#hpVtModal .hp-modalhd{grid-template-columns:auto auto minmax(0,1fr);grid-template-areas:'dong ghi ma' 'dong ghi cam' 'dong ghi yc';align-items:start;row-gap:1px;column-gap:8px;padding-top:12px;padding-bottom:12px;}" +
@@ -1559,7 +1567,7 @@ var SK_TODO =
 /* 08/11 nút Ghi nhận 5S = icon cờ đuôi nheo + «5S» (mẫu 6); huy = «3/3» hoặc số phiếu còn nợ */
 var CO_5S = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2v20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
   '<path d="M5 2L23 10L5 18z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>' +
-  '<text x="10.9" y="12.9" text-anchor="middle" font-size="8" font-weight="800" fill="var(--surface)" font-family="system-ui,Segoe UI,sans-serif">5S</text></svg>';
+  '</svg><span class="hp-vtghi-chu">5S</span>';
 var MODAL_HTML =
 '<div id="hpModal" class="hp-modal">' +
 '  <div class="hp-modalbox">' +
@@ -3812,11 +3820,21 @@ function renderVt(){
     : bc ? esc("Băng chuyền " + bc[1])
     /* Câu hướng dẫn "bấm ô ngày bên dưới…" đã bỏ (luật ⑦) — dòng phụ nay mang DỮ LIỆU: khu + ngày đang xem.
        Để trống thì khối tiêu đề thấp hơn cụm nút góc phải, đầu pop-up cao thêm (qc-ghi-nhan-5s bắt 28/09). */
-    : esc(((areaOf(loc) || {}).ngan || "") + (d ? " · " + thuVN(d) + " " + ngayVN(d) : ""));
+    : esc((areaOf(loc) || {}).ngan || "");   // 08/11 user: bỏ «· T7 07/11» (dải ô ngày đã hiện — trùng lặp)
   /* Hyperlink DUY NHẤT của pop-up: "Yêu cầu #… ↗" ở góc phải trên (không còn nút Mở planogram riêng) */
   var pg = $id("hpVtPg");
   pg.href = r ? pgDetailUrl(r.id) : pgListUrlLoc(d, loc);
   pg.textContent = r ? ("Yêu cầu #" + r.id + " ↗") : "Tìm trên planogram ↗";
+  /* 08/11 user «planogram đồng bộ thiết kế mới nhất (như Bảo dưỡng)»: chip trạng thái chữ Việt tô kín màu ô, ↗ trong chip thay dòng «Yêu cầu #…»;
+     dòng 2 = khu · chip định kỳ; 2 chip cùng bề rộng. Dòng «Trạng thái» trong thân bỏ. */
+  pg.style.display = "none";
+  var mC = r ? cellMeta(cellStateDay(r, d)) : null, MUI = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" ' +
+    'stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>';
+  $id("hpVtTitle").innerHTML += '<a class="hp-chipdau tt" href="' + esc(pg.href) + '" target="_blank" rel="noopener" title="' + esc(r ? "Mở yêu cầu #" + r.id + " trên planogram" : "Tìm trên planogram") + '"' +
+    ' style="background:' + (mC && !mC.dashed ? mC.c : "var(--muted)") + (mC && mC.ink === "dark" ? ";color:var(--text)" : "") + '">' + esc(mC ? mC.sh : "Không có yêu cầu") + MUI + "</a>";
+  $id("hpVtSub").innerHTML += '<span class="hp-chipdau ts">Hằng ngày</span>';
+  var cDau = [].slice.call(document.querySelectorAll("#hpVtModal .hp-chipdau")); cDau.forEach(function(x){ x.style.minWidth = ""; });
+  var wDau = Math.max.apply(null, cDau.map(function(x){ return x.getBoundingClientRect().width; }).concat([0])); cDau.forEach(function(x){ x.style.minWidth = Math.ceil(wDau) + "px"; });
 
   /* Dải lịch sử 7 ngày (cũ → mới) — màu theo hệ trạng thái đầy đủ, mỗi ngày độc lập */
   var dates = ycDates().slice(0, 7).sort();
@@ -3842,8 +3860,7 @@ function renderVt(){
        Hyperlink duy nhất "Yêu cầu #… ↗" ở góc phải trên pop-up. */
     var themSt = (r.stId === 1 || /new/i.test(r.st)) ? "" : " " + stBadge(r);
     /* 21/10 user: «Trạng thái» và «Báo cáo» gom 1 dòng: Trạng thái: … | Báo cáo: Chưa có ai */
-    rows.push(["Trạng thái", '<span class="hp-badge" style="background:color-mix(in srgb,' + m2.c + ' 15%,transparent);color:' + cellInk(m2) + '">' + esc(m2.lb) + '</span>' + themSt +
-      (!r.email ? ' <span class="hp-hint">| Báo cáo: Chưa có ai</span>' : "")]);
+    if (!r.email) rows.push(["Người báo cáo", '<span class="hp-hint">Chưa có ai</span>' + themSt]);   // 08/11: trạng thái lên chip đầu thanh bên
     if (r.email) {   // (trước: else của «if (!r.email)» — nay gom vào dòng Trạng thái)
       rows.push(["Người báo cáo", r.email ? (esc(tenNm(r.email) || r.email) + (r.at ? ' <span class="hp-hint">lúc ' + esc(String(r.at).slice(11, 16) || r.at) + " " + ngayVN(r.ngay) + '</span>' : "")) : '<span class="hp-hint">— chưa có ai báo cáo trong ngày này</span>']);
       var ai = aiOf(r), aim = ai && aiMeta(ai.kl);
