@@ -1515,7 +1515,10 @@
       kyMo[kh].forEach(function (k) { var b = k["MÃ VỊ TRÍ"], v = S.vt[b]; if (!v || nhomCua(k["NHÓM THỰC HIỆN"]) === "CHƯA XÁC ĐỊNH" || (/Đã xoá/.test(k["TRẠNG THÁI"]) && !S.khuBin[b])) return;
         the.push({ b: b, khu: S.khuBin[b] || "", l: lopKy(k), hm: k["HẠNG MỤC"] || v.hm, ten: String(v.ten || b).split("|").pop().trim() || b, kt: true,
           nhom: (NHOM[nhomCua(k["NHÓM THỰC HIỆN"])] || [k["NHÓM THỰC HIỆN"]])[0], nhomK: nhomCua(k["NHÓM THỰC HIỆN"]),   // nhomK = khoá nhóm cho hộp Đổi người (BAO-DUONG-GIAO «HM|NHÓM|MÃ»)
-          ng: String(k["NGƯỜI NHẬN"] || "").split(/\s*,\s*/).map(function (t) { return t.replace(/\s*\(\d+\)\s*$/, "").trim(); }).filter(Boolean).map(tenVao),
+          /* 08/11: chỉ định vừa lưu (hộp Đổi người, lạc quan) thắng cột Người nhận của tab KY — trước đây mục con KT chờ máy chạy lại mới đổi */
+          ng: (function () { var cd = cheDoCua((k["HẠNG MỤC"] || v.hm) + "|" + nhomCua(k["NHÓM THỰC HIỆN"]) + "|" + b);
+            if (cd.v.indexOf("chi-dinh") === 0) return tachDs(cd.chiDinh).filter(function (t) { return t !== "-"; }).map(function (t) { return tenVao(tenNV(t)); });
+            return String(k["NGƯỜI NHẬN"] || "").split(/\s*,\s*/).map(function (t) { return t.replace(/\s*\(\d+\)\s*$/, "").trim(); }).filter(Boolean).map(tenVao); })(),
           han: k["HẠN"], d: isoTuDmy(k["KỲ HIỆN TẠI"]), ky: /Đã xoá/.test(k["TRẠNG THÁI"]) ? "" : k["TASK ID"], ts: k["TẦN SUẤT"] }); });
     /* 07/11: việc bảo trì theo KẾ HOẠCH vẫn là mục con KT dù task kỳ đã xoá (03/11 ngưng tạo task) — chỉ không gắn link task; nhóm «Chưa xác định» không phải việc; vị trí chưa có lịch planogram (chưa rõ kho) thì không hiện kế hoạch đã xoá task */
     });
