@@ -504,7 +504,7 @@
         B + " .bd-kvt-cho{display:inline-block;margin-left:4px;padding:0 6px;border-radius:4px;font-size:11px;line-height:16px;color:color-mix(in srgb,var(--warn) 70%,var(--text));" +
           "background:color-mix(in srgb,var(--warn) 14%,transparent);cursor:help}",
       /* 06/11 lượt 7: thẻ mục con CỐ ĐỊNH 64px — trái 2/3 (tên tối đa 2 dòng + bút cuối tên · dòng mã) | phải 1/3: trạng thái TRÊN, ảnh + đổi người DƯỚI */
-      B + " .bd-ko-ds .bd-kvt{grid-template-columns:minmax(0,2fr) minmax(0,1fr);grid-template-areas:'trai ngs';height:48px;gap:0 10px;align-items:stretch;padding:6px 8px 6px 10px;overflow:hidden}" +
+      B + " .bd-ko-ds .bd-kvt{grid-template-columns:minmax(0,2fr) minmax(0,1fr);grid-template-areas:'trai ngs';grid-template-rows:minmax(0,1fr);height:52px;gap:0 10px;align-items:stretch;padding:6px 8px 6px 10px;overflow:hidden}" +
         B + " .bd-kvt-trai{grid-area:trai;min-width:0;display:flex;flex-direction:column;justify-content:center}" +
         B + " .bd-ko-ds .bd-kvt-ten{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:18px;white-space:normal}" +
         B + " .bd-kvt-ten .bd-kvt-but{width:20px;height:20px;margin-left:2px}" + B + " .bd-kvt-ql{color:var(--muted);margin-left:6px;font-size:11.5px}",
@@ -515,8 +515,11 @@
         "@media (hover:hover){" + B + " .bd-kvt-qlb{opacity:0}" + B + " .bd-kvt:hover .bd-kvt-qlb," + B + " .bd-kvt:focus-within .bd-kvt-qlb{opacity:1}}",
       /* 07/11 user «ảnh đang căn phải dời sang trái 1cm, lấy chỗ cho 2 icon căn lề phải mục con, trên xuống thẳng cột: Đổi người / Đổi kho»:
          cột phải cố định 24px (2 hàng), ảnh cách 14px — nút giữ chỗ khi chưa bật bút (chi-sua) nên ảnh không xê dịch */
-      B + " .bd-ko-ds .bd-kvt-ngs{display:grid;grid-template-columns:auto 24px;grid-template-rows:24px 24px;grid-template-areas:'av doi' 'av ck';column-gap:14px;row-gap:4px;align-items:center}" +
-        B + " .bd-ko-ds .bd-kvt-ngs>.bd-kvt-doi{grid-area:doi}" + B + " .bd-ko-ds .bd-kvt-ngs>.bd-kvt-ck{grid-area:ck}" + B + " .bd-ko-ds .bd-kvt-ngs>.bd-kav{grid-area:av;justify-self:end}",
+      B + " .bd-ko-ds .bd-kvt-ngs{display:grid;grid-template-columns:auto 24px;grid-template-rows:20px 20px;grid-template-areas:'av doi' 'av ck';column-gap:14px;row-gap:4px;align-items:center}" +
+        B + " .bd-ko-ds .bd-kvt-ngs>.bd-kvt-doi{grid-area:doi}" + B + " .bd-ko-ds .bd-kvt-ngs>.bd-kvt-ck{grid-area:ck}" + B + " .bd-ko-ds .bd-kvt-ngs>.bd-kav{grid-area:av;justify-self:end}" +
+        B + " .bd-ko-ds .bd-kvt-ngs>:is(.bd-kvt-doi,.bd-kvt-ck){height:20px!important;min-height:0!important}" +
+        B + " .bd-ko-ds .bd-kvt-ngs{align-self:center;row-gap:0;margin:0}" +
+        B + " .bd-ko-ds .bd-kvt-ngs>.bd-kav{align-self:center;padding-top:0!important;padding-bottom:0!important}",   /* 08/11 thẻ con thấp 52 px (bỏ dòng Ngày + mã) — 2 nút xếp dọc 20 + 20 */
       /* 07/11 user «dạng ngăn kéo oke, nhưng xổ mục con ra mà không đẩy các mục cha bên dưới — vẫn cố định các mục cha khác» (mẫu 8, Hieu-ung-mo-dong-muc-con):
          máy tính — khung mục con NỔI ngay dưới ô cha (đè lên hàng dưới, hàng dưới đứng yên); mở = kéo ngăn ra, bấm lần 2 = đẩy ngăn vào rồi mới đóng (xuLyKhu) */
       "@media not all and (max-width:768px){" + B + " .bd-kbang-w{overflow:visible}" + B + " .bd-kbang .bd-ko.mo .bd-ko-h{margin-bottom:-8px}" +   /* ô cha giữ đúng cỡ lúc đóng (trước +6px đẩy hàng dưới) */
@@ -847,8 +850,8 @@
         B + " .bd-hd-ds li.on>i{background:var(--accent);color:var(--surface)}" + B + " .bd-hd-ds b{font-weight:600}",
       /* 08/11 HỆ ĐIỆN THOẠI: tấm đáy 2 nấc (D08) + đẩy màn mục cha → mục con (D03) */
       /* 08/11 Người thực hiện: 1 lưới căn giữa khung — hàng 1 «Người thực hiện · PTCH · bắt tay · Bảo trì» cùng 12/600; dưới ảnh + tên thẳng cột */
-      B + " .bd-nt-l{display:grid;grid-template-columns:max-content 18px max-content;column-gap:14px;row-gap:6px;align-items:center;justify-content:start}" +
-        B + " .bd-nt-l.mot{display:flex;flex-direction:column;align-items:flex-start;gap:6px}" +
+      B + " .bd-ben .hp-vtrow>.bd-nt-l{display:grid;grid-template-columns:max-content 18px max-content;column-gap:14px;row-gap:6px;align-items:center;justify-content:start}" +
+        B + " .bd-ben .hp-vtrow>.bd-nt-l.mot{display:flex;flex-direction:column;flex-wrap:nowrap;align-items:flex-start;gap:6px}" +
         B + " .bd-nt-td," + B + " .bd-nt-bp{display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:20px;font-weight:600;white-space:nowrap}" +
         B + " .bd-nt-td{color:var(--muted)}" + B + " .bd-nt-ic{display:flex;align-items:center;justify-content:center;color:var(--accent)}",
       B + " .bd-nt-ngang{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:6px 16px}" + B + " .bd-nt .bd-pc-ng{min-width:0}",
@@ -884,7 +887,7 @@
         B + " .bd-pn.mo>.bd-pn-h .bd-mui{transform:rotate(180deg)!important}" + B + " .bd-ko-ds.vua-mo{animation:none}" +
         B + " .bd-pn.mo:has(>.bd-ko-ds.vua-mo){animation:bdManVao .28s var(--ez-apple,ease) both}" +
         /* Lịch thực hiện = ngăn kéo: mục con XUỐNG DÒNG ⇒ cột tên không rộng quá mục cha (mục cha vẫn 1 dòng) */
-        B + " .bd-nt-l{column-gap:8px}" + B + " .bd-nt .bd-pc-tn{font-size:12px}" + B + " .bd-nt .bd-pc-ng{gap:4px}" +
+        B + " .bd-ben .hp-vtrow>.bd-nt-l{column-gap:8px}" + B + " .bd-nt .bd-pc-tn{font-size:12px}" + B + " .bd-nt .bd-pc-ng{gap:4px}" +
         B + " .bd-hm.kl tr.vtr td.vt{white-space:normal}" + B + " .bd-hm.kl tr.vtr td.vt .bd-ten{white-space:normal;overflow-wrap:break-word}}",
       "@keyframes bdManVao{from{transform:translateX(100%)}to{transform:none}}",
       "@media(max-width:560px){" + B + " .bd-panel>.panel-head{flex-wrap:wrap;row-gap:4px}" + B + " .bd-panel>.panel-head .ph-dem{white-space:normal}" + B + " .bd-panel>.panel-head .bd-phai{margin-left:0}" + B +
