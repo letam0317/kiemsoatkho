@@ -495,18 +495,34 @@ function parseResp(kind, resp){
     return mapRows(kind, H, rows);
   }catch(e){ return null; }
 }
+/* 08/11 user «ép load dữ liệu các mục xuống < 1 s — Tồn kho chính xác load rất lâu»: đo live — mỗi lượt readTab Apps Script 2–3 s, KHÔNG rút được ở phía GAS.
+   ⇒ BỘ NHỚ ĐỆM trên máy (IndexedDB «hsk-dem»): mở lại = vẽ NGAY bản lần trước (< 1 s), Apps Script trả bản mới thì vẽ lại ngầm (giữ bộ lọc / cuộn).
+   Chỉ dùng khi máy có khoá thiết bị / phiên tài khoản (tbKhoa) — đăng xuất xoá phiên thì không đọc bản đệm; bản đệm quá 3 ngày bỏ. */
+var DEM_HAN = 3 * 864e5;
+function demMo(){ return new Promise(function(ok, loi){ try{ if (!window.indexedDB) return loi(0); var q = indexedDB.open("hsk-dem", 1);
+  q.onupgradeneeded = function(){ q.result.createObjectStore("tab"); }; q.onsuccess = function(){ ok(q.result); }; q.onerror = function(){ loi(0); }; }catch(e){ loi(0); } }); }
+function demDoc(k){ return demMo().then(function(db){ return new Promise(function(ok){ var r = db.transaction("tab").objectStore("tab").get(k);
+  r.onsuccess = function(){ ok(r.result || null); }; r.onerror = function(){ ok(null); }; }); }).catch(function(){ return null; }); }
+function demGhi(k, v){ demMo().then(function(db){ db.transaction("tab", "readwrite").objectStore("tab").put(v, k); }).catch(function(){}); }
 function loadData(){
   var st = $id("hkState"); if (!st) return;
   var btn = $id("hkReload"); if (btn) btn.disabled = true;
-  st.style.display = "block";
-  st.innerHTML = '<div class="hk-spin"></div>Đang tải dữ liệu kiểm kê…';
-  $id("hkGrid").style.display = "none";
+  var coSan = S.ok && (S.data.sku.length || S.data.loc.length);   // đang có số liệu (Tải lại) ⇒ giữ bảng, chỉ quay nút
+  if (!coSan){ st.style.display = "block"; st.innerHTML = '<div class="hk-spin"></div>Đang tải dữ liệu kiểm kê…'; $id("hkGrid").style.display = "none"; }
   S.lastAt = Date.now();
+  var khoa = tbKhoa(), daMoi = false, KD = "kk|" + location.pathname.split("/")[1];
+  if (khoa && !coSan) demDoc(KD).then(function(d){
+    if (daMoi || !d || Date.now() - d.at > DEM_HAN || !d.data) return;
+    S.ok = true; S.loi = ""; S.data = d.data; if (d.ts) S.tsData = d.ts; S.tuDem = true; render();
+    var b2 = $id("hkReload"); if (b2) b2.disabled = true;   // còn đang lấy bản mới
+  });
   Promise.all([readTabP(TAB_SKU, "hkgv_sku"), readTabP(TAB_LOC, "hkgv_loc")]).then(function(res){
-    var sku = parseResp("sku", res[0]), loc = parseResp("loc", res[1]);
-    S.ok = !!(sku || loc);
+    var sku = parseResp("sku", res[0]), loc = parseResp("loc", res[1]); daMoi = true;
+    if (!(sku || loc) && S.tuDem){ var b3 = $id("hkReload"); if (b3) b3.disabled = false; return; }   // Apps Script hỏng: giữ bản đệm đang hiện
+    S.ok = !!(sku || loc); S.tuDem = false;
     S.loi = S.ok ? "" : (res.some(function(r){ return r && r.code === 403; }) ? "khoa" : "gas");
     S.data = { sku: sku || [], loc: loc || [] };
+    if (S.ok && khoa) demGhi(KD, { at: Date.now(), ts: S.tsData || 0, data: S.data });
     render();
   });
   loadMeta();
