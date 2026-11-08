@@ -1448,7 +1448,7 @@ var CSS = [
 "#hpVtModal .hp-modalhd>div:first-child,#hpVtModal .hp-vtacts,#hpVtModal .hp-vtr1{display:contents;}" +
 "#hpVtTitle{grid-area:ma;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}#hpVtSub{grid-area:cam;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}" +
 "#hpVtModal #hpVtGhi,#hpVtModal #hpVtLt{grid-area:ghi;justify-self:end;margin:0;white-space:nowrap;}" +
-"#hpVtModal .hp-mdong{grid-area:dong;justify-self:end;}#hpVtModal #hpVtPg{grid-area:yc;justify-self:end;}",
+"#hpVtModal .hp-mdong{grid-area:dong;justify-self:end;}#hpVtModal .hp-mdong.x-do-dong{min-width:0!important;}#hpVtModal #hpVtPg{grid-area:yc;justify-self:end;}",
 /* 22/10 user lần 4 — WEB: cụm «Đóng · Ghi nhận 5S» căn TRÁI thanh bên; cụm «mã vị trí / camera|băng chuyền / Yêu cầu #… ↗» căn PHẢI,
    3 dòng sát nhau. Điện thoại (22/10 lần 5 user «xemtruoc điện thoại chưa làm theo»): ĐẢO trái/phải so với web — cụm «mã / dòng phụ / Yêu cầu» căn TRÁI; «Ghi nhận 5S» «Đóng» CÙNG HÀNG (Đóng bên phải) căn PHẢI (lần 6). */
 "@media(min-width:769px){#hpVtModal .hp-modalhd{grid-template-columns:auto auto minmax(0,1fr);grid-template-areas:'dong ghi ma' 'dong ghi cam' 'dong ghi yc';align-items:start;row-gap:1px;column-gap:8px;padding-top:12px;padding-bottom:12px;}" +
