@@ -1201,14 +1201,22 @@ var CSS = [
    đậm (đỏ trong tab này = việc phải xử lý; nút này chính là bước xử lý). Nút CHỮ, không viền, cùng cỡ link;
    focus ring theo khuôn chung (--accent + box-shadow 3px). Điện thoại: vùng chạm ≥40px (luật ④ bộ đo). */
 ".hp-vtacts{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}",
-".hp-vtghi{background:0;border:0;padding:2px 0;margin:0;font:inherit;font-size:12px;font-weight:800;color:#dc2626;cursor:pointer;white-space:nowrap;line-height:1.3;border-radius:6px;min-height:26px;}",
-".hp-vtghi:hover{text-decoration:underline;}",
-".hp-vtghi:disabled{opacity:.55;cursor:progress;text-decoration:none;}",
+/* 08/11 user chọn MẪU 6 + chữ 5S giữa cờ: ô VUÔNG nền đỏ nhạt, viền đỏ nhạt, cờ đuôi nheo đỏ đặc có chữ «5S» — ám hiệu ghi nhận 5S cho mục
+   đang xem. Đủ phiếu luỹ tiến ⇒ huy hiệu «3/3» / số phiếu góc trên phải. Chữ «Ghi nhận 5S…» nằm ở aria-label + title. */
+".hp-vtghi{position:relative;display:inline-grid;place-items:center;box-sizing:border-box;width:16px;height:16px;min-height:0;padding:0;margin:0;flex:none;" +
+  "border-radius:6px;border:1px solid color-mix(in srgb,var(--bad) 35%,var(--surface));background:color-mix(in srgb,var(--bad) 10%,var(--surface));color:var(--bad);cursor:pointer;line-height:0;}",
+".hp-vtghi svg{width:14px;height:14px;display:block;pointer-events:none}.hp-vtghi::after{content:'';position:absolute;inset:-8px}",   /* 08/11 user «khung Ghi nhận 5S còn 1/2» — ô 16 px, vùng bấm nới 32 px bằng lớp vô hình */
+".hp-vtghi .hp-vtghi-huy{position:absolute;top:-6px;right:-8px;min-width:18px;height:14px;padding:0 3px;border-radius:7px;background:var(--bad);color:var(--surface);" +
+  "font:700 9.5px/14px system-ui,sans-serif;box-shadow:0 0 0 1.5px var(--surface);pointer-events:none;white-space:nowrap}",
+".hp-vtghi:hover{background:color-mix(in srgb,var(--bad) 18%,var(--surface));border-color:color-mix(in srgb,var(--bad) 55%,var(--surface));}",
+".hp-vtghi:disabled{opacity:.55;cursor:progress;}",
 ".hp-vtghi:focus-visible{outline:0;box-shadow:0 0 0 3px color-mix(in srgb, var(--accent,#326e51) 28%, transparent);}",
 /* Dòng đếm luỹ tiến thay chỗ nút khi CHƯA đủ 3 lần ("Đi làm không báo cáo · lần 2/3") — cùng màu đỏ, nhỏ hơn, không bấm được */
 ".hp-vtlt{font-size:11px;font-weight:700;color:#dc2626;white-space:nowrap;line-height:1.3;padding:2px 0;cursor:help;}",
 ".hp-vtlt:empty{display:none;}",
-"@media(max-width:768px){.hp-vtghi{min-height:44px;min-width:44px;padding:6px 0;}}",   // 17/10 QC: pop-up khác đè lên thì pop-up vị trí thu nhỏ nhẹ → 40px còn 39 ⇒ 44 cho dư
+/* điện thoại: ô cờ cùng cỡ ✕ (28) để đầu thanh không cao thêm; vùng chạm nới ra 44 px bằng lớp ::after vô hình */
+"@media(max-width:768px){.hp-vtghi{width:14px;height:14px}.hp-vtghi svg{width:12px;height:12px}" +
+  ".hp-vtghi::after{content:'';position:absolute;inset:-14px}.hp-vtghi .hp-vtghi-huy{font-size:10.5px}}",   // 17/10 QC: pop-up khác đè lên thì pop-up vị trí thu nhỏ nhẹ → 40px còn 39 ⇒ 44 cho dư
 
 /* ===== KHUÔN THẺ DI ĐỘNG `table.mbcard` + dọn thanh điều khiển (21/08/2026) =====================
  * NGÒI NỔ: người dùng gửi lại chính màn này từ điện thoại — "Danh sách theo dõi › AI xét duyệt ảnh"
@@ -1452,18 +1460,18 @@ var CSS = [
 /* 22/10 user lần 4 — WEB: cụm «Đóng · Ghi nhận 5S» căn TRÁI thanh bên; cụm «mã vị trí / camera|băng chuyền / Yêu cầu #… ↗» căn PHẢI,
    3 dòng sát nhau. Điện thoại (22/10 lần 5 user «xemtruoc điện thoại chưa làm theo»): ĐẢO trái/phải so với web — cụm «mã / dòng phụ / Yêu cầu» căn TRÁI; «Ghi nhận 5S» «Đóng» CÙNG HÀNG (Đóng bên phải) căn PHẢI (lần 6). */
 "@media(min-width:769px){#hpVtModal .hp-modalhd{grid-template-columns:auto auto minmax(0,1fr);grid-template-areas:'dong ghi ma' 'dong ghi cam' 'dong ghi yc';align-items:start;row-gap:1px;column-gap:8px;padding-top:12px;padding-bottom:12px;}" +
-  "#hpVtModal .hp-mdong{justify-self:start;}#hpVtModal #hpVtGhi,#hpVtModal #hpVtLt{justify-self:start;align-self:start;margin-top:2px!important;}" +
+  "#hpVtModal .hp-mdong{justify-self:start;}#hpVtModal #hpVtLt{justify-self:start;align-self:start;margin-top:2px!important;}#hpVtModal #hpVtGhi{justify-self:start;align-self:start;margin:0!important;}" +
   "#hpVtTitle,#hpVtSub,#hpVtModal #hpVtPg{justify-self:end;text-align:right;line-height:1.3;}#hpVtSub{margin:0;}#hpVtModal #hpVtPg{min-height:0;padding:0;}}",
 /* Đáy thanh bên (điện thoại): khoảng hở dưới đáy = thanh công cụ trình duyệt ẩn đi để lộ trang phía sau (khung cao theo vùng nhìn NHỎ).
    ⇒ khung cao theo vùng nhìn LỚN NHẤT (100vh = lvh) để luôn phủ kín; thân chừa thêm đáy bằng phần thanh công cụ (100vh − 100dvh)
    để mục cuối vẫn cuộn lên được khi thanh công cụ đang hiện. */
 "@media(max-width:768px){#hpVtModal .hp-modalhd{grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:'ma ghi dong' 'cam . .' 'yc . .';align-items:start;row-gap:2px;column-gap:8px;}" +
-  "#hpVtModal .hp-mdong,#hpVtModal #hpVtGhi,#hpVtModal #hpVtLt{justify-self:end;text-align:right;margin-bottom:-8px!important;}#hpVtModal #hpVtGhi{min-height:28px;padding:0;white-space:nowrap;}" +
+  "#hpVtModal .hp-mdong,#hpVtModal #hpVtGhi,#hpVtModal #hpVtLt{justify-self:end;text-align:right;margin-bottom:-8px!important;}" +
   "#hpVtTitle,#hpVtSub,#hpVtModal #hpVtPg{justify-self:start;text-align:left;line-height:1.3;}#hpVtModal #hpVtPg{border:0!important;height:auto!important;min-height:0!important;padding:0!important;}}" +
   "@media(max-width:768px){#hpVtModal.hp-modal{top:0!important;}body:has(#hpVtModal.show) #sideToggle{opacity:0;pointer-events:none;}" +
   "#hpVtModal .hp-modalbox{height:100vh!important;max-height:none!important;}#hpVtModal .hp-modalbody{flex:1 1 auto;min-height:0;}" +
   "@supports(height:100dvh){#hpVtModal .hp-modalbody{padding-bottom:calc(20px + 100vh - 100dvh)!important;}}" +
-  "#hpVtModal #hpVtGhi{font-size:11.5px;}#hpVtModal #hpVtPg{padding:0!important;font-size:12px!important;}}",
+  "#hpVtModal #hpVtPg{padding:0!important;font-size:12px!important;}}",
 ".hp-vtr1{display:flex;align-items:center;gap:8px;}.hp-vtpg{font-size:12px;white-space:nowrap;}.hp-vtpg:empty{display:none;}.hp-vt-tgon{display:none;}",
 "@media(max-width:768px){#hpVtModal .hp-modalbox{width:100vw!important;}body:has(#hpVtModal.show) header{translate:0 -100%;pointer-events:none}.hp-vt-tday{display:none}.hp-vt-tgon{display:inline}" +
   "#hpVtModal .hp-vtr1 .hsk-nut,#hpVtModal .hp-vtpg{min-height:28px!important;height:28px;padding:0 8px!important;font-size:13px!important;border-radius:6px}.hp-vtpg{border:1px solid var(--border,#e5e7eb);display:inline-flex;align-items:center;text-decoration:none}}",
@@ -1548,6 +1556,10 @@ var SK_TODO =
 '<div class="sk" style="height:40px;border-radius:9px;margin:0"></div>' +
 '</section>';
 
+/* 08/11 nút Ghi nhận 5S = icon cờ đuôi nheo + «5S» (mẫu 6); huy = «3/3» hoặc số phiếu còn nợ */
+var CO_5S = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2v20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+  '<path d="M5 2L23 10L5 18z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>' +
+  '<text x="10.9" y="12.9" text-anchor="middle" font-size="8" font-weight="800" fill="var(--surface)" font-family="system-ui,Segoe UI,sans-serif">5S</text></svg>';
 var MODAL_HTML =
 '<div id="hpModal" class="hp-modal">' +
 '  <div class="hp-modalbox">' +
@@ -1564,7 +1576,7 @@ var MODAL_HTML =
 '    <div class="hp-modalhd"><div><div class="mt" id="hpVtTitle"></div><div class="mtsub" id="hpVtSub"></div></div>' +
 /* 21/10 user: «Yêu cầu #…» và «Ghi nhận 5S» GIỮ NGUYÊN chỗ cũ (góc phải trên), chỉ ✕ → «Đóng»; pop-up thành THANH BÊN PHẢI (CSS #hpVtModal) */
 '      <div class="hp-vtacts"><div class="hp-vtr1"><a id="hpVtPg" class="hp-ext hp-vtpg" target="_blank" rel="noopener"></a><button type="button" class="hsk-nut phu nho hp-mdong" onclick="HPLANOGRAM.closeVt()">Đóng</button></div>' +
-'      <button type="button" id="hpVtGhi" class="hp-vtghi" onclick="HPLANOGRAM.ghiNhan5S()" title="Mở form Ghi nhận 5S (cần PIN) — vị trí và hiện trạng đã điền sẵn từ dữ liệu của ô này">Ghi nhận 5S</button>' +
+'      <button type="button" id="hpVtGhi" class="hp-vtghi" onclick="HPLANOGRAM.ghiNhan5S()" aria-label="Ghi nhận 5S" title="Mở form Ghi nhận 5S (cần PIN) — vị trí và hiện trạng đã điền sẵn từ dữ liệu của ô này">' + CO_5S + '</button>' +
 '      <span id="hpVtLt" class="hp-vtlt"></span></div></div>' +
 '    <div class="hp-modalbody" id="hpVtBody" style="padding:14px 20px 20px;"></div>' +
 '  </div>' +
@@ -4173,6 +4185,10 @@ function luyTien(pc, d, caseA){
      caseA + sổ chưa có  → dòng "chưa đếm được luỹ tiến" (đợi bộ đồng bộ), không nút
      caseA + đang là HÔM NAY → dòng "hôm nay chưa tính (chờ hết ca)" — ngày chưa khép thì không đếm
      mọi ca khác         → nút "Ghi nhận 5S" như thường (hạng mục + ảnh người dùng tự chọn) */
+function veNutGhi(b, nhan, huy){
+  b.innerHTML = CO_5S + (huy ? '<b class="hp-vtghi-huy">' + String(huy).replace(/[<>&"]/g, '') + '</b>' : "");
+  b.setAttribute("aria-label", nhan);
+}
 function capNhatNutGhi(loc, d, r, pc, lsAll){
   var b = $id("hpVtGhi"), tx = $id("hpVtLt"); if (!b || !tx) return;
   pc = nguoiChiuNgay(loc, d, pc);   // 17/10: bàn A8 có camera → người đứng bàn chịu, không phải người phân công
@@ -4180,7 +4196,7 @@ function capNhatNutGhi(loc, d, r, pc, lsAll){
   var A = !!(tt && tt.caseA);
   tx.textContent = ""; tx.title = "";
   if (!A){
-    b.style.display = ""; b.textContent = "Ghi nhận 5S";
+    b.style.display = ""; veNutGhi(b, "Ghi nhận 5S", "");
     b.title = "Mở form Ghi nhận 5S (cần PIN) — vị trí và hiện trạng đã điền sẵn; hạng mục và ảnh (từ ảnh báo cáo ngày này) tự chọn";
     return;
   }
@@ -4197,7 +4213,7 @@ function capNhatNutGhi(loc, d, r, pc, lsAll){
     tx.title = "Tab chấm công theo ngày chưa có cột Vi phạm — đợi bộ đồng bộ lượt kế (15'); đủ " + MOI_LAN + " lần mới hiện nút ghi nhận KPI −2%";
   } else if (k.du){
     b.style.display = "";
-    b.textContent = k.soPhieu > 1 ? ("Ghi nhận 5S · còn " + k.soPhieu + " phiếu") : ("Ghi nhận 5S · lần " + MOI_LAN + "/" + MOI_LAN);
+    if (k.soPhieu > 1) veNutGhi(b, "Ghi nhận 5S · còn " + k.soPhieu + " phiếu", String(k.soPhieu)); else veNutGhi(b, "Ghi nhận 5S · lần " + MOI_LAN + "/" + MOI_LAN, MOI_LAN + "/" + MOI_LAN);
     b.title = k.n + " lần có chấm công nhưng không báo cáo vệ sinh" + nenNgay + " ⇒ " + k.soPhieu + " phiếu × −2% KPI. " +
       "Phiếu này kê " + MOI_LAN + " ngày cũ nhất (" + k.keNay.map(ngayVN).join(" · ") + ")" +
       (k.soPhieu > 1 ? "; lập xong nút vẫn hiện cho phiếu kế tiếp" : "") +
@@ -4397,9 +4413,9 @@ function ghiNhan5S(){
   if (!VT.loc) return;
   var d = VT.ngay || ngayXem();
   var du = soanGhiNhan5S(VT.loc, d);
-  var b = $id("hpVtGhi"), nhan = b ? b.textContent : "";
+  var b = $id("hpVtGhi"), nhan = b ? b.innerHTML : "";
   if (b) b.disabled = true;
-  var xong = function(){ if (b){ b.disabled = false; b.textContent = nhan; } };   // hỏi PIN có thể bị huỷ/treo — nút không được khoá vĩnh viễn
+  var xong = function(){ if (b){ b.disabled = false; b.innerHTML = nhan; } };   // hỏi PIN có thể bị huỷ/treo — nút không được khoá vĩnh viễn
   /* Ca A: bắt đầu chụp NGAY, không chờ ai — nhưng KHÔNG chặn việc mở form. */
   var pAnh = null;
   if (du.caseA){
