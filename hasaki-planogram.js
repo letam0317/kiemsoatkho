@@ -1127,6 +1127,10 @@ var CSS = [
 ".hp-vthist:hover{transform:scale(1.08);}",
 ".hp-vtrow{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:6px 0;border-bottom:1px solid var(--border,#f1f4f8);font-size:12.5px;color:var(--text,#1f2937);}",
 ".hp-vtrow:last-child{border-bottom:0;}",
+".hp-vtrow-them{grid-column:2;min-width:0}",
+".hp-vtcard.pt .hd .hp-badge{text-transform:none;letter-spacing:0;font-size:10.5px;font-weight:500}",   /* 08/11: «theo bảng phân công» viết thường như «tham khảo» */
+"@media(max-width:560px){.hp-vtrow.ngang{grid-template-columns:auto minmax(0,1fr)!important;align-items:center;column-gap:12px}.hp-vtrow.ngang>div:not(.hp-vtrow-them){justify-self:end;text-align:right}" +
+  ".hp-vtrow-them{grid-column:1 / -1}}",
 ".hp-vtrow label{font-size:10.5px;font-weight:650;color:var(--muted,#9ca3af);text-transform:uppercase;letter-spacing:.04em;padding-top:2px;}",
 /* Badge trong hàng chi tiết được XUỐNG DÒNG: nhãn trạng thái ô đã dài ra (kèm luôn lý do,
    vd "Chưa vệ sinh · có người đi làm (nhắc ngay)") — giữ max-width 180px của badge chung
@@ -1217,12 +1221,12 @@ var CSS = [
    đang xem. Đủ phiếu luỹ tiến ⇒ huy hiệu «3/3» / số phiếu góc trên phải. Chữ «Ghi nhận 5S…» nằm ở aria-label + title. */
 /* 08/11 user «chuyển icon cờ thành khung CHỮ NHẬT ĐỎ, bên trong icon cờ đã chọn + chữ 5S kế bên — to 1,2 so với hiện tại» */
 ".hp-vtghi{position:relative;display:inline-flex;align-items:center;gap:3px;box-sizing:border-box;width:auto;height:20px;min-height:0;padding:0 6px 0 5px;margin:0;flex:none;" +
-  "border-radius:4px;border:1.5px solid var(--bad);background:var(--surface);color:var(--bad);cursor:pointer;line-height:1;font:700 11px/1 system-ui,'Segoe UI',sans-serif;white-space:nowrap}",   /* 08/11 user chọn MẪU 2 «viền đỏ nền trắng» */
+  "border-radius:4px;border:1.5px solid var(--warn);background:var(--surface);color:var(--warn);cursor:pointer;line-height:1;font:700 11px/1 system-ui,'Segoe UI',sans-serif;white-space:nowrap}",   /* 08/11 user chọn MẪU 2 «viền đỏ nền trắng» */
 ".hp-vtghi svg{width:12px;height:12px;display:block;pointer-events:none}.hp-vtghi .hp-vtghi-chu{pointer-events:none}" +
   ".hp-vtghi::after{content:'';position:absolute;inset:-8px}",
 ".hp-vtghi .hp-vtghi-huy{position:absolute;top:-6px;right:-8px;min-width:18px;height:14px;padding:0 3px;border-radius:7px;background:var(--bad);color:var(--surface);" +
   "font:700 9.5px/14px system-ui,sans-serif;box-shadow:0 0 0 1.5px var(--surface);pointer-events:none;white-space:nowrap}",
-".hp-vtghi:hover{background:color-mix(in srgb,var(--bad) 8%,var(--surface));}",
+".hp-vtghi:hover{background:color-mix(in srgb,var(--warn) 10%,var(--surface));}",   /* 08/11 user «khung cờ + 5S màu VÀNG ở toàn bộ link» */
 ".hp-vtghi:disabled{opacity:.55;cursor:progress;}",
 ".hp-vtghi:focus-visible{outline:0;box-shadow:0 0 0 3px color-mix(in srgb, var(--accent,#326e51) 28%, transparent);}",
 /* Dòng đếm luỹ tiến thay chỗ nút khi CHƯA đủ 3 lần ("Đi làm không báo cáo · lần 2/3") — cùng màu đỏ, nhỏ hơn, không bấm được */
@@ -1475,10 +1479,16 @@ var CSS = [
   "font-size:11.5px;line-height:16px;font-weight:600;white-space:nowrap;text-decoration:none;}.hp-chipdau.tt{color:rgb(255,255,255);}a.hp-chipdau:hover{filter:brightness(.92);}" +
   ".hp-chipdau.ts{background:var(--surface2,var(--nen2));color:var(--text);border-color:var(--ad-chia,var(--border));}" +
   /* 08/11 user «vào / ra chuyên nghiệp, vách ngăn chốt cứng bên phải khung»: khối dính mép phải thẻ, 2 cột nhãn | giờ */
-".hp-vtvr::before{content:'';position:absolute;left:0;top:1px;bottom:1px;width:3px;border-radius:2px;background:var(--vr,var(--muted))}" +
+/* 08/11 user «Chấm vào / Chấm ra, vách ngăn sát chữ trên + dưới ≤ 3 px, căn phải; màu, font, vách đồng bộ khung thẻ» */
+".hp-vtvr::before{content:'';position:absolute;left:0;top:-2px;bottom:-2px;width:1px;background:color-mix(in srgb,var(--accent) 32%,transparent)}" +
   ".hp-vtcard .who:has(.hp-vtvr){align-items:center}" +
-  ".hp-vtvr{position:relative;display:grid;grid-template-columns:auto auto;align-items:baseline;column-gap:10px;row-gap:1px;margin-left:auto;padding-left:12px;min-width:96px;font-size:11.5px;line-height:16px;color:var(--muted);white-space:nowrap}" +
-  ".hp-vtvr span{font-size:11px;color:var(--muted)}.hp-vtvr b{display:block!important;font-size:13px;line-height:18px;color:var(--text);font-weight:600;font-variant-numeric:tabular-nums;text-align:right}" +
+  ".hp-vtvr{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;" +
+  "flex:none;width:96px;min-height:30px;box-sizing:border-box;margin-left:auto;padding-left:8px;font-size:11.5px;line-height:16px;color:var(--muted);white-space:nowrap}" +
+  ".hp-vtcard .ln.hp-hd{font-size:12px;line-height:17px;font-weight:400;color:var(--text);margin-top:6px}.hp-vtcard .ln.hp-hd b{font-weight:600}" +
+  ".hp-vtcard .hp-hd-khong{color:var(--bad)}.hp-vtcard .ln.hp-hd-dung{color:var(--good)}.hp-vtcard .ln.hp-hd-lech{color:var(--warn)}" +
+  ".hp-vtvr .hp-vtvr-nghi{font-size:12px!important;font-weight:600;color:var(--text)}" +
+  ".hp-vtvr span{font-size:10.5px;font-weight:500;line-height:1.4;color:var(--muted);text-align:left}" +
+  ".hp-vtvr b{display:inline-block!important;min-width:32px;font-size:10.5px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}" +
   "@media(max-width:768px){#hpVtModal #hpVtTitle,#hpVtModal #hpVtSub{flex-direction:row-reverse;justify-content:flex-end;}}" +
 "#hpVtModal .hp-mdong{grid-area:dong;justify-self:end;}" +
   "#hpVtModal #hpVtLt{grid-area:auto!important;grid-column:1 / -1!important;grid-row:9!important;justify-self:start!important;margin:4px 0 0!important;white-space:normal;}" +   /* 08/11 user «lỗi đè chữ» */
@@ -3800,22 +3810,21 @@ function hoatDongNgay(em, d){
 }
 /* 2 dòng HTML cho thẻ Phụ trách / nhật ký NV: "Báo cáo ô khác …" + "Đóng gói tại …". boQua = khoá ô đang xem. */
 function dongHoatDong(em, d, boQua){
-  var hd = hoatDongNgay(em, d), out = "";
+  /* 08/11 user «làm gọn, đồng bộ cụm»: 1 câu duy nhất — vd «Đóng gói tại A8-504-05-01-01 (camera_00001 · 315 phiếu) nhưng không báo cáo ở ô A8 nào»;
+     không làm gì ⇒ «Không đóng gói và báo cáo ở bàn đóng gói nào». Chữ 12 px như cụm Báo cáo gần nhất; vế «không …» màu đỏ theme. */
+  var hd = hoatDongNgay(em, d);
   var bcKhac = hd.bc.filter(function(x){ return !boQua || khoaO(x.loc) !== boQua; });
   var ngan = function(l){ return String(l).replace(/^F0-/, ""); };
-  if (bcKhac.length)
-    out += '<div class="ln">Báo cáo vệ sinh ô khác: <b>' + bcKhac.slice(0, 6).map(function(x){ return '<span style="white-space:nowrap">' + esc(ngan(x.loc)) + (x.gio ? " " + esc(x.gio) : "") + '</span>'; }).join(" · ") + '</b>' +
-      (bcKhac.length > 6 ? " +" + (bcKhac.length - 6) : "") + '</div>';
-  else out += '<div class="ln" style="color:#dc2626">' + (S.ls.ok ? "Hôm đó KHÔNG báo cáo vệ sinh ô nào" : "đang đọc lịch sử báo cáo…") + '</div>';
-  if (hd.dg.length)
-    out += '<div class="ln">Đóng gói tại: ' + hd.dg.slice(0, 3).map(function(p){
-      return '<b>' + esc(p.ban ? ngan(p.ban) : p.cam) + '</b> <span class="hp-hint">' + esc(p.cam) + " · " + p.n + " phiếu" + (p.dau ? " " + esc(p.dau) + "→" + esc(p.cuoi || "?") : "") + '</span>';
-    }).join(" · ") + '</div>';
-  else out += '<div class="ln mut">' + (S.pk.dang ? "đang đọc phiếu đóng gói…"
-    : !S.pk.ok ? "chưa đọc được phiếu đóng gói"
-    : S.pk.ngay[d] ? "Hôm đó không đóng gói ở bàn A8 nào"
-    : "ngày ngoài cửa sổ phiếu đóng gói 30 ngày") + '</div>';
-  return out;
+  if (!S.ls.ok || S.pk.dang) return '<div class="ln mut hp-hd">' + (!S.ls.ok ? "đang đọc lịch sử báo cáo…" : "đang đọc phiếu đóng gói…") + '</div>';
+  var coPk = S.pk.ok && S.pk.ngay[d];
+  var dg = hd.dg.slice(0, 2).map(function(p){ return '<b>' + esc(p.ban ? ngan(p.ban) : p.cam) + '</b> (' + esc(p.cam) + " · " + p.n + " phiếu)"; }).join(", ");
+  var bc = bcKhac.slice(0, 4).map(function(x){ return '<b>' + esc(ngan(x.loc)) + '</b>' + (x.gio ? " " + esc(x.gio) : ""); }).join(", ") + (bcKhac.length > 4 ? " +" + (bcKhac.length - 4) : "");
+  var khong = function(t){ return '<span class="hp-hd-khong">' + t + '</span>'; };
+  var cau = !bcKhac.length && !hd.dg.length ? (coPk ? khong("Không đóng gói và báo cáo ở bàn đóng gói nào") : khong("Không báo cáo vệ sinh ô nào") + ' <span class="hp-hint">(ngoài cửa sổ phiếu đóng gói)</span>')
+    : !bcKhac.length ? "Đóng gói tại " + dg + " nhưng " + khong("không báo cáo ở ô A8 nào")
+    : !hd.dg.length ? "Báo cáo vệ sinh ô " + bc + (coPk ? " nhưng " + khong("không đóng gói ở bàn nào") : "")
+    : "Báo cáo vệ sinh ô " + bc + " · đóng gói tại " + dg;
+  return '<div class="ln hp-hd">' + cau + '</div>';
 }
 function renderVt(){
   if ($id("hpVtModal") && $id("hpVtModal").dataset.chu) return;   // vỏ đang do mục khác dùng (moVoVt) — không vẽ đè
@@ -3881,12 +3890,14 @@ function renderVt(){
     /* 21/10 user: «Trạng thái» và «Báo cáo» gom 1 dòng: Trạng thái: … | Báo cáo: Chưa có ai */
     if (!r.email) rows.push(["Người báo cáo", '<span class="hp-hint">Chưa có ai</span>' + themSt]);   // 08/11: trạng thái lên chip đầu thanh bên
     if (r.email) {   // (trước: else của «if (!r.email)» — nay gom vào dòng Trạng thái)
-      rows.push(["Người báo cáo", r.email ? (esc(tenNm(r.email) || r.email) + (r.at ? ' <span class="hp-hint">lúc ' + esc(String(r.at).slice(11, 16) || r.at) + " " + ngayVN(r.ngay) + '</span>' : "")) : '<span class="hp-hint">— chưa có ai báo cáo trong ngày này</span>']);
+      rows.push(["Người báo cáo", r.email ? (esc(tenNm(r.email) || r.email) + (r.at ? ' <span class="hp-hint">lúc ' + esc(String(r.at).slice(11, 16) || r.at) + " " + ngayVN(r.ngay) + '</span>' : ""))
+        : '<span class="hp-hint">— chưa có ai báo cáo trong ngày này</span>', "ngang"]);
       var ai = aiOf(r), aim = ai && aiMeta(ai.kl);
       rows.push(["AI xét duyệt", aim
         /* Cùng khuôn với ô lý do ở panel danh sách: câu kết luận + danh sách "ô nào lỗi gì" thu sẵn. */
-        ? '<span class="hp-badge" style="background:color-mix(in srgb,' + aim.c + ' 15%,transparent);color:' + aim.c + '">' + esc(aim.lb.replace("AI: ", "")) + (ai.diem ? " · " + ai.diem : "") + '</span> <span class="hp-hint">tin cậy ' + ai.tincay + '%</span>' + aiLyDoKhoi(ai.lydo, ai.anhloi)
-        : '<span class="hp-hint">chưa chấm' + (r.stId === 3 ? " — sẽ chấm ở lượt kế tiếp" : "") + '</span>']);
+        ? '<span class="hp-badge" style="background:color-mix(in srgb,' + aim.c + ' 15%,transparent);color:' + aim.c + '">' + esc(aim.lb.replace("AI: ", "")) + (ai.diem ? " · " + ai.diem : "") +
+          '</span> <span class="hp-hint">tin cậy ' + ai.tincay + '%</span>'
+        : '<span class="hp-hint">chưa chấm' + (r.stId === 3 ? " — sẽ chấm ở lượt kế tiếp" : "") + '</span>', "ngang", aim ? aiLyDoKhoi(ai.lydo, ai.anhloi) : ""]);   // 08/11 user: kết quả lên ngang hàng nhãn
       /* ẢNH: mặc định chỉ bày ANH_XEM_TRUOC ô — mỗi ô là ẢNH GỐC ~520KB (CDN không có bản nhỏ), bày
          cả 24 ô là 18,6MB/lượt mở. Muốn xem cả bộ thì bấm "+N": lúc đó mới trải hết lưới và ảnh vẫn
          vào theo tầm nhìn. Người chỉ liếc qua không phải trả tiền băng thông cho 20 ảnh không xem. */
@@ -3937,14 +3948,15 @@ function renderVt(){
     cardPt =
       '<div class="hp-vtcard pt">' +
       '<div class="hd">Phụ trách <span class="hp-badge" style="background:color-mix(in srgb,' + mauNg + ' 14%,transparent);color:' + mauNg + '">' +
-        esc(tuGS ? "Bảng phân công" : "Suy từ báo cáo gần nhất") + '</span></div>' +
+        esc(tuGS ? "theo bảng phân công" : "suy từ báo cáo gần nhất") + '</span></div>' +
       /* 21/10 user «làm gọn cụm»: bỏ vòng chữ cái + email, 1 dòng tên · mã */
       /* 05/11 user «bổ sung avatar trước cụm tên · mã»: chỉ ẢNH (không có ảnh thì ẩn — 21/10 đã bỏ vòng chữ cái ở đây) */
       /* 08/11 user (ảnh khoanh): bỏ dòng «Ngày 07/11 · ĐI LÀM: vào … · không chấm ra / KHÔNG báo cáo vệ sinh ô này»;
          thêm khối «vào / ra» cạnh tên, vạch trái màu đi làm (xanh) / nghỉ (xám); di chuột = câu đầy đủ cũ */
       '<div class="who">' + avChiAnh(ten, pc.em) + '<div><b>' + esc(ten) + '</b>' + (pc.code ? '<small>' + esc(pc.code) + '</small>' : "") + '</div>' +
         '<div class="hp-vtvr" style="--vr:' + cc.c + '" title="' + esc(cc.lb + (cc.sub ? " · " + cc.sub : "") + (cc.sub2 ? " · " + cc.sub2 : "")) + '">' +
-          '<span>Vào</span><b>' + esc(cc.vao || "—") + '</b><span>Ra</span><b>' + esc(cc.ra || "—") + '</b></div></div>' +
+          (!cc.vao && !cc.ra ? '<span class="hp-vtvr-nghi">Nghỉ</span>'   /* 08/11 user: trống cả 2 ⇒ «Nghỉ», giữa vị trí 2 dòng */
+            : '<span>Chấm vào <b>' + esc(cc.vao || "") + '</b></span><span>Chấm ra <b>' + esc(cc.ra || "") + '</b></span>') + '</div></div>' +   /* 08/11 user: không có giờ thì để trống */
       (cc.kbc ? (canPK(), dongHoatDong(pc.em, d, kO)) : "") +
       (tuGS ? "" : '<div class="ln mut">g-sheet chưa phân công vị trí này' + (pc.bc ? " — bằng chứng " + esc(ngayVN(pc.bc)) : "") + '</div>') +
       /* Ghi chú của dòng BÙ trong bảng phân công vốn mở đầu đúng bằng câu "g-sheet chưa phân công
@@ -4017,12 +4029,11 @@ function renderVt(){
     var tenBc = bcTen || bcEm;
     cardBc += '<div class="who">' + avChiAnh(bcTen, bcEm) + '<div><b>' + esc(tenBc) + '</b>' + (bcCode ? '<small>' + esc(bcCode) + '</small>' : "") + '</div></div>' +
       /* 08/11 user «T7 07/11 lúc 08:21 · 1 ngày trước trùng với Người báo cáo»: lượt gần nhất = lượt của ngày đang xem ⇒ không in lại ngày giờ */
-      (r && r.email && bcNgay === d ? "" : '<div class="ln"><b>' + esc(thuVN(bcNgay)) + " " + esc(ngayVN(bcNgay)) + '</b>' +
-        (bcGio ? ' lúc <b>' + esc(bcGio) + '</b>' : "") +
-        (ptTuoiVt != null ? ' <span class="hp-hint">· ' + (ptTuoiVt > 0 ? ptTuoiVt + " ngày trước" : "hôm nay") + '</span>' : "") +
-        (bcNguon ? ' <span class="hp-hint">(' + esc(bcNguon) + ')</span>' : "") + '</div>') +
-      (!soDuoc ? "" : khacNguoi ? '<div class="ln" style="color:#d97706">⚠ khác người trong bảng phân công</div>'
-        : '<div class="ln" style="color:#059669">✓ đúng người trong bảng phân công</div>') +
+      /* 08/11 user «làm gọn, đồng bộ cụm»: «T6 06/11 16:50 · 2 ngày trước» (nguồn để ở title) — cùng cỡ / màu cụm hoạt động */
+      (r && r.email && bcNgay === d ? "" : '<div class="ln hp-hd" title="' + esc(bcNguon) + '"><b>' + esc(thuVN(bcNgay)) + " " + esc(ngayVN(bcNgay)) + (bcGio ? " " + esc(bcGio) : "") + '</b>' +
+        (ptTuoiVt != null ? " · " + (ptTuoiVt > 0 ? ptTuoiVt + " ngày trước" : "hôm nay") : "") + '</div>') +
+      (!soDuoc ? "" : khacNguoi ? '<div class="ln hp-hd hp-hd-lech">⚠ khác người trong bảng phân công</div>'
+        : '<div class="ln hp-hd hp-hd-dung">✓ đúng người trong bảng phân công</div>') +
       (ptTuoiVt != null && ptTuoiVt > NGUONG_PT_CU ? '<div class="ln mut">quá ' + NGUONG_PT_CU + ' ngày — bằng chứng cũ, chưa chắc còn phụ trách</div>' : "");
   } else {
     cardBc += '<div class="ln mut">' + (S.ls.dang ? "đang đọc lịch sử " + LS_NGAY + " ngày…"
@@ -4034,7 +4045,8 @@ function renderVt(){
 
   $id("hpVtBody").innerHTML =
     '<div class="hp-vthistrow">' + hist + '</div>' +
-    rows.map(function(x){ return '<div class="hp-vtrow"><label>' + x[0] + '</label><div>' + x[1] + '</div></div>'; }).join("") +
+    rows.map(function(x){ return '<div class="hp-vtrow' + (x[2] ? " " + x[2] : "") + '"><label>' + x[0] + '</label><div>' + x[1] + '</div>' +
+      (x[3] ? '<div class="hp-vtrow-them">' + x[3] + '</div>' : "") + '</div>'; }).join("") +
     '<div class="hp-vtduo">' + cardPt + cardBc + '</div>' + theTaiSan(loc);
   capNhatNutGhi(loc, d, r, pc, lsAll);   // nút / dòng đếm luỹ tiến ở góc phải trên — cần pc + chấm công nên đặt cuối
   lazyQuet();
