@@ -28,7 +28,8 @@
     var b = document.createElement("button"); b.type = "button"; b.className = "btn-filter loc-pop-nut"; b.setAttribute("aria-expanded", "false");
     b.appendChild(document.createTextNode("Bộ lọc"));
     b.addEventListener("click", function (ev) { if (ev.target.closest(".tat-loc")) return;
-      var mo = k.classList.toggle("loc-pop-mo"); b.classList.toggle("mo", mo); b.setAttribute("aria-expanded", String(mo)); });
+      var mo = k.classList.toggle("loc-pop-mo"); b.classList.toggle("mo", mo); b.setAttribute("aria-expanded", String(mo));
+      if (mo) { var cha = k.offsetParent || k.parentNode; k.style.top = Math.round(hang.getBoundingClientRect().bottom - cha.getBoundingClientRect().top + cha.scrollTop - cha.clientTop) + "px"; } });   // 08/11 TK-28: ngăn kéo nổi ngay dưới hàng nút, không đẩy dữ liệu
     hang.appendChild(b);
     k.parentNode.classList.add("loc-pop-box"); k.__locPop = b;
     capNhat(k);
@@ -43,7 +44,10 @@
     ".loc-pop-box>.hp-mfilters,.loc-pop-box>.hk-mfilters,.loc-pop-box>.ht-mfilters{order:2}" +
     ".loc-pop-box>.loc-pop-hang~*{order:3}" +
     ".loc-pop-box>.hp-mfilters:not(.loc-pop-mo),.loc-pop-box>.hk-mfilters:not(.loc-pop-mo),.loc-pop-box>.ht-mfilters:not(.loc-pop-mo){display:none!important}" +
-    ".loc-pop-box>.loc-pop-mo{transform-origin:top center;animation:popIn .22s var(--ez-spring,cubic-bezier(.16,1,.3,1))}" +
+    /* 08/11 user «Bộ lọc dạng ngăn kéo — không xô đẩy khung dữ liệu» (TK-28): khối lọc mở NỔI đè lên danh sách (top = đáy hàng nút, đặt lúc mở) */
+    ".loc-pop-box>.loc-pop-mo{position:absolute!important;left:0;right:0;z-index:30;background:var(--surface);border-bottom:1px solid var(--ad-chia,var(--border));border-radius:0 0 8px 8px;" +
+    "box-shadow:0 6px 16px 0 color-mix(in srgb,var(--text) 8%,transparent),0 9px 28px 8px color-mix(in srgb,var(--text) 5%,transparent);max-height:70vh;overflow:auto;" +
+    "transform-origin:top center;animation:popIn .22s var(--ez-spring,cubic-bezier(.16,1,.3,1))}" +
     /* mẫu nút trang (.panel-head .btn-filter) */
     /* !important: CSS điện thoại của module ép nút trong pop-up giãn hết hàng (đo ảnh 26/10: chữ tóm tắt bị bóp thành 1 cột dọc) */
     ".loc-pop-box .loc-pop-nut{position:relative;display:inline-flex!important;align-items:center;justify-content:center;gap:6px;flex:0 0 auto!important;width:auto!important;max-width:none!important;" +
@@ -52,7 +56,7 @@
     ".loc-pop-nut::after{content:'';display:inline-block;width:5.5px;height:5.5px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;" +
     "transform:translateY(-1.5px) rotate(45deg);transition:transform .22s var(--ez-apple,ease);flex:0 0 auto}" +
     ".loc-pop-nut.mo::after{transform:translateY(1.5px) rotate(-135deg)}" +
-    ".loc-pop-nut:hover,.loc-pop-nut.mo,.loc-pop-nut.dang-loc{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface))}" +
+    ".loc-pop-nut:hover,.loc-pop-nut.mo{border-color:var(--border);color:var(--text);background:var(--ad-re,var(--hover))}" +   /* 07/11 nút Bộ lọc mới: màu thường; đang lọc = .tl-dang (tat-loc.js) */
     ".loc-pop-nut::before{content:'';position:absolute;left:-2px;right:-2px;top:-6px;bottom:-6px}}";
   (document.head || document.documentElement).appendChild(st);
   /* pop-up module dựng muộn (tải module khi mở mục) + khối lọc vẽ lại mỗi lần mở + ô chọn đặt giá trị bằng mã (không bắn input) */
