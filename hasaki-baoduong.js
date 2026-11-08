@@ -524,6 +524,20 @@
       B + " .bd-ko-ds .bd-kvt-ngs{display:grid;grid-template-columns:auto 24px;grid-template-rows:20px 20px;grid-template-areas:'av doi' 'av ck';column-gap:14px;row-gap:4px;align-items:center}" +
         B + " .bd-ko-ds .bd-kvt-ngs>.bd-kvt-doi{grid-area:doi}" + B + " .bd-ko-ds .bd-kvt-ngs>.bd-kvt-ck{grid-area:ck}" + B + " .bd-ko-ds .bd-kvt-ngs>.bd-kav{grid-area:av;justify-self:end}" +
         B + " .bd-ko-ds .bd-kvt-ngs>:is(.bd-kvt-doi,.bd-kvt-ck){height:20px!important;min-height:0!important}" +
+        /* 08/11 user «giảm mục con 0,7 hiện tại: cả chữ / khung ảnh; PTCH tròn · Bảo trì vuông thể hiện rõ; nhãn Định kỳ dưới tên» — đồng bộ mọi mục con */
+        B + " .bd-ko-ds .bd-kvt-ma{gap:4px;justify-content:flex-start}" +
+        B + " .bd-ko-ds .bd-kvt-dk{display:inline-flex;align-items:center;height:16px;padding:0 5px;border-radius:3px;background:var(--surface2,var(--ad-chia));color:var(--text);font-size:11px;font-weight:600}" +
+        B + " .bd-ko-ds .bd-kav-1.nho .bd-av," + B + " .bd-ko-ds .bd-kav-1.nho .bd-av img{border-radius:50%!important}" +
+        B + " .bd-ko-ds .bd-kav-1.nho.vuong{border-radius:4px}" + B + " .bd-ko-ds .bd-kav-1.nho.vuong .bd-av," + B + " .bd-ko-ds .bd-kav-1.nho.vuong .bd-av img{border-radius:3px!important}" +
+        /* điện thoại: mục con thu nhỏ (user 08/11: tên 10,5 px · ảnh 23 px · thẻ thấp); máy tính giữ cỡ cũ */
+        "@media(max-width:768px){" + B + " .bd-ko-ds .bd-kvt{height:auto!important;min-height:0;padding-top:4px!important;padding-bottom:4px!important}" +
+        B + " .bd-ko-ds .bd-kvt :is(.bd-kvt-ten,.bd-vtd-ten){font-size:11.5px!important;line-height:15px!important}" +
+        B + " .bd-nt-ic{gap:0;margin-top:6px}" + B + " .bd-nt-ic small{font-size:9px!important;line-height:11px!important}" +
+        B + " .bd-ko-ds .bd-kvt-ma{font-size:10px!important;line-height:13px;margin-top:1px}" + B + " .bd-ko-ds .bd-kvt-ma *{font-size:10px!important}" + B + " .bd-ko-ds .bd-kvt-dk{height:14px;padding:0 4px}" +
+        B + " .bd-ko-ds .bd-kvt-ngs .bd-av{width:21px!important;height:21px!important;font-size:9.5px!important}" +
+        B + " .bd-ko-ds .bd-kvt-ngs{grid-template-columns:auto 17px;grid-template-rows:14px 14px;column-gap:10px}" +
+        B + " .bd-ko-ds .bd-kvt-ngs>:is(.bd-kvt-doi,.bd-kvt-ck){width:17px!important;height:14px!important}" + B + " .bd-ko-ds .bd-kvt-ngs svg{width:12px;height:12px}" +
+        B + " .bd-ko-ds .bd-kvt-but{width:14px!important;height:14px!important}" + B + " .bd-ko-ds .bd-kvt-but svg{width:10px;height:10px}}" +
         B + " .bd-ko-ds .bd-kvt-ngs{align-self:center;row-gap:0;margin:0}" +
         B + " .bd-ko-ds .bd-kvt-ngs>.bd-kav{align-self:center;padding-top:0!important;padding-bottom:0!important}",   /* 08/11 thẻ con thấp 52 px (bỏ dòng Ngày + mã) — 2 nút xếp dọc 20 + 20 */
       /* 07/11 user «dạng ngăn kéo oke, nhưng xổ mục con ra mà không đẩy các mục cha bên dưới — vẫn cố định các mục cha khác» (mẫu 8, Hieu-ung-mo-dong-muc-con):
@@ -861,7 +875,8 @@
         B + " .bd-nt-av{position:relative;display:inline-flex}" + B + " .bd-nt-av .bd-av{width:32px;height:32px;font-size:13px}" + B + " .bd-nt-ng.vuong .bd-nt-av .bd-av{border-radius:8px}" +
         B + " .bd-nt-hh{position:absolute;right:-6px;bottom:-3px;min-width:18px;height:14px;padding:0 3px;border-radius:4px;font-size:9px;line-height:14px;font-weight:600;" +
         "color:rgb(255,255,255);box-shadow:0 0 0 1.5px var(--surface)}" + B + " .bd-nt-hh.pt{background:rgb(46,125,79)}" + B + " .bd-nt-hh.bt{background:rgb(31,95,153)}" +
-        B + " .bd-nt-ten{font-size:12.5px;line-height:16px;color:var(--text);white-space:nowrap}" + B + " .bd-nt-ic{align-self:flex-start;display:flex;color:var(--accent);margin-top:8px}" +
+        B + " .bd-nt-ten{font-size:12.5px;line-height:16px;color:var(--text);white-space:nowrap}" + B + " .bd-nt-ic{align-self:flex-start;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--accent);margin-top:8px}" +
+        B + " .bd-nt-ic small{font-family:Roboto,system-ui,sans-serif;font-size:10px;line-height:13px;text-transform:lowercase;white-space:nowrap;color:inherit}" +
         B + " .bd-nt-doi{align-self:flex-start;margin-top:4px}" +
         B + " .bd-nt-td," + B + " .bd-nt-bp{display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:20px;font-weight:600;white-space:nowrap}" +
         B + " .bd-nt-td{color:var(--muted)}" + B + " .bd-nt-ic{display:flex;align-items:center;justify-content:center;color:var(--accent)}",
@@ -880,7 +895,7 @@
       "@media(max-width:768px){" + B + " .bd-bc{grid-template-columns:44% minmax(0,1fr);gap:10px}" + B + " .bd-hd{top:0}" + B + " .bd-hd-cap{height:170px;font-size:11.5px;line-height:16px;padding:10px 8px}" +
         B + " .bd-hd-cap>i{flex-basis:20px;height:20px;line-height:20px;font-size:11px}" + B + " .bd-hd-dk{gap:4px;padding:0 6px 8px}" + B + " .bd-hd-dk .bd-lk{min-width:28px;padding:0 6px}" +
         B + " .bd-hd-ds li{padding:6px 4px;gap:6px;font-size:12px;line-height:17px}" + B + " .bd-hd-ds li>i{flex-basis:20px;height:20px;line-height:20px;font-size:11px}" +
-        "#hpVtModal[data-chu=bd] .hp-modalbox{position:absolute;left:0;right:0;bottom:0;top:auto;height:62dvh!important;max-height:none!important;" +
+        "#hpVtModal[data-chu=bd] .hp-modalbox{position:absolute;left:0;right:0;bottom:0;top:auto;height:calc(62dvh + 38px)!important;max-height:none!important;" +
         "border-radius:16px 16px 0 0!important;transform:translateY(100%);transition:transform .28s var(--ez-apple,ease),height .28s var(--ez-apple,ease)}" +
         "#hpVtModal[data-chu=bd].show .hp-modalbox{transform:none}#hpVtModal[data-chu=bd][data-nac=day] .hp-modalbox{height:calc(100dvh - 10px)!important}" +
         "#hpVtModal[data-chu=bd] .bd-nac{display:flex;justify-content:center;padding:8px 0 2px;touch-action:none;cursor:grab}" +
@@ -895,7 +910,7 @@
            chỉ tấm nhận chạm. Trang đệm đáy bằng nấc nửa ⇒ hàng cuối vẫn cuộn lên được phía trên tấm */
         "#hpVtModal[data-chu=bd].hp-modal{background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;pointer-events:none}" +
         "#hpVtModal[data-chu=bd] .hp-modalbox{pointer-events:auto;box-shadow:0 -6px 24px color-mix(in srgb,var(--text) 18%,transparent)}" +
-        "body:has(#hpVtModal[data-chu=bd].show) #pane-baoduong{padding-bottom:62dvh}" +
+        "body:has(#hpVtModal[data-chu=bd].show) #pane-baoduong{padding-bottom:calc(62dvh + 38px)}" +
         /* đẩy màn (Miller dọc) — 08/11 user «nhấn mục cha vẫn hiện mục con dạng ngăn kéo»: mở 1 mục cha = MÀN MỚI trượt vào từ phải
            (cả đầu ‹ lẫn danh sách con), mục cùng cấp + đầu kho ẩn, thẻ cha bỏ viền thành trang; ‹ / vuốt lùi = trượt về */
         "#bdNay{overflow-x:clip}" +
@@ -904,7 +919,7 @@
         /* 08/11 user «nhấn mục cha thì TOÀN MÀN HÌNH chỉ hiển thị riêng khung mục cha (‹ · tên · n vị trí) + mục con» ⇒ màn phủ cố định cả màn, dưới tấm đáy */
         "#bdNay .bd-man:not(.bd-man .bd-man){position:fixed;inset:0;z-index:1150;margin:0!important;padding:12px 16px calc(16px + env(safe-area-inset-bottom))!important;" +
         "overflow-y:auto;overscroll-behavior:contain;background:var(--bg,var(--surface))!important;border:0!important;box-shadow:none!important;border-radius:0!important}" +
-        "body:has(#hpVtModal[data-chu=bd].show) #bdNay .bd-man:not(.bd-man .bd-man){padding-bottom:62dvh!important}" +
+        "body:has(#hpVtModal[data-chu=bd].show) #bdNay .bd-man:not(.bd-man .bd-man){padding-bottom:calc(62dvh + 38px)!important}" +
         "#pane-baoduong:has(#bdNay .bd-man){transform:none!important;translate:none!important;animation:none!important}" +
         /* mờ + pointer-events:none vẫn bắt chạm (đo 08/11) ⇒ gỡ hẳn khi đang ở màn mục cha */
         "body:has(#pane-baoduong:not(.hidden) #bdNay .bd-man) #sideToggle{display:none!important}" +   /* chỉ khi tab Bảo dưỡng đang hiện */
@@ -1721,7 +1736,7 @@
     var nhom = function (x, bt) { return (x.ten.length ? x.ten.map(function (t) { return the(t, bt); }).join("") : chua(bt)) + doi(x); };
     var chinhBt = ben.bt.co, hai = ben.pt.co && ben.bt.co;
     var hang = chinhBt ? nhom(ben.bt, true) : nhom(ben.pt, false);
-    if (hai) hang += '<span class="bd-nt-ic" title="phối hợp với" aria-label="phối hợp với">' + SVG_TAY + "</span>" + nhom(ben.pt, false);
+    if (hai) hang += '<span class="bd-nt-ic">' + SVG_TAY + '<small>phối hợp với</small></span>' + nhom(ben.pt, false);   // 08/11 user: chữ dưới icon bắt tay
     return '<div class="hp-vtrow bd-nt"><label>Người thực hiện</label><div class="bd-nt-hang">' + hang + "</div></div>";
   }
 
@@ -1977,6 +1992,7 @@
       var dongVtK = function (t) {
         var q = qlCua(t.khu, t.hm, t.b), bl = buocLt(t), nl = t.l === "b" && !/ht|dl/.test(bl) ? "Trễ hạn" : LT.filter(function (z) { return z[0] === bl; })[0][1];   // work: quá hạn = «Trễ hạn»
         var dt = (S.doiTen || {})[t.b], cho = dt && dt["TRẠNG THÁI"] !== "Đã đổi WMS";
+        var vhM = t.kt && t.nhomK ? (nguoiVt(t.b, t.nhomK).vh || null) : null;   // 08/11: người PTCH trong nhóm VH + BT ⇒ ảnh tròn
         /* 06/11 lượt 7 user: «bút cạnh mã → tưởng đổi mã; mã vị trí luôn cố định» ⇒ bút đứng cuối TÊN (đổi tên hiển thị, mã giữ nguyên);
            «mục con kích thước cố định, không hiện số ảnh; trạng thái lên trên cùng bên phải; ảnh + icon xuống dưới cùng bên phải; tên chiếm 2/3, dài thì xuống dòng» */
         return '<div class="bd-kvt lt-' + bl + (t.l === "b" ? " qh" : "") + (t.kt ? " kt" : "") + '" data-bin="' + esc(t.b) + '" data-kt="' + (t.kt ? 1 : 0) + '"' + (t.d ? ' data-ngay="' + t.d + '"' : "") + ">" +
@@ -1985,7 +2001,8 @@
               '" title="Đổi tên vị trí (mã giữ nguyên)" aria-label="Đổi tên vị trí ' + esc(t.ten) + ', mã giữ nguyên">' +
               SVG_BUT + "</button>" : "") + "</span>" +
             /* 08/11 user «mục con bỏ dòng Ngày + mã vị trí, thu hẹp chiều cao khung» — dòng phụ chỉ còn khi có hạn (KT) / chờ WMS / QL riêng */
-            ((!t.doi && t.han) || cho || q.cap === "vị trí" ? '<span class="bd-kvt-ma">' + (!t.doi && t.han ? '<span class="bd-phu">hạn ' + esc(t.han) + "</span>" : "") +
+            /* 08/11 user «bổ sung nhãn Định kỳ bên dưới hàng tên mục con — căn trái», đồng bộ mọi mục con */
+            (true ? '<span class="bd-kvt-ma"><span class="bd-kvt-dk">' + esc(t.ts ? tsNgan(t.ts) : "Hằng ngày") + "</span>" + (!t.doi && t.han ? '<span class="bd-phu">hạn ' + esc(t.han) + "</span>" : "") +
             (cho ? '<small class="bd-kvt-cho" title="' + esc((dt["TRẠNG THÁI"] === "Lỗi" ? "WMS chưa nhận tên mới" : "Đang chờ WMS / planogram cập nhật") + " — tên cũ: " + (dt["TÊN CŨ"] || "")) + '">' +
               (dt["TRẠNG THÁI"] === "Lỗi" ? "WMS chưa đổi" : "chờ WMS") + "</small>" : "") + (q.cap === "vị trí" ? '<span class="bd-kvt-ql">· QL ' + q.ds.map(function (x) { return o(tenNV(x)); }).join(", ") + "</span>" : "") +
             "</span>" : "") + "</span>" +
@@ -1997,8 +2014,8 @@
               esc(t.ten) + '">' + SVG_DOI + "</button>" : "") +
             (sua && (t.doi || t.kt) && t.khu ? '<button type="button" class="bd-lk bd-ka bd-kvt-ck' + anSua(t) + '" data-act="ckvt" data-bin="' + esc(t.b) + '" data-khu="' + esc(t.khu) + '" data-hmuc="' + esc(t.hm) +
               '" title="Chuyển sang ' + (t.khu === "SHOP" ? "WH" : "SHOP") + '" aria-label="Chuyển ' + esc(t.ten) + " sang " + (t.khu === "SHOP" ? "WH" : "SHOP") + '">' + SVG_CK + "</button>" : "") +
-            '<span class="bd-kav">' + (t.ng.length ? t.ng.map(function (p) { return anhSo1({ ten: p.ten, vao: p.vao }, 1, t.kt); }).join("") : anhChua(null, 1, t.kt)) + "</span>" + "</span>" +
-            (sua && t.doi ? '<button type="button" class="bd-lk bd-ka bd-kvt-x' + anSua(t) + (S.xacBo === "vt|" + t.b ? " xn" : "") + '" data-act="bovt" data-bin="' + esc(t.b) +
+            '<span class="bd-kav">' + (t.ng.length ? t.ng.map(function (p) { return anhSo1({ ten: p.ten, vao: p.vao }, 1, t.kt && !(vhM && vhM[tenNV(p.ten)])); }).join("") : anhChua(null, 1, t.kt)) + "</span>" + "</span>" +
+            (sua && (t.doi || t.kt) ? '<button type="button" class="bd-lk bd-ka bd-kvt-x' + anSua(t) + (S.xacBo === "vt|" + t.b ? " xn" : "") + '" data-act="bovt" data-bin="' + esc(t.b) +
               '" data-hmuc="' + esc(t.hm) + '" title="' +
               (S.xacBo === "vt|" + t.b ? "Bấm lần nữa để bỏ " : "Bỏ ") + esc(t.ten) + ' khỏi Việc hôm nay" aria-label="Bỏ ' + esc(t.ten) + '">' + SVG_X_N + "</button>" : "") + "</div>";
       };
@@ -2893,6 +2910,7 @@
     if (!S.ganNgoai) { S.ganNgoai = 1;
       var dongNgan = function () { var h = document.querySelector('#bdNay .bd-kbang td.bd-ko.mo .bd-ko-h[aria-expanded="true"], #bdNay .bd-pl>.bd-pn.mo>.bd-pn-h[aria-expanded="true"]'); if (h && !laDT()) h.click(); };
       document.addEventListener("click", function (e) { var t = e.target;
+        if (!e.isTrusted) return;   // 08/11 gốc lỗi «back về mất ngăn kéo»: mở thanh bên phải ⇒ trang tự .click() nút thu thanh bên trái (cú bấm giả) — không phải người bấm ra ngoài
         /* 08/11 user «back về vẫn giữ ngăn kéo của mục con trước đó»: bấm nền / ✕ của vỏ thanh bên (đang đóng dần, mất .show) không đóng ngăn */
         if (!document.contains(t) || t.closest(".bd-kbang td.bd-ko.mo, .bd-kbang .bd-ko-h, .bd-pl>.bd-pn.mo, .bd-pn-h, .hp-modal, [role=dialog], .hx-ben, .bd-ben, .cs-list")) return;
         if (Date.now() - (S.benDongLuc || 0) < 600) return;
