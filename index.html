@@ -1276,7 +1276,7 @@ html{scroll-behavior:smooth;scrollbar-gutter:stable;}
 .settings-pop .dropdown-action-btn .timestamp-hint{font-size:12px; font-weight:500; color:var(--muted,#888); white-space:nowrap; line-height:1.3;}
 .settings-pop .dropdown-action-btn:hover .act{color:var(--accent);}
 .settings-pop a.dropdown-action-btn{text-decoration:none;}
-.settings-pop .dl-moi{cursor:default}.settings-pop .dl-moi:hover .act{color:inherit}
+.settings-pop .dl-moi{cursor:pointer}   /* 08/11 bấm = làm mới mục đang xem */
 
 /* Badge DEV (hiện khi ?dev=1 — nhắc đang ở bản nháp, sync production bị chặn) */
 .dev-badge{background:#b45309; color:#fff; border-radius:6px; padding:3px 8px; font-size:10.5px; font-weight:800; letter-spacing:.6px;}
@@ -1806,7 +1806,8 @@ window.hxNoiLai = function(){
             <!-- 20/10 user «3 mục này còn cần không, không cần thì bỏ»: bỏ «Tải lại dữ liệu» (trang tự làm mới 5' + khi quay lại tab),
                  «Cập nhật ngay (cần PIN)» + «Cập nhật chấm công (cần PIN)» (nhật ký watch-login từ 01/08: 0 lần bấm; 5S tự đồng bộ ≥45', chấm công 07:20 hằng ngày;
                  2 nút chỉ chạy khi laptop bật). Giữ 1 dòng giờ dữ liệu (trước lặp ở 2 nút). -->
-            <div id="dlMoi" class="dropdown-action-btn dl-moi" role="status"><span class="act">Dữ liệu 5S tự làm mới</span><small class="timestamp-hint" id="tsReload"></small></div>
+            <!-- 08/11 user: viên «Cập nhật hh:mm:ss dd/mm/yyyy» cuối trang BỎ — giờ cập nhật của MỤC ĐANG XEM hiện ở đây (bấm = làm mới mục đó) -->
+            <div id="dlMoi" class="dropdown-action-btn dl-moi" role="button" tabindex="0"><span class="act" id="dlMoiTen">Cập nhật</span><small class="timestamp-hint" id="tsReload"></small></div>
             <a id="btnTaiBoCai" class="dropdown-action-btn" href="CAI-PC-1LAN.bat" download="CAI-PC-1LAN.bat" style="text-decoration:none"><span class="act">Tải bộ cài PC (chạy admin)</span><small class="timestamp-hint">cài 5S cho PC nội bộ · 1 lần</small></a>
           </div>
         </div>
@@ -3902,7 +3903,7 @@ function moHasakiBaoDuong(){   // 27/10 Tài sản › Bảo dưỡng — khuôn
       '<div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:54%"></div>'+
       '<div class="sk sk-line" style="width:62%"></div></div>';
     _bdNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-baoduong.js?v=20261108i';
+      const s=document.createElement('script'); s.src='hasaki-baoduong.js?v=20261108k';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-baoduong.js'));
       document.body.appendChild(s);
     });
@@ -3968,7 +3969,7 @@ let _hxNap=null;
 function napXm(){
   if(!_hxNap){
     _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261108i';
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261108k';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
       document.body.appendChild(s);
     });
@@ -4043,7 +4044,7 @@ function moHasakiKiemke(){
       '<div class="sk sk-line" style="width:68%"></div><div class="sk sk-line" style="width:52%"></div>'+
       '<div class="sk sk-line" style="width:60%"></div></div>';
     _hkNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-kiemke.js?v=20261027a';
+      const s=document.createElement('script'); s.src='hasaki-kiemke.js?v=20261108k';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-kiemke.js'));
       document.body.appendChild(s);
     });
@@ -4081,7 +4082,7 @@ var HOME_MUC = [
     /* 27/10 Tài sản › Bảo dưỡng: số = tổng đầu việc trong kế hoạch (hasaki-baoduong.js ghi tqGhi «bd» khi vẽ xong; Tổng quan không tự tải) */
     { t: "baoduong", ten: "Bảo dưỡng", cc: "var(--accent)", mo: "Kế hoạch bảo dưỡng thiết bị kho 170: hạng mục, tần suất, người thực hiện và từng đầu việc theo g-sheet.",
       muc: ["Mục lục", "Đầu việc", "Tần suất", "Người thực hiện"],
-      so: function(){ var d=window.tqDoc&&tqDoc("bd"); return d&&d.dv?{ k: nf0(d.dv), l: "đầu việc · "+d.hm+" hạng mục" }:null; } }
+      so: function(){ var d=window.tqDoc&&tqDoc("bd"); return d&&d.dv?{ k: nf0(d.dv), l: "đầu việc"+(d.hm?" · "+d.hm+" hạng mục":"") }:null; } }
   ]},
   { g: "Xác minh", hx: 1, mo: "Chỉ máy quản lý · cần đăng nhập", items: [
     { t: "xacminh", sub: "treo", ten: "Theo tác vụ", cc: "var(--accent)", mo: "Phiếu WF591 đang mở: bằng chứng camera, máy gợi ý là ai, việc tiếp theo.", muc: ["Bằng chứng", "Máy gợi ý", "Quyết định"] },
@@ -4378,10 +4379,31 @@ function hienGioDuLieu(ms,laServer){
   const hint='Mới nhất: '+p(d.getHours())+':'+p(d.getMinutes())+' '+p(d.getDate())+'/'+p(d.getMonth()+1);
   const chiTiet=(laServer?'Dữ liệu lấy từ API WMS lúc ':'Dữ liệu tải về trình duyệt lúc ')
     +p(d.getHours())+':'+p(d.getMinutes())+' ngày '+p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear();
-  const e2=$('tsReload'); if(e2) e2.textContent=hint;
-  const b=$('dlMoi'); if(b) b.title=chiTiet+' · trang tự làm mới mỗi 5 phút';   // accessibility: tooltip chi tiết
+  window.__gio5S={ ms:ms, chiTiet:chiTiet };   // 08/11: menu «Dữ liệu» đọc theo mục đang xem (dlCapNhat)
+  if(window.dlCapNhat) window.dlCapNhat();
 }
 
+/* 08/11 user «bỏ toàn bộ Cập nhật hh:mm:ss ở cuối trang, chuyển lên thay chỗ "Dữ liệu 5S tự làm mới"; vào mục nào hiện đúng giờ cập nhật mục đó»:
+   viên .cn của các mô-đun vẫn dựng (giữ hàm bấm làm mới) nhưng ẨN; menu Dữ liệu đọc viên .cn của khung đang hiện; mục 5S (Tổng quan / Vi phạm /
+   Tổng kết / Quy định) không có viên riêng ⇒ giờ dữ liệu 5S (lastSync). */
+(function(){
+  var st=document.createElement('style'); st.textContent='.cn{display:none!important}'; document.head.appendChild(st);
+  var p2=function(n){ return String(n).padStart(2,'0'); };
+  var vienDangXem=function(){ var ds=[].slice.call(document.querySelectorAll('[id^="pane-"]:not(.hidden) .cn'));
+    return ds.filter(function(c){ var x=c.closest('[id^="pane-"]'); for(var e=x;e&&e!==document.body;e=e.parentElement){ if(e.classList.contains('hidden')||e.hidden) return false; } return true; }).pop()||null; };
+  window.dlCapNhat=function(){ var h=document.getElementById('tsReload'), b=document.getElementById('dlMoi'), t=document.getElementById('dlMoiTen'); if(!h||!b) return;
+    var c=vienDangXem();
+    if(c){ var g=(c.querySelector('.cn-gio')||{}).textContent||'', n=(c.querySelector('.cn-ngay')||{}).textContent||'';
+      h.textContent=/\d/.test(g)?g.slice(0,5)+' '+n.slice(0,5):'đang tải…'; b.title=(c.title||'').replace(/ · Bấm để làm mới$/,'')+' · bấm để làm mới mục này'; b.dataset.co='1'; }
+    else { var d=window.__gio5S; delete b.dataset.co;
+      if(d){ var x=new Date(d.ms); h.textContent=p2(x.getHours())+':'+p2(x.getMinutes())+' '+p2(x.getDate())+'/'+p2(x.getMonth()+1); b.title=d.chiTiet+' · trang tự làm mới mỗi 5 phút'; } }
+    if(t) t.textContent='Cập nhật'; };
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest&&ev.target.closest('#dlMoi'); if(b){ var c=vienDangXem(); if(c) c.click(); else if(typeof capNhatGioDuLieu==='function') capNhatGioDuLieu(); setTimeout(window.dlCapNhat,400); return; }
+    setTimeout(window.dlCapNhat,0); },true);
+  document.addEventListener('keydown',function(ev){ if((ev.key==='Enter'||ev.key===' ')&&ev.target&&ev.target.id==='dlMoi'){ ev.preventDefault(); ev.target.click(); } });
+  setInterval(function(){ var m=document.getElementById('dlMoi'); if(m&&m.offsetParent) window.dlCapNhat(); },2000);
+})();
 /* ===== TOAST không chặn (thay alert) + loading nút Cập nhật ===== */
 function toast(msg, loai){ const t=document.createElement('div'); t.className='toast toast-'+(loai||'ok');
   t.textContent=msg; document.body.appendChild(t); requestAnimationFrame(()=>t.classList.add('show'));
