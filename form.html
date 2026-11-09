@@ -42,7 +42,7 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
     ===========================================================
     HƯỚNG DẪN NHANH (dành cho người dùng):
     1. Mở file google-script.gs, làm theo hướng dẫn để lấy đường link Web App.
-    2. Dán đường link đó vào biến WEBHOOK_URL ở cuối file này (phần <script>).
+    2. Dán đường link đó vào biến WEBHOOK_URL ở cuối file này (phần script).
     3. Mở file index.html này bằng trình duyệt (nên dùng điện thoại để quét mã & chụp ảnh).
        * Lưu ý: Camera chỉ bật được khi mở qua https:// hoặc localhost (yêu cầu bảo mật của trình duyệt).
     ===========================================================
@@ -68,7 +68,7 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
           <input
             type="text"
             x-model="tuKhoaNV"
-            @focus="moDropdownNV = true"
+            @focus="moDropdownNV = true; window.hskAnhNV && hskAnhNV.tai()"
             @input="moDropdownNV = true"
             placeholder="Gõ tên, ID, email hoặc nghiệp vụ để tìm (vd: tamlc, 233135, Đóng gói)..."
             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none transition"
@@ -88,11 +88,14 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
               <div class="w-24 shrink-0 text-right">Nghiệp vụ</div>
             </div>
 
-            <template x-for="(nv, idx) in danhSachLocNV()" :key="idx">
+            <template x-for="(nv, idx) in danhSachLocNV()" :key="nv.code || nv.email || idx">
               <div
                 @click="chonNV(nv)"
                 class="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-slate-100 last:border-0 flex items-center gap-2 text-xs transition"
               >
+                <!-- 09/11 user: ảnh đại diện trước tên (anh-nv.js tự gắn ảnh vào [data-anh-nv]) -->
+                <span class="w-7 h-7 shrink-0 rounded-full bg-slate-100 text-slate-500 text-[11px] font-semibold inline-flex items-center justify-center overflow-hidden" :data-anh-nv="nv.name" :data-anh-em="nv.email"
+                      ><span x-text="String(nv.name||'?').trim().split(/\s+/).pop().charAt(0)"></span></span>
                 <!-- Cột 1: HỌ VÀ TÊN (Chiếm phần lớn không gian, không bị trống thừa) -->
                 <div class="flex-1 min-w-0 font-semibold text-slate-900 truncate" x-text="nv.name"></div>
                 <!-- Cột 2: ID (Mã NV 6 số gọn gàng) -->
@@ -112,11 +115,13 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
 
         <!-- Danh sách NV vi phạm đã chọn (nằm dưới ô nhập, màu sắc xanh lá giống Mục 3) -->
         <div x-show="form.nhanVienViPhamList && form.nhanVienViPhamList.length > 0" x-cloak class="mt-2.5 flex flex-wrap gap-1.5">
-          <template x-for="(nv, idx) in form.nhanVienViPhamList" :key="idx">
-            <div class="inline-flex items-center gap-1.5 rounded-xl bg-green-50 border border-green-200 px-3 py-1.5 text-xs text-green-700 shadow-sm">
-              <span class="font-semibold text-green-700">✓ Đã chọn:</span>
-              <span class="font-bold text-slate-900" x-text="nv.name"></span>
-              <span class="text-slate-500 font-mono text-[11px]" x-text="'(' + nv.code + ' / ' + nv.email + (nv.dept ? ' / ' + nv.dept : '') + ')'"></span>
+          <template x-for="(nv, idx) in form.nhanVienViPhamList" :key="nv.code || nv.email || idx">
+            <!-- 09/11 user: chip gọn = ảnh + 2 chữ cuối tên (đủ tên · mã · mail ở title), xuống dòng theo NGUYÊN chip -->
+            <div class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl bg-green-50 border border-green-200 pl-1 pr-2 py-1 text-xs text-green-700 shadow-sm"
+                  :title="nv.name + ' · ' + nv.code + ' · ' + nv.email + (nv.dept ? ' · ' + nv.dept : '')">
+              <span class="w-5 h-5 shrink-0 rounded-full bg-slate-100 text-slate-500 text-[10px] font-semibold inline-flex items-center justify-center overflow-hidden" :data-anh-nv="nv.name" :data-anh-em="nv.email"
+                    ><span x-text="String(nv.name||'?').trim().split(/\s+/).pop().charAt(0)"></span></span>
+              <span class="font-bold text-slate-900" x-text="String(nv.name||'').trim().split(/\s+/).slice(-2).join(' ')"></span>
               <button type="button" @click="xoaNV(idx)" class="hover:bg-red-100 hover:text-red-600 text-slate-400 rounded-full w-4 h-4 inline-flex items-center justify-center font-bold ml-1 transition" title="Xóa">✕</button>
             </div>
           </template>
@@ -230,7 +235,9 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
       </div>
 
       <!-- ===== MỤC 5: Hiện trạng (Ghi chú, không bắt buộc) ===== -->
-      <div>
+      <!-- 09/11 user «ghi chú vẫn hiển thị»: phiếu luỹ tiến đủ 3/3 (nạp từ nút cờ Planogram) KHÔNG hiện ghi chú — bằng chứng là ảnh mẫu luỹ tiến;
+           Hiện trạng vẫn gửi kèm (vào sheet, bộ đẩy đọc 3 ngày) nhưng task WF không có Mô tả, như phiếu cò -->
+      <div x-show="!anGhiChu">
         <label class="block text-sm font-semibold text-slate-700 mb-2">
           5. Hiện trạng (ghi chú)
         </label>
@@ -586,6 +593,7 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
         // Bắt tay: form bắn 'ghi5s-san-sang' lên parent lúc khởi tạo; parent gửi 'ghi5s-nap-san' {du}
         // (hoặc 'ghi5s-xoa-nap-san' khi người dùng mở form TAY — trả form về trắng nếu họ chưa sửa gì).
         // Chỉ nhận tin từ đúng cửa sổ cha (e.source === window.parent) — không nhận từ frame/tab khác.
+        anGhiChu: false,      // 09/11 phiếu luỹ tiến đủ 3/3 từ Planogram: ẩn ô Hiện trạng (vẫn gửi)
         _napSan: null,        // bản vừa nạp {viTri, hienTrang, hangMuc} để biết người dùng đã sửa hay chưa
         _napSanHM: '',        // hạng mục xin nạp mà chưa khớp được — khớp lại khi QUY-DINH về muộn hơn tin nạp
         ngheNapSan() {
@@ -630,6 +638,7 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
           };
           this.tuKhoa = ''; this.moDropdown = false;
           this.hangDong = Math.min(10, Math.max(3, this.form.hienTrang.split('\n').length + 1));
+          this.anGhiChu = !!(du.luyTien && du.luyTien.du);   // 09/11: phiếu luỹ tiến đủ 3/3 ⇒ ẩn ô ghi chú
           // Ảnh nạp sẵn (ảnh CHỤP POP-UP làm bằng chứng): gỡ bản nạp cũ rồi thêm bản mới; KHÔNG gắn nhãn giờ (không phải ảnh hiện trường)
           this._goFileNapSan();
           for (const a of (du.anh || [])) {
@@ -1236,5 +1245,6 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
       };
     }
   </script>
+  <script src="anh-nv.js?v=20261105a"></script>   <!-- 09/11 ảnh đại diện ở ô Nhân viên vi phạm (tự gắn [data-anh-nv]) -->
 </body>
 </html>
