@@ -1062,7 +1062,7 @@ var CSS = [
 "#pane-planogram .hp-cctbl .num,.hp-modal .hp-cctbl .num{text-align:right;font-variant-numeric:tabular-nums;}",
 "#pane-planogram .hp-cctbl .mut,.hp-modal .hp-cctbl .mut{color:var(--muted,#9ca3af);}",
 "#pane-planogram .hp-cctbl .empty,.hp-modal .hp-cctbl .empty{text-align:center;color:var(--muted,#9ca3af);padding:26px;}",
-"#pane-planogram .hp-cctbl td.wrap,.hp-modal .hp-cctbl td.wrap{white-space:normal;min-width:280px;max-width:520px;line-height:1.5;}",
+"#pane-planogram .hp-cctbl td:is(.wrap,.hp-xdong),.hp-modal .hp-cctbl td:is(.wrap,.hp-xdong){white-space:normal;min-width:280px;max-width:520px;line-height:1.5;}",
 "#pane-planogram .hp-badge,.hp-modal .hp-badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:650;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;}",
 "#pane-planogram .hp-state{padding:56px 20px;text-align:center;color:var(--muted,#6b7280);}",
 "#pane-planogram .hp-spin,.hp-modal .hp-spin{width:32px;height:32px;border:3px solid var(--border,#d5dbe4);border-top-color:var(--accent,#326e51);border-radius:50%;margin:0 auto 16px;animation:hp-sp .8s linear infinite;}",
@@ -1305,6 +1305,17 @@ var CSS = [
 /* Cột Model là thông tin KỸ THUẬT (gemini-3.5-flash-lite) — dòng tổng kết dưới bảng đã liệt kê đủ
    các model đã dùng, nên trong thẻ nó chỉ là chữ lạ chiếm chỗ. Ẩn trên điện thoại, giữ ở máy tính. */
 "#pane-planogram table.mbcard td.ai-model,.hp-modal table.mbcard td.ai-model{display:none;}",
+/* 09/11 chiều user (screenshot-1794213429503) «làm gọn thì lộn xộn, không theo luật, không theo thứ tự»: thẻ AI xét duyệt theo LUẬT THANH BÊN —
+   hàng 1 mã vị trí · kết luận; lý do; rồi từng hàng NHÃN CỘT TRÁI CỐ ĐỊNH: Ngày → Người báo cáo → Ảnh báo cáo; nút Mở ↗ · Từ chối chốt hàng cuối bên phải. Model ẩn. */
+"#hpAiBody table.ai-the tr{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center}",
+"#hpAiBody table.ai-the td.mb-hd{order:1;grid-column:1}#hpAiBody table.ai-the td.mb-tag{order:2;grid-column:2;margin:0;text-align:right!important}",
+"#hpAiBody table.ai-the td.ailydo{order:3;grid-column:1/-1}",
+"#hpAiBody table.ai-the td[data-lb]{grid-column:1/-1;display:grid!important;grid-template-columns:104px minmax(0,1fr);align-items:center;gap:8px;font-size:13px;color:var(--text)}",
+"#hpAiBody table.ai-the td[data-lb]::before{content:attr(data-lb);font-size:13px;font-weight:400;color:var(--muted)}",
+"#hpAiBody table.ai-the td.ai-ngay{order:4}#hpAiBody table.ai-the td.ai-nv{order:5}#hpAiBody table.ai-the td.ai-anh{order:6}#hpAiBody table.ai-the td.ai-anh>.hp-thumbs{justify-self:start}",
+"#hpAiBody table.ai-the td.ai-model{display:none!important}",
+"#hpAiBody table.ai-the td.mb-act{order:7;grid-column:1/-1;display:flex!important;justify-content:flex-end;align-items:center;gap:8px;margin:0}",
+"#hpAiBody table.ai-the td.mb-act>a,#hpAiBody table.ai-the td.mb-act>.hsk-nut{box-sizing:border-box;height:34px;min-height:34px!important;padding:0 14px!important;font-size:12px!important;border-radius:6px!important}",
 /* Khung bảng: bỏ cuộn-trong-cuộn. Ngón tay kéo trang mà trúng khung con là bẫy chạm kinh điển;
    thẻ chảy theo trang, số dòng đã bị chặn bằng CAP nên không có danh sách dài vô hạn. */
 "#pane-planogram .hp-ccwrap:has(table.mbcard),.hp-modal .hp-ccwrap:has(table.mbcard){overflow:visible;max-height:none !important;border:0;border-radius:0;}",
@@ -2571,7 +2582,7 @@ function aiLyDoRuot(lydo, anhloi){
 var AI_LYDO_TAP = ' onclick="event.stopPropagation();this.classList.toggle(\'mo\')"';
 function aiLyDoCell(lydo, anhloi){
   var o = aiLyDoRuot(lydo, anhloi);
-  return '<td class="wrap mb-full ailydo"' + (o.n ? ' data-n="' + o.n + '"' : "") +
+  return '<td class="hp-xdong mb-full ailydo"' + (o.n ? ' data-n="' + o.n + '"' : "") +
     ' title="' + o.tip + '"' + AI_LYDO_TAP + '>' + o.html + '</td>';
 }
 function aiLyDoKhoi(lydo, anhloi){
@@ -2669,7 +2680,9 @@ function renderAiModal(){
     sBox.textContent = nf(rows.length) + ' / ' + nf(all.length) + ' kết quả' + (S.area ? (' (' + areaMeta(S.area).short + ')') : '');
   }
 
-  var CAPAI = 300;
+  /* 09/11 chiều luật «mọi danh sách mặc định 20 dòng + Xem thêm 20 (còn n)»; đổi bộ lọc / tìm (số dòng khác) ⇒ về 20 */
+  if (S._aiN !== rows.length){ S._aiN = rows.length; S.aiSo = 20; }
+  var CAPAI = S.aiSo || 20;
   var body = rows.length ? rows.slice(0, CAPAI).map(function(r){
     var m = aiMeta(r.kl) || { lb: r.kl, c: "#6b7280" };
     /* 09/11 user «tối ưu hiển thị theo luật thanh bên Planogram»: kết luận = chữ màu không khung (.hp-vtai), tên 2 chữ cuối, mã vị trí mở thanh bên, lý do 2 dòng */
@@ -2685,8 +2698,8 @@ function renderAiModal(){
       '<td class="mb-hd">' + loMa(r.loc, r.ngay) + '</td>' +
       '<td class="mb-tag">' + badge + '</td>' +
       aiLyDoCell(r.lydo, r.anhloi) +
-      '<td class="ai-nv' + (nvName || r.exec ? "" : " mb-0") + '" data-lb="NV" title="' + esc(r.exec) + '">' + (nvName ? esc(ten2(nvName)) : esc(r.exec || "—")) + '</td>' +
-      '<td class="ai-anh' + (coAnh ? "" : " mb-0") + '" data-lb="Ảnh">' + anh + '</td>' +
+      '<td class="ai-nv' + (nvName || r.exec ? "" : " mb-0") + '" data-lb="Người báo cáo" title="' + esc(r.exec) + '">' + (nvName ? esc(ten2(nvName)) : esc(r.exec || "—")) + '</td>' +
+      '<td class="ai-anh' + (coAnh ? "" : " mb-0") + '" data-lb="Ảnh báo cáo">' + anh + '</td>' +
       '<td class="mut ai-model" style="font-size:10.5px">' + esc((r.model || "").replace(/^gemini-|^claude-/, "")) + '</td>' +
       '<td class="mb-act"><a class="hp-ext" target="_blank" rel="noopener" href="' + esc(pgDetailUrl(r.id)) + '">Mở ↗</a>' +
       /* 09/11 user «cột hành động Từ chối — nhấn ⇒ pop-up ghi lý do ⇒ máy tự Từ chối (reject) yêu cầu ở planogram»: chỉ yêu cầu đang Chờ duyệt */
@@ -2694,11 +2707,11 @@ function renderAiModal(){
         : S.tuChoi[r.id] ? ' <span class="hp-vtai" style="color:var(--bad)">Đã từ chối</span>' : '') + '</td></tr>';
   }).join("") : '<tr><td colspan="8" class="empty">Không có kết quả phù hợp bộ lọc.</td></tr>';
 
-  var capNote = rows.length > CAPAI ? '<tr><td colspan="8" class="empty">Hiển thị ' + nf(CAPAI) + ' / ' + nf(rows.length) + ' dòng — dùng bộ lọc để thu hẹp.</td></tr>' : "";
+  var con = rows.length - CAPAI, capNote = con > 0 ? '<tr><td colspan="8" class="empty"><button type="button" class="hsk-nut phu" onclick="HPLANOGRAM.aiThem()">Xem thêm ' + Math.min(20, con) + ' phiếu (còn ' + nf(con) + ')</button></td></tr>' : "";
 
   bBox.innerHTML =
-    '<div class="hp-ccwrap" style="max-height:calc(92vh - 200px)"><table class="hp-cctbl mbcard" style="min-width:980px"><thead><tr>' +
-    '<th>Ngày</th><th>Vị trí</th><th>Kết luận</th><th>Lý do AI đưa ra</th><th>Người thực hiện</th><th>Ảnh</th><th>Model</th><th>Hành động</th>' +
+    '<div class="hp-ccwrap" style="max-height:calc(92vh - 200px)"><table class="hp-cctbl mbcard ai-the" style="min-width:980px"><thead><tr>' +
+    '<th>Ngày</th><th>Vị trí</th><th>Kết luận</th><th>Lý do AI đưa ra</th><th>Người báo cáo</th><th>Ảnh báo cáo</th><th>Model</th><th>Hành động</th>' +
     '</tr></thead><tbody>' + body + capNote + '</tbody></table></div>' +
     '<p class="hp-hint" style="margin:10px 0 0" title="Ảnh trùng/thiếu được chốt cứng tại máy (đúng 100%); kết luận mơ hồ AI tự xếp “Cần xem” để người duyệt quyết.">' + [S.ai.ts ? 'AI chấm lúc ' + fmtTime(S.ai.ts) : '', Object.keys(models).length ? esc(Object.keys(models).join(", ")) : ''].filter(Boolean).join(' · ') + '</p>';   /* "x / N kết quả" đã có ở dòng phụ đề pop-up (hpAiSub) — không in lần 2 */
 
@@ -4078,7 +4091,8 @@ function renderVt(){
        điều cần biết là HÔM ĐÓ người phụ trách có đi làm mà không báo cáo hay không.
        Nguồn VESINH-CHAMCONG-NGAY (60 ngày); tab đó chưa về/chưa có thì mới rớt về chấm công hôm nay. */
     var cc = ccNgayVeThe(pc, d, r, lsCua(loc));
-    var gcVe = String(pc.gc || "").replace(/^\s*g-sheet chưa phân công vị trí này\s*(·\s*)?/i, "");
+    var gcVe = String(pc.gc || "").replace(/^\s*g-sheet chưa phân công vị trí này\s*(·\s*)?/i, "")
+      .replace(/\s*·?\s*người báo cáo gần nhất khác:[^·]*/i, "").replace(/^\s*·\s*|\s*·\s*$/g, "");   // 09/11 chiều user bỏ cụm này
     cardPt =
       '<div class="hp-vtcard pt">' +
       '<div class="hd">Phụ trách ' + chipKhung(tuGS ? "theo bảng phân công" : "suy từ báo cáo gần nhất", mauNg) + '</div>' +
@@ -5249,6 +5263,7 @@ function init(pane){
 }
 
 window.HPLANOGRAM = {
+  aiThem: function(){ S.aiSo = (S.aiSo || 20) + 20; renderAiModal(); },   // 09/11 «Xem thêm 20 phiếu (còn n)»
   init: init, reload: loadData, setArea: setArea, moKhuMB: moKhuMB, setNgay: setNgay, setKhoang: setKhoang, chonNgay: chonNgay, moLocNgay: moLocNgay, dongLocNgay: dongLocNgay, setListMode: setListMode, toggleLoc: toggleLoc,
   openAll: openAll, openArea: openArea, openStatus: openStatus, openName: openName, openYc: openYc, openYcAi: openYcAi, closeModal: closeModal,
   openAiList: openAiList, closeAiModal: closeAiModal, renderAiModal: renderAiModal,
