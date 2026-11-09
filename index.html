@@ -66,7 +66,7 @@ window.GOC_DL=/\.pages\.dev$|^(localhost|127\.0\.0\.1)$/.test(location.hostname)
   try{
     var tb=null; try{ tb=new URLSearchParams(location.search).get('tab'); }catch(e){}
     if(tb!=='planogram' || /khoa=/.test(location.hash||'')) return;
-    var V='20261109d';   // PHẢI khớp s.src trong moHasakiPlanogram()
+    var V='20261109e';   // PHẢI khớp s.src trong moHasakiPlanogram()
     var l=document.createElement('link'); l.rel='preload'; l.as='script'; l.href='hasaki-planogram.js?v='+V; document.head.appendChild(l);
     var GAS='https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec';
     var khoa=''; try{ khoa=localStorage.getItem('tb-khoa')||(localStorage.getItem('tk-phien')?'tk:'+localStorage.getItem('tk-phien'):''); }catch(e){}   // 22/10 phiên tài khoản thay mã thiết bị
@@ -1057,7 +1057,16 @@ td.kpi-ten{white-space:nowrap;}
   border-radius:50%; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; background:var(--surface2); color:var(--muted); font-size:11px; font-weight:600;}
 #kpiPanel .panel-head{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:nowrap;}
 .kpi-che{display:inline-flex; min-width:0;} .kpi-che .hp-whtab{white-space:nowrap; cursor:pointer;}
-#kpiPanel .tkq-grid{padding:12px;} #kpiPanel .tkq-grid[hidden],#kpiPanel .kpi-wrap[hidden]{display:none!important;}
+#kpiPanel .tkq-grid{padding:12px;} #kpiPanel .tkq-grid[hidden],#kpiPanel .kpi-wrap[hidden],#kpiPanel .kpi-band[hidden]{display:none!important;}
+#kpiPanel .kpi-band{margin:0; padding:12px 12px 0;}
+/* 09/11 tối Mẫu 3 + Mẫu 14: đầu cột 2 tầng, vạch ngăn 3 nhóm, hạng top 3 thành dải màu; ô tháng chốt phải */
+#kpiWrap thead tr.kpi-nhom th{padding-top:6px; padding-bottom:6px; font-size:11px; font-weight:600; color:var(--muted); border-bottom:1px solid var(--border);}
+#kpiWrap thead th.kpi-col-val, #kpiWrap thead th.kpi-col-prev{text-align:right;}
+.kpi-wrap .kpi-g{border-left:1px solid var(--border);}
+.kpi-wrap tr.kpi-top td.kpi-rank{background:color-mix(in srgb,var(--bad) 8%,transparent);}
+.kpi-tieu{display:none;} #kpiPanel .panel-head>.cs{margin-left:auto; width:auto; flex:0 0 auto;}
+@media(min-width:769px){ .kpi-wrap table{table-layout:fixed;} .kpi-wrap col.kc-rank{width:56px;} .kpi-wrap col.kc-id{width:120px;}
+  .kpi-wrap col.kc-luot{width:21%;} .kpi-wrap col.kc-val{width:17%;} .kpi-wrap col.kc-prev{width:18%;} }
 /* điện thoại: Segmented chiếm trọn hàng đầu (3 nút chia đều), ô tháng xuống hàng dưới — không bị chèn mất chữ */
 @media (max-width:700px){ #kpiPanel .panel-head{flex-wrap:wrap; height:auto!important; padding:8px 12px!important;} .kpi-che{flex:1 1 100%;}
   .kpi-che .hp-whtab{flex:1 1 0; justify-content:center; padding:3px 6px!important; font-size:13px!important;} #kpiPanel #kpiThang{flex:1 1 100%; max-width:none;} .kpi-wrap .kpi-rank{width:22px!important; padding-right:4px!important;} }
@@ -1065,11 +1074,22 @@ td.kpi-ten{white-space:nowrap;}
    .pane có animation/will-change transform ⇒ phần tử fixed bị nhốt — bỏ ở Tổng kết điện thoại. */
 @media (max-width:700px){
   #pane-tong:not(.hidden){display:flex; flex-direction:column; animation:none!important; will-change:auto!important; transform:none!important; padding-bottom:calc(64px + env(safe-area-inset-bottom))!important;}
-  #pane-tong>#kpiBand{order:2; margin:0;} #pane-tong>#kpiPanel{order:1;}
   #pane-tong #kpiChe{position:fixed; left:0; right:0; bottom:0; z-index:55; display:flex; margin:0; padding:0 2px env(safe-area-inset-bottom)!important; border-radius:0!important;
     background:var(--surface)!important; border:0!important; border-top:1px solid var(--ad-chia,var(--border))!important; box-shadow:0 -4px 12px color-mix(in srgb,var(--text) 8%,transparent);}
   #pane-tong #kpiChe .hp-whtab{min-height:48px; border-radius:0!important; font-size:12px!important;}
-  #pane-tong #kpiPanel .panel-head:has(#kpiChe){padding:8px 12px!important;}
+  #pane-tong #kpiPanel .panel-head:has(#kpiChe){padding:8px 12px!important; flex-wrap:nowrap!important; justify-content:flex-start; gap:8px;}
+  #pane-tong .kpi-tieu{display:inline; flex:0 0 auto; white-space:nowrap; font-size:14px; font-weight:600; color:var(--text);}
+  #pane-tong #kpiPanel .panel-head>.cs{flex:0 0 auto; width:auto; min-width:0; margin:0;}
+  #pane-tong #kpiPanel .panel-head>.cs>.cs-trigger{width:auto; height:24px; min-height:0; padding:0 8px; gap:6px; font-size:11px; white-space:nowrap;}
+  #pane-tong .kpi-wrap table{table-layout:fixed; width:100%;}
+  #pane-tong .kpi-wrap col.kc-rank{width:26px;} #pane-tong .kpi-wrap col.kc-id{width:0;} #pane-tong .kpi-wrap col.kc-luot{width:40px;}
+  #pane-tong .kpi-wrap col.kc-val{width:52px;} #pane-tong .kpi-wrap col.kc-prev{width:84px;}
+  #pane-tong th.kpi-id, #pane-tong td.kpi-id{display:table-cell!important; padding:0!important; border-left:0; font-size:0; overflow:hidden;}
+  #pane-tong .kpi-wrap .kpi-g{border-left-width:1px;} #pane-tong .kpi-wrap td.kpi-ten{overflow:hidden;} #pane-tong .kpi-ten .tn{width:auto; max-width:calc(100% - 32px);}
+  #pane-tong .kpi-wrap td.kpi-col-prev, #pane-tong .kpi-wrap th.kpi-col-prev{text-align:right;} #pane-tong .kpi-wrap td.kpi-col-luot{padding-left:6px;}
+  #pane-tong .kpi-wrap .kp-t, #pane-tong .kpi-wrap .kp-d{display:none;}
+  #pane-tong td.kpi-col-prev .kpi-up, #pane-tong td.kpi-col-prev .kpi-down, #pane-tong td.kpi-col-prev .kpi-eq{display:inline; line-height:inherit;}
+  #pane-tong #kpiWrap thead tr.kpi-nhom th{font-size:9.5px; padding-top:4px; padding-bottom:4px;}
 }
 /* NV ĐÃ NGHỈ VIỆC — "bay màu" hiện đại, không icon: mờ mạnh + nghiêng + gạch ngang MẢNH,
    phân biệt tức thì trên cả nền sáng/tối mà bảng vẫn sạch */
@@ -1672,7 +1692,7 @@ body.side-anim:has(.wrap :is([class*="modal"],[id$="modal"],[id$="Modal"],#light
 <!-- 12/10 giao diện Ant Design: LIVE mặc định (user "theo ant design chưa live"); nạp ĐỒNG BỘ ở head để khung hình đầu đã đúng kiểu, tắt trong Cài đặt -->
 <script>window.AD_BI_DANH={"tonkho/kiemke":"kk","tonkho/batthuong":"kk#pane-htonbat"};   /* 15/10 link cũ → mục gộp «Tồn kho chính xác» */ window.AD_TEN='Audit Retail'; window.AD_CHUYEN={ten:'Audit Factory', app:'factory'};</script>   <!-- 13/10 user: Audit Hasaki → Audit Retail + nút sang Factory cuối thanh bên -->
 <script src="tien-ich.js?v=20261020a"></script><script src="anh-nv.js?v=20261105a"></script><!-- 05/11 ảnh đại diện NV toàn dự án: vòng tròn [data-anh-nv] tự thay ảnh --><!-- 20/10 tiện ích chung: esc/$id/hm/ngayVN — nạp TRƯỚC mọi mô-đun -->
-<script src="hasaki-giaodien-antd.js?v=20261109d"></script>
+<script src="hasaki-giaodien-antd.js?v=20261109e"></script>
 <script src="tai-khoan.js?v=20261109a"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
 <script src="tat-loc.js?v=20261109a" defer></script>
 <script src="loc-popup.js?v=20261108a" defer></script>
@@ -1911,18 +1931,18 @@ window.hxNoiLai = function(){
   <section id="pane-tong" class="pane hidden">
     <!-- 09/11 user chọn MẪU 13 «Một khung, ba chế độ xem» (Tệp xuất «Tổng kết - 20 mẫu hiển thị»): 4 ô chỉ số lên đầu; 1 khung có Segmented
          Nhân viên · Quản lý · Tổng kết nhanh — mỗi lúc chỉ 1 bảng, không cuộn dài; ô tháng góc phải đầu khung -->
-    <div class="kpi-band" id="kpiBand">
+    <div class="panel" id="kpiPanel" style="margin-bottom:14px">
+      <div class="panel-head"><span class="kpi-che" id="kpiChe" role="tablist" aria-label="Chế độ xem">
+          <button type="button" class="hp-whtab active" data-che="nv">Nhân viên</button><button type="button" class="hp-whtab" data-che="ql">Quản lý</button><button type="button" class="hp-whtab" data-che="tkn">Thống kê</button></span>
+        <span class="kpi-tieu">Luỹ kế ở tháng</span><select id="kpiThang" title="Chọn tháng/năm"></select></div>
+      <!-- `data-mb-cuon`: bảng xếp hạng cột ngắn (giữ so sánh giữa các dòng). 09/11: điện thoại vừa khít, không cuộn. -->
+      <div class="kpi-wrap" id="kpiWrap" data-mb-cuon="bang-xep-hang-cot-ngan"><div style="padding:16px"><div class="sk sk-line" style="width:80%"></div><div class="sk sk-line" style="width:60%"></div></div></div>
+      <div class="kpi-band" id="kpiBand" hidden>   <!-- 09/11 tối user: 4 ô chỉ số gom vào chế độ «Thống kê» -->
       <div class="kb-tile"><div class="sk sk-line" style="width:60%"></div></div>
       <div class="kb-tile"><div class="sk sk-line" style="width:60%"></div></div>
       <div class="kb-tile"><div class="sk sk-line" style="width:60%"></div></div>
       <div class="kb-tile"><div class="sk sk-line" style="width:60%"></div></div>
     </div>
-    <div class="panel" id="kpiPanel" style="margin-bottom:14px">
-      <div class="panel-head"><span class="kpi-che" id="kpiChe" role="tablist" aria-label="Chế độ xem">
-          <button type="button" class="hp-whtab active" data-che="nv">Nhân viên</button><button type="button" class="hp-whtab" data-che="ql">Quản lý</button><button type="button" class="hp-whtab" data-che="tkn">Tổng kết nhanh</button></span>
-        <select id="kpiThang" title="Chọn tháng/năm"></select></div>
-      <!-- `data-mb-cuon`: bảng xếp hạng cột ngắn (giữ so sánh giữa các dòng). 09/11: điện thoại vừa khít, không cuộn. -->
-      <div class="kpi-wrap" id="kpiWrap" data-mb-cuon="bang-xep-hang-cot-ngan"><div style="padding:16px"><div class="sk sk-line" style="width:80%"></div><div class="sk sk-line" style="width:60%"></div></div></div>
       <div class="tkq-grid" id="tkqGrid" hidden>
         <div class="tkq-card"><div class="sk sk-line" style="width:70%"></div></div>
         <div class="tkq-card"><div class="sk sk-line" style="width:70%"></div></div>
@@ -3068,13 +3088,13 @@ function renderKpi(){ setTimeout(homeVeLai, 0);
   const prevQl=Object.fromEntries(prev.ql.map(x=>[x.ten,x.kpi]));
   // Ô so sánh: tháng trước −x% + mũi tên tăng(đỏ)/giảm(xanh)
   const soSanh=(cur,pv)=>{
-    if(pv==null) return '<span class="kpi-prev-non"><span class="th-full">— không vi phạm</span><span class="th-short">—</span></span>';
+    if(pv==null) return '<span class="kpi-prev-non"><span class="th-full">— không vi phạm</span><span class="th-short">không VP</span></span>';
     const d=Math.round((cur-pv)*100)/100, f=n=>String(n).replace('.',',');
     /* 21/10 đánh giá: «−2% ▲ +3%» đọc hai lần mới hiểu → ghi rõ tháng nào và chênh bao nhiêu điểm */
-    const base=`<span class="kpi-prev">T${pmT}: −${f(pv)}%</span>`;
-    if(d>0) return base+` <span class="kpi-up" title="Tháng này trừ nhiều hơn tháng ${pmT} ${f(d)} điểm">▲ +${f(d)} điểm</span>`;
-    if(d<0) return base+` <span class="kpi-down" title="Tháng này trừ ít hơn tháng ${pmT} ${f(-d)} điểm">▼ −${f(-d)} điểm</span>`;
-    return base+' <span class="kpi-eq" title="Bằng tháng trước">＝ bằng</span>';
+    const base=`<span class="kpi-prev"><span class="kp-t">T${pmT}: </span>−${f(pv)}%</span>`;
+    if(d>0) return base+` <span class="kpi-up" title="Tháng này trừ nhiều hơn tháng ${pmT} ${f(d)} điểm">▲ +${f(d)}<span class="kp-d"> điểm</span></span>`;
+    if(d<0) return base+` <span class="kpi-down" title="Tháng này trừ ít hơn tháng ${pmT} ${f(-d)} điểm">▼ −${f(-d)}<span class="kp-d"> điểm</span></span>`;
+    return base+' <span class="kpi-eq" title="Bằng tháng trước">＝<span class="kp-d"> bằng</span></span>';
   };
   KPI_DATA={nv,ql,ym};
   // Cột HỌ VÀ TÊN tự co giãn theo TÊN NGƯỜI DÀI NHẤT thật sự trong bảng tháng này
@@ -3088,23 +3108,27 @@ function renderKpi(){ setTimeout(homeVeLai, 0);
   /* Mẫu 13: chế độ xem — Nhân viên / Quản lý (bảng riêng) / Tổng kết nhanh (lưới thẻ) */
   const che=window.KPI_CHE||'nv';
   $('kpiChe').querySelectorAll('[data-che]').forEach(b=>{ const k=b.dataset.che; b.classList.toggle('active',k===che); b.setAttribute('aria-selected',k===che);
-    b.innerHTML=(k==='nv'?'Nhân viên':k==='ql'?'Quản lý':'Tổng kết nhanh')+(k==='nv'?' <b>· '+nv.length+'</b>':k==='ql'?' <b>· '+ql.length+'</b>':''); });
-  $('kpiWrap').hidden=che==='tkn'; $('tkqGrid').hidden=che!=='tkn';
+    b.innerHTML=(k==='nv'?'Nhân viên':k==='ql'?'Quản lý':'Thống kê')+(k==='nv'?' <b>· '+nv.length+'</b>':k==='ql'?' <b>· '+ql.length+'</b>':''); });
+  $('kpiWrap').hidden=che==='tkn'; $('tkqGrid').hidden=che!=='tkn'; $('kpiBand').hidden=che!=='tkn';
   // Tiêu đề cột so sánh đổi ĐỘNG theo tháng liền trước của bộ lọc (04 -> "Tháng 03"; 01 -> "Tháng 12")
   const pmT=prevYm.split('-')[1];
   const fmt=v=>{const s=String(Math.round(v*100)/100).replace('.',',');return v>0?`<span class="kpi-neg">−${s}%</span>`:'<span class="kpi-zero">0%</span>';};
   const maxK=Math.max(...nv.map(x=>x.kpi),0.0001);
-  let h='<table><thead><tr><th class="kpi-rank">#</th><th class="kpi-id">ID</th><th>Họ và tên</th>'
-   +'<th class="kpi-col-luot"><span class="th-full">Lượt ghi nhận</span><span class="th-short">Lượt</span></th>'
+  /* 09/11 tối user: MẪU 3 đầu cột 2 tầng «Nhân viên · Tháng n · So sánh» + MẪU 14 hạng thành dải màu; điện thoại khít, cấm cuộn (cột ID ẩn ⇒ nhóm đầu 2 cột) */
+  /* bảng cố định cột lấy độ rộng ở HÀNG ĐẦU (hàng nhóm gộp ô) ⇒ độ rộng cột đặt ở <colgroup> */
+  let h='<table><colgroup><col class="kc-rank"><col class="kc-id"><col class="kc-ten"><col class="kc-luot"><col class="kc-val"><col class="kc-prev"></colgroup>'
+   +'<thead><tr class="kpi-nhom"><th colspan="3">'+(che==='ql'?'Quản lý':'Nhân viên')+'</th><th colspan="2" class="kpi-g">Tháng '+(+ym.split('-')[1])+'</th><th class="kpi-g">So sánh</th></tr>'
+   +'<tr><th class="kpi-rank">#</th><th class="kpi-id">ID</th><th>Họ và tên</th>'
+   +'<th class="kpi-col-luot kpi-g"><span class="th-full">Lượt ghi nhận</span><span class="th-short">Lượt</span></th>'
    +'<th class="kpi-col-val"><span class="th-full">KPI trừ luỹ kế</span><span class="th-short">KPI trừ</span></th>'
-   +`<th class="kpi-col-prev"><span class="th-full">So với Tháng ${pmT}</span><span class="th-short">Tháng ${pmT}</span></th></tr></thead><tbody>`;
+   +`<th class="kpi-col-prev kpi-g"><span class="th-full">So với Tháng ${pmT}</span><span class="th-short">Tháng ${pmT}</span></th></tr></thead><tbody>`;
   if(che==='nv') h+=nv.map((x,i)=>`<tr data-kpi="nv:${i}" class="${i<3?'kpi-top':''}" title="Bấm xem các task trong tháng">
       <td class="kpi-rank">${i+1}</td>
       <td class="kpi-id">${esc(x.id)}</td>
       <td class="kpi-ten" title="${esc(x.ten)}${x.nghi?' — đã nghỉ việc':''}">${avKpi(x.ten)}<span class="tn${x.nghi?' user-resigned':''}"><span class="th-full">${esc(x.ten)}</span><span class="th-short">${esc(ten2(x.ten))}</span></span></td>
-      <td class="kpi-col-luot"><span class="kpi-pill">${x.luot} lượt</span></td>
+      <td class="kpi-col-luot kpi-g"><span class="kpi-pill">${x.luot}<span class="kp-d"> lượt</span></span></td>
       <td class="kpi-val">${fmt(x.kpi)}<div class="kpi-bar" style="width:${Math.max(6,Math.round(x.kpi/maxK*100))}%"></div></td>
-      <td class="kpi-col-prev">${soSanh(x.kpi,prevNv[x.id]!=null?prevNv[x.id]:null)}</td></tr>`).join('')
+      <td class="kpi-col-prev kpi-g">${soSanh(x.kpi,prevNv[x.id]!=null?prevNv[x.id]:null)}</td></tr>`).join('')
      ||'<tr><td colspan="6"><div class="empty-row">Không có NV vi phạm trong tháng này.</div></td></tr>';
   if(che==='ql' && !ql.length) h+='<tr><td colspan="6"><div class="empty-row">Không có quản lý bị trừ trong tháng này.</div></td></tr>';
   if(che==='ql' && ql.length){
@@ -3113,9 +3137,9 @@ function renderKpi(){ setTimeout(homeVeLai, 0);
       <td class="kpi-rank">QL</td>
       <td class="kpi-id">—</td>
       <td class="kpi-ten" title="${esc(x.ten)}">${avKpi(x.ten)}<span class="tn"><span class="th-full">${esc(x.ten)}</span><span class="th-short">${esc(ten2(x.ten))}</span></span></td>
-      <td class="kpi-col-luot"><span class="kpi-pill">${x.xm+x.kxm} lượt</span> <span class="muted kpi-xm" style="font-size:12px">${x.xm} XM · ${x.kxm} không XM</span></td>
+      <td class="kpi-col-luot kpi-g"><span class="kpi-pill">${x.xm+x.kxm}<span class="kp-d"> lượt</span></span> <span class="muted kpi-xm" style="font-size:12px">${x.xm} XM · ${x.kxm} không XM</span></td>
       <td class="kpi-val">${fmt(x.kpi)}<div class="kpi-bar" style="width:${Math.max(6,Math.round(x.kpi/maxQ*100))}%"></div></td>
-      <td class="kpi-col-prev">${soSanh(x.kpi,prevQl[x.ten]!=null?prevQl[x.ten]:null)}</td></tr>`).join('');
+      <td class="kpi-col-prev kpi-g">${soSanh(x.kpi,prevQl[x.ten]!=null?prevQl[x.ten]:null)}</td></tr>`).join('');
   }
   h+='</tbody></table>';
   $('kpiWrap').innerHTML=h;
@@ -3960,7 +3984,7 @@ let _bdNap=null;
 function napModBD(){
   if(!_bdNap){
     _bdNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-baoduong.js?v=20261109d';
+      const s=document.createElement('script'); s.src='hasaki-baoduong.js?v=20261109e';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-baoduong.js'));
       document.body.appendChild(s);
     });
@@ -4000,7 +4024,7 @@ function moHasakiPlanogram(){
       '<div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:54%"></div>'+
       '<div class="sk sk-line" style="width:62%"></div></div>';
     _hpNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20261109d';   // khớp V ở <head>
+      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20261109e';   // khớp V ở <head>
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-planogram.js'));
       document.body.appendChild(s);
     });
@@ -4036,7 +4060,7 @@ let _hxNap=null;
 function napXm(){
   if(!_hxNap){
     _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261109d';
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261109e';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
       document.body.appendChild(s);
     });
@@ -4131,7 +4155,7 @@ function moHasakiKiemke(){
 var HOME_MUC = [
   { g: "Hạng mục 5S", mo: "Vi phạm 5S kho 170 · đồng bộ từ work.hasaki.vn", items: [
     { t: "tong", ten: "Tổng kết", cc: "var(--accent)", mo: "Luỹ kế KPI trừ theo nhân viên trong tháng, so tháng trước, tổng kết nhanh việc còn treo.",
-      muc: ["Luỹ kế KPI", "So tháng trước", "Tổng kết nhanh"],
+      muc: ["Luỹ kế KPI", "So tháng trước", "Thống kê"],
       /* tháng = tháng bảng luỹ kế KPI đang xem (mặc định tháng mới nhất CÓ dữ liệu) — đầu tháng chưa có phiếu thì không hiện "0" */
       so: function(){ if(!ROWS.length) return null; var sel=$('kpiThang'), ym=(sel&&sel.value)||"";
         if(!ym){ var d=new Date(); ym=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); }
