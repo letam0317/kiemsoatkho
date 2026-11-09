@@ -29,7 +29,8 @@ self.addEventListener("message", function (e) {
 function datKhoa(d) {
   if (!/^https?:\/\//.test(String(d.goc || ""))) return Promise.reject(new Error("thiếu địa chỉ máy dự phòng"));
   /* 27/10 lớp PC: d.lop {kp, ds, apiMoi} → khoá kép (giai-ma-guong.js chon: tệp có trong lớp giải bằng Kp, còn lại K) */
-  return G.nhapKhoa(d.khoa, d.lop).then(function (kk) { DAU_C.clear(); K = { goc: String(d.goc).replace(/\/$/, ""), phien: String(d.phien || ""), kGoc: kk.kGoc, kTen: kk.kTen, lop: kk.lop }; return K; });
+  /* 09/11 KHO DRIVE (mọi máy tắt): d.bd = { tên ẩn: id tệp Drive } (ban-do.json) — bản mã đọc Range qua cổng cùng tên miền /kho/<id> (Drive chặn đọc thẳng từ trang web — 403) */
+  return G.nhapKhoa(d.khoa, d.lop).then(function (kk) { DAU_C.clear(); K = { goc: String(d.goc).replace(/\/$/, ""), phien: String(d.phien || ""), kGoc: kk.kGoc, kTen: kk.kTen, lop: kk.lop, bd: d.bd || null }; return K; });
 }
 
 /* Mất K (trình duyệt tắt service worker khi rảnh) → hỏi trang đã gửi yêu cầu (hoặc mọi trang đang mở) qua MessageChannel. */
@@ -58,6 +59,8 @@ function coKhoa(clientId) {
 }
 
 function hoi(ten, a, b, sig) {   // Range tới máy dự phòng; phiên qua tham số (khỏi tiêu đề riêng ⇒ ít preflight)
+  if (K.bd) { var id = K.bd[ten]; if (!id) return Promise.resolve(new Response(null, { status: 404 }));   // 09/11 kho Drive
+    return fetch(self.location.origin + "/kho/" + encodeURIComponent(id), { headers: { range: "bytes=" + a + "-" + (b == null ? "" : b) }, signal: sig, credentials: "omit", mode: "cors" }); }
   return fetch(K.goc + "/ma/" + ten + "?phien=" + encodeURIComponent(K.phien), { headers: { range: "bytes=" + a + "-" + (b == null ? "" : b) },
     signal: sig, cache: "no-store", credentials: "omit", mode: "cors" });
 }
@@ -65,7 +68,7 @@ function layDau(ten, khoa) {
   var p = DAU_C.get(ten); if (p) return p;
   p = hoi(ten, 0, DAU - 1).then(function (r) {
     if (r.status === 401) throw loi("Cần đăng nhập", 401);
-    if (r.status === 404) throw loi("Máy dự phòng chưa có tệp này (laptop chưa đẩy sang, hoặc khoá giải mã không khớp).", 404);
+    if (r.status === 404) throw loi(K.bd ? "Kho Drive chưa có tệp này (laptop chưa kịp đẩy trước khi tắt)." : "Máy dự phòng chưa có tệp này (laptop chưa đẩy sang, hoặc khoá giải mã không khớp).", 404);
     if (!r.ok) throw loi("Máy dự phòng trả " + r.status, 502);
     return r.arrayBuffer();
   }).then(function (ab) { return G.docDau(new Uint8Array(ab).slice(0, DAU), khoa, K); });
