@@ -397,6 +397,10 @@
       "html body #pane-xacminh .cl-hang1 .cl-tt .hx-tag{display:inline-flex!important;align-items:center;gap:5px;margin:0;" +
         "padding:2px 9px!important;border-radius:20px!important;font-size:11px!important;font-weight:700!important;line-height:16px!important}" +
       "#pane-xacminh .cl-hang1 .cl-tt .hx-tag::before{content:\"\";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}" +
+      /* 09/11 tối user (ảnh điện thoại): chip trạng thái dài đẩy «Mở task / Quyết định» ra khỏi màn ⇒ cột chip CO LẠI, chip dài cắt «…» (title đủ chữ), cột nút giữ cỡ */
+      "#pane-xacminh .cl-hang1 .cl-tt{flex:0 1 auto!important;min-width:0;max-width:100%}#pane-xacminh .cl-hang1 .cl-nut{flex:none!important}" +
+      "html body #pane-xacminh .cl-hang1 .cl-tt .hx-tag{display:block!important;max-width:100%;box-sizing:border-box;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}" +
+      "html body #pane-xacminh .cl-hang1 .cl-tt .hx-tag::before{display:inline-block;margin-right:5px;vertical-align:1px}" +
       "#pane-xacminh .cl-hang1 .cl-nut .hx-qd-cl{cursor:pointer;user-select:none}#pane-xacminh .cl-hang1 .cl-nut .hx-qd-cho{opacity:.65}" +
       "#pane-xacminh .cl-item.vp .cl-data .cl-loi,#pane-xacminh .cl-item.vp .cl-data .cl-kv{" +
         "display:-webkit-box!important;-webkit-line-clamp:1!important;-webkit-box-orient:vertical!important;overflow:hidden!important;white-space:normal!important;text-overflow:clip!important;word-break:break-all}",
@@ -1332,7 +1336,7 @@
   /* 05/10 QC: thay mã luật (KHAC/TB-02…) bằng MỨC MÁY BIẾT viết thường — đúng Hướng 1 user duyệt (chắc chắn → bấm là xong; cần chọn; đang tra; chưa tra được).
      Mã luật vẫn còn trong tooltip cho chủ máy tra sổ luật. */
   /* 21/10 Mẫu 1 (đánh giá 20/10: chip viết hoa không thống nhất «Máy chắc chắn» / «cần bạn xem»): 3 mức độ chắc, ngắn, cùng kiểu */
-  var MUC_MAY = { chac: ["Máy chắc", "good"], vua: ["Cần bạn xem", "warn"], chon: ["Cần bạn quyết", "warn"], tam: ["Nhờ anh Tâm kiểm tra thực tế", "warn"], cam: ["Máy tra camera giờ báo cáo", "info"], tudong: ["Máy tự xử theo luật vệ sinh", "info"], tra: ["Chờ camera xác nhận", "info"], soi: ["Máy đang soi camera (AI)", "info"], nhan: ["Có clip lúc chụp · bạn nhận người", "warn"], khong: ["Máy đang tìm bằng chứng", ""], quyet: ["Bạn đã quyết · chờ máy làm", "info"], xong: ["Đã xử lý", "good"] };
+  var MUC_MAY = { chac: ["Máy chắc", "good"], vua: ["Cần bạn xem", "warn"], chon: ["Cần bạn quyết", "warn"], tam: ["Nhờ anh Tâm kiểm tra thực tế", "warn"], cam: ["Máy tra camera giờ báo cáo", "info"], tudong: ["Máy tự xử theo luật vệ sinh", "info"], tra: ["Chờ camera xác nhận", "info"], soi: ["Máy đang soi camera (AI)", "info"], nhan: ["Bạn nhận người", "warn"], khong: ["Máy đang tìm", ""], quyet: ["Bạn đã quyết · chờ máy làm", "info"], xong: ["Đã xử lý", "good"] };
   function mucMay(p) {
     var x = p.xm || {}, g = p.goiY;
     /* 20/10 user «14115619 ghi Đã xử lý mà vẫn treo B1»: cột «Đã xử lý» = «Đã đưa vào hàng chờ cắt clip camera» (12/10) bị coi là XONG.
@@ -1642,7 +1646,7 @@
     var daXong = !!(x.daXuLy && !/hàng chờ|đang /i.test(x.daXuLy)), daQD = !!(q && !/^Cắt thêm clip/.test(q.qd || ""));
     var bc = !!(b.clip || b.moc.length || b.kho || b.trung || b.veSinh || (b.ls && b.ls.ds.some(function (y) { return y.clip; })));
     var tGC = gcCua(p.id);
-    var chips = '<span class="hx-tag ' + mm[1] + '"' + (p.goiY ? ' title="Luật ' + e_(p.goiY.luat) + '"' : "") + '>' + e_(String(mm[0]).replace(/^Máy gợi ý · /, "")) + '</span>' +
+    var chips = '<span class="hx-tag ' + mm[1] + '" title="' + e_(mm[0]) + (p.goiY ? " · luật " + e_(p.goiY.luat) : "") + '">' + e_(String(mm[0]).replace(/^Máy gợi ý · /, "")) + '</span>' +
       treoTag(p.treoGio) +
       (p.buoc && p.buoc !== "B1" ? '<span class="hx-tag info">' + e_(p.buoc) + '</span>' : "") +
       (tGC ? nhanGC(p.id) : "");
@@ -1710,7 +1714,7 @@
     var x = p.xm, q = p.qdB1, g = p.goiY;
     var noi = x && x.nghi ? '<div class="hx-l2" style="font-size:13px" title="' + e_(x.nghi) + '">' + e_(x.nghi) + '</div>'
       : g ? '<div class="muted hx-l2" style="font-size:12px">' + e_(g.luat === "KHAC" ? "Chưa có luật tự áp cho lỗi này — bạn quyết tay" : g.ketLuan === "canh-b11" ? "Lỗi vệ sinh hằng ngày — cò B1.1 tự xử mỗi giờ theo luật vệ sinh" : (g.lyDo || "")) + '</div>' : "";
-    var mm = MUC_MAY[mucMay(p)] || ["", ""]; noi = '<span class="hx-tag ' + mm[1] + '"' + (g ? ' title="Luật ' + e_(g.luat) + '"' : "") + '>' + e_(mm[0]) + '</span>' + noi;
+    var mm = MUC_MAY[mucMay(p)] || ["", ""]; noi = '<span class="hx-tag ' + mm[1] + '" title="' + e_(mm[0]) + (g ? " · luật " + e_(g.luat) : "") + '">' + e_(mm[0]) + '</span>' + noi;
     if (p.vs && p.vs.bc) noi += '<div class="muted" style="font-size:12px">Báo cáo gần nhất ' + e_(p.vs.bc.gio + " " + String(p.vs.bc.ngay).slice(8, 10) + "/" + String(p.vs.bc.ngay).slice(5, 7)) + ' · cách lúc ghi nhận ' + e_(String(Math.round(p.vs.cachGioBc || 0))) + ' giờ' + (p.vs.cam ? ' · camera lúc nộp: có người tại kệ ' + e_(String(Math.max(1, Math.round((p.vs.cam.tong || 0) / 60)))) + ' phút' : "") + '</div>';   // 07/10
     var tt = x && x.daXuLy ? '<span class="hx-tag good">' + e_(x.daXuLy.slice(0, 40)) + '</span>' : q ? '<span class="hx-tag info">' + e_(q.qd) + '</span>' : "";
     return noi + '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">' + tt +
