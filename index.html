@@ -66,7 +66,7 @@ window.GOC_DL=/\.pages\.dev$|^(localhost|127\.0\.0\.1)$/.test(location.hostname)
   try{
     var tb=null; try{ tb=new URLSearchParams(location.search).get('tab'); }catch(e){}
     if(tb!=='planogram' || /khoa=/.test(location.hash||'')) return;
-    var V='20261109a';   // PHẢI khớp s.src trong moHasakiPlanogram()
+    var V='20261109c';   // PHẢI khớp s.src trong moHasakiPlanogram()
     var l=document.createElement('link'); l.rel='preload'; l.as='script'; l.href='hasaki-planogram.js?v='+V; document.head.appendChild(l);
     var GAS='https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec';
     var khoa=''; try{ khoa=localStorage.getItem('tb-khoa')||(localStorage.getItem('tk-phien')?'tk:'+localStorage.getItem('tk-phien'):''); }catch(e){}   // 22/10 phiên tài khoản thay mã thiết bị
@@ -1038,6 +1038,12 @@ thead th.c-loi, tbody td.c-loi{max-width:var(--loi-w);}   /* 21/10: theo vạch 
 .kpi-wrap tbody tr[data-kpi]:hover{background:var(--hover);}
 .kpi-rank{width:44px; text-align:center; color:var(--muted); font-weight:800; font-variant-numeric:tabular-nums;}
 .kpi-top .kpi-rank{color:var(--bad);}
+/* 09/11 tiêu đề pop-up task của 1 NV (Tổng kết): ảnh + 2 hàng chữ, cắt «…» thay vì cuộn */
+.st-ng{display:flex;align-items:center;gap:10px;min-width:0}
+.st-av{flex:none;width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;background:var(--surface2);color:var(--muted);font-size:14px;font-weight:600}
+.st-ng-t{display:flex;flex-direction:column;min-width:0}
+.st-ng-t b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st-ng-t small{font-size:12.5px;font-weight:400;line-height:18px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kpi-top{}   /* 13/10 AD-01: bỏ vạch đỏ trái top 3 — thứ hạng đã đỏ ở cột # */
 .kpi-id{color:var(--muted); font-variant-numeric:tabular-nums; letter-spacing:.03em;}
 .kpi-ten{font-weight:700; font-size:15px;}
@@ -1045,6 +1051,16 @@ thead th.c-loi, tbody td.c-loi{max-width:var(--loi-w);}   /* 21/10: theo vạch 
    đơn vị ch nên tự co giãn theo cỡ chữ desktop/mobile) — tên luôn 1 hàng trọn vẹn, KHÔNG "…" */
 td.kpi-ten{white-space:nowrap;}
 .kpi-ten .tn{display:block; width:var(--tenW,auto); max-width:none; white-space:nowrap; overflow:visible;}
+/* 09/11 Mẫu 13: ảnh + tên cùng hàng; cột tên KHOÁ CỨNG (không đổi theo tháng) — tên dài quá cắt «…» */
+.kpi-wrap{--tenW:22ch; --tenW2:10ch;} .kpi-ten .tn{display:inline-block; vertical-align:middle; overflow:hidden; text-overflow:ellipsis;}
+.kpi-av{width:24px; height:24px; margin-right:8px; vertical-align:middle;
+  border-radius:50%; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; background:var(--surface2); color:var(--muted); font-size:11px; font-weight:600;}
+#kpiPanel .panel-head{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:nowrap;}
+.kpi-che{display:inline-flex; min-width:0;} .kpi-che .hp-whtab{white-space:nowrap; cursor:pointer;}
+#kpiPanel .tkq-grid{padding:12px;} #kpiPanel .tkq-grid[hidden],#kpiPanel .kpi-wrap[hidden]{display:none!important;}
+/* điện thoại: Segmented chiếm trọn hàng đầu (3 nút chia đều), ô tháng xuống hàng dưới — không bị chèn mất chữ */
+@media (max-width:700px){ #kpiPanel .panel-head{flex-wrap:wrap; height:auto!important; padding:8px 12px!important;} .kpi-che{flex:1 1 100%;}
+  .kpi-che .hp-whtab{flex:1 1 0; justify-content:center; padding:3px 6px!important; font-size:13px!important;} #kpiPanel #kpiThang{flex:1 1 100%; max-width:none;} .kpi-wrap .kpi-rank{width:22px!important; padding-right:4px!important;} }
 /* NV ĐÃ NGHỈ VIỆC — "bay màu" hiện đại, không icon: mờ mạnh + nghiêng + gạch ngang MẢNH,
    phân biệt tức thì trên cả nền sáng/tối mà bảng vẫn sạch */
 .user-resigned{opacity:.45; font-style:italic;
@@ -1085,6 +1101,9 @@ th.kpi-col-prev, td.kpi-col-prev{text-align:right; white-space:nowrap;}
   .kpi-wrap thead th:last-child, .kpi-wrap tbody td:last-child{padding-right:10px;}
   .th-full{display:none;} .th-short{display:inline;}
   th.kpi-id, td.kpi-id{display:none;}                      /* ẩn cột ID (đã có trong pop-up) */
+  /* 09/11 user: tên 2 chữ cuối ⇒ cột tên theo --tenW2; bảng vừa khít khung, CẤM cuộn ngang */
+  .kpi-ten .tn{width:var(--tenW2,auto);}
+  .kpi-wrap{overflow-x:hidden!important;} .kpi-wrap table{width:100%;}
   .kpi-rank{width:16px; padding-left:2px; padding-right:2px;}
   /* HỌ TÊN khổ 18ch (theo cỡ chữ mobile -> tự hẹp tương ứng), 3 cột số co đúng nội dung */
   .kpi-ten{font-size:12px;}
@@ -1117,6 +1136,8 @@ table.vdoc{border-collapse:separate; border-spacing:0;}
    không đặt flex thẳng lên th để giữ hành vi table-cell) */
 .vd-hbox{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:4px; width:100%;}
 .vdoc thead th.vd-corner{z-index:4;}
+/* 09/11 user (clip 14.20.36) «lỗi hiển thị số lần ghi nhận khi cuộn trái ở pop-up»: lớp antd ép z-index ô góc về 1 ⇒ ô «Lần n» đè khi cuộn ngang */
+#statModal .vdoc thead th.vd-corner,.vdoc thead th.vd-corner{z-index:6!important;} #statModal .vdoc thead th.vd-h{z-index:2!important;} #statModal .vdoc tbody th.vd-f{z-index:3!important;}
 .vd-lan{display:inline-block; padding:3px 11px; border-radius:999px; border:1px solid var(--border);
   background:var(--hover); font-weight:800; font-size:11px; letter-spacing:.05em; color:var(--text);}
 .vd-d{display:block; font-size:10.5px; font-weight:600; color:var(--muted); font-variant-numeric:tabular-nums;}  /* cách badge bằng gap của .vd-hbox */
@@ -1641,7 +1662,7 @@ body.side-anim:has(.wrap :is([class*="modal"],[id$="modal"],[id$="Modal"],#light
 <!-- 12/10 giao diện Ant Design: LIVE mặc định (user "theo ant design chưa live"); nạp ĐỒNG BỘ ở head để khung hình đầu đã đúng kiểu, tắt trong Cài đặt -->
 <script>window.AD_BI_DANH={"tonkho/kiemke":"kk","tonkho/batthuong":"kk#pane-htonbat"};   /* 15/10 link cũ → mục gộp «Tồn kho chính xác» */ window.AD_TEN='Audit Retail'; window.AD_CHUYEN={ten:'Audit Factory', app:'factory'};</script>   <!-- 13/10 user: Audit Hasaki → Audit Retail + nút sang Factory cuối thanh bên -->
 <script src="tien-ich.js?v=20261020a"></script><script src="anh-nv.js?v=20261105a"></script><!-- 05/11 ảnh đại diện NV toàn dự án: vòng tròn [data-anh-nv] tự thay ảnh --><!-- 20/10 tiện ích chung: esc/$id/hm/ngayVN — nạp TRƯỚC mọi mô-đun -->
-<script src="hasaki-giaodien-antd.js?v=20261029a"></script>
+<script src="hasaki-giaodien-antd.js?v=20261109c"></script>
 <script src="tai-khoan.js?v=20261109a"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
 <script src="tat-loc.js?v=20261109a" defer></script>
 <script src="loc-popup.js?v=20261108a" defer></script>
@@ -1878,36 +1899,26 @@ window.hxNoiLai = function(){
   <!-- 12/10 TỔNG QUAN: bảng chọn hạng mục, dựng từ HOME_MUC (cùng danh sách thanh bên) -->
   <section id="pane-home" class="pane hidden"></section>
   <section id="pane-tong" class="pane hidden">
-    <!-- Luỹ kế KPI trừ trong tháng -->
-    <div class="panel" id="kpiPanel" style="margin-bottom:0">
-      <div class="panel-head"><span>Luỹ kế KPI trừ trong tháng</span>
-        <select id="kpiThang" title="Chọn tháng/năm"></select></div>
-      <!-- `data-mb-cuon`: MIỄN TRỪ CÓ CHỦ ĐÍCH khỏi luật ⑩ (bảng ≥5 cột không được bắt kéo ngang).
-           Đây là BẢNG XẾP HẠNG: mọi cột đều ngắn (#, họ tên, số lượt, giá trị, so tháng trước) và giá
-           trị của nó nằm ở chỗ ĐỌC SO SÁNH ĐƯỢC giữa các dòng — đổi sang thẻ là mất luôn cái đó. Chủ
-           đích giữ họ tên trọn một hàng (biến --tenW) cũng đã ghi rõ ở khối CSS phía trên. Trên màn
-           360px nó thừa 25px và tự cuộn ngang trong khung — đúng ngoại lệ mà luật ⑩ chừa ra. -->
-      <div class="kpi-wrap" id="kpiWrap" data-mb-cuon="bang-xep-hang-cot-ngan"><div style="padding:16px"><div class="sk sk-line" style="width:80%"></div><div class="sk sk-line" style="width:60%"></div></div></div>
-    </div>
-    <!-- Dải 4 chỉ số tháng (gọn, DƯỚI bảng luỹ kế) -->
+    <!-- 09/11 user chọn MẪU 13 «Một khung, ba chế độ xem» (Tệp xuất «Tổng kết - 20 mẫu hiển thị»): 4 ô chỉ số lên đầu; 1 khung có Segmented
+         Nhân viên · Quản lý · Tổng kết nhanh — mỗi lúc chỉ 1 bảng, không cuộn dài; ô tháng góc phải đầu khung -->
     <div class="kpi-band" id="kpiBand">
       <div class="kb-tile"><div class="sk sk-line" style="width:60%"></div></div>
       <div class="kb-tile"><div class="sk sk-line" style="width:60%"></div></div>
       <div class="kb-tile"><div class="sk sk-line" style="width:60%"></div></div>
       <div class="kb-tile"><div class="sk sk-line" style="width:60%"></div></div>
     </div>
-
-    <!-- TỔNG KẾT NHANH — LƯỚI THẺ BẤM ĐƯỢC (bấm 1 thẻ -> pop-up danh sách task chi tiết) -->
-    <details class="panel tkn-details" id="tk7Panel" style="margin-bottom:14px">
-      <summary class="tkn-summary">Tổng kết nhanh</summary>
-      <div class="tkq-grid" id="tkqGrid">
+    <div class="panel" id="kpiPanel" style="margin-bottom:14px">
+      <div class="panel-head"><span class="kpi-che" id="kpiChe" role="tablist" aria-label="Chế độ xem">
+          <button type="button" class="hp-whtab active" data-che="nv">Nhân viên</button><button type="button" class="hp-whtab" data-che="ql">Quản lý</button><button type="button" class="hp-whtab" data-che="tkn">Tổng kết nhanh</button></span>
+        <select id="kpiThang" title="Chọn tháng/năm"></select></div>
+      <!-- `data-mb-cuon`: bảng xếp hạng cột ngắn (giữ so sánh giữa các dòng). 09/11: điện thoại vừa khít, không cuộn. -->
+      <div class="kpi-wrap" id="kpiWrap" data-mb-cuon="bang-xep-hang-cot-ngan"><div style="padding:16px"><div class="sk sk-line" style="width:80%"></div><div class="sk sk-line" style="width:60%"></div></div></div>
+      <div class="tkq-grid" id="tkqGrid" hidden>
         <div class="tkq-card"><div class="sk sk-line" style="width:70%"></div></div>
         <div class="tkq-card"><div class="sk sk-line" style="width:70%"></div></div>
         <div class="tkq-card"><div class="sk sk-line" style="width:70%"></div></div>
       </div>
-    </details>
-
-
+    </div>
   </section>
 
   <!-- ===== TAB TASK VI PHẠM (bộ lọc + bảng) ===== -->
@@ -1944,6 +1955,7 @@ window.hxNoiLai = function(){
         </table>
       </div>
       <div class="cardlist" id="cardList"></div>
+      <div id="vpThem" class="vp-them" hidden></div>   <!-- 09/11 mặc định 20 dòng + «Xem thêm 20 phiếu (còn n)» -->
     </div>
   </section>
 
@@ -2884,13 +2896,16 @@ function nnNap(){
 window.addEventListener('hx-du-lieu', nnNap);
 /* 29/10 user «Bởi Anh Tài/Ngọc Thành… — người gửi form ghi nhận; bổ sung ở mục quyền»: 8591 /api/nguoi-gui (sổ người gửi riêng tư + sổ tác giả),
    chỉ tamlc / tài khoản có quyền «Người gửi ghi nhận» (r.vp.ng); máy chủ gác lần nữa. Phiếu trước 12/10 không có sổ ⇒ không hiện. */
+/* 09/11 user «ép các nút Theo tác vụ / Theo máy / Bởi ai xuống NGAY khi vào Vi phạm (người có quyền) — đang chờ load khá lâu»: nhớ bản lần trước trên máy (≤ 12 giờ),
+   vẽ ngay; bản mới từ laptop / Apps Script về thì thay. Lúc vẽ vẫn kiểm quyền từng nút (xmCoMuc / ngDuocXem) — nhớ không mở thêm quyền. */
 let NG=null, _ngHoi=0;
+try{ const c=JSON.parse(localStorage.getItem('vp-ng-nho')||'null'); if(c && c.ng && Date.now()-c.luc<432e5){ NG=c.ng; ngNap._nho=1; } }catch(e){}
 function ngDuocXem(){ return typeof window.tkCoNguoiGui==='function' && window.tkCoNguoiGui(); }
 function ngNap(){
-  if(NG || _ngHoi || !ngDuocXem()) return;
+  if((NG && !ngNap._nho) || _ngHoi || !ngDuocXem()) return; ngNap._nho=0;   // bản nhớ ⇒ vẫn hỏi bản mới 1 lần
   _ngHoi=1;
   vpQuaLaptop('/api/nguoi-gui',30000).then(j=>j && j.theoMa ? j : vpRiengGas().then(g=>g && g.nguoiGui))
-    .then(j=>{ if(j && j.theoMa){ NG=j; render(); } }).catch(()=>{}).then(()=>{ _ngHoi=0; });
+    .then(j=>{ if(j && j.theoMa){ NG=j; try{ localStorage.setItem('vp-ng-nho', JSON.stringify({ luc: Date.now(), ng: j })); }catch(e){} render(); } }).catch(()=>{}).then(()=>{ _ngHoi=0; });
 }
 /* 30/10: Xác minh › Theo tác vụ «người gửi …» — bản chụp dự phòng đã gỡ người gửi (khoá chung) ⇒ lấy từ NG khi tài khoản có quyền */
 window.ngTheoPhieu=function(id,ma){ if(!NG || !ngDuocXem()) return ''; return (ma && NG.theoMa[String(ma).trim()]) || NG.theoId[String(id)] || ''; };
@@ -3056,7 +3071,15 @@ function renderKpi(){ setTimeout(homeVeLai, 0);
   // (chỉ quét chuỗi tên ở cột họ tên NV + QL, không tính header/cột khác)
   // -> tên luôn trọn vẹn 1 hàng, KHÔNG cắt "..." , không thừa khoảng trống
   const tenDaiNhat=Math.max(0, ...nv.map(x=>String(x.ten||'').length), ...ql.map(x=>String(x.ten||'').length));   // cột chỉ in TÊN (ID đã có cột riêng)
-  $('kpiWrap').style.setProperty('--tenW', (tenDaiNhat||18)+'ch');
+  /* 09/11 user (clip 14.20.36) «khoá cứng, cố định kích thước khung tên NV vi phạm»: cột tên KHÔNG đổi theo tháng / tên dài nhất nữa (đặt cứng ở CSS) */
+  /* 09/11 user «chỉ điện thoại: hiển thị 2 tên cuối — vừa khít màn hình, CẤM cuộn»: điện thoại in .th-short = 2 chữ cuối, cột tên rộng theo tên gọn dài nhất */
+  const ten2=t=>String(t||'').trim().split(/\s+/).slice(-2).join(' ');
+  const avKpi=t=>`<span class="kpi-av" data-anh-nv="${esc(t||'')}">${esc(String(t||'?').trim().split(/\s+/).pop().charAt(0))}</span>`;
+  /* Mẫu 13: chế độ xem — Nhân viên / Quản lý (bảng riêng) / Tổng kết nhanh (lưới thẻ) */
+  const che=window.KPI_CHE||'nv';
+  $('kpiChe').querySelectorAll('[data-che]').forEach(b=>{ const k=b.dataset.che; b.classList.toggle('active',k===che); b.setAttribute('aria-selected',k===che);
+    b.innerHTML=(k==='nv'?'Nhân viên':k==='ql'?'Quản lý':'Tổng kết nhanh')+(k==='nv'?' <b>· '+nv.length+'</b>':k==='ql'?' <b>· '+ql.length+'</b>':''); });
+  $('kpiWrap').hidden=che==='tkn'; $('tkqGrid').hidden=che!=='tkn';
   // Tiêu đề cột so sánh đổi ĐỘNG theo tháng liền trước của bộ lọc (04 -> "Tháng 03"; 01 -> "Tháng 12")
   const pmT=prevYm.split('-')[1];
   const fmt=v=>{const s=String(Math.round(v*100)/100).replace('.',',');return v>0?`<span class="kpi-neg">−${s}%</span>`:'<span class="kpi-zero">0%</span>';};
@@ -3065,21 +3088,21 @@ function renderKpi(){ setTimeout(homeVeLai, 0);
    +'<th class="kpi-col-luot"><span class="th-full">Lượt ghi nhận</span><span class="th-short">Lượt</span></th>'
    +'<th class="kpi-col-val"><span class="th-full">KPI trừ luỹ kế</span><span class="th-short">KPI trừ</span></th>'
    +`<th class="kpi-col-prev"><span class="th-full">So với Tháng ${pmT}</span><span class="th-short">Tháng ${pmT}</span></th></tr></thead><tbody>`;
-  h+=nv.map((x,i)=>`<tr data-kpi="nv:${i}" class="${i<3?'kpi-top':''}" title="Bấm xem các task trong tháng">
+  if(che==='nv') h+=nv.map((x,i)=>`<tr data-kpi="nv:${i}" class="${i<3?'kpi-top':''}" title="Bấm xem các task trong tháng">
       <td class="kpi-rank">${i+1}</td>
       <td class="kpi-id">${esc(x.id)}</td>
-      <td class="kpi-ten" title="${esc(x.ten)}${x.nghi?' — đã nghỉ việc':''}"><span class="tn${x.nghi?' user-resigned':''}">${esc(x.ten)}</span></td>
+      <td class="kpi-ten" title="${esc(x.ten)}${x.nghi?' — đã nghỉ việc':''}">${avKpi(x.ten)}<span class="tn${x.nghi?' user-resigned':''}"><span class="th-full">${esc(x.ten)}</span><span class="th-short">${esc(ten2(x.ten))}</span></span></td>
       <td class="kpi-col-luot"><span class="kpi-pill">${x.luot} lượt</span></td>
       <td class="kpi-val">${fmt(x.kpi)}<div class="kpi-bar" style="width:${Math.max(6,Math.round(x.kpi/maxK*100))}%"></div></td>
       <td class="kpi-col-prev">${soSanh(x.kpi,prevNv[x.id]!=null?prevNv[x.id]:null)}</td></tr>`).join('')
      ||'<tr><td colspan="6"><div class="empty-row">Không có NV vi phạm trong tháng này.</div></td></tr>';
-  if(ql.length){
-    h+='<tr class="kpi-sep"><td colspan="6">Quản lý nghiệp vụ — KPI theo trách nhiệm xác minh <span class="kpi-sep-note">(−0.2%/lượt xác minh được · −1%/lượt không xác minh được)</span></td></tr>';
+  if(che==='ql' && !ql.length) h+='<tr><td colspan="6"><div class="empty-row">Không có quản lý bị trừ trong tháng này.</div></td></tr>';
+  if(che==='ql' && ql.length){
     const maxQ=Math.max(...ql.map(x=>x.kpi),0.0001);
     h+=ql.map((x,i)=>`<tr data-kpi="ql:${i}" title="Bấm xem các task trong tháng">
       <td class="kpi-rank">QL</td>
       <td class="kpi-id">—</td>
-      <td class="kpi-ten" title="${esc(x.ten)}"><span class="tn">${esc(x.ten)}</span></td>
+      <td class="kpi-ten" title="${esc(x.ten)}">${avKpi(x.ten)}<span class="tn"><span class="th-full">${esc(x.ten)}</span><span class="th-short">${esc(ten2(x.ten))}</span></span></td>
       <td class="kpi-col-luot"><span class="kpi-pill">${x.xm+x.kxm} lượt</span> <span class="muted kpi-xm" style="font-size:12px">${x.xm} XM · ${x.kxm} không XM</span></td>
       <td class="kpi-val">${fmt(x.kpi)}<div class="kpi-bar" style="width:${Math.max(6,Math.round(x.kpi/maxQ*100))}%"></div></td>
       <td class="kpi-col-prev">${soSanh(x.kpi,prevQl[x.ten]!=null?prevQl[x.ten]:null)}</td></tr>`).join('');
@@ -3130,7 +3153,9 @@ function moKpiChiTiet(loai,idx){
     kpiOf=r=>codeVP(r)?'<span class="kpi-neg">−0,2%</span> <span class="muted" style="font-size:11.5px">(XM được)</span>'
                       :'<span class="kpi-neg">−1%</span> <span class="muted" style="font-size:11.5px">(không XM)</span>';
   }
-  $('stTitle').textContent=(loai==='nv'?(x.ten+' ('+x.id+')'):(x.ten+' — Quản lý nghiệp vụ'))+' · tháng '+thang+'/'+nam+' · '+rows.length+' task';
+  /* 09/11 user: tiêu đề = 2 hàng — trên: ảnh + họ tên đầy đủ, mã NV (đậm) · dưới: «Tháng 11/2026 ghi nhận 1 task» (mờ); thẳng hàng, không cuộn */
+  $('stTitle').innerHTML='<span class="st-ng"><span class="st-av" data-anh-nv="'+esc(x.ten)+'">'+esc(String(x.ten||'?').trim().split(/\s+/).pop().charAt(0))+'</span>'+
+    '<span class="st-ng-t"><b>'+esc(loai==='nv'?(x.ten+' '+x.id):(x.ten+' — Quản lý nghiệp vụ'))+'</b><small>Tháng '+thang+'/'+nam+' ghi nhận '+rows.length+' task</small></span></span>';
   $('stBody').innerHTML=rowsTableDocHTML(rows,kpiOf);
   $('statModal').classList.add('fit');       // khung modal ôm sát bảng dọc theo số lần vi phạm
   // Đặt width khung = ĐÚNG bề rộng bảng theo số lần (kẹp trần 95vw) -> hết khoảng trắng phải
@@ -3258,7 +3283,7 @@ try{ matchMedia('(max-width:820px)').addEventListener('change',()=>{ if(ROWS.len
 function _render(){
   nnNap(); ngNap();                             // 29/10 lịch sử nhắc nhở (chỉ khi có quyền + máy chủ 8591)
   xmTvNap();                                     // 25/10 chip «Theo tác vụ»: hỏi nền 1 lần khi máy vào được Xác minh
-  const dTable=loc().sort(cmpNgayDesc);          // Task vi phạm: theo BỘ LỌC của tab này
+  let dTable=loc().sort(cmpNgayDesc);   // 09/11 let: cắt 20 dòng bên dưới          // Task vi phạm: theo BỘ LỌC của tab này
   const dAll=ROWS.slice().sort(cmpNgayDesc);     // Tổng quan: TOÀN BỘ (KHÔNG chịu ảnh hưởng bộ lọc tab Task)
   curD=dAll; rowGal={};
   /* 21/10 đánh giá: «190 task» đầu bảng ≠ «111» thanh bên, không ai biết số nào là gì → nói rõ cả hai */
@@ -3278,6 +3303,12 @@ function _render(){
   /* 25/10 (đo điện thoại CPU ×4: đứng hình 0,8 s khi mở Vi phạm): trước đây vẽ CẢ bảng lẫn thẻ (198 dòng × 2) rồi CSS giấu 1 kiểu —
      nay chỉ vẽ kiểu đang hiện (≤ 820 px = thẻ, rộng hơn = bảng); đổi cỡ qua mốc 820 thì vẽ lại. Chỉ số dòng tra bằng Map (bỏ indexOf n²). */
   const laThe=matchMedia('(max-width:820px)').matches, soDong=new Map(ROWS.map((r,i)=>[r,i])); _render.laThe=laThe;
+  /* 09/11 user «các trang hiển thị mặc định 20 hàng dữ liệu, muốn thì nhấn Xem thêm n phiếu (còn n)» — đổi bộ lọc (số dòng khác) ⇒ về 20 */
+  if(_render._n!==dTable.length){ _render._n=dTable.length; window.VP_SO=20; }
+  const vpSo=window.VP_SO||20, dToan=dTable; dTable=dTable.slice(0,vpSo);
+  { const con=dToan.length-dTable.length, el=$('vpThem'); el.hidden=con<=0;
+    el.innerHTML=con>0?'<button type="button" class="hsk-nut phu" id="vpThemNut">Xem thêm '+Math.min(20,con)+' phiếu (còn '+con+')</button>':'';
+    if(con>0) $('vpThemNut').onclick=()=>{ window.VP_SO=vpSo+20; render(); }; }
 
   // Bảng (desktop) — Ngày ghi nhận / Vị trí / Lỗi / NV vi phạm / QL trực tiếp / Hình ảnh / Trạng thái(kiêm link work)
   $('tbody').innerHTML = laThe ? '' : dTable.map(r=>{
@@ -3919,7 +3950,7 @@ let _bdNap=null;
 function napModBD(){
   if(!_bdNap){
     _bdNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-baoduong.js?v=20261109a';
+      const s=document.createElement('script'); s.src='hasaki-baoduong.js?v=20261109c';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-baoduong.js'));
       document.body.appendChild(s);
     });
@@ -3959,7 +3990,7 @@ function moHasakiPlanogram(){
       '<div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:54%"></div>'+
       '<div class="sk sk-line" style="width:62%"></div></div>';
     _hpNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20261109a';   // khớp V ở <head>
+      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20261109c';   // khớp V ở <head>
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-planogram.js'));
       document.body.appendChild(s);
     });
@@ -3995,7 +4026,7 @@ let _hxNap=null;
 function napXm(){
   if(!_hxNap){
     _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261109b';
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261109c';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
       document.body.appendChild(s);
     });
@@ -4007,6 +4038,7 @@ function napXm(){
    25/10 (2) user «đi từ nút Theo tác vụ/Theo máy ở Vi phạm thì hiện thanh bên phải, nhưng vuốt phải / đóng thanh bên thì VẪN về giao diện Vi phạm»
    ⇒ KHÔNG chuyển tab nữa: mở thanh bên Xác minh ngay trên Vi phạm (đóng/vuốt lùi = 1 lớp, hskLop). Thêm nút «Theo máy ›» (phiếu do lượt camera lập). */
 let XM_TV=new Set(), XM_TM={}, _xmTvHoi=0;
+try{ const c=JSON.parse(localStorage.getItem('xm-tv-nho')||'null'); if(c && Date.now()-c.luc<432e5){ XM_TV=new Set(c.tv||[]); XM_TM=c.tm||{}; } }catch(e){}   // 09/11 vẽ nút ngay từ bản nhớ
 function xmTvNap(){
   if(_xmTvHoi || window.__HX_MA_HOA || typeof xmDuocXem!=='function' || !xmDuocXem()) return;
   /* máy chủ chưa dò xong lúc bảng vẽ lần đầu (điện thoại qua đường hầm chậm) → dò 1 lần, xong thì hỏi lại */
@@ -4023,7 +4055,9 @@ function xmCoMuc(m){ try { return xmDuocXem() && (!window.TK || typeof window.tk
 function xmTvCapNhat(){
   const H=window.HXACMINH, moi=new Set(H && H.idTacVu && xmCoMuc('treo') ? H.idTacVu() : []), tm=H && H.idTheoMay && xmCoMuc('cam') ? H.idTheoMay() : {};
   const ky=JSON.stringify(tm), giong=moi.size===XM_TV.size && [...moi].every(x=>XM_TV.has(x)) && ky===xmTvCapNhat._ky;
-  XM_TV=moi; XM_TM=tm; xmTvCapNhat._ky=ky; const coXm=!!(moi.size || Object.keys(tm).length); $('fXmO').hidden=!coXm; $('filterGrid').classList.toggle('co-xm',coXm); if(!giong) render(); }
+  XM_TV=moi; XM_TM=tm; xmTvCapNhat._ky=ky;
+  if(moi.size || Object.keys(tm).length){ try{ localStorage.setItem('xm-tv-nho', JSON.stringify({ luc: Date.now(), tv: [...moi], tm })); }catch(e){} }
+  const coXm=!!(moi.size || Object.keys(tm).length); $('fXmO').hidden=!coXm; $('filterGrid').classList.toggle('co-xm',coXm); if(!giong) render(); }
 window.addEventListener('hx-du-lieu', xmTvCapNhat);
 document.addEventListener('tk-doi', function(){ const m=$('modal');
   if(m && m.classList.contains('show') && m.classList.contains('hx-ben') && !xmDuocXem()) dongModal();
@@ -4798,6 +4832,7 @@ $('ghiModal').addEventListener('click',e=>{ if(e.target.id==='ghiModal') dongGhi
 $('hmmClose').addEventListener('click',dongHinhHangMuc);
 $('hmModal').addEventListener('click',e=>{ if(e.target.id==='hmModal') dongHinhHangMuc(); });
 $('kpiThang').addEventListener('change',function(){ SUMMARY_INDEX ? chonThang(this.value) : renderKpi(); });
+$('kpiChe').addEventListener('click',function(e){ const b=e.target.closest('[data-che]'); if(!b || b.classList.contains('active')) return; window.KPI_CHE=b.dataset.che; renderKpi(); });   // 09/11 Mẫu 13
 
 $('bbFile').addEventListener('change',e=>{ taiBienBanLen(e.target.files); });
 
@@ -4952,7 +4987,7 @@ document.addEventListener('click', ()=>csDongHet(null));
     { g: "", items: [["home","Tổng quan"]] },   // 12/10 trang Tổng quan đứng riêng trên đầu (không tiêu đề nhóm)
     { g: "Hạng mục 5S",   items: [["tong","Tổng kết"],["task","Vi phạm"],["hangmuc","Quy định"],["planogram","Planogram"]] },
     /* 05/11 user: gộp Tồn kho + Tài sản · 27/10 user: hạng mục «Tài sản» ngang Tồn kho / Xác minh, mục con «Bảo dưỡng» · 15/10 user: gộp Kiểm kê + Bất thường thành 1 mục (trong trang Kiểm kê trên, Bất thường dưới) */
-    { g: "Tồn kho & tài sản", items: [["kk","Tồn kho chính xác"],["baoduong","Bảo dưỡng"]] },
+    { g: "Tồn kho & tài sản", items: [["kk","Tồn kho CX"],["baoduong","Bảo dưỡng"]] },   // 09/11 user «viết tắt Tồn kho CX — thu hẹp thanh bên trái»
     /* 05/10 user chọn kiểu A: mục con Xác minh nằm ở thanh bên (thay dải chip trong tab). Chỉ hiện trên máy có máy chủ 8591. */
     { g: "Xác minh", hx: 1, items: [["xacminh","Theo tác vụ","treo"],["xacminh","Theo máy","cam"],["maytram","Máy trạm"],["xacminh","Nhật ký","tg"],["xacminh","CCTV","sodo"]] }   // 24/10 Sơ đồ camera: CHỈ tài khoản tamlc (lọc ở build, máy chủ cũng chặn)   // 15/10 user: Nhật ký xuống dưới Máy trạm   // 13/10 tối user: Máy trạm ở Xác minh, DƯỚI CÙNG, phải đăng nhập mới xem (điện thoại: nhóm chỉ còn mục này)
   ];
