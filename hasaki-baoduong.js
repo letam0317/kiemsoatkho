@@ -833,6 +833,12 @@
       /* Báo cáo ở đâu: clip (khung điện thoại, chữ vẽ đè theo yêu cầu) + các bước chi tiết; màu khung clip = màu ảnh hướng dẫn .gif (không theo giao diện) */
       B + " .bd-bc{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start}",
       B + " .bd-hd{position:sticky;top:34px;margin:0;border-radius:12px;overflow:hidden;background:rgb(20,20,20);color:rgb(255,255,255);width:100%;max-width:300px;justify-self:center}",
+      /* 09/11 user «nhấn vào clip hướng dẫn thì nhảy TOÀN MÀN HÌNH — back lại thì về như cũ» (lớp hskLop: vuốt lùi / Back / Esc đóng 1 lớp) */
+      "#hpVtBody .bd-hd.toan-man{position:fixed;inset:0;z-index:1300;max-width:none;width:auto;justify-self:stretch;align-self:stretch;border-radius:0;display:flex;align-items:center;justify-content:center;background:rgb(10,10,10)}" +
+        "#hpVtBody .bd-hd.toan-man .bd-hd-man{height:100dvh;width:auto;max-width:100vw;aspect-ratio:9/16}" +
+        "#hpVtBody .bd-tab-than:has(.bd-hd.toan-man),#hpVtBody .bd-bc:has(.bd-hd.toan-man){animation:none!important;transform:none!important}" +
+        "#hpVtModal:has(.bd-hd.toan-man),#hpVtModal:has(.bd-hd.toan-man) .hp-modalbox{backdrop-filter:none!important;" +
+          "-webkit-backdrop-filter:none!important;transform:none!important;filter:none!important}",   /* fadeUp giữ translate3d ⇒ fixed bị nhốt */
       B + " .bd-hd-man{position:relative;aspect-ratio:9/16;container-type:inline-size;cursor:pointer;user-select:none;-webkit-user-select:none;overflow:hidden}" +
         B + " .bd-hd-man img{display:block;width:100%;height:100%}",
       B + " .bd-hd-man>*:not(img){position:absolute;font-family:'Segoe UI',system-ui,sans-serif}" +
@@ -1552,6 +1558,15 @@
     return { bin: b, kho: kho, loai: l["LOẠI MỤC ĐÍCH"] || "Warehouse", mo: l["MÔ TẢ VỊ TRÍ"] || String(v.ten || "").split("|").pop().trim() || b,
       ngay: e.l === "vh" ? String(e.y["NGÀY"]).split("-").reverse().join("-") : "", khung: viecCuaYc(b, e) };
   }
+  /* 09/11 user (A1 SHOP: 16 khung tên = 16 mã ô con, chung 1 mô tả): «chỉ hiển thị 1 lần mã vị trí của yêu cầu», «Báo cáo ở đâu cũng chỉ 1 lần»
+     ⇒ gom khung CÙNG mô tả; tên khung toàn là mã vị trí (F0-…) thì thay bằng MÃ VỊ TRÍ CỦA YÊU CẦU. Trả [{ten, mo, tu, den}] (tu/den = số thứ tự khung, từ 1). */
+  function gomKhung(khung, bin) {
+    var ds = [];
+    (khung || []).forEach(function (x, i) { var g = ds.filter(function (n) { return n.mo === x.mo; })[0];
+      if (g) { g.ten.push(x.ten); g.den = i + 1; } else ds.push({ mo: x.mo, ten: [x.ten], tu: i + 1, den: i + 1 }); });
+    return ds.map(function (g) { var laMa = bin && g.ten.every(function (t) { return /^F0-/i.test(String(t).trim()); });
+      return { ten: laMa ? bin : g.ten.join(" · "), mo: g.mo, tu: g.tu, den: g.den, n: g.ten.length }; });
+  }
   function hdBuoc(p) {
     var lv = LOAI_VI[p.loai] || p.loai, nhom = p.bin.split("-").slice(0, -2).join("-") || p.bin, N = p.khung.length, cat = function (t, n) { t = String(t || ""); return t.length <= n ? t : t.slice(0, n - 1) + "…"; };
     var C = function (box, t, fs, mau, dam, giua) { return { b: box, t: t, fs: fs, m: mau || "rgb(33,33,33)", d: dam, g: giua }; };
@@ -1575,10 +1590,10 @@
       { n: "n07", so: 7, cap: "Ô **Mã vị trí** (Bin location) phải hiện đúng mã **" + p.bin + "**, rồi bấm Enter. Dòng **" + nhom + "** ở mục **Chưa thực hiện** khớp mã vừa quét.",
         o: [[60, 495, 912, 609], [36, 806, 1044, 1018]], c: dau.concat(ds, [C([78, 500, 905, 604], p.bin, 40)]) }
     ];
-    p.khung.forEach(function (k, i) { B.push({ n: "n08", so: 8, cap: "Khung " + (i + 1) + "/" + N + " · **" + k.ten +
+    gomKhung(p.khung, p.bin).forEach(function (k) { B.push({ n: "n08", so: 8, cap: "Khung " + (k.n > 1 ? k.tu + "–" + k.den : k.tu) + "/" + N + " · **" + k.ten +
         "**: đọc **Mô tả** (Description), làm đúng từng việc. Ảnh **Tiêu chuẩn** (Standard) bên trái, bấm **Chụp ảnh** (Take photo) bên phải. Khung nào cũng bắt buộc 1 ảnh",
       o: [[552, 1128, 1044, 1668], [42, 1128, 522, 1668, "mau"]], k: { y0: 262, y1: 1112, ten: k.ten, mo: k.mo } }); });
-    var cuoi = p.khung[N - 1] || { ten: "", mo: "" };
+    var gk = gomKhung(p.khung, p.bin), cuoi = gk[gk.length - 1] || { ten: "", mo: "" };   // 09/11 khung cuối cũng theo tên đã gom (mã của yêu cầu)
     B.push({ n: "n09", so: 9, cap: "Chụp đủ " + N + "/" + N + " khung thì nút **Hoàn tất khai báo** (Complete request) mới sáng, bấm để gửi. Ảnh sai thì bấm dấu × trên ảnh để chụp lại",
       o: [[30, 1776, 1050, 1900]], k: { y0: 282, y1: 1140, ten: cuoi.ten, mo: cuoi.mo } });
     B.push({ n: "n10", so: 10, cap: "Gửi xong app báo thành công rồi tự quay về danh sách, vị trí sang tab **Đã thực hiện** (Completed). Báo cáo chờ quản lý duyệt", o: [[540, 648, 1032, 744]], c: dau });
@@ -1623,6 +1638,13 @@
     if (S.hdChay) { clearTimeout(S.hdT); S.hdT = setTimeout(function () { hdDen(S.hdI + 1); }, x.ms); }
   }
   function hdDung() { S.hdChay = false; clearTimeout(S.hdT); }
+  function hdToanMan(bat) {
+    var f = document.querySelector("#hpVtBody .bd-hd"); if (!f) return;
+    if (bat) { if (f.classList.contains("toan-man")) return; f.classList.add("toan-man"); if (window.hskLop) window.hskLop.day("bd-hd-tm", function () { hdToanMan(false); }); if (!S.hdChay) hdPhat(); }
+    else { f.classList.remove("toan-man"); if (window.hskLop) window.hskLop.rut("bd-hd-tm"); }
+  }
+  /* bấm clip: chưa toàn màn ⇒ phóng toàn màn (và phát); đang toàn màn ⇒ dừng / phát */
+  function hdBam() { var f = document.querySelector("#hpVtBody .bd-hd"); if (f && !f.classList.contains("toan-man")) { hdToanMan(true); return; } if (S.hdChay) hdDung(); else hdPhat(); }
   function hdPhat() { S.hdChay = true; hdDen(S.hdI || 0); }
   function napAnhHd() { if (S.hdNap) return; S.hdNap = 1; ["n01", "n02", "n03", "n04", "n06", "n6a", "n6b", "n07", "n08", "n09", "n10"].forEach(function (n) { var im = new Image(); im.src = "bd-hd/" + n + ".webp"; }); }
   function veCachLam(b, d) {
@@ -1639,7 +1661,7 @@
       /* 08/11 user «bổ sung mục Ảnh báo cáo — các mục cố định, đồng bộ»: việc kỳ chưa có yêu cầu planogram cũng có dòng Ảnh báo cáo (0/n đầu mục) */
       var anhKt = e && e.l === "kt" ? (function () { var vk = viecCuaYc(b, e); return dong("Ảnh báo cáo (0/" + vk.length + ")", '<span class="hp-hint bd-motdong" title="' +
         esc(vk.map(function (x) { return x.ten; }).join(" · ")) + '">Chưa có ảnh: ' + vk.map(function (x) { return o(x.ten); }).join(" · ") + "</span>"); })() : "";
-      than = veDai(b, d) + veNgay(b, v, d) + anhKt + vePhanCong(b) +
+      than = veDai(b, d) + vePhanCong(b) + veNgay(b, v, d) + anhKt +   /* 09/11 user: người phụ trách lên đầu, rồi Người báo cáo / Ảnh báo cáo */
         (tenM && moT ? '<div class="hp-vtcard bd-ten-the' + (moT ? " mo" : "") + '"><div class="hd"><span>Tên hiển thị</span>' + (moT || !duocSua() ? "" : '<button type="button" class="bd-lk bd-ten-mo">Đổi tên</button>') + "</div>" +
           (moT ? tenM.than : tenM.than.replace(/^<div class="bd-ls-form bd-ten-form[\s\S]*?<span class="bd-dl bd-ten-bao"><\/span><\/div>/, "")) + "</div>" : "");
     } else if (tab === "lam") than = chonYc + (e ? veLamGi(b, e) : '<div class="ln mut">Không có yêu cầu bảo dưỡng</div>');
@@ -1678,7 +1700,16 @@
   /* người phụ trách đang hiệu lực (cùng thứ tự với bd-task-ky: nguồn đã chọn, hụt thì nguồn khác) */
   function nguoiVt(b, nhom) {
     var cd = cheDoCua(khoaGiao(b, nhom)), gy = goiY(b, nhom);
-    if (cd.v.indexOf("chi-dinh") === 0) return { ten: cd.chiDinh, nguon: "Chỉ định" };
+    /* 09/11 user «3 người, đổi bỏ Kiệm thì Lâm và Lành còn nhưng MẤT icon phối hợp, không rõ vai trò»: nhánh Chỉ định trước trả tên trơn ⇒ nhóm VH + BT
+       coi tất cả là Bảo trì. Nay kèm bảng vh (ai thuộc Vận hành / PTCH): cột «Phân bộ phận» tab KY + người g-sheet của nhóm (bd-task-ky: người g-sheet = VH,
+       điều phối KT = Bảo trì) ⇒ chỉ định lại vẫn giữ PT / BT và icon phối hợp */
+    if (cd.v.indexOf("chi-dinh") === 0) { var vhC = {};
+      if (nhom !== "VẬN HÀNH") {
+        var kyC = (S.ky || []).filter(function (k) { return k["MÃ VỊ TRÍ"] === b && nhomCua(k["NHÓM THỰC HIỆN"]) === nhom; })[0];
+        if (kyC) String(kyC["PHÂN BỘ PHẬN"] || "").split(" · ").forEach(function (p) { if (/^VH:/.test(p)) p.slice(3).split(/\s*,\s*/).forEach(function (t) { vhC[tenNV(t.replace(/\s*\(\d+\)\s*$/, "").trim())] = 1; }); });
+        if (/VẬN HÀNH/.test(nhom)) Object.keys(((S.vt[b] || {}).nhom || {})[nhom] ? S.vt[b].nhom[nhom].pt || {} : {}).forEach(function (t) { vhC[tenNV(t)] = 1; });
+      }
+      return { ten: cd.chiDinh, nguon: "Chỉ định", vh: vhC }; }
     /* 07/11 user «mục con là tamlc mà thanh bên Phụ trách lại là Lâm và Nguyễn Kiệm»: nhóm Bảo trì / KT do bd-task-ky phân giải người nhận
        (Điều phối KT cơ điện — không theo ô g-sheet) ⇒ Phụ trách đọc CÙNG nguồn với mục con: cột Người nhận của tab BAO-DUONG-KY */
     if (nhom !== "VẬN HÀNH") { var kyN = (S.ky || []).filter(function (k) { return k["MÃ VỊ TRÍ"] === b && nhomCua(k["NHÓM THỰC HIỆN"]) === nhom && k["NGƯỜI NHẬN"]; })[0];
@@ -2739,7 +2770,7 @@
       if (e.target.closest(".bd-ten-mo")) { S.moTen = S.chon; veLaiBen(true); var oT2 = hop.querySelector(".bd-ten-o"); if (oT2) { oT2.focus(); oT2.select(); } return; }
       var hl = e.target.closest(".bd-hd-ds li[data-hd]"); if (hl) { hdDung(); hdDen(Number(hl.getAttribute("data-hd")));
         var fg = hop.querySelector(".bd-hd"); if (fg && fg.getBoundingClientRect().top < 0) fg.scrollIntoView({ block: "nearest" }); return; }
-      if (e.target.closest(".bd-hd-man")) { if (S.hdChay) hdDung(); else hdPhat(); return; }
+      if (e.target.closest(".bd-hd-man")) { hdBam(); return; }
       var lt = e.target.closest(".bd-ten-luu"); if (lt) { luuTen(lt); return; }
       var th = e.target.closest(".bd-ls-them"); if (th) { var f = th.closest(".bd-ls").querySelector(".bd-ls-form"); if (f.hidden) moFormLs(f); else f.hidden = true; return; }
       if (e.target.closest(".bd-ls-bo")) { e.target.closest(".bd-ls-form").hidden = true; return; }
@@ -2987,13 +3018,14 @@
        (tab VESINH-LICH): lamGi(khung) = danh sách khung + chi tiết đầu dòng · baoCao(p) = clip cách báo cáo + các bước (p = {bin, kho, loai, mo, ngay, khung}) */
     benVs: {
       css: function () { napCss(); },
-      lamGi: function (khung) {
+      lamGi: function (khung, bin) {
         if (!khung || !khung.length) return '<div class="ln mut">Chưa có lịch planogram của vị trí này</div>';
-        return '<div class="bd-lg-tt hp-hint">' + khung.length + " khung ảnh</div>" + '<ol class="bd-lg">' + khung.map(function (x) { var ct = dongChiTiet(x.mo);
+        /* 09/11 user: khung CÙNG mô tả ⇒ 1 đầu mục, mô tả 1 lần; tên khung là mã ô con ⇒ chỉ ghi mã vị trí của yêu cầu (gomKhung) */
+        return '<div class="bd-lg-tt hp-hint">' + khung.length + " khung ảnh</div>" + '<ol class="bd-lg">' + gomKhung(khung, bin).map(function (x) { var ct = dongChiTiet(x.mo);
           return '<li><div class="bd-lg-t"><b>' + o(x.ten) + "</b></div>" + (ct ? '<ul class="bd-lg-ct">' + ct + "</ul>" : "") + "</li>"; }).join("") + "</ol>";
       },
       baoCao: function (p, giu) { S.hdChu = ""; if (!giu) S.hdI = 0; napAnhHd(); return htmlBaoCao(hdBuoc(p)); },   // giu = vẽ lại cùng vị trí × ngày ⇒ giữ bước clip
-      phat: function () { hdPhat(); }, dung: function () { hdDung(); }, den: function (i) { hdDen(i); }, chay: function () { return !!S.hdChay; }
+      phat: function () { hdPhat(); }, bam: function () { hdBam(); }, toanMan: function (bat) { hdToanMan(bat); }, dung: function () { hdDung(); }, den: function (i) { hdDen(i); }, chay: function () { return !!S.hdChay; }
     }
   };
 })();
