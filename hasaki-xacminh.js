@@ -429,13 +429,16 @@
       ".hx-vl-ghi[hidden],.hx-vl-form[hidden]{display:none!important}.hx-vl-ghi{margin-top:8px}.hx-vl-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}.hx-vl-form input{width:130px}.hx-vl-form .cs{flex:0 0 220px;width:220px}.hx-vl-luc{font-size:13px}",
       "@media(max-width:560px){.hx-vl-ghi .hx-vl-mo{width:100%}.hx-vl-form>*{flex:1 1 calc(50% - 4px)}.hx-vl-form .cs{min-width:0;width:auto}#vlForm>.cs{order:1;flex:1 1 100%!important;width:auto!important}#vlForm>input{order:2;flex:1 1 0!important;width:auto!important;min-width:0!important}#vlForm>#vlLuu{order:3;flex:0 0 96px!important}#vlForm>#vlMsg{order:4;flex:1 1 100%!important}#vlForm>#vlMsg:empty{display:none}.hx-vl-form input{width:auto}.hx-vl-form .hx-vl-luc{flex-basis:100%}.hx-vl-go{min-height:40px}}",
       ".hx-qd-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}.hx-qd-form .lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}.hx-qd-form input,.hx-qd-form select{width:100%}",
+      ".hx-sao{display:inline-block;width:14px;height:14px;margin-right:4px;vertical-align:-2px;fill:var(--warn);flex:none}" +
       ".hx-visao{font-size:13px;line-height:1.45;color:var(--text);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}.hx-visao.mo{display:block}",
       ".hx-sx{border:0;background:none;padding:0;font:inherit;font-weight:inherit;color:inherit;cursor:pointer;text-align:left}.hx-sx:hover,.hx-sx.on{color:var(--accent)}",
       ".hx-pd{display:flex;gap:10px;align-items:baseline;padding:8px 12px;background:#111;color:#e6efe9;font-size:14px;min-height:22px;flex-wrap:nowrap;overflow:hidden}.hx-pd>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
       ".hx-qd-khung{position:relative}.hx-qd-khung.trong{background:none;min-height:0}" +
       /* 09/11 chiều user (clip 15.35.50) «chỗ hiển thị clip/camera là khoá cứng mà chèn ghi chú làm đẩy khung clip xuống»: chưa có clip ⇒ khung VẪN giữ đúng cỡ 16:9, lý do nằm giữa khung */
-      "#modal.hx-ben .hx-tb-luoi #qdKhung.trong{display:flex;align-items:center;justify-content:center;aspect-ratio:16/9;width:100%;overflow:hidden;background:color-mix(in srgb,var(--warn) 12%,var(--surface))!important;border-radius:8px}" +
-      "#modal.hx-ben .hx-tb-luoi #qdKhung.trong>.hx-qd-tt{margin:0;max-height:100%;overflow:auto;padding:12px 16px;border:0;background:transparent;text-align:center}" +   // 29/10 ô clip không có camera: chỉ dòng lý do, không nền đen
+      "#modal.hx-ben .hx-tb-luoi #qdKhung.trong{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:16/9;width:100%;overflow:hidden;background:var(--text)!important;border-radius:8px}" +
+      "#modal.hx-ben #qdKhung .hx-m11-nen{position:absolute;inset:0;width:100%!important;height:100%!important;aspect-ratio:auto!important;max-height:none!important;object-fit:cover!important;filter:blur(4px) brightness(.32);transform:scale(1.06)}" +
+      "#modal.hx-ben #qdKhung .hx-m11{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;max-height:100%;overflow:auto;padding:12px 16px;text-align:center;font-size:13px;line-height:1.45;color:rgb(255 255 255 / .92);text-shadow:0 1px 3px rgb(0 0 0 / .85)}" +
+      "#modal.hx-ben #qdKhung .hx-m11>b{font-size:16px;font-weight:600;color:rgb(255 255 255)}#modal.hx-ben #qdKhung .hx-m11>.r{color:color-mix(in srgb,var(--bad) 55%,rgb(255 255 255));font-weight:600}" +
       ".hx-qd-khung.hx-dang-tai::after,.hx-qd-khung.hx-loi-clip::after,",
       ".hx-qd-khung.hx-cham-phat::after{content:'Đang tải clip…';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);color:white;font-size:14px;font-weight:600;pointer-events:none}",
       ".hx-tb-clip{position:relative}.hx-tb-clip[data-tb]::after{content:attr(data-tb);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;" +
@@ -1562,6 +1565,18 @@
   /* 06/11 user «Chưa có bằng chứng camera — máy đang tìm > thời hạn tìm ra? … phải nói được làm được, không bịa thời gian»:
      p.timBC do máy chủ tính từ LỊCH THẬT của task máy tìm + vị trí hàng chờ (may-tim-du-kien.mjs). Máy đã dừng → nói lý do, KHÔNG nói «đang tìm».
      Không có giờ (chưa đọc được lịch) → không nêu giờ. LUẬT 05/11: không nhắc laptop. */
+  /* 09/11 tối user chọn MẪU 11 (bộ mẫu khung «chưa có clip»): Ảnh ghi nhận mờ làm nền, chữ nổi hơn nền — đầu khung 1 chữ trạng thái,
+     dưới là từng ý (giờ máy tìm · trễ lượt đỏ · lý do), không lặp */
+  function khungM11(chu, anh) {
+    chu = String(chu || ""); var dong = [], tieu = /^trễ|· trễ lượt/i.test(chu) ? "Trễ lượt" : /^Máy dừng/i.test(chu) ? "Máy dừng tìm" : /chưa có camera gán/i.test(chu) ? "Không có camera"
+      : /anh Tâm/.test(chu) ? "Chờ kiểm thực tế" : /máy đang tìm/i.test(chu) ? "Đang tìm" : /Chưa biết đồ vật/i.test(chu) ? "Chưa biết lúc xuất hiện" : /vệ sinh hằng ngày/i.test(chu) ? "Không cần clip" : "";
+    chu.split(" · ").forEach(function (y) { var m = /máy đang tìm \[([^\]]+)\]/.exec(y);
+      if (m) return dong.push('<span class="g">Máy tìm lúc ' + e_(m[1]) + '</span>');
+      if (/^Chưa có bằng chứng camera — máy đang tìm$/.test(y)) return dong.push('<span class="s">Chưa có bằng chứng camera</span>');
+      if (/^trễ lượt/.test(y)) return dong.push('<span class="r">' + e_(y) + '</span>');
+      dong.push('<span class="s">' + e_(y.replace(/^Máy dừng tìm — /, "")) + '</span>'); });
+    return (anh ? '<img class="hx-m11-nen" src="' + e_(anh) + '" alt="" aria-hidden="true" decoding="async">' : "") +
+      '<div class="hx-m11">' + (tieu ? '<b>' + tieu + '</b>' : "") + dong.join("") + '</div>'; }
   function chuTim(p, coLui) {
     var t = p.timBC, gio = function (s) { s = String(s || ""); return s.slice(11, 16) + " " + s.slice(8, 10) + "/" + s.slice(5, 7); };   // giờ + ngày không tách dòng
     if (t && t.trangThai === "dung") return "Máy dừng tìm — " + t.lyDo + (coLui ? " · chọn khung sớm nhất đã thấy đồ vật trên Dải 72 giờ" : "");
@@ -1744,7 +1759,9 @@
   var VIEC_VL = ["Lấy hàng ra khỏi ô", "Đặt hàng vào ô", "Xếp / dời hàng trong ô", "Chạm / lục hàng", "Khác"];
   function cumNV(ten, email, tt) { tt = tt || "Inactive"; return '<span class="hx-nv tt-' + e_(tt.toLowerCase()) + '" title="' + e_(tt === "Active" ? "Đang làm" : tt === "Pending" ? "Nghỉ thai sản" : "Đã nghỉ / không còn trong danh bạ") + '"><b>' + e_(ten) + '</b> [@' + e_(String(email || "").replace(/@.*$/, "")) + ' |' + e_(tt) + ']</span>'; }
   /* 21/10 user: «[@hamlx |Active]» thay «[hamlx@hasaki.vn|Active]», màu theo trạng thái giữ nguyên */
-  function oLsKho(LS, idx, ai) {
+  var SAO_GY = '<svg class="hx-sao" viewBox="0 0 24 24" aria-label="Máy gợi ý" role="img"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.2 6.1 20.4l1.3-6.5L2.5 9.3l6.6-.8z"/></svg>';
+  function oLsKho(LS, idx, ai, sao) {
+    sao = sao || []; var laSao = function (x) { return sao.length && [x.email, x.ma].some(function (k) { return k && sao.indexOf(String(k).toLowerCase()) >= 0; }); };
     if (!LS) return "";
     var pt = (LS.phuTrach || []).filter(function (n) { return !(ai && n.ma && ai.indexOf(n.ma) >= 0); })   // 13/10 luật không lặp: phụ trách kệ = người máy gợi ý thì bỏ
       .map(function (n) { return e_(n.ten) + (n.ma ? " (" + e_(n.ma) + ")" : ""); }).join(", ");
@@ -1758,7 +1775,7 @@
       return '<div role="button" tabindex="0" class="hx-lan' + (co ? "" : " khong") + (vl ? " vl" : "") + (ra ? " ra" : "") + '" data-lan="' + idx[j] + '"' + (co ? "" : ' aria-disabled="true" title="Chưa cắt được clip lượt này"') + '>' +
         '<span class="gio">' + e_(x.at.slice(8, 10) + "/" + x.at.slice(5, 7) + " " + x.at.slice(11, 16)) + '<small>trước ' + e_(x.truocGio < 24 ? soVN(x.truocGio) + " giờ" : soVN(Math.round(x.truocGio / 24 * 10) / 10) + " ngày") + '</small></span>' +
         /* 20/10 user: tên NV luôn «Họ tên [email|Trạng thái]», cả cụm tô màu theo trạng thái (Active xanh · Pending tím · Inactive xám) — tra theo email/mã ở máy chủ */
-        '<span class="ai">' + (x.email ? cumNV(x.ten, x.email, x.ttNv) : '<b>' + e_(x.ten) + '</b>' + (x.ma ? ' <span class="muted">' + e_(x.ma) + '</span>' : "")) +
+        '<span class="ai">' + (laSao(x) ? SAO_GY : "") + (x.email ? cumNV(x.ten, x.email, x.ttNv) : '<b>' + e_(x.ten) + '</b>' + (x.ma ? ' <span class="muted">' + e_(x.ma) + '</span>' : "")) +
           /* 23/10 user: clip máy cắt theo yêu cầu «Cắt thêm clip camera» → cờ ngay sau cụm tên NV (góc camera thêm ghi kèm kênh) */
           (x.them ? ' <span class="hx-tag warn" title="Máy cắt theo yêu cầu «Cắt thêm clip camera»' + (x.kenh ? " · " + e_(x.kenh) : "") + '">Thêm góc' + (x.phu && x.kenh ? " · " + e_(x.kenh) : "") + '</span>' : "") +
           (vl ? '<small><span class="hx-tag vl">Không qua hệ thống</span> ' + e_(x.loai) + (x.nguonVL === "may" ? " · máy soi camera" + (x.moTa ? " · " + e_(x.moTa.slice(0, 90)) + (x.moTa.length > 90 ? "…" : "") : "") : "") + '</small>'
@@ -2052,18 +2069,14 @@
           (ghiMay.length ? '<button type="button" id="qdINut" aria-haspopup="dialog" aria-label="Ghi chú của máy" title="Ghi chú của máy">i</button>' : "") +
           '</div>' + (themDs.length ? '<div class="hx-qd-ls hx-them-hang" hidden><div class="hx-qd-o"><div class="hx-lans">' + themDs.join("") + '</div></div></div>' : "") + '</div>') +
       (anhGN ? tp("anh", anhGN) : "") +
-      (LS ? tp("aitacdong", '<div class="hx-qd-ls">' + oLsKho(LS, lanIdx, ai) + '</div>') : "") +   // 19/10 (5) user: khôi phục danh sách ai tác động (chỉ bỏ dòng tiêu đề)
+      (LS ? tp("aitacdong", '<div class="hx-qd-ls">' + oLsKho(LS, lanIdx, ai, ((p.goiY && p.goiY.nv) || []).map(function (n) { return String(n.email || n.code || "").toLowerCase(); })) + '</div>') : "") +   // 19/10 (5) user: khôi phục danh sách ai tác động (chỉ bỏ dòng tiêu đề)
       /* 20/10 user: khối thông tin dưới Ảnh ghi nhận — Ngày ghi nhận / Vị trí / Ghi chú (có mới hiện) → Thuộc lỗi → Máy gợi ý (2 thành phần sẵn có, không nhân đôi) */
       tp("thongtin", '<div class="hx-qd-o hx-tb-mt"><span class="lbl">Ngày ghi nhận</span><div>' + e_(nvpChu) + '</div></div>' + (viTriChu ? '<div class="hx-qd-o hx-tb-mt"><span class="lbl">Vị trí</span><div>' + e_(viTriChu) + '</div></div>' : "") +
         (skuDs.length ? '<div class="hx-qd-o hx-tb-mt"><span class="lbl">SKU / Mã SP</span><div>' + e_(skuDs.join(" · ")) + '</div></div>' : "") +
         (moTa ? '<div class="hx-qd-o hx-tb-mt"><span class="lbl">Ghi chú</span><div class="hx-qd-mota" title="' + e_(boTag_(moTa)) + '">' + eTag_(moTa) + '</div></div>' : "")) +
       tp("tinhtrang", "") +   // 08/11: tình trạng đã vào nút (i)
       tp("loi", '<div class="hx-qd-o hx-tb-mt"><span class="lbl">Thuộc lỗi</span><div class="hx-qd-loi" title="' + e_(p.loi) + '">' + e_(p.loi) + '</div></div>') +
-      tp("goiy", '<div class="hx-qd-o hx-tb-mt"><span class="lbl">Máy gợi ý</span><div>' + (p.goiY && p.goiY.nv && p.goiY.nv.length && p.goiY.nv[0].email ? (function (ds) { /* 20/10 user: chỉ 1–2 người KHẢ NĂNG CAO NHẤT (máy chủ đã xếp: lượt gần giờ ghi nhận nhất, rồi nhiều lượt), còn lại gom «+N người khác» bấm xổ (popIn) */
-            var top = ds.slice(0, 2).map(function (n) { return cumNV(n.ten, n.email, n.ttNv); }).join(", ");
-            return ds.length > 2 ? top + ' <button type="button" class="hx-gy-them" aria-expanded="false">+' + (ds.length - 2) + ' người khác</button><div class="hx-gy-con" hidden>' + ds.slice(2).map(function (n) { return cumNV(n.ten, n.email, n.ttNv); }).join("<br>") + '</div>' : top; })(p.goiY.nv) : '<b>' + e_(ai || "Chưa có ứng viên") + '</b>') + (p.goiY ? ' <span class="hx-tag ' + (MUC_MAY[mucMay(p)] || ["", ""])[1] + '">' + e_(String((MUC_MAY[mucMay(p)] || [""])[0]).replace(/^Máy gợi ý · /, "")) + '</span>' : "") + '</div></div>' +
-        /* 13/10 user: đã có dữ liệu camera thì KHÔNG hiện đoạn «Vì sao» — ai/lúc nào/làm gì đã chạy thành phụ đề dưới clip từng người */
-        (!coCam && p.goiY && p.goiY.lyDo ? '<div class="hx-qd-o hx-tb-mt"><span class="lbl">Vì sao · luật ' + e_(p.goiY.luat || "") + '</span><div class="hx-visao" title="Bấm để xem hết">' + e_(ngayChu(p.goiY.lyDo)) + '</div></div>' : "")) +
+      /* 09/11 tối user «dẹp dòng Máy gợi ý / Vì sao · luật — chuyển thành sao vàng trước tên ở dòng Tác động WMS» (oLsKho tham số sao) */
       tp("quyetdinh", '<div class="hx-qd-ben">' +
         '<div class="hx-qd-form"><label class="hx-qd-o"><span class="lbl">Quyết định<span class="hx-dxl" hidden></span></span><select id="qdSel"><option value="">— chưa quyết —</option>' +
           ds.map(function (o) { return '<option' + (o === q.qd ? " selected" : "") + '>' + e_(o) + '</option>'; }).join("") + '</select></label>' +
@@ -2113,7 +2126,7 @@
     function xem(i) {
       var n = nguon[i], k = $id("qdKhung"); dangXem = null; k.hidden = false; k.classList.remove("trong"); var th0 = $id("qdTlHang"); if (th0) th0.hidden = true; var pd0 = $id("qdPd"); if (pd0) pd0.remove();
       /* không có hình camera: lý do nằm trong ô clip (29/10), dòng tình trạng không lặp */
-      if (!n) { k.innerHTML = trongCam ? '<div class="hx-qd-tt">' + e_(trongCam) + '</div>' : ""; k.hidden = !trongCam; k.classList.toggle("trong", !!trongCam); khoaAnhGN(); return; }
+      if (!n) { k.innerHTML = trongCam ? khungM11(trongCam, anhDs[0]) : ""; k.hidden = !trongCam; k.classList.toggle("trong", !!trongCam); khoaAnhGN(); return; }
       $id("mBody").querySelectorAll(".hx-qd-nguon [data-ng]").forEach(function (b) { b.classList.toggle("on", Number(b.dataset.ng) === i); });
       var thC = $id("mBody").querySelector("[data-themgoc]"); if (thC) thC.classList.toggle("on", !!n.them);
       $id("mBody").querySelectorAll(".hx-qd-nguon [data-vlmay]").forEach(function (b) { b.classList.toggle("on", Number(b.dataset.vlmay) === i); });   // nút «Ảnh ghi nhận» là bật/tắt riêng — không đụng
