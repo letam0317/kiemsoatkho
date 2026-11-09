@@ -66,7 +66,7 @@ window.GOC_DL=/\.pages\.dev$|^(localhost|127\.0\.0\.1)$/.test(location.hostname)
   try{
     var tb=null; try{ tb=new URLSearchParams(location.search).get('tab'); }catch(e){}
     if(tb!=='planogram' || /khoa=/.test(location.hash||'')) return;
-    var V='20261109c';   // PHẢI khớp s.src trong moHasakiPlanogram()
+    var V='20261109d';   // PHẢI khớp s.src trong moHasakiPlanogram()
     var l=document.createElement('link'); l.rel='preload'; l.as='script'; l.href='hasaki-planogram.js?v='+V; document.head.appendChild(l);
     var GAS='https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec';
     var khoa=''; try{ khoa=localStorage.getItem('tb-khoa')||(localStorage.getItem('tk-phien')?'tk:'+localStorage.getItem('tk-phien'):''); }catch(e){}   // 22/10 phiên tài khoản thay mã thiết bị
@@ -1061,6 +1061,16 @@ td.kpi-ten{white-space:nowrap;}
 /* điện thoại: Segmented chiếm trọn hàng đầu (3 nút chia đều), ô tháng xuống hàng dưới — không bị chèn mất chữ */
 @media (max-width:700px){ #kpiPanel .panel-head{flex-wrap:wrap; height:auto!important; padding:8px 12px!important;} .kpi-che{flex:1 1 100%;}
   .kpi-che .hp-whtab{flex:1 1 0; justify-content:center; padding:3px 6px!important; font-size:13px!important;} #kpiPanel #kpiThang{flex:1 1 100%; max-width:none;} .kpi-wrap .kpi-rank{width:22px!important; padding-right:4px!important;} }
+/* 09/11 chiều user «chỉ ở điện thoại: chốt cứng các tab Nhân viên · Quản lý · Tổng kết nhanh dưới cùng màn hình; bảng KPI lên đầu, 4 ô chỉ số bên dưới bảng».
+   .pane có animation/will-change transform ⇒ phần tử fixed bị nhốt — bỏ ở Tổng kết điện thoại. */
+@media (max-width:700px){
+  #pane-tong:not(.hidden){display:flex; flex-direction:column; animation:none!important; will-change:auto!important; transform:none!important; padding-bottom:calc(64px + env(safe-area-inset-bottom))!important;}
+  #pane-tong>#kpiBand{order:2; margin:0;} #pane-tong>#kpiPanel{order:1;}
+  #pane-tong #kpiChe{position:fixed; left:0; right:0; bottom:0; z-index:55; display:flex; margin:0; padding:0 2px env(safe-area-inset-bottom)!important; border-radius:0!important;
+    background:var(--surface)!important; border:0!important; border-top:1px solid var(--ad-chia,var(--border))!important; box-shadow:0 -4px 12px color-mix(in srgb,var(--text) 8%,transparent);}
+  #pane-tong #kpiChe .hp-whtab{min-height:48px; border-radius:0!important; font-size:12px!important;}
+  #pane-tong #kpiPanel .panel-head:has(#kpiChe){padding:8px 12px!important;}
+}
 /* NV ĐÃ NGHỈ VIỆC — "bay màu" hiện đại, không icon: mờ mạnh + nghiêng + gạch ngang MẢNH,
    phân biệt tức thì trên cả nền sáng/tối mà bảng vẫn sạch */
 .user-resigned{opacity:.45; font-style:italic;
@@ -1662,7 +1672,7 @@ body.side-anim:has(.wrap :is([class*="modal"],[id$="modal"],[id$="Modal"],#light
 <!-- 12/10 giao diện Ant Design: LIVE mặc định (user "theo ant design chưa live"); nạp ĐỒNG BỘ ở head để khung hình đầu đã đúng kiểu, tắt trong Cài đặt -->
 <script>window.AD_BI_DANH={"tonkho/kiemke":"kk","tonkho/batthuong":"kk#pane-htonbat"};   /* 15/10 link cũ → mục gộp «Tồn kho chính xác» */ window.AD_TEN='Audit Retail'; window.AD_CHUYEN={ten:'Audit Factory', app:'factory'};</script>   <!-- 13/10 user: Audit Hasaki → Audit Retail + nút sang Factory cuối thanh bên -->
 <script src="tien-ich.js?v=20261020a"></script><script src="anh-nv.js?v=20261105a"></script><!-- 05/11 ảnh đại diện NV toàn dự án: vòng tròn [data-anh-nv] tự thay ảnh --><!-- 20/10 tiện ích chung: esc/$id/hm/ngayVN — nạp TRƯỚC mọi mô-đun -->
-<script src="hasaki-giaodien-antd.js?v=20261109c"></script>
+<script src="hasaki-giaodien-antd.js?v=20261109d"></script>
 <script src="tai-khoan.js?v=20261109a"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
 <script src="tat-loc.js?v=20261109a" defer></script>
 <script src="loc-popup.js?v=20261108a" defer></script>
@@ -3950,7 +3960,7 @@ let _bdNap=null;
 function napModBD(){
   if(!_bdNap){
     _bdNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-baoduong.js?v=20261109c';
+      const s=document.createElement('script'); s.src='hasaki-baoduong.js?v=20261109d';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-baoduong.js'));
       document.body.appendChild(s);
     });
@@ -3990,7 +4000,7 @@ function moHasakiPlanogram(){
       '<div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:54%"></div>'+
       '<div class="sk sk-line" style="width:62%"></div></div>';
     _hpNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20261109c';   // khớp V ở <head>
+      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20261109d';   // khớp V ở <head>
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-planogram.js'));
       document.body.appendChild(s);
     });
@@ -4026,7 +4036,7 @@ let _hxNap=null;
 function napXm(){
   if(!_hxNap){
     _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261109c';
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261109d';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
       document.body.appendChild(s);
     });
