@@ -21,7 +21,11 @@
   var TRAN_CLIP = 150 * 1048576, TRAN_ANH = 30 * 1048576;
   var goc = function () { try { return localStorage.getItem("hx-api") || window.HX_API; } catch (e) { return window.HX_API; } };
   var phien = function () { try { return localStorage.getItem("hx-phien") || ""; } catch (e) { return ""; } };
-  var goiKhoa = function () { return { hxGm: "khoa", khoa: KHOA, lop: LOP, goc: goc(), phien: phien() }; };
+  var goiKhoa = function () { return { hxGm: "khoa", khoa: KHOA, lop: LOP, goc: goc(), phien: phien(), bd: window.__HX_BD || null }; };
+  /* 09/11 KHO DRIVE: mọi máy tắt ⇒ index.html hxThuDrive nạp ban-do.json (tên ẩn → id tệp Drive); không có tên trong bản đồ = 404 */
+  var urlMa = function (ten) { var bd = window.__HX_BD; if (bd) { var id = bd[ten]; return id ? location.origin + "/kho/" + encodeURIComponent(id) : "about:blank#khong-co"; }
+    return String(goc()).replace(/\/$/, "") + "/ma/" + ten + "?phien=" + encodeURIComponent(phien()); };
+  var layMa = function (ten) { return urlMa(ten).indexOf("about:") === 0 ? Promise.resolve(new Response(null, { status: 404 })) : fetch(urlMa(ten), { cache: "no-store", credentials: "omit" }); };
   var hoiCho = function (p, ms, chu) { return Promise.race([p, new Promise(function (o, h) { setTimeout(function () { h(new Error(chu)); }, ms); })]); };
   var loi = function (chu, ma) { var e = new Error(chu); e.ma = ma; return e; };
 
@@ -54,7 +58,7 @@
   }
   /* 27/10 lớp PC: tải trọn 1 tệp nhỏ theo tên ẩn → JSON (404 → null) */
   function taiJson(G, kk, khoa) {
-    return G.tenAn(kk, khoa).then(function (ten) { return fetch(String(goc()).replace(/\/$/, "") + "/ma/" + ten + "?phien=" + encodeURIComponent(phien()), { cache: "no-store", credentials: "omit" }); })
+    return G.tenAn(kk, khoa).then(layMa)
       .then(function (r) { if (r.status === 404) return null; if (!r.ok) throw loi("Máy dự phòng trả " + r.status, r.status);
         return G.docTron(r, khoa, kk, { tran: 8 * 1048576 }).then(function (x) { return new Blob(x.phan).text(); }).then(JSON.parse); });
   }
@@ -103,9 +107,7 @@
 
   /* ---- giải trong trang (đường lùi) ---- */
   function hoiMa(k) {
-    return sanSang().then(function () { return window.hxGiaiMa.tenAn(KK, k); }).then(function (ten) {
-      return fetch(String(goc()).replace(/\/$/, "") + "/ma/" + ten + "?phien=" + encodeURIComponent(phien()), { cache: "no-store", credentials: "omit" });
-    }).then(function (r) {
+    return sanSang().then(function () { return window.hxGiaiMa.tenAn(KK, k); }).then(layMa).then(function (r) {
       if (r.status === 401) { var e = loi("Phiên đăng nhập đã hết — đăng nhập lại.", 401); e.canDangNhap = 1; throw e; }
       if (r.status === 404) throw loi("Máy dự phòng chưa có tệp này (laptop chưa đẩy sang, hoặc khoá giải mã không khớp).", 404);
       if (!r.ok) throw loi("Máy dự phòng trả " + r.status, 502);
