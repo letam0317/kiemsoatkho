@@ -1076,7 +1076,7 @@ var CSS = [
 ".hp-modal{display:none;position:fixed;inset:0;background:rgba(17,24,39,.55);backdrop-filter:blur(6px);z-index:1200;align-items:center;justify-content:center;padding:18px;opacity:0;transition:opacity .22s;}",
 ".hp-modal.show{opacity:1;}",
 /* 09/11 mở thanh bên vị trí TỪ pop-up Tra cứu nhân viên (#hpNkModal đứng sau trong DOM) ⇒ thanh bên phải nổi trên pop-up; đóng thanh bên = về lại pop-up */
-"body:has(#hpNkModal.show) #hpVtModal{z-index:1201;}",
+"body:has(#hpNkModal.show) #hpVtModal,body:has(#hpAiModal.show) #hpVtModal{z-index:1201;}",   /* 09/11 tối: cả pop-up AI xét duyệt — bấm mã vị trí ⇒ thanh bên NỔI TRÊN pop-up, đóng ⇒ về đúng dòng */
 ".hp-modalbox{background:var(--surface,#fff);color:var(--text,#1f2937);border-radius:18px;width:min(1080px,96vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(16,24,40,.3);transform:translateY(12px) scale(.985);opacity:.6;transition:transform .26s,opacity .26s;}",
 ".hp-modal.show .hp-modalbox{transform:none;opacity:1;}",
 ".hp-modalhd{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border,#e8ecf1);gap:10px;}",
@@ -1307,14 +1307,16 @@ var CSS = [
 "#pane-planogram table.mbcard td.ai-model,.hp-modal table.mbcard td.ai-model{display:none;}",
 /* 09/11 chiều user (screenshot-1794213429503) «làm gọn thì lộn xộn, không theo luật, không theo thứ tự»: thẻ AI xét duyệt theo LUẬT THANH BÊN —
    hàng 1 mã vị trí · kết luận; lý do; rồi từng hàng NHÃN CỘT TRÁI CỐ ĐỊNH: Ngày → Người báo cáo → Ảnh báo cáo; nút Mở ↗ · Từ chối chốt hàng cuối bên phải. Model ẩn. */
-"#hpAiBody table.ai-the tr{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center}",
-"#hpAiBody table.ai-the td.mb-hd{order:1;grid-column:1}#hpAiBody table.ai-the td.mb-tag{order:2;grid-column:2;margin:0;text-align:right!important}",
+"#hpAiBody table.ai-the tr{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 8px;align-items:center;padding:10px 12px!important}",
+/* 09/11 tối user «bỏ chữ Ngày / Người / Ảnh báo cáo; gọn khít dữ liệu, không nhiều khoảng trống»: hàng 1 mã · kết luận; lý do; hàng cuối ảnh · ngày · tên · nút */
+"#hpAiBody table.ai-the td.mb-hd{order:1;grid-column:1/3;grid-row:1;justify-self:start}#hpAiBody table.ai-the td.mb-tag{order:2;grid-column:3;grid-row:1;margin:0;text-align:right!important}",
 "#hpAiBody table.ai-the td.ailydo{order:3;grid-column:1/-1}",
-"#hpAiBody table.ai-the td[data-lb]{grid-column:1/-1;display:grid!important;grid-template-columns:104px minmax(0,1fr);align-items:center;gap:8px;font-size:13px;color:var(--text)}",
-"#hpAiBody table.ai-the td[data-lb]::before{content:attr(data-lb);font-size:13px;font-weight:400;color:var(--muted)}",
-"#hpAiBody table.ai-the td.ai-ngay{order:4}#hpAiBody table.ai-the td.ai-nv{order:5}#hpAiBody table.ai-the td.ai-anh{order:6}#hpAiBody table.ai-the td.ai-anh>.hp-thumbs{justify-self:start}",
+"#hpAiBody table.ai-the td[data-lb]::before{content:none!important}#hpAiBody table.ai-the td[data-lb]{white-space:nowrap!important;font-size:12px;color:var(--muted)}",
+"#hpAiBody table.ai-the td.ai-ngay{order:1;grid-column:1/3;grid-row:1;justify-self:end}",
+"#hpAiBody table.ai-the td.ai-anh{order:4;grid-column:1}#hpAiBody table.ai-the td.ai-nv{order:6;grid-column:2;overflow:hidden;text-overflow:ellipsis;color:var(--text)}",
+"#hpAiBody table.ai-the td.ai-anh .hp-thumbs img{width:32px;height:32px}#hpAiBody table.ai-the td.ai-anh .hp-thumbs .more{min-height:32px;height:32px;padding:0 6px}",
 "#hpAiBody table.ai-the td.ai-model{display:none!important}",
-"#hpAiBody table.ai-the td.mb-act{order:7;grid-column:1/-1;display:flex!important;justify-content:flex-end;align-items:center;gap:8px;margin:0}",
+"#hpAiBody table.ai-the td.mb-act{order:7;grid-column:3;display:flex!important;justify-content:flex-end;align-items:center;gap:6px;margin:0}",
 "#hpAiBody table.ai-the td.mb-act>a,#hpAiBody table.ai-the td.mb-act>.hsk-nut{box-sizing:border-box;height:34px;min-height:34px!important;padding:0 14px!important;font-size:12px!important;border-radius:6px!important}",
 /* Khung bảng: bỏ cuộn-trong-cuộn. Ngón tay kéo trang mà trúng khung con là bẫy chạm kinh điển;
    thẻ chảy theo trang, số dòng đã bị chặn bằng CAP nên không có danh sách dài vô hạn. */
