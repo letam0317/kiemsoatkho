@@ -23,3 +23,16 @@
 .hsk-nut.nho{min-height:30px;padding:0 10px;font-size:13px}
 .hsk-nut[disabled],.hsk-nut.tat{opacity:.5;cursor:not-allowed;pointer-events:none}
 @media (max-width:560px){.hsk-nut,.hsk-nut.nho{min-height:44px;padding:0 14px;font-size:14px}}
+
+/* ===== 09/11 THANH TAB THANH BÊN PHẢI (vỏ chung #hpVtModal) — Bảo dưỡng + Planogram: «Tổng quan · Làm gì · Báo cáo ở đâu · Tài sản · Lịch sử».
+   Chuyển từ hasaki-baoduong.js (08/11 hệ H05) để Planogram có thanh tab ngay, không chờ nạp module Bảo dưỡng (không «bản tạm rồi nhảy»). */
+#hpVtBody .bd-tabben{position:sticky;top:-14px;z-index:4;display:flex;margin:-14px -20px 12px;padding:4px 14px 0;background:var(--surface);border-bottom:1px solid var(--ad-chia,var(--border));overflow-x:auto;scrollbar-width:none}
+#hpVtBody .bd-tabben::-webkit-scrollbar{display:none}
+#hpVtBody .bd-tabben .hp-whtab{position:relative;flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 10px;margin:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:var(--muted);font:inherit;font-size:13px;font-weight:400;cursor:pointer}
+#hpVtBody .bd-tabben .hp-whtab::before{display:none!important}
+#hpVtBody .bd-tabben .hp-whtab:hover{color:var(--text)}
+#hpVtBody .bd-tabben .hp-whtab::after{content:'';position:absolute;left:10px;right:10px;bottom:-1px;height:2px;border-radius:2px;background:var(--accent);transform:scaleX(0);transition:transform .2s var(--ez-apple,ease)}
+#hpVtBody .bd-tabben .hp-whtab.active{color:var(--accent)}
+#hpVtBody .bd-tabben .hp-whtab.active::after{transform:none}
+#hpVtBody .bd-tab-so{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--surface2);color:var(--muted);font-size:11px;line-height:18px;text-align:center}
+#hpVtBody .bd-tab-than{animation:fadeUp .16s var(--ez-apple,ease) both}
