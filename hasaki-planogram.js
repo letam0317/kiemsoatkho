@@ -1140,7 +1140,8 @@ var CSS = [
 ".hp-vtai{font-weight:600;font-size:12.5px;white-space:nowrap}.hp-vtphu{font-size:12.5px;font-weight:400;color:var(--muted);white-space:nowrap}",
 /* 09/11 user: AI xét duyệt — nhãn trái, kết quả phải CÙNG HÀNG (cấm xuống dòng); lý do AI xuống ngay dưới, bắt đầu từ cột TRÁI, tối đa 2 dòng,
    «xem thêm / thu gọn» liền sau chữ (không thành dòng 3) */
-"#hpVtBody .hp-vtrow .hp-vtrow-them{grid-column:1 / -1}",
+"#hpVtBody .hp-vtrow.co-sau{border-bottom:0;padding-bottom:0}#hpVtBody .hp-vtrow-sau{display:block;padding:4px 13px 8px;border-bottom:1px solid var(--border);font-size:12.5px}" +
+  "#hpVtBody .hp-vtrow-sau:last-child{border-bottom:0}#hpVtBody .hp-vtrow-sau>.hp-vtrow-them{display:block;min-width:0}",
 "#hpVtBody .hp-vtrow-them .ailydo{position:relative;margin-top:2px!important}#hpVtBody .hp-vtrow-them .ailydo .hp-lydo{-webkit-line-clamp:2}" +
   "#hpVtBody .hp-vtrow-them .ailydo:not(.mo)::after{position:absolute;right:0;bottom:0;margin:0;padding-left:18px;line-height:1.55;" +
   "background:linear-gradient(90deg,transparent,var(--surface) 16px)}" +
@@ -1149,9 +1150,11 @@ var CSS = [
 /* 09/11 user «Người báo cáo / AI xét duyệt / Ảnh báo cáo thẳng cột, chốt theo Phụ trách»: nhãn + giá trị thụt đúng bằng mép chữ trong thẻ Phụ trách (viền 1 + đệm 12) */
 "#hpVtBody .hp-vtrow{padding-left:13px;padding-right:13px}",
 /* 09/11 user «bấm +12 thì thiết kế cách hiển thị — CẤM cuộn sang phải»: đã mở hết ⇒ lưới xuống dòng, 5 ảnh / hàng cùng cỡ */
-"@media(max-width:560px){#hpVtBody .hp-vtrow.anh .hp-vtthumbs.het{flex-wrap:wrap}}",
-"@media(max-width:560px){#hpVtBody .hp-vtrow.anh>div{min-width:0}#hpVtBody .hp-vtrow.anh .hp-vtthumbs{flex-wrap:nowrap;gap:6px;width:100%}" +
-  "#hpVtBody .hp-vtrow.anh .hp-vtthumbs>*{flex:0 0 calc((100% - 24px) / 5);width:calc((100% - 24px) / 5);min-width:0;height:auto;aspect-ratio:1;box-sizing:border-box}}",
+"#hpVtBody .hp-vtrow.anh .hp-vtthumbs.het{flex-wrap:wrap}",
+"#hpVtBody .hp-vtrow.anh>div{min-width:0}#hpVtBody .hp-vtrow.anh .hp-vtthumbs{flex-wrap:nowrap;gap:6px}" +
+  "#hpVtBody .hp-vtrow.anh .hp-vtthumbs>img,#hpVtBody .hp-vtrow.anh .hp-vtthumbs>.hp-vtmore{flex:0 0 auto;" +
+  "width:calc((100vw - 96px) / 5)!important;height:calc((100vw - 96px) / 5)!important;max-width:56px;max-height:56px;min-width:0;box-sizing:border-box;object-fit:cover}" +
+  "#hpVtBody .hp-vtmore{padding:0;white-space:nowrap;font-size:11px;line-height:1}",
 /* 09/11 tab Lịch sử của thanh bên Planogram: mỗi lượt báo cáo 1 dòng — ngày · giờ · người (ảnh + tên đủ, 1 dòng) */
 ".hp-vtls{display:flex;flex-direction:column}.hp-vtls-d{display:grid;grid-template-columns:96px 48px minmax(0,1fr);align-items:center;gap:8px;min-height:40px;border-bottom:1px solid var(--ad-chia,var(--border));font-size:12.5px}",
 ".hp-vtls-d:last-child{border-bottom:0}.hp-vtls-ng{display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}" +
@@ -4206,8 +4209,9 @@ function renderVt(){
   var than = "";
   if (tab === "tq"){
     than = '<div class="hp-vthistrow">' + hist + '</div>' + '<div class="hp-vtduo hp-vtduo-dau">' + cardPt + cardBc + '</div>' +
-      rows.map(function(x){ return '<div class="hp-vtrow' + (x[2] ? " " + x[2] : "") + '"><label>' + x[0] + '</label><div>' + x[1] + '</div>' +
-        (x[3] ? '<div class="hp-vtrow-them">' + x[3] + '</div>' : "") + '</div>'; }).join("");
+      /* 09/11 tối user (ảnh điện thoại: lý do AI ĐÈ lên «Đạt · 100»): lý do là khối RIÊNG nằm SAU hàng lưới — không phụ thuộc trình duyệt xếp ô lưới */
+      rows.map(function(x){ return '<div class="hp-vtrow' + (x[2] ? " " + x[2] : "") + (x[3] ? " co-sau" : "") + '"><label>' + x[0] + '</label><div>' + x[1] + '</div></div>' +
+        (x[3] ? '<div class="hp-vtrow-sau"><div class="hp-vtrow-them">' + x[3] + '</div></div>' : ""); }).join("");
   } else if (tab === "ts"){
     var tam = document.createElement("div"); tam.innerHTML = theTaiSan(loc); var su = tam.querySelector("summary"); if (su) su.remove(); var dt0 = tam.querySelector("details"); if (dt0) dt0.setAttribute("open", "");
     than = tam.innerHTML || '<div class="ln mut">Chưa có sổ tài sản tại vị trí này</div>';
