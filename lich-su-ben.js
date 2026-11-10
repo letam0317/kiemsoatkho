@@ -29,10 +29,17 @@
   function laAnh(o) { return o.che === "anh"; }
   function khop(o, l) { var a = laAnh(o); return (a || !o.loc.tu || l.ngay >= o.loc.tu) && (a || !o.loc.den || l.ngay <= o.loc.den) && (!o.loc.ng || l.ten === o.loc.ng); }
   function dangLoc(o) { return !!(o.loc.ng || (laAnh(o) ? o.loc.vt : o.loc.tu || o.loc.den)); }
-  function maCon(p, l, k) { var c = p && p.con ? p.con(k, l.a.length) : ""; var m = c && typeof c === "object" ? String(c.ma || "") : ""; return /\s/.test(m) ? "" : m; }   // ảnh ngoài 16 ô chuẩn («… (Ảnh 17/24)») không thuộc ô nào
-  /* chỉ số ảnh của 1 lượt khớp mã vị trí đang lọc (không lọc ⇒ mọi ảnh) */
+  /* 10/11 tối user duyệt mẫu «bộ lọc Mục»: mỗi ảnh thuộc 1 MỤC = vị trí / đối tượng ĐÚNG như lịch planogram của yêu cầu
+     (A1: 16 mâm F0-A1-…-04-01…; A8: «Tổng quan trạm đóng gói», «Bàn làm việc - …»). Nguồn: l.khung[k] (Bảo dưỡng — tên khung từng ảnh)
+     → p.muc[k] (Planogram — khung lịch theo thứ tự ảnh) → p.con(k) (dự phòng cũ). */
+  function mucCua(p, l, k) {
+    if (l.khung) return String(l.khung[k] || "");
+    if (p && p.muc && k < p.muc.length) return String(p.muc[k] || "");
+    var c = p && p.con ? p.con(k, l.a.length) : ""; if (c && typeof c === "object") { var m = String(c.ma || ""); return /\s/.test(m) ? "" : m; } return String(c || "");
+  }
+  /* chỉ số ảnh của 1 lượt khớp mục đang lọc (không lọc ⇒ mọi ảnh) */
   function anhVt(p, o, l) { var ds = (l.a || []).map(function (u, k) { return k; }); if (!laAnh(o) || !o.loc.vt) return ds;
-    return ds.filter(function (k) { return maCon(p, l, k) === o.loc.vt; }); }
+    return ds.filter(function (k) { return mucCua(p, l, k) === o.loc.vt; }); }
 
   var CSS = [
     ".lsb{position:relative}",
@@ -43,7 +50,13 @@
     "html body .lsb .lsb-hd .hp-whtab,html body .lsb .lsb-hd .btn-filter{display:inline-flex!important;align-items:center;justify-content:center;gap:4px;width:100%;min-width:0;min-height:0!important;height:auto!important;margin:0!important;padding:2px!important;" +
       "border:1px solid var(--border)!important;border-radius:8px!important;background:var(--surface)!important;box-shadow:none!important;color:var(--text)!important;font:inherit;font-size:13px!important;font-weight:400!important;line-height:20px!important;cursor:pointer;white-space:nowrap}",
     "html body .lsb .lsb-hd .hp-whtab::before,html body .lsb .lsb-hd .hp-whtab::after,html body .lsb .lsb-hd .btn-filter::after{display:none!important}",   /* mẫu chốt: Bộ lọc không mũi tên — ô bằng các ô kia */
-    "html body .lsb .lsb-hd .hp-whtab.active{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 10%,var(--surface))!important;color:var(--accent)!important;font-weight:600!important}",
+    /* 10/11 tối (clip 18.54.51, đo 40,5 px): ô đang chọn in ĐẬM làm ô rộng ra ⇒ 4 ô (bằng ô rộng nhất) co giãn, cả hàng căn giữa trượt mỗi lần đổi mục.
+       Đậm giả bằng bóng chữ (không đổi bề rộng chữ) + ô thứ 4 luôn có (không quyền «+ Thêm» thì ô giữ chỗ ẩn) ⇒ hàng đứng yên */
+    "html body .lsb .lsb-hd .hp-whtab.active{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 10%,var(--surface))!important;color:var(--accent)!important;font-weight:400!important;text-shadow:0 0 .6px currentColor}",
+    ".lsb-hd .lsb-giu{visibility:hidden;pointer-events:none}",
+    ".cs-list .cs-opt.bo{color:var(--muted);text-decoration:line-through}",
+    /* ảnh «Trước» mẫu 10/11 tối: danh sách Mục (16 dòng) bị LẬT LÊN, chui dưới thanh tab ⇒ trong ngăn kéo luôn mở XUỐNG, cuộn trong (TK-05) */
+    "html body .lsb-keo .cs-list{top:calc(100% + 4px)!important;bottom:auto!important;max-height:300px!important;overflow:auto!important}",   /* mục lịch đã bỏ (như người nghỉ việc) */
     "html body .lsb .lsb-hd .hp-whtab[disabled]{opacity:.5;cursor:not-allowed}",
     "html body .lsb .lsb-hd .hp-whtab b{margin:0;padding:0 5px;border-radius:8px;font-size:11px;line-height:16px;font-weight:400;background:var(--ad-nen2,var(--surface2));color:var(--muted)}",
     "html body .lsb .lsb-hd .hp-whtab.active b{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface))}",
@@ -109,7 +122,8 @@
     var lt = luotTrong(p), nA = lt.filter(function (l) { return khop(o, l) && (!laAnh(o) || !o.loc.vt || anhVt(p, o, l).length); }).length, sc = p.sc || [], nS = sc.length;
     var seg = [["tat", "Tất cả", nA + nS], ["anh", "Ảnh", nA], ["sc", "Sửa chữa", nS]];
     var dang = dangLoc(o), laSc = o.che === "sc";
-    var nut = laSc ? (p.coThem ? '<span class="bl-cum"><button type="button" class="btn-filter bl-moi lsb-them' + (o.keo === "them" ? " mo" : "") + '" data-lsb-keo="them" aria-expanded="' + (o.keo === "them") + '">+ Thêm</button></span>' : "")
+    var nut = laSc ? (p.coThem ? '<span class="bl-cum"><button type="button" class="btn-filter bl-moi lsb-them' + (o.keo === "them" ? " mo" : "") + '" data-lsb-keo="them" aria-expanded="' + (o.keo === "them") + '">+ Thêm</button></span>'
+        : '<span class="bl-cum lsb-giu" aria-hidden="true"><span class="btn-filter bl-moi">Bộ lọc</span></span>')
       : '<span class="bl-cum' + (dang ? " dang" : "") + '"><button type="button" class="btn-filter bl-moi' + (o.keo === "loc" ? " mo" : "") + '" data-lsb-keo="loc" aria-expanded="' + (o.keo === "loc") + '">' +
         (dang ? "Đang lọc" : "Bộ lọc") + "</button>" + (dang ? '<button type="button" class="hsk-nut bl-xoa x-do" data-lsb-boloc aria-label="Bỏ lọc" title="Bỏ lọc">×</button>' : "") + "</span>";
     var h = '<div class="panel-head lsb-hd"><span class="lsb-seg" role="tablist" aria-label="Lịch sử">' + seg.map(function (s) {
@@ -157,11 +171,13 @@
     var ng = {}; luotTrong(p).forEach(function (l) { if (l.ten) ng[l.ten] = (ng[l.ten] || 0) + 1; });
     var ds = Object.keys(ng).sort(function (a, b) { return ng[b] - ng[a]; });
     var dau = '<div><span class="nh">Ngày</span><div class="date-filter lsb-ngay"></div></div>';
-    if (laAnh(o)) {   // mục Ảnh: Vị trí (mã ô con có ảnh báo cáo) thay cho Ngày
-      var vt = {}, th = []; luotTrong(p).forEach(function (l) { (l.a || []).forEach(function (u, k) { var m = maCon(p, l, k); if (!m) return; if (!vt[m]) { vt[m] = 0; th.push([k, m]); } vt[m]++; }); });
-      th.sort(function (a, b) { return a[0] - b[0] || (a[1] < b[1] ? -1 : 1); });
-      dau = '<div><span class="nh">Vị trí</span><select class="lsb-vt"><option value="">Tất cả vị trí</option>' + th.map(function (x) {
-        return "<option" + (x[1] === o.loc.vt ? " selected" : "") + ' value="' + esc(x[1]) + '">' + esc(x[1].replace(/^F0-/, "")) + " (" + vt[x[1]] + " ảnh)</option>"; }).join("") + "</select></div>";
+    if (laAnh(o)) {   // mục Ảnh: «Mục» thay cho Ngày — đủ mục của lịch (kể cả mục chưa có ảnh); mục chỉ còn trong ảnh cũ (lịch đã bỏ) = xám gạch ngang
+      var dang = (p.muc || []).filter(Boolean), co = {}, cu = []; dang.forEach(function (m) { co[m] = 1; });
+      luotTrong(p).forEach(function (l) { (l.a || []).forEach(function (u, k) { var m = mucCua(p, l, k); if (m && !co[m]) { co[m] = 1; cu.push(m); } }); });
+      if (!dang.length) { dang = cu; cu = []; }   // chưa có lịch ⇒ mục lấy từ ảnh, không gạch
+      var opt = function (m, bo) { return "<option" + (bo ? ' class="bo"' : "") + (m === o.loc.vt ? " selected" : "") + ' value="' + esc(m) + '">' + esc(m.replace(/^F0-/, "")) + "</option>"; };
+      dau = '<div><span class="nh">Mục</span><select class="lsb-vt"><option value="">Tất cả mục</option>' + dang.map(function (m) { return opt(m, false); }).join("") +
+        cu.map(function (m) { return opt(m, true); }).join("") + "</select></div>";
     }
     return '<div class="lsb-keo loc" role="dialog" aria-label="Bộ lọc lịch sử">' + dau +
       '<div><span class="nh">Người báo cáo</span><select class="lsb-ng"><option value="">Tất cả người báo cáo</option>' + ds.map(function (t) {
@@ -184,10 +200,12 @@
   function sauChen(root) {
     var k = root.getAttribute("data-lsb"), p = P[k], o = st(k); if (!p) return;
     root.__lsbDa = root.firstElementChild;   // đánh dấu đã gắn — MutationObserver không gắn lần 2
+    lay(root);   // thanh bên vẽ lại cả khung (dữ liệu về / đổi tab) ⇒ ảnh đã hiện lấy lại từ kho
     /* 10/11 tối user (clip 17.23.35) «ảnh bị giật khi chọn 1 mục»: mỗi lần đổi mục / lọc là vẽ lại ⇒ ô ảnh về ô chờ rồi tải lại.
        Ảnh nào đã hiện thì gắn lại NGAY nguồn đã tải (bộ nhớ trình duyệt, 0 lượt mạng), bỏ khỏi hàng tải lười */
     [].forEach.call(root.querySelectorAll(".lsb-o img"), function (im) { var u = DA_TAI[im.getAttribute("data-goc") || im.getAttribute("src")];
-      if (!u || im.getAttribute("src") === u) return; im.classList.remove("hp-lz"); im.removeAttribute("data-src"); im.src = u; });
+      if (!u || im.getAttribute("src") === u || (im.complete && im.naturalWidth > 2 && !im.classList.contains("hp-lz"))) return;   // ảnh đang hiện (vừa lấy từ kho) — không gán lại
+      im.classList.remove("hp-lz"); im.removeAttribute("data-src"); im.src = u; });
     /* «ô nhập ở + Thêm bị che mất»: danh sách dưới trống thì ngăn kéo nổi thò ra ngoài khung, cuộn là chui dưới thanh tab dính đầu ⇒
        khung giữ đủ cao bằng ngăn kéo đang mở (chỉ kéo dài đáy, nội dung không xê dịch) */
     var keo = root.querySelector(".lsb-keo"); root.style.minHeight = keo ? (keo.offsetTop + keo.offsetHeight + 12) + "px" : "";
@@ -217,9 +235,22 @@
     if (o.cuon) { var d = root.querySelector('[data-lsb-scid="' + (window.CSS && CSS.escape ? CSS.escape(o.cuon) : o.cuon) + '"]'); if (d) d.scrollIntoView({ block: "center" }); o.cuon = ""; }
     if (p.sauVe) try { p.sauVe(root); } catch (e) {}
   }
+  /* KHO ẢNH ĐÃ HIỆN (theo khoá ảnh gốc): đổi mục sang Sửa chữa là lịch bị gỡ hết — quay lại vẫn lấy đúng phần tử ảnh cũ (0 lượt tải).
+     Giữ tối đa 400 ảnh (~ 7 vị trí × 60 ngày), quá thì bỏ ảnh cũ nhất. */
+  var KHO = {}, KHO_TT = [];
+  function khoaO(im) { return im.getAttribute("data-goc") || im.getAttribute("src") || ""; }
+  /* mỗi khoá giữ MỌI phần tử (nhiều ô cùng 1 ảnh gốc — vd ngày lặp ảnh — đều được giữ) */
+  function cat(root) { [].forEach.call(root.querySelectorAll(".lsb-o img"), function (im) { var x = khoaO(im);
+    if (!x || !im.complete || im.naturalWidth < 3 || im.classList.contains("hp-lz")) return; khoCat(x, im); }); }
+  function khoCat(x, im) { if (!KHO[x]) { KHO[x] = []; KHO_TT.push(x); if (KHO_TT.length > 400) delete KHO[KHO_TT.shift()]; } if (KHO[x].indexOf(im) < 0) KHO[x].push(im); }
+  function lay(root) { [].forEach.call(root.querySelectorAll(".lsb-o img"), function (im) { var x = khoaO(im), ds = KHO[x] || [], c = null;
+    for (var j = 0; j < ds.length; j++) if (ds[j] !== im && !ds[j].isConnected) { c = ds[j]; break; } if (!c) return;
+    [].forEach.call(im.attributes, function (a) { if (a.name !== "src" && a.name !== "data-src" && a.name !== "class") c.setAttribute(a.name, a.value); });
+    c.className = im.className.replace(/\bhp-lz\b/, "").trim(); c.__lz = 1; im.replaceWith(c); }); }
   function veLai(k) {
     var root = document.querySelector('.lsb[data-lsb="' + (window.CSS && CSS.escape ? CSS.escape(k) : k) + '"]'), p = P[k]; if (!root || !p) return;
-    root.innerHTML = than(p, st(k)); sauChen(root);
+    /* chống nháy: ảnh ô lịch đã hiện ⇒ chuyển NGUYÊN phần tử sang ô mới cùng ảnh (0 lượt tải, không trắng 1 nhịp) */
+    cat(root); root.innerHTML = than(p, st(k)); lay(root); sauChen(root);
   }
   /* host chèn HTML xong thì gọi (hoặc để MutationObserver tự bắt) */
   function gan(scope) { [].forEach.call((scope || document).querySelectorAll(".lsb[data-lsb]"), function (r) { if (r.__lsbDa && r.__lsbDa === r.firstElementChild) return; sauChen(r); }); }
@@ -228,6 +259,41 @@
   var DA_TAI = {};
   document.addEventListener("load", function (e) { var im = e.target; if (!im || im.tagName !== "IMG" || !im.closest || !im.closest(".lsb-o") || im.classList.contains("hp-lz") || im.naturalWidth < 3) return;
     DA_TAI[im.getAttribute("data-goc") || im.getAttribute("src")] = im.currentSrc || im.src; }, true);
+  /* 10/11 tối user duyệt mẫu «chống nháy» (clip 18.54.51 — đo: 1 lượt bấm qua lại = hiệu ứng hiện dần chạy lại 8 lần, 207 lượt ảnh tải lại):
+     thanh bên #hpVtModal (Planogram + Bảo dưỡng) mỗi lần dữ liệu về / đổi mục là VẼ LẠI cả thân ⇒
+     ① vẽ lại CÙNG tab: tắt hiệu ứng fadeUp / hp-in của khung mới (chỉ hiện dần khi ĐỔI TAB — luật TK-16);
+     ② ảnh đã hiện ở khung cũ: chuyển NGUYÊN phần tử ảnh sang chỗ ảnh cùng nguồn ở khung mới (0 lượt tải, không trắng 1 nhịp).
+     Bắt bằng MutationObserver (chạy trước khi trình duyệt vẽ khung) — không phải sửa từng chỗ vẽ của mô-đun. */
+  (function () {
+    /* CHỈ ảnh báo cáo (ô lịch / lưới ảnh Tổng quan — có data-goc hoặc nằm trong ô lịch). Ảnh đại diện (anh-nv.js tự chèn lại khi mất ảnh)
+       KHÔNG đụng: đổi qua lại với bộ đó = vòng lặp vô tận làm treo trang (phiên new-folder-5b bắt được 10/11 tối) */
+    var khoaAnh = function (im) { if (im.closest("[data-anh-nv]")) return ""; return im.getAttribute("data-goc") || (im.closest(".lsb-o") ? im.getAttribute("src") || "" : ""); };
+    var tabCua = function (than) { return than ? (than.getAttribute("data-tab-than") || "") : ""; };
+    var tabTruoc = null;
+    function xuLy(ms) {
+      var cu = {}, moi = [], thanMoi = null;
+      ms.forEach(function (m) {
+        [].forEach.call(m.removedNodes, function (n) { if (n.nodeType !== 1) return; var ds = n.tagName === "IMG" ? [n] : n.querySelectorAll("img");
+          [].forEach.call(ds, function (im) { var k = khoaAnh(im); if (k && im.complete && im.naturalWidth > 2 && !im.classList.contains("hp-lz")) { if (!cu[k]) cu[k] = im; if (im.closest(".lsb-o")) khoCat(k, im); } }); });
+        [].forEach.call(m.addedNodes, function (n) { if (n.nodeType !== 1) return; var ds = n.tagName === "IMG" ? [n] : n.querySelectorAll("img"); [].push.apply(moi, ds);
+          var t = n.matches && n.matches(".bd-tab-than") ? n : n.querySelector && n.querySelector(".bd-tab-than"); if (t) thanMoi = t; });
+      });
+      if (thanMoi) { var tA = document.querySelector("#hpVtModal .bd-tabben .hp-whtab.active");
+        var tb = tabCua(thanMoi) || (tA ? tA.getAttribute("data-tab") || tA.getAttribute("data-ptab") || "" : "");
+        if (tb && tb === tabTruoc) { thanMoi.style.animation = "none"; [].forEach.call(thanMoi.querySelectorAll(".hp-vtcard"), function (c) { c.style.animation = "none"; }); }
+        tabTruoc = tb; }
+      moi.forEach(function (im) { var k = khoaAnh(im), c = cu[k]; if (!c || im === c || !im.isConnected) return; delete cu[k];
+        [].forEach.call(im.attributes, function (a) { if (a.name !== "src" && a.name !== "data-src" && a.name !== "class") c.setAttribute(a.name, a.value); });
+        c.className = im.className.replace(/\bhp-lz\b/, "").trim(); c.__lz = 1; im.replaceWith(c); });
+      if (QS) QS.takeRecords();   // thay đổi do chính bộ này gây ra: bỏ, không xử lý lại
+    }
+    var QS = null;
+    function theoDoi() { var m = document.getElementById("hpVtModal"); if (!m) return false;
+      QS = new MutationObserver(xuLy); QS.observe(m, { childList: true, subtree: true }); return true; }
+    if (!theoDoi()) { var mo = new MutationObserver(function () { if (theoDoi()) mo.disconnect(); }); mo.observe(document.documentElement, { childList: true, subtree: true }); }
+    /* đóng thanh bên ⇒ lần mở sau là «đổi tab» (được hiện dần) */
+    document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("#hpVtModal .x-do,#hpVtClose")) tabTruoc = null; }, true);
+  })();
   /* ---------- sự kiện uỷ quyền ---------- */
   function dongKeo(k) { var o = st(k); if (!o.keo) return; o.keo = ""; veLai(k); }
   document.addEventListener("click", function (e) {
@@ -278,7 +344,9 @@
      moNgay(o): mở từ chip ngày — dải = mọi ảnh của đúng ngày (mọi lượt), không chữ dưới ô.
      o = { ten, ma, luot:[{id, ngay, gio, ten, email, a:[url], urlLui?:fn, thumb?:fn, con?:fn(i,n)}], id, i, veAnh(url) → html, sauVe() } */
   function anhMuc(o, l, k) {
-    var n = l.a.length, u = l.a[k], c = l.khung ? l.khung[k] || "" : o.con ? o.con(k, n) : "", laO = c && typeof c === "object";   // con → chuỗi tên khung hoặc {ten, ma} (ô con có mã riêng)
+    var n = l.a.length, u = l.a[k], mk = !l.khung && o.muc && k < o.muc.length ? String(o.muc[k] || "") : "";
+    /* tên trong pop-up = đúng MỤC của lịch (A8: «Tổng quan trạm đóng gói»…, cùng danh sách bộ lọc); mục là mã ô con (A1) thì giữ cách gọi Kệ · dãy · Tầng · Mâm */
+    var c = l.khung ? l.khung[k] || "" : mk && !/^F0-/.test(mk) ? mk : o.con ? o.con(k, n) : "", laO = c && typeof c === "object";   // con → chuỗi tên khung hoặc {ten, ma} (ô con có mã riêng)
     return { type: "img", url: (o.goc && o.goc(u)) || u, urlLui: o.lui ? o.lui(u) : "", thumb: o.nho ? o.nho(u) : "", ten: o.ten || "", ma: laO ? c.ma : o.ma,
       tieu: laO ? c.ten : c, nguoi: l.ten ? String(l.ten).trim().split(/\s+/).slice(-2).join(" ") : "", tenDu: l.ten || "", email: l.email || "",
       luc: dm(l.ngay) + (l.gio ? " lúc " + l.gio : ""), dem: n > 1 ? (k + 1) + "/" + n : "" };
@@ -286,7 +354,7 @@
   function moAnh(o) {
     if (typeof window.openLB !== "function") return;
     /* o.vt = mã vị trí đang lọc ở mục Ảnh ⇒ ảnh lớn + dải ngày chỉ gồm ảnh của đúng mã đó */
-    var giu = function (l) { var ks = l.a.map(function (u, k) { return k; }); return o.vt ? ks.filter(function (k) { return maCon(o, l, k) === o.vt; }) : ks; };
+    var giu = function (l) { var ks = l.a.map(function (u, k) { return k; }); return o.vt ? ks.filter(function (k) { return mucCua(o, l, k) === o.vt; }) : ks; };
     var ds = (o.luot || []).filter(function (l) { return l.a && l.a.length && giu(l).length; }), list = [], dai = [], bd = 0;
     ds.forEach(function (l, j) { var ks = giu(l), dau = list.length; dai.push({ u: l.a[ks[0]], so: o.vt ? ks.length : l.t || l.a.length, ngay: dm(l.ngay), dau: dau });
       if (l.id === o.id) bd = dau + Math.min(o.i || 0, ks.length - 1);
