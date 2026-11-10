@@ -47,3 +47,5 @@
 #hpVtBody .bd-tabben .hp-whtab.active::after{transform:none}
 #hpVtBody .bd-tab-so{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--surface2);color:var(--muted);font-size:11px;line-height:18px;text-align:center}
 #hpVtBody .bd-tab-than{animation:fadeUp .16s var(--ez-apple,ease) both}
+/* 10/11 tối (clip 18.54.51 giây 17–18): nội dung ngắn ⇒ mất thanh cuộn ⇒ bề rộng khung đổi ⇒ thanh tab + hàng lọc căn giữa trượt — giữ chỗ thanh cuộn cố định */
+#hpVtBody{scrollbar-gutter:stable}
