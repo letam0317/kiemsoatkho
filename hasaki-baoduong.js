@@ -1058,6 +1058,7 @@
       S.ok = !!(dv && dv.length);
       S.loi = S.ok ? "" : (res[0] && res[0].code === 403 ? "khoa" : res[0] && res[0].status === "success" ? "trong" : "gas");
       S.dv = dv || []; S.yc = bang(res[1]) || []; S.ky = bang(res[2]) || [];
+      setTimeout(lamNongAnh, 2500);
       S.giao = {}; (bang(res[3]) || []).forEach(function (g) { S.giao[g["KHOÁ"]] = g; });
       S.ls = bang(res[4]) || [];
       /* 06/11 cấu hình theo khu SHOP / WH (GAS bd_khu): khoá «LOẠI|KHU|HẠNG MỤC|MÃ VỊ TRÍ» */
@@ -1110,8 +1111,25 @@
     return String(y["ẢNH BÁO CÁO"] || "").split(" | ").map(function (s) { var i = s.lastIndexOf("::"); return i < 0 ? null : { khung: s.slice(0, i).trim(), tep: s.slice(i + 2).trim() }; })
       .filter(function (a) { return a && a.tep; }).map(function (a) { var http = /^https?:/i.test(a.tep); return { khung: a.khung, url: http ? a.tep : ANH_CDN + a.tep, urlLui: http ? a.tep : ANH_GW + a.tep }; });
   }
+  /* 10/11 lượt báo cáo bảo dưỡng (có ảnh) → dạng chung lich-su-ben.js, mới → cũ */
+  function luotBd(b) {
+    return ycCua(b).map(function (y) { var a = anhCua(y), tn = String(y["TÊN NGƯỜI LÀM"] || "").split(" · ")[0];
+      return { id: String(y["REQUEST ID"]), ngay: String(y["NGÀY"] || "").slice(0, 10), gio: (/(\d{1,2}:\d{2})/.exec(String(y["LÚC LÀM"] || "")) || ["", ""])[1],
+        ten: tn || String(y["NGƯỜI LÀM"] || ""), email: String(y["NGƯỜI LÀM"] || ""), a: a.map(function (x) { return x.url; }), lui: a.map(function (x) { return x.urlLui; }),
+        khung: a.map(function (x) { return x.khung; }), t: a.length }; })
+      .filter(function (l) { return l.a.length; }).sort(function (a, c) { return (c.ngay + c.gio).localeCompare(a.ngay + a.gio); });
+  }
+  function tenVtBd(b) { return String((S.vt[b] || {}).ten || "").split("|").pop().trim(); }
+  function moBd(b, ds, id, i, ngay) {
+    var luiCua = {}; ds.forEach(function (l) { l.a.forEach(function (u, k) { luiCua[u] = l.lui[k]; }); });
+    var o = { ten: tenVtBd(b), ma: b, luot: ds, id: id, i: i || 0, lui: function (u) { return luiCua[u] || ""; } };
+    if (ngay) window.hskLichSu.moNgay(o); else window.hskLichSu.moAnh(o);
+  }
   function xemAnh(y, i) {
     if (!y || typeof window.openLB !== "function") return;
+    /* 10/11 pop-up kiểu B: ảnh 1 yêu cầu (Tổng quan) ⇒ dải = mọi ảnh của đúng vị trí × ngày đó */
+    if (window.hskLichSu) { var b0 = y["MÃ VỊ TRÍ"], ng0 = String(y["NGÀY"] || "").slice(0, 10);
+      moBd(b0, luotBd(b0).filter(function (l) { return l.ngay === ng0; }).reverse(), String(y["REQUEST ID"]), i, true); return; }
     var v = S.vt[y["MÃ VỊ TRÍ"]] || {}, ds = anhCua(y);
     window.openLB(ds.map(function (a) { return { url: a.url, urlLui: a.urlLui, title: a.khung, sub: (v.ten || y["MÃ VỊ TRÍ"]) + " · " + dm(y["NGÀY"]), meta: (y["NGƯỜI LÀM"] || "") + (y["LÚC LÀM"] ? " · " + y["LÚC LÀM"] : "") }; }), i || 0);
   }
@@ -1333,6 +1351,13 @@
     var l = document.querySelector('link[href^="hasaki-planogram.js"]'), src = l ? l.getAttribute("href") : "hasaki-planogram.js";
     _plg = new Promise(function (res, rej) { var s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = function () { _plg = null; rej(new Error("Không tải được khung thanh bên")); }; document.body.appendChild(s); });
     return _plg;
+  }
+  /* 10/11 làm nóng ảnh nhỏ: ảnh ĐẦU mỗi lượt báo cáo (ô ngày Lịch sử) + mọi ảnh 2 ngày gần nhất, mới → cũ, tối đa 400 — 1 lần mỗi lượt nạp */
+  function lamNongAnh() {
+    if (!S.yc || !S.yc.length) return;
+    var ds = S.yc.slice().sort(function (a, c) { return String(c["NGÀY"] || "").localeCompare(String(a["NGÀY"] || "")); }), moc = congNgay(isoVN(Date.now()), -1), ra = [];
+    ds.forEach(function (y) { var a = anhCua(y); if (!a.length) return; (String(y["NGÀY"] || "").slice(0, 10) >= moc ? a : a.slice(0, 1)).forEach(function (x) { ra.push(x.url); }); });
+    if (ra.length) napPlg().then(function () { var H = window.HPLANOGRAM; if (H && H.anhLamNong) H.anhLamNong(ra, 400); }).catch(function () {});
   }
   var MAU_O = { x: "var(--good)", d: "var(--warn)", m: "color-mix(in srgb,var(--bad) 45%,var(--surface))", b: "var(--bad)" };
   function badge(chu, mau) { return '<span class="hp-badge" style="background:color-mix(in srgb,' + mau + ' 15%,transparent);color:' + mau + '">' + esc(chu) + "</span>"; }
@@ -1673,7 +1698,7 @@
     else if (tab === "ts") { var ts = window.HPLANOGRAM && window.HPLANOGRAM.theTaiSan ? window.HPLANOGRAM.theTaiSan(b) : "";
       if (ts) { var tam = document.createElement("div"); tam.innerHTML = ts; var su = tam.querySelector("summary"); if (su) su.remove(); var dt0 = tam.querySelector("details"); if (dt0) dt0.setAttribute("open", ""); ts = tam.innerHTML; }
       than = ts || '<div class="ln mut">Chưa có sổ tài sản tại vị trí này</div>'; }
-    else than = theLichSu(b);
+    else than = lichSuBd(b);
     if (tab !== "bc") hdDung();
     return '<div class="bd-ben"><div class="bd-tabben" role="tablist" aria-label="Thông tin vị trí">' + TAB_BEN.map(function (t) {
         return '<button type="button" role="tab" class="hp-whtab' + (t[0] === tab ? " active" : "") + '" data-tab="' + t[0] + '" aria-selected="' + (t[0] === tab) + '">' + t[1] +
@@ -2671,6 +2696,35 @@
   function lsMo() { return (S.ls || []).filter(function (r) { return r["LOẠI"] === "Hư hỏng" && r["TRẠNG THÁI"] === "Đang xử lý" && S.vt[r["MÃ VỊ TRÍ"]]; })
     .sort(function (a, c) { return String(a["NGÀY"]).localeCompare(String(c["NGÀY"])); }); }
   var tien = function (x) { var n = Number(x); return n ? n.toLocaleString("vi-VN") + " đ" : ""; };
+  /* 10/11 user chốt mẫu «Lịch sử - mẫu chốt lịch tháng»: thanh bên Bảo dưỡng › Lịch sử CÙNG KHUÔN Planogram (lich-su-ben.js) —
+     Ảnh = lượt báo cáo bảo dưỡng 60 ngày (YC, anhCua) · Sửa chữa = sổ hư hỏng · sửa chữa đang có; thêm dòng = ngăn kéo «+ Thêm» (duocSua) */
+  function scBd(b) { return lsCua(b).map(function (r) { return { id: r["ID"], ngay: String(r["NGÀY"] || "").slice(0, 10), loai: r["LOẠI"], moTa: r["MÔ TẢ"], vatTu: r["VẬT TƯ"],
+    sl: r["SỐ LƯỢNG"], dvt: r["ĐƠN VỊ"], cp: r["CHI PHÍ"], nguoiLam: r["NGƯỜI THỰC HIỆN"] }; }); }
+  function lichSuBd(b) {
+    if (!window.hskLichSu) return theLichSu(b);
+    var hn = isoVN(Date.now()), ngay = []; for (var i = 0; i < NGAY_DU_LIEU; i++) ngay.push(congNgay(hn, -i));
+    return window.hskLichSu.ve({ khoa: "bd|" + b, ngay: ngay, luot: luotBd(b), sc: scBd(b), coThem: duocSua(),
+      /* 10/11 tối user «mục Ảnh ở Lịch sử Bảo dưỡng phải gần như tức thì»: trước tải ẢNH GỐC ~600 KB cho từng ô ngày ⇒ dùng chung ảnh nhỏ của
+         Planogram (máy chủ /anh-plg ~8 KB, lưu IndexedDB 62 ngày — mở lại 0 lượt mạng) + đã làm nóng từ lúc trang nạp (lamNongAnh) */
+      img: function (u) { var H = window.HPLANOGRAM; return H && H.anhNho ? H.anhNho(u) : '<img loading="lazy" decoding="async" src="' + esc(u) + '" alt="">'; },
+      sauVe: function (r) { var H = window.HPLANOGRAM; if (H && H.lazyQuet) H.lazyQuet(r); },
+      moAnh: function (id) { moBd(b, luotBd(b), id, 0, false); }, them: function (g) { g.bin = b; return lsThem(g); } });
+  }
+  /* ghi 1 dòng sổ qua GAS bd_ls (lưu lạc quan do lich-su-ben.js lo) — xong thì nạp dòng thật, vẽ lại nơi đang mở */
+  function lsThem(g) {
+    if (!duocSua()) return Promise.reject(new Error("Tài khoản chưa có quyền Làm ở Bảo dưỡng"));
+    /* thanh bên Planogram: chưa tải danh mục Bảo dưỡng */
+    var goi = { action: "bd_ls", phien: phien(), op: "them", bin: g.bin, hm: ((S.vt && S.vt[g.bin]) || {}).hm || "",
+      loai: g.loai, ngay: g.ngay, moTa: g.moTa, vatTu: g.vatTu, sl: g.sl, dvt: g.dvt, chiPhi: g.chiPhi, nguoiLam: g.nguoiLam };
+    return fetch(APPSCRIPT_URL, { method: "POST", body: JSON.stringify(goi), redirect: "follow" }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j.status !== "success") throw new Error(j.message || "Lỗi");
+      var d = j.dong || [], hd = ["ID", "MÃ VỊ TRÍ", "HẠNG MỤC", "LOẠI", "NGÀY", "NGÀY XONG", "TRẠNG THÁI", "MÔ TẢ", "VẬT TƯ", "SỐ LƯỢNG", "ĐƠN VỊ", "CHI PHÍ", "NGƯỜI THỰC HIỆN", "NGƯỜI GHI", "LÚC GHI"];
+      var dong = {}; hd.forEach(function (h, i) { dong[h] = d[i] == null ? "" : String(d[i]).replace(/^'/, ""); });
+      S.ls = (S.ls || []).filter(function (r) { return r["ID"] !== dong["ID"]; }).concat([dong]);
+      if (PANE && S.ok) { try { veLaiLuoi(); veLaiNay(); } catch (e) {} } veLaiBen(); if (S.lsCb) try { S.lsCb(); } catch (e) {}
+      return dong;
+    });
+  }
   function theLichSu(b) {
     var ds = lsCua(b), homNay = isoVN(Date.now()), sua = suaBen(b);
     var dong = ds.map(function (r) {
@@ -3022,6 +3076,14 @@
        (tab VESINH-LICH): lamGi(khung) = danh sách khung + chi tiết đầu dòng · baoCao(p) = clip cách báo cáo + các bước (p = {bin, kho, loai, mo, ngay, khung}) */
     benVs: {
       css: function () { napCss(); },
+      /* 10/11 Lịch sử › Sửa chữa ở thanh bên Planogram: sổ BAO-DUONG-LICHSU theo mã vị trí — chưa đọc thì đọc 1 lần (null = đang đọc / không đọc được) */
+      ls: function (bin, xong) { S.lsCb = xong;
+        if (S.ok || S.lsDoc) return scBd(bin);   // S.ls mặc định [] — chỉ tin khi trang Bảo dưỡng đã tải hoặc đã đọc riêng
+        if (!S.lsDang) { S.lsDang = 1; readTabP(TAB_LS).then(function (res) { var co = res && res.status === "success", r = bang(res) || (co ? [] : null);   // sổ chưa có dòng = rỗng, vẫn ghi được
+          if (r) { S.ls = r; S.lsDoc = 1; } S.lsDang = 0; if (r && xong) xong(); }, function () { S.lsDang = 0; }); }
+        return null; },
+      lsThem: function (g) { return lsThem(g); },
+      coSua: function () { return duocSua(); },
       lamGi: function (khung, bin) {
         if (!khung || !khung.length) return '<div class="ln mut">Chưa có lịch planogram của vị trí này</div>';
         /* 09/11 user: khung CÙNG mô tả ⇒ 1 đầu mục, mô tả 1 lần; tên khung là mã ô con ⇒ chỉ ghi mã vị trí của yêu cầu (gomKhung) */
