@@ -1621,6 +1621,19 @@ var CSS = [
 ".hp-vtr1{display:flex;align-items:center;gap:8px;}.hp-vtpg{font-size:12px;white-space:nowrap;}.hp-vtpg:empty{display:none;}.hp-vt-tgon{display:none;}",
 "@media(max-width:768px){#hpVtModal .hp-modalbox{width:100vw!important;}body:has(#hpVtModal.show) header{translate:0 -100%;pointer-events:none}.hp-vt-tday{display:none}.hp-vt-tgon{display:inline}" +
   "#hpVtModal .hp-vtr1 .hsk-nut,#hpVtModal .hp-vtpg{min-height:28px!important;height:28px;padding:0 8px!important;font-size:13px!important;border-radius:6px}.hp-vtpg{border:1px solid var(--border,#e5e7eb);display:inline-flex;align-items:center;text-decoration:none}}",
+/* 10/11 user duyệt MẪU 7 «Thẻ nổi đổ bóng»: tiêu đề + 5 tab = MỘT thẻ trắng nổi trên nền xám nhạt (chỉ vỏ Planogram, chưa áp
+   Bảo dưỡng data-chu=bd). Vị trí mọi thành phần GIỮ NGUYÊN. Web: hd = nửa trên, tab sticky = nửa dưới, clip-path cắt bóng chỗ nối.
+   Điện thoại: hd thẻ nổi trên, thanh tab chốt đáy thẻ nổi dưới (bóng hắt lên). */
+"#hpVtModal:is(:not([data-chu]),[data-chu='']) .hp-modalbox{background:color-mix(in srgb,var(--text) 4%,var(--surface))}" +
+  "#hpVtModal:is(:not([data-chu]),[data-chu='']) .hp-modalhd{background:var(--surface);margin:12px 12px 0;" +
+  "border-radius:8px 8px 0 0;border-bottom:1px solid color-mix(in srgb,var(--border) 45%,transparent);" +
+  "box-shadow:var(--shadow);clip-path:inset(-30px -30px 0 -30px);position:relative;z-index:5}" +
+  "@media(min-width:769px){#hpVtModal:is(:not([data-chu]),[data-chu='']) .bd-tabben.hp-vttab{margin:-14px -8px 14px;border-bottom:0;" +
+  "border-radius:0 0 8px 8px;box-shadow:var(--shadow);clip-path:inset(0 -30px -30px -30px)}}" +
+  "@media(max-width:768px){#hpVtModal:is(:not([data-chu]),[data-chu='']) .hp-modalhd{margin:10px 10px 0;border-radius:8px;border-bottom:0;clip-path:none}" +
+  "#hpVtModal:is(:not([data-chu]),[data-chu='']) .bd-tabben.hp-vttab{left:10px;right:10px;bottom:10px;border-radius:8px;border-top:0;" +
+  "box-shadow:var(--shadow)}" +
+  "#hpVtModal:is(:not([data-chu]),[data-chu='']) #hpVtBody{padding-bottom:78px!important}}",
 "@media(max-width:700px){#pane-planogram .hp-chiM{display:inline-flex;}#pane-planogram .hp-legrow{flex-wrap:nowrap;}" +
   /* 33 tên xổ ra thành 28 hàng (bộ đo răng cưa bắt 28/09) → 1 dải cuộn ngang; bấm tên vẫn soi ô trên sơ đồ */
   "#pane-planogram .hp-todo .hp-ptnhac{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-left:0;padding-bottom:2px;}#pane-planogram .hp-todo .hp-ptnhac .hp-ptchip{flex:0 0 auto;min-height:40px;}" +
@@ -1702,9 +1715,9 @@ var SK_TODO =
 '<div class="sk" style="height:40px;border-radius:9px;margin:0"></div>' +
 '</section>';
 
-/* 08/11 nút Ghi nhận 5S = icon cờ đuôi nheo + «5S» (mẫu 6); huy = «3/3» hoặc số phiếu còn nợ */
-var CO_5S = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2v20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
-  '<path d="M5 2L23 10L5 18z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>' +
+/* 10/11 user «mất chân cờ, thành mỗi tam giác» ⇒ lá nhỏ lại, chân dài rõ. 08/11 nút Ghi nhận 5S = icon cờ đuôi nheo + «5S» (mẫu 6); huy = «3/3» hoặc số phiếu còn nợ */
+var CO_5S = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2.5v19" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' +
+  '<path d="M6 3L21 8.5L6 14z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>' +
   '</svg><span class="hp-vtghi-chu">5S</span>';
 var MODAL_HTML =
 '<div id="hpModal" class="hp-modal">' +
@@ -4077,11 +4090,14 @@ function luotPg(loc, ds){
 function conAnh(loc){ return function(k, n){ var c = viTriCon(loc, k, n), m = c.match(/^F0-A1-(\d{3})-(\d{2})-(\d{2})-(\d{2})/);
   return m ? { ten: "Kệ " + m[2] + " · dãy " + m[1] + " · Tầng " + m[3] + " · Mâm " + m[4], ma: c } : /^F0-/.test(c) ? { ten: "", ma: loc } : { ten: c, ma: loc }; }; }
 /* 10/11 pop-up ảnh kiểu B: mở từ Lịch sử — dải mỗi LƯỢT 1 ô (60 ngày, trước chip đầu Tổng quan), bỏ ngày không báo cáo */
+/* 10/11 tối user duyệt «Mục»: danh sách vị trí / đối tượng = khung lịch planogram của yêu cầu (VESINH-LICH), đúng thứ tự ảnh.
+   Tên pop-up lấy cùng nguồn — trước đây viTriCon đoán theo đuôi mã nên F0-A8-504-01-01-01 bị gọi «Tổng quan băng chuyền» (lịch: «Tổng quan trạm đóng gói») */
+function mucPg(loc){ var lv = lichVt(loc); return lv && lv.khung ? lv.khung.map(function(k){ return k.ten; }) : []; }
 function moAnhLs(loc, reqId, i, vt){   // vt = mã ô con đang lọc ở mục Ảnh (10/11 tối) — pop-up chỉ ảnh của mã đó
   if (!window.hskLichSu) return;
   var dates = ycDates().slice(0, 7).sort();
   var ds = luotPg(loc, (lsCua(loc) || []).filter(function(v){ return !dates.length || v.ngay < dates[0]; }));
-  window.hskLichSu.moAnh({ ma: loc, luot: ds, id: reqId, i: i, vt: vt || "", con: conAnh(loc), goc: function(u){ return _anhGoc[u]; }, lui: urlAnhGw,
+  window.hskLichSu.moAnh({ ma: loc, luot: ds, id: reqId, i: i, vt: vt || "", muc: mucPg(loc), con: conAnh(loc), goc: function(u){ return _anhGoc[u]; }, lui: urlAnhGw,
     nho: function(u){ return _anhSan[u] || ""; }, veAnh: function(u){ return imgAnh(u, "", false); }, sauVe: lazyQuet });
 }
 function renderVt(){
@@ -4341,11 +4357,11 @@ function renderVt(){
     for (; tg >= moc; tg -= 864e5) ngLs.push(new Date(tg).toISOString().slice(0, 10));
     /* 10/11 chiều user chốt mẫu «Lịch sử - mẫu chốt lịch tháng»: bảng dòng → LỊCH THÁNG + Segmented Tất cả | Ảnh | Sửa chữa (lich-su-ben.js,
        dùng chung Bảo dưỡng). Sửa chữa = sổ BAO-DUONG-LICHSU theo mã vị trí (đọc qua module Bảo dưỡng); chưa đọc được thì để trống. */
-    napBdVs();
+    napBdVs(); canVSL();   // 10/11 tối: lịch planogram (khung) cho bộ lọc «Mục»
     var bdv2 = window.HBAODUONG && window.HBAODUONG.benVs, scLs = bdv2 && bdv2.ls ? bdv2.ls(loc, veLaiVt) : null;
     than = !S.ls.ok ? '<div class="ln mut">Đang tải lịch sử báo cáo…</div>'
       : !window.hskLichSu ? '<div class="ln mut">Đang tải…</div>'
-      : window.hskLichSu.ve({ khoa: "pg|" + loc, ngay: ngLs, luot: luotPg(loc, lsVt),
+      : window.hskLichSu.ve({ khoa: "pg|" + loc, ngay: ngLs, luot: luotPg(loc, lsVt), muc: mucPg(loc),
           sc: scLs, coThem: !!(scLs && bdv2.coSua && bdv2.coSua()), img: function(u){ return imgAnh(u, "", false); }, sauVe: lazyQuet,
           con: conAnh(loc), moAnh: function(id, vt){ moAnhLs(loc, id, 0, vt); }, them: function(g){ g.bin = loc; return bdv2.lsThem(g); } });
   } else {
@@ -5169,7 +5185,7 @@ function openAnh(id, i){
   if (window.hskLichSu){
     var kO = khoaO(r.loc || VT.loc), cung = S.yc.rows.filter(function(x){ return x.ngay === r.ngay && khoaO(x.loc) === kO && x.anh.length; })
       .sort(function(a, b){ return String(a.at || "").localeCompare(String(b.at || "")); });
-    window.hskLichSu.moNgay({ ma: r.loc || VT.loc, id: r.id, i: i || 0, con: conAnh(r.loc || VT.loc), goc: function(u){ return _anhGoc[u]; },
+    window.hskLichSu.moNgay({ ma: r.loc || VT.loc, id: r.id, i: i || 0, muc: mucPg(r.loc || VT.loc), con: conAnh(r.loc || VT.loc), goc: function(u){ return _anhGoc[u]; },
       lui: function(u){ return _anhGoc[u] ? u : urlAnhGw(u); }, nho: function(u){ return _anhSan[u] || ""; }, veAnh: function(u){ return imgAnh(u, "", false); }, sauVe: lazyQuet,
       luot: cung.map(function(x){ return { id: x.id, ngay: x.ngay, gio: x.at ? String(x.at).slice(11, 16) : "", ten: x.email ? (tenNm(x.email) || x.email) : "", email: x.email || "", a: x.anh }; }) });
     return;
