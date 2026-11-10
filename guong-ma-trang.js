@@ -77,10 +77,84 @@
       if (JSON.stringify(lop) === JSON.stringify(LOP)) return;
       return G.nhapKhoa(KHOA, lop).then(function (kk) { LOP = lop; KK = kk; if (SW_OK) return guiSW().catch(function () {}); }); }); }).catch(function () {});
   }
+  /* 10/11 user «vẫn có khoá nhưng nhanh — gần như tức thì»: TỦ KHOÁ trên máy. K + lớp PC (kp) cất trong IndexedDB dưới dạng BẢN MÃ,
+     bọc bằng khoá AES do trình duyệt sinh, KHÔNG xuất được (extractable=false — script nào cũng không đọc ra được byte khoá bọc).
+     Vé gắn với băm phiên tài khoản: đăng xuất / đổi phiên ⇒ vé vô hiệu và bị xoá. Lần mở sau: mở tủ ~vài ms thay vì xin Apps Script 1–3 s.
+     Mức an toàn không giảm: ai đã cầm hồ sơ trình duyệt thì cũng cầm phiên tk-phien (localStorage) và tự xin được K — tủ không mở thêm cửa nào.
+     Sau khi dùng vé: kiểm lại NỀN (lớp PC mỗi lần; K với Apps Script khi vé >30 phút — mất quyền/hết phiên ⇒ xoá vé + quên khoá) — đổi thì nạp khoá mới, gửi sw.js, ghi vé mới. */
+  var TU_DB = "hx-tu-khoa", TU_HAN = 7 * 864e5, TU_KIEM_K = 30 * 60e3, LAM_MOI = null;
+  function moDb() {
+    return new Promise(function (ok, hong) {
+      var rq = indexedDB.open(TU_DB, 1);
+      rq.onupgradeneeded = function () { rq.result.createObjectStore("k"); };
+      rq.onsuccess = function () { ok(rq.result); }; rq.onerror = function () { hong(rq.error); };
+    });
+  }
+  function tuGoi(che, fn) {   // 1 giao dịch: fn(store) → giá trị trả về (yêu cầu IDB) ; mọi trục trặc → null
+    return moDb().then(function (db) { return new Promise(function (ok, hong) {
+      var tx = db.transaction("k", che), st = tx.objectStore("k"), rq = fn(st), kq = null;
+      if (rq) rq.onsuccess = function () { kq = rq.result; };
+      tx.oncomplete = function () { db.close(); ok(kq); }; tx.onerror = tx.onabort = function () { db.close(); hong(tx.error); };
+    }); });
+  }
+  var bamPhien = function () { var p = (window.TK && window.TK.phien) || ""; if (!p) return Promise.resolve("");
+    return crypto.subtle.digest("SHA-256", new TextEncoder().encode("hx-tu:" + p)).then(function (b) { return Array.prototype.map.call(new Uint8Array(b), function (x) { return ("0" + x.toString(16)).slice(-2); }).join(""); }); };
+  function docTu() {   // → {khoa, lop, luc} | null
+    if (!window.indexedDB || !crypto.subtle) return Promise.resolve(null);
+    return Promise.all([bamPhien(), tuGoi("readonly", function (st) { return st.get("boc"); }), tuGoi("readonly", function (st) { return st.get("ve"); })])
+      .then(function (r) {
+        var ph = r[0], boc = r[1], ve = r[2];
+        if (!ph || !boc || !ve || ve.ph !== ph || !(Date.now() - ve.luc < TU_HAN)) { if (ve && ve.ph !== ph) xoaTu(); return null; }
+        return crypto.subtle.decrypt({ name: "AES-GCM", iv: ve.iv }, boc, ve.ct).then(function (b) {
+          var o = JSON.parse(new TextDecoder().decode(b)); if (!/^[A-Za-z0-9+\/]{43}=$/.test(String(o.khoa || ""))) return null;
+          return { khoa: o.khoa, lop: o.lop || null, luc: ve.luc }; });
+      }).catch(function () { return null; });
+  }
+  function ghiTu(khoa, lop, luc) {
+    if (!window.indexedDB || !crypto.subtle || !khoa) return Promise.resolve();
+    return Promise.all([bamPhien(), tuGoi("readonly", function (st) { return st.get("boc"); })]).then(function (r) {
+      if (!r[0]) return;
+      var coBoc = r[1] ? Promise.resolve(r[1]) : crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"])
+        .then(function (k) { return tuGoi("readwrite", function (st) { return st.put(k, "boc"); }).then(function () { return k; }); });
+      return coBoc.then(function (boc) {
+        var iv = crypto.getRandomValues(new Uint8Array(12));
+        return crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, boc, new TextEncoder().encode(JSON.stringify({ khoa: khoa, lop: lop || null })))
+          .then(function (ct) { return tuGoi("readwrite", function (st) { return st.put({ ph: r[0], luc: luc || Date.now(), iv: iv, ct: ct }, "ve"); }); });
+      });
+    }).catch(function () {});
+  }
+  function xoaTu() { if (!window.indexedDB) return Promise.resolve(); return tuGoi("readwrite", function (st) { return st.delete("ve"); }).catch(function () {}); }
+  /* kiểm lại nền sau khi dùng vé (không chặn trang) */
+  function quenKhoa() {   // tài khoản mất quyền / hết phiên: xoá vé + khoá trong bộ nhớ + khoá ở sw.js
+    xoaTu(); KHOA = ""; CHO = null; KK = null; LOP = null; LOP_LUC = 0;
+    var c = SW && SW.controller; if (c) try { c.postMessage({ hxGm: "xoa" }); } catch (e) { /* */ }
+  }
+  function lamMoiNen(G, tu) {
+    var hoiK = Date.now() - tu.luc > TU_KIEM_K;
+    var p = (hoiK ? layKhoa() : Promise.resolve(tu.khoa)).then(function (k) {
+      var luc = hoiK ? Date.now() : tu.luc;
+      return layLop(G, k).then(function (lop) {
+        var doi = k !== KHOA || JSON.stringify(lop) !== JSON.stringify(LOP);
+        if (!doi) return hoiK ? ghiTu(k, lop, luc) : null;
+        return G.nhapKhoa(k, lop).then(function (kk) { KHOA = k; LOP = lop; KK = kk;
+          if (SW_OK) guiSW().catch(function () {});
+          return ghiTu(k, lop, luc); });
+      });
+    }, function (e) { if (e && (e.code === 401 || e.code === 403)) quenKhoa(); });   // GAS chậm/lỗi mạng: giữ vé, lần sau hỏi lại
+    p = p.catch(function () {});
+    LAM_MOI = p; p.then(function () { if (LAM_MOI === p) LAM_MOI = null; });
+    return p;
+  }
   function sanSang() {
     if (CHO) return CHO;
-    CHO = layKhoa().then(function (k) { KHOA = k; return napLib().then(function (G) { return layLop(G, k).then(function (lop) { LOP = lop;
-        return Promise.all([dangKy(), G.nhapKhoa(k, lop)]); }); }); })
+    CHO = napLib().then(function (G) { return docTu().then(function (tu) {
+      if (tu) {   // ĐƯỜNG NHANH: mở tủ trên máy
+        KHOA = tu.khoa; LOP = tu.lop; LOP_LUC = Date.now();
+        return Promise.all([dangKy(), G.nhapKhoa(tu.khoa, tu.lop)]).then(function (r) { setTimeout(function () { lamMoiNen(G, tu); }, 0); return r; });
+      }
+      return layKhoa().then(function (k) { KHOA = k; return layLop(G, k).then(function (lop) { LOP = lop; ghiTu(k, lop);
+        return Promise.all([dangKy(), G.nhapKhoa(k, lop)]); }); });
+    }); })
       .then(function (r) { SW_OK = r[0]; KK = r[1]; return true; });
     CHO.catch(function () { CHO = null; });
     return CHO;
@@ -90,7 +164,9 @@
     if (!window.__HX_MA_HOA) return port.postMessage({ loi: "trang không ở chế độ bản dự phòng mã hoá" });
     sanSang().then(function () { port.postMessage(goiKhoa()); }, function (e) { port.postMessage({ loi: e.message }); });
   });
-  window.addEventListener("hx-phien", function () { if (KHOA && SW && SW.controller) guiSW().catch(function () {}); });
+  window.addEventListener("hx-phien", function () {
+    if (!(window.TK && window.TK.phien)) { quenKhoa(); return; }   // 10/11 đăng xuất ⇒ xoá vé tủ khoá
+    if (KHOA && SW && SW.controller) guiSW().catch(function () {}); });
 
   var khoaDuong = function (p) { var s = String(p || "").split("?")[0]; try { return decodeURIComponent(s); } catch (e) { return s; } };
   var url = function (k, du) {
@@ -117,7 +193,9 @@
   /** khoá (và khoá dự phòng du) → { blob, d } giải trọn trong trang */
   function taiBlob(k, du, tran, tienDo) {
     var mo = function (x) { return hoiMa(x).then(function (r) { return window.hxGiaiMa.docTron(r, x, KK, { tran: tran, tienDo: tienDo }); }); };
-    return mo(k).catch(function (e) { if (du && e && e.ma === 404) return mo(du); throw e; })
+    var moDu = function () { return mo(k).catch(function (e) { if (du && e && e.ma === 404) return mo(du); throw e; }); };
+    /* vé trong tủ cũ hơn lớp PC mới (tệp mới chưa có trong danh sách) → chờ lượt kiểm nền xong rồi thử lại 1 lần */
+    return moDu().catch(function (e) { var lm = LAM_MOI; if (lm && e && (e.ma === 404 || e.ma === 500)) return lm.then(moDu); throw e; })
       .then(function (x) { return { blob: new Blob(x.phan, { type: x.d.ct }), d: x.d }; });
   }
   var ANH = new Map(), anhTong = 0;   // ảnh đã giải: khoá → Promise<blob url> (≤ 60 MB, ảnh dùng lại nhiều chỗ)
@@ -187,6 +265,7 @@
   window.hxGuongMa = {
     sanSang: sanSang,
     coSW: function () { return SW_OK; },
+    guiLai: function () { if (KHOA && SW_OK) guiSW().catch(function () {}); },   // 10/11 bản đồ kho Drive vừa làm mới (index.html hxBanDo) → sw.js nhận bản mới
     lop: function () { return LOP ? { luc: LOP.luc, may: LOP.may, apiMoi: LOP.apiMoi, lucLaptop: LOP.lucLaptop } : null; },   // 27/10 lớp PC đang dùng (giờ chụp)
     tep: function (p) { return url("tep:" + khoaDuong(p)); },
     thu: function (u, api) { var p = duongCua(u, api); if (!p) return u; var k = khoaDuong(p); return url("thu:" + k, "tep:" + k); },
@@ -200,7 +279,7 @@
       }).then(function (j) { return p === "/api/ghi-chu" && id ? (j || []).filter(function (x) { return x.id === id; }) : j; });
     },
     capNhat: function () {   /* sau mỗi lần dò máy chủ: không mã hoá → quên khoá + gỡ sw.js (trang y như cũ) */
-      if (window.__HX_MA_HOA) return;
+      if (window.__HX_MA_HOA) { if (window.TK && window.TK.phien) sanSang().catch(function () {}); return; }   // 10/11 mở khoá SẴN ngay khi biết là bản mã hoá
       KHOA = ""; CHO = null; KK = null; SW_OK = false; LOP = null; LOP_LUC = 0;
       if (SW && SW.controller && /\/sw\.js$/.test(SW.controller.scriptURL)) SW.getRegistration().then(function (r) { if (r) r.unregister(); }).catch(function () {});
     }
