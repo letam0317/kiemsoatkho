@@ -823,10 +823,14 @@
       B + " .bd-lg-tt{margin:0 0 6px;font-size:12px}" + B + " .bd-lg{margin:0;padding:0;list-style:none;counter-reset:lg}",
       B + " .bd-lg>li{counter-increment:lg;position:relative;padding:10px 0 10px 30px;border-top:1px solid var(--ad-chia,var(--border))}" +
         B + " .bd-lg>li:first-child{border-top:0;padding-top:4px}",
-      B + " .bd-lg>li::before{content:counter(lg);position:absolute;left:0;top:10px;width:20px;height:20px;border-radius:50%;" +
+      /* 10/11 trưa user (Screenshot_10-11-2026_111017 «1 Motor quạt 1 pha 220V ~5′ [ảnh]» lệch): hàng tiêu đề khoá cao 28 px (cụm ảnh đại diện cao 28),
+         số thứ tự đặt đúng TÂM hàng đó (đệm 10 + (28 − 20)/2 = 14) ⇒ số · tên · ~phút · ảnh cùng 1 đường tâm */
+      B + " .bd-lg>li::before{content:counter(lg);position:absolute;left:0;top:14px;width:20px;height:20px;border-radius:50%;" +
         "background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);font-size:12px;font-weight:600;line-height:20px;text-align:center}" +
-        B + " .bd-lg>li:first-child::before{top:4px}",
-      B + " .bd-lg-t{display:flex;align-items:center;gap:8px;font-size:13.5px;line-height:20px}" + B + " .bd-lg-ng{display:inline-flex;align-items:center;gap:2px;margin-left:auto;padding:2px 4px;border-radius:6px}" +
+        B + " .bd-lg>li:first-child::before{top:8px}",
+      B + " .bd-lg-t{display:flex;align-items:center;gap:8px;min-height:28px;font-size:13.5px;line-height:20px}" +
+        B + " .bd-lg-ng{display:inline-flex;align-items:center;gap:2px;margin-left:auto;height:28px;box-sizing:border-box;padding:0 4px;border-radius:6px}" +
+        B + " .bd-lg-ng .bd-av{width:22px;height:22px}" +
         B + " button.bd-lg-ng{border:1px dashed var(--ad-chia,var(--border));background:none;cursor:pointer}" + B + " button.bd-lg-ng:hover{border-color:var(--accent)}" + B + " .bd-lg-t b{font-weight:600}" +
         B + " .bd-lg-ct{margin:4px 0 0;padding-left:16px;font-size:13px;line-height:20px}" + B + " .bd-lg-ct li{margin:2px 0}" +
         B + " .bd-lg-ct li::marker{color:var(--muted)}" + B + " .bd-lg-con{margin:2px 0 4px;padding-left:18px;list-style:circle}" + B + " .bd-lg-ct b{font-weight:600}",
