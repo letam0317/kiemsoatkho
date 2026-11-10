@@ -1122,7 +1122,10 @@ var CSS = [
 "#hpAiModal #hpAiSearch{max-width:280px;min-height:36px;margin:0;}",
 ".hp-thumbs .more:hover{background:color-mix(in srgb, var(--accent,#326e51) 10%, transparent);}",
 /* pop-up CHI TIẾT VỊ TRÍ (bấm ô sơ đồ) — dải lịch sử 7 ngày + hàng nhãn/giá trị */
-".hp-vthistrow{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 10px;}",   /* 10/11 user: dải ngày nhích LÊN, cách thẻ Phụ trách đúng bằng khoảng Phụ trách ↔ Báo cáo gần nhất (10 px) */   /* 08/11 user «thu hẹp khoảng trống» (14 → 4) */
+/* 10/11 tối user: dải ngày căn giữa khung */
+/* 10/11 user: dải ngày nhích LÊN, cách thẻ Phụ trách đúng bằng khoảng Phụ trách ↔ Báo cáo gần nhất (10 px) */
+/* 08/11 user «thu hẹp khoảng trống» (14 → 4) */
+".hp-vthistrow{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:-4px 0 10px;}",
 ".hp-vthist{position:relative;min-width:52px;padding:5px 8px;border-radius:9px;text-align:center;font-size:10.5px;font-weight:650;color:#fff;cursor:pointer;line-height:1.3;border:2px solid transparent;transition:transform .16s cubic-bezier(.32,.72,0,1);}",
 ".hp-vthist.inkdark{color:#422006;}",
 ".hp-vthist b{display:block;font-size:9px;opacity:.85;}",
@@ -2175,7 +2178,7 @@ var ANH_CHO = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAI
  *   Trình duyệt thiếu API hoặc fetch lỗi → rớt về <img src=ảnh gốc> như trước, onerror → gateway (không mất ảnh). */
 var ANH_SONG_SONG = 6;   // 25/10: 3 → 6 — CDN Cloudflare HTTP/2 dồn chung 1 kết nối; đường ảnh đúng (không còn 404 + vòng gateway) nên 6 lượt không nghẽn
 var ANH_NHO_W = 176;               // 56 px × DPR 3 = 168 — đủ nét cho ô thumbnail lớn nhất
-var ANH_NHO_TTL = 9 * 86400000;    // ảnh chỉ giữ 7 ngày trên dashboard → dọn sau 9 ngày
+var ANH_NHO_TTL = 62 * 86400000;   // 10/11: Lịch sử thanh bên 60 ngày (Planogram + Bảo dưỡng) ⇒ giữ ảnh nhỏ 62 ngày (~8 KB/ảnh)
 var ANH_GOC_GIU = 8;               // ảnh gốc gần nhất giữ trong RAM (~4 MB) cho lightbox
 var _anhQ = [], _anhDang = 0, _anhMemo = {}, _anhSan = {}, _anhGoc = {}, _anhGocTt = [];
 function imgAnh(u, phu, taiNgay){
@@ -2289,6 +2292,36 @@ function anhGocGiu(u, blob){
     _anhGoc[u] = URL.createObjectURL(blob); _anhGocTt.push(u);
     while (_anhGocTt.length > ANH_GOC_GIU){ var cu = _anhGocTt.shift(); try{ URL.revokeObjectURL(_anhGoc[cu]); }catch(e){} delete _anhGoc[cu]; }
   }catch(e){}
+}
+/* 10/11 tối user «ảnh planogram (nhất là mục Ảnh ở Lịch sử Bảo dưỡng) phải có gần như tức thì»: LÀM NÓNG ảnh nhỏ trước khi mở.
+   Chỉ khi có máy chủ ảnh nhỏ (/anh-plg ~8 KB/ảnh — laptop hoặc máy dự phòng); kho Drive / không máy chủ ⇒ không làm (ảnh gốc ~600 KB, quá nặng
+   để tải trước). Chạy 2 luồng, chỉ khi hàng ảnh đang nhìn trống (không giành mạng với ảnh trên màn); có trong RAM / IndexedDB rồi thì bỏ qua. */
+var _nongQ = [], _nongDang = 0, _nongDa = {};
+function anhLamNong(ds, tran){
+  return mayChuAnh().then(function(api){
+    if (!api || window.__HX_DRIVE) return 0;
+    var n = 0;
+    (ds || []).forEach(function(u){ if (n >= (tran || 300) || !u || _anhSan[u] || _anhMemo[u] || _nongDa[u]) return; _nongDa[u] = 1; _nongQ.push(u); n++; });
+    nongChay(api); return n;
+  });
+}
+function nongChay(api){
+  while (_nongDang < 2 && _nongQ.length){
+    if (_anhDang) { setTimeout(function(){ nongChay(api); }, 400); return; }
+    var u = _nongQ.shift(); _nongDang++;
+    (function(u){
+      var k = anhKhoa(u);
+      idbLay(k).then(function(r){
+        if (r && r.d && Date.now() - (r.at || 0) < ANH_NHO_TTL) { _anhSan[u] = r.d; return; }
+        if (_anhSan[u] || _anhMemo[u]) return;
+        var opt = { mode: "cors", credentials: "omit" }; if (window.AbortSignal && AbortSignal.timeout) opt.signal = AbortSignal.timeout(10000);
+        return fetch(api + "/anh-plg/" + encodeURIComponent(k), opt)
+          .then(function(r){ if (!r.ok) throw 0; return r.blob(); })
+          .then(function(b){ return new Promise(function(res, rej){ var fr = new FileReader(); fr.onload = function(){ res(fr.result); }; fr.onerror = rej; fr.readAsDataURL(b); }); })
+          .then(function(d){ _anhSan[u] = d; idbGhi(k, { d: d, at: Date.now() }); });
+      })["catch"](function(){}).then(function(){ _nongDang--; nongChay(api); });
+    })(u);
+  }
 }
 /* IndexedDB tối giản (kho hp-anh / bảng thumb) — mọi lỗi nuốt êm, luồng chính không phụ thuộc */
 var _idb = null, _idbDaDon = false;
@@ -2737,7 +2770,7 @@ function renderAiModal(){
       '<td class="mut ai-model" style="font-size:10.5px">' + esc((r.model || "").replace(/^gemini-|^claude-/, "")) + '</td>' +
       '<td class="mb-act"><a class="hp-ext" target="_blank" rel="noopener" href="' + esc(pgDetailUrl(r.id)) + '">Mở ↗</a>' +
       /* 09/11 user «cột hành động Từ chối — nhấn ⇒ pop-up ghi lý do ⇒ máy tự Từ chối (reject) yêu cầu ở planogram»: chỉ yêu cầu đang Chờ duyệt */
-      (yc && yc.stId === 3 && !S.tuChoi[r.id] ? ' <button type="button" class="hsk-nut nguy nho" data-rid="' + esc(r.id) + '" onclick="event.stopPropagation();HPLANOGRAM.moTuChoi(this.getAttribute(\'data-rid\'))">Từ chối</button>'
+      (yc && yc.stId === 3 && !S.tuChoi[r.id] ? ' <button type="button" class="hsk-nut nguy nho hp-tuchoi" data-rid="' + esc(r.id) + '" onclick="event.stopPropagation();HPLANOGRAM.moTuChoi(this.getAttribute(\'data-rid\'))">Từ chối</button>'
         : S.tuChoi[r.id] ? ' <span class="hp-vtai" style="color:var(--bad)">Đã từ chối</span>' : '') + '</td></tr>';
   }).join("") : '<tr><td colspan="8" class="empty">Không có kết quả phù hợp bộ lọc.</td></tr>';
 
@@ -4035,12 +4068,21 @@ function pgaNapLoc(loc){
     if (PGA.idx) napManh(); }
 }
 function pgaCua(loc, reqId){ var m = PGA.loc[loc]; return (m && reqId && m[reqId]) || null; }
-function moAnhLs(loc, reqId, i){
-  var o = anhLuot(loc, reqId); if (!o || !o.a.length || typeof window.openLB !== "function") return;
-  var v = null; (lsCua(loc) || []).forEach(function(x){ if (x.id === reqId) v = x; });
-  var meta = v ? ["Người báo cáo: " + (v.name || tenNm(v.email) || v.email), "Ngày báo cáo: " + ngayVN(v.ngay) + (v.gio ? " lúc " + v.gio : "")].join(" · ") : "";
-  window.openLB(o.a.map(function(u, k){ var con = viTriCon(loc, k, o.a.length);
-    return { type: "img", url: _anhGoc[u] || u, urlLui: urlAnhGw(u), thumb: _anhSan[u] || "", title: con, sub: locTitle(loc), meta: meta }; }), i || 0);
+/* lượt báo cáo → dạng chung của lich-su-ben.js (mới → cũ) */
+function luotPg(loc, ds){
+  return (ds || []).slice().sort(function(a, b){ return (b.ngay + (b.gio || "")).localeCompare(a.ngay + (a.gio || "")); }).map(function(v){
+    var o = anhLuot(loc, v.id); return { id: v.id, ngay: v.ngay, gio: v.gio || "", ten: v.name || tenNm(v.email) || v.email || "", email: v.email || "", a: o ? o.a : [], t: o ? o.t : 0 }; });
+}
+/* ô con của 1 ảnh: A1 = mã mâm + «Kệ · dãy · Tầng · Mâm»; băng chuyền / bàn A8 = tên khung; còn lại = mã vị trí */
+function conAnh(loc){ return function(k, n){ var c = viTriCon(loc, k, n), m = c.match(/^F0-A1-(\d{3})-(\d{2})-(\d{2})-(\d{2})/);
+  return m ? { ten: "Kệ " + m[2] + " · dãy " + m[1] + " · Tầng " + m[3] + " · Mâm " + m[4], ma: c } : /^F0-/.test(c) ? { ten: "", ma: loc } : { ten: c, ma: loc }; }; }
+/* 10/11 pop-up ảnh kiểu B: mở từ Lịch sử — dải mỗi LƯỢT 1 ô (60 ngày, trước chip đầu Tổng quan), bỏ ngày không báo cáo */
+function moAnhLs(loc, reqId, i, vt){   // vt = mã ô con đang lọc ở mục Ảnh (10/11 tối) — pop-up chỉ ảnh của mã đó
+  if (!window.hskLichSu) return;
+  var dates = ycDates().slice(0, 7).sort();
+  var ds = luotPg(loc, (lsCua(loc) || []).filter(function(v){ return !dates.length || v.ngay < dates[0]; }));
+  window.hskLichSu.moAnh({ ma: loc, luot: ds, id: reqId, i: i, vt: vt || "", con: conAnh(loc), goc: function(u){ return _anhGoc[u]; }, lui: urlAnhGw,
+    nho: function(u){ return _anhSan[u] || ""; }, veAnh: function(u){ return imgAnh(u, "", false); }, sauVe: lazyQuet });
 }
 function renderVt(){
   if ($id("hpVtModal") && $id("hpVtModal").dataset.chu) return;   // vỏ đang do mục khác dùng (moVoVt) — không vẽ đè
@@ -4297,18 +4339,15 @@ function renderVt(){
        Chiều: ĐỦ MỌI NGÀY từ trước chip đầu Tổng quan lùi về LS_NGAY (60) ngày; ngày không có lượt nào (không làm / nghỉ) = 1 hàng «Không báo cáo» ở cột Ảnh. */
     var ngLs = [], dDau = dates.length ? dates[0] : isoToday(), tg = Date.parse(dDau + "T00:00:00Z") - 864e5, moc = Date.parse(isoToday() + "T00:00:00Z") - (LS_NGAY - 1) * 864e5;
     for (; tg >= moc; tg -= 864e5) ngLs.push(new Date(tg).toISOString().slice(0, 10));
-    var dongLs = function(v){
-        var ten = v.name || tenNm(v.email) || v.email || "", o = anhLuot(loc, v.id), anhO;
-        if (o && o.a.length) anhO = imgAnh(o.a[0], ' data-lsr="' + esc(v.id) + '" data-lsi="0"', false) +
-          (o.t > 1 ? '<button type="button" class="hp-vtmore" data-lsr="' + esc(v.id) + '" data-lsi="1">+' + (o.t - 1) + '</button>' : "");
-        else anhO = '<span class="hp-hint">' + (PGA.dangIdx || PGA.dang[loc] ? "…" : "—") + '</span>';
-        return '<div class="hp-vtls-d"><b>' + esc(thuVN(v.ngay)) + " " + esc(ngayVN(v.ngay)) + '</b><span class="hp-hint">' + esc(v.gio || "") + '</span>' +
-          '<span class="hp-vtls-ng" title="' + esc(ten) + '">' + avChiAnh(ten, v.email) + '<span class="t">' + esc(ten2(ten)) + '</span></span><span class="hp-vtls-anh">' + anhO + '</span></div>'; };
+    /* 10/11 chiều user chốt mẫu «Lịch sử - mẫu chốt lịch tháng»: bảng dòng → LỊCH THÁNG + Segmented Tất cả | Ảnh | Sửa chữa (lich-su-ben.js,
+       dùng chung Bảo dưỡng). Sửa chữa = sổ BAO-DUONG-LICHSU theo mã vị trí (đọc qua module Bảo dưỡng); chưa đọc được thì để trống. */
+    napBdVs();
+    var bdv2 = window.HBAODUONG && window.HBAODUONG.benVs, scLs = bdv2 && bdv2.ls ? bdv2.ls(loc, veLaiVt) : null;
     than = !S.ls.ok ? '<div class="ln mut">Đang tải lịch sử báo cáo…</div>'
-      : '<div class="hp-vtls"><div class="hp-vtls-d hp-vtls-dau"><span>NGÀY</span><span>GIỜ</span><span>NGƯỜI</span><span>ẢNH</span></div>' + ngLs.map(function(dd){
-        var cua = lsVt.filter(function(v){ return v.ngay === dd; });
-        return cua.length ? cua.map(dongLs).join("") : '<div class="hp-vtls-d hp-vtls-khong"><b>' + esc(thuVN(dd)) + " " + esc(ngayVN(dd)) + '</b><span class="hp-hint">—</span>' +
-          '<span class="hp-hint">—</span><span class="hp-vtls-anh"><span class="hp-hint">Không báo cáo</span></span></div>'; }).join("") + '</div>';
+      : !window.hskLichSu ? '<div class="ln mut">Đang tải…</div>'
+      : window.hskLichSu.ve({ khoa: "pg|" + loc, ngay: ngLs, luot: luotPg(loc, lsVt),
+          sc: scLs, coThem: !!(scLs && bdv2.coSua && bdv2.coSua()), img: function(u){ return imgAnh(u, "", false); }, sauVe: lazyQuet,
+          con: conAnh(loc), moAnh: function(id, vt){ moAnhLs(loc, id, 0, vt); }, them: function(g){ g.bin = loc; return bdv2.lsThem(g); } });
   } else {
     var bdv = window.HBAODUONG && window.HBAODUONG.benVs, lv = lichVt(loc);
     if (!bdv || !S.vsl.ok){ napBdVs(); canVSL(); than = '<div class="ln mut">Đang tải lịch planogram…</div>'; }
@@ -5126,6 +5165,15 @@ function openAnh(id, i){
   var r = null;
   for (var j = 0; j < S.yc.rows.length; j++) if (String(S.yc.rows[j].id) === String(id)){ r = S.yc.rows[j]; break; }
   if (!r || !r.anh.length) return;
+  /* 10/11 pop-up kiểu B mở từ ảnh của CHIP NGÀY: dải = mọi ảnh của đúng vị trí × ngày đó (mọi lượt), không chữ dưới ô, không áp bộ lọc trang */
+  if (window.hskLichSu){
+    var kO = khoaO(r.loc || VT.loc), cung = S.yc.rows.filter(function(x){ return x.ngay === r.ngay && khoaO(x.loc) === kO && x.anh.length; })
+      .sort(function(a, b){ return String(a.at || "").localeCompare(String(b.at || "")); });
+    window.hskLichSu.moNgay({ ma: r.loc || VT.loc, id: r.id, i: i || 0, con: conAnh(r.loc || VT.loc), goc: function(u){ return _anhGoc[u]; },
+      lui: function(u){ return _anhGoc[u] ? u : urlAnhGw(u); }, nho: function(u){ return _anhSan[u] || ""; }, veAnh: function(u){ return imgAnh(u, "", false); }, sauVe: lazyQuet,
+      luot: cung.map(function(x){ return { id: x.id, ngay: x.ngay, gio: x.at ? String(x.at).slice(11, 16) : "", ten: x.email ? (tenNm(x.email) || x.email) : "", email: x.email || "", a: x.anh }; }) });
+    return;
+  }
   var baseLoc = r.loc || VT.loc;
   var nguoiBC = r.email ? (tenNm(r.email) || r.email) : "";
   var gio = r.at ? String(r.at).slice(11, 16) : "";
@@ -5368,6 +5416,7 @@ window.HPLANOGRAM = {
   openAll: openAll, openArea: openArea, openStatus: openStatus, openName: openName, openYc: openYc, openYcAi: openYcAi, closeModal: closeModal,
   openAiList: openAiList, closeAiModal: closeAiModal, renderAiModal: renderAiModal,
   comboInput: comboInput, comboMenu: comboMenu, quick: quick, openAnh: openAnh, anhLui: anhLui,
+  anhNho: function(u){ return imgAnh(u, "", false); }, lazyQuet: lazyQuet, anhLamNong: anhLamNong,   // 10/11 Bảo dưỡng › Lịch sử dùng chung ảnh nhỏ có lưu + làm nóng
   openNk: openNk, closeNk: closeNk, nkPick: nkPick, nkSearch: nkSearch, nkMoViTri: nkMoViTri, thuAnh: thuAnh, moTuChoi: moTuChoi, dongTuChoi: dongTuChoi, guiTuChoi: guiTuChoi,
   openViTri: openViTri, moVoVt: moVoVt, theTaiSan: theTaiSan, ttGocVN: ttGocVN, nutGhiCho: nutGhiCho, moAnhHet: moAnhHet, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao, openThieu: openThieu, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
   toggleLegend: toggleLegend, closeLegend: closeLegend,
