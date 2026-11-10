@@ -54,6 +54,7 @@
        Đậm giả bằng bóng chữ (không đổi bề rộng chữ) + ô thứ 4 luôn có (không quyền «+ Thêm» thì ô giữ chỗ ẩn) ⇒ hàng đứng yên */
     "html body .lsb .lsb-hd .hp-whtab.active{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 10%,var(--surface))!important;color:var(--accent)!important;font-weight:400!important;text-shadow:0 0 .6px currentColor}",
     ".lsb-hd .lsb-giu{visibility:hidden;pointer-events:none}",
+    "html body .lsb .lsb-hd .hp-whtab.co-sc{border-color:var(--warn)!important}html body .lsb .lsb-hd .hp-whtab.co-sc:not(.active){color:var(--warn)!important}",   /* = .hx-gc-nut.cho */
     ".cs-list .cs-opt.bo{color:var(--muted);text-decoration:line-through}",
     /* ảnh «Trước» mẫu 10/11 tối: danh sách Mục (16 dòng) bị LẬT LÊN, chui dưới thanh tab ⇒ trong ngăn kéo luôn mở XUỐNG, cuộn trong (TK-05) */
     "html body .lsb-keo .cs-list{top:calc(100% + 4px)!important;bottom:auto!important;max-height:300px!important;overflow:auto!important}",   /* mục lịch đã bỏ (như người nghỉ việc) */
@@ -127,7 +128,9 @@
       : '<span class="bl-cum' + (dang ? " dang" : "") + '"><button type="button" class="btn-filter bl-moi' + (o.keo === "loc" ? " mo" : "") + '" data-lsb-keo="loc" aria-expanded="' + (o.keo === "loc") + '">' +
         (dang ? "Đang lọc" : "Bộ lọc") + "</button>" + (dang ? '<button type="button" class="hsk-nut bl-xoa x-do" data-lsb-boloc aria-label="Bỏ lọc" title="Bỏ lọc">×</button>' : "") + "</span>";
     var h = '<div class="panel-head lsb-hd"><span class="lsb-seg" role="tablist" aria-label="Lịch sử">' + seg.map(function (s) {
-      return '<button type="button" role="tab" class="hp-whtab' + (s[0] === o.che ? " active" : "") + '" data-lsb-che="' + s[0] + '" aria-selected="' + (s[0] === o.che) + '"' + (s[0] === "sc" && !p.sc ? " disabled" : "") + ">" + s[1] + " <b>" + s[2] + "</b></button>"; }).join("") + "</span>" + nut + "</div>";
+      /* 10/11 khuya user: bỏ số cạnh tên; «Sửa chữa» có dữ liệu ⇒ khung vàng như nút Ghi chú Theo tác vụ / Theo máy (không số) */
+      return '<button type="button" role="tab" class="hp-whtab' + (s[0] === o.che ? " active" : "") + (s[0] === "sc" && nS ? " co-sc" : "") + '" data-lsb-che="' + s[0] + '" aria-selected="' + (s[0] === o.che) + '"' +
+        (s[0] === "sc" && !p.sc ? " disabled" : "") + ' title="' + s[1] + " · " + s[2] + '">' + s[1] + "</button>"; }).join("") + "</span>" + nut + "</div>";
     if (o.keo === "loc" && !laSc) h += keoLoc(p, o);
     if (o.keo === "them" && laSc && p.coThem) h += keoThem(p, o);
     return h + (laSc ? veSc(p, o) : lich(p, o, o.che === "tat"));
@@ -268,6 +271,7 @@
     /* CHỈ ảnh báo cáo (ô lịch / lưới ảnh Tổng quan — có data-goc hoặc nằm trong ô lịch). Ảnh đại diện (anh-nv.js tự chèn lại khi mất ảnh)
        KHÔNG đụng: đổi qua lại với bộ đó = vòng lặp vô tận làm treo trang (phiên new-folder-5b bắt được 10/11 tối) */
     var khoaAnh = function (im) { if (im.closest("[data-anh-nv]")) return ""; return im.getAttribute("data-goc") || (im.closest(".lsb-o") ? im.getAttribute("src") || "" : ""); };
+    var VO = "#hpVtModal,#plgmodal";
     var tabCua = function (than) { return than ? (than.getAttribute("data-tab-than") || "") : ""; };
     var tabTruoc = null;
     function xuLy(ms) {
@@ -278,7 +282,7 @@
         [].forEach.call(m.addedNodes, function (n) { if (n.nodeType !== 1) return; var ds = n.tagName === "IMG" ? [n] : n.querySelectorAll("img"); [].push.apply(moi, ds);
           var t = n.matches && n.matches(".bd-tab-than") ? n : n.querySelector && n.querySelector(".bd-tab-than"); if (t) thanMoi = t; });
       });
-      if (thanMoi) { var tA = document.querySelector("#hpVtModal .bd-tabben .hp-whtab.active");
+      if (thanMoi) { var vo = thanMoi.closest(VO) || document, tA = vo.querySelector(".bd-tabben .hp-whtab.active");
         var tb = tabCua(thanMoi) || (tA ? tA.getAttribute("data-tab") || tA.getAttribute("data-ptab") || "" : "");
         if (tb && tb === tabTruoc) { thanMoi.style.animation = "none"; [].forEach.call(thanMoi.querySelectorAll(".hp-vtcard"), function (c) { c.style.animation = "none"; }); }
         tabTruoc = tb; }
@@ -287,12 +291,18 @@
         c.className = im.className.replace(/\bhp-lz\b/, "").trim(); c.__lz = 1; im.replaceWith(c); });
       if (QS) QS.takeRecords();   // thay đổi do chính bộ này gây ra: bỏ, không xử lý lại
     }
-    var QS = null;
-    function theoDoi() { var m = document.getElementById("hpVtModal"); if (!m) return false;
-      QS = new MutationObserver(xuLy); QS.observe(m, { childList: true, subtree: true }); return true; }
-    if (!theoDoi()) { var mo = new MutationObserver(function () { if (theoDoi()) mo.disconnect(); }); mo.observe(document.documentElement, { childList: true, subtree: true }); }
+    var QS = null, DA = {};
+    /* vỏ thanh bên: Retail #hpVtModal (thân #hpVtBody) · 10/11 tối Factory #plgmodal (thân #plgmBody — user «làm y chang Retail») */
+    var VO_DS = [["hpVtModal", "hpVtBody"], ["plgmodal", "plgmBody"]];
+    function theoDoi() { var con = 0; VO_DS.forEach(function (v) { var m = document.getElementById(v[0]); if (!m) { con++; return; } if (DA[v[0]]) return; DA[v[0]] = 1;
+        QS = QS || new MutationObserver(xuLy); QS.observe(m, { childList: true, subtree: true });
+        /* chỗ giữ thanh cuộn cố định (scrollbar-gutter) làm thân hẹp hơn thẻ tiêu đề ⇒ ghi bề rộng vào --sbw để thanh tab Mẫu 7 bù đúng */
+        var b = document.getElementById(v[1]), do_ = function () { if (b) m.style.setProperty("--sbw", Math.max(0, b.offsetWidth - b.clientWidth) + "px"); };
+        if (b && window.ResizeObserver) new ResizeObserver(do_).observe(b); do_(); });
+      return !con; }
+    if (!theoDoi()) { var mo = new MutationObserver(function () { if (theoDoi()) mo.disconnect(); }); mo.observe(document.documentElement, { childList: true, subtree: true }); setTimeout(function () { mo.disconnect(); }, 30000); }
     /* đóng thanh bên ⇒ lần mở sau là «đổi tab» (được hiện dần) */
-    document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("#hpVtModal .x-do,#hpVtClose")) tabTruoc = null; }, true);
+    document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("#hpVtModal .x-do,#hpVtClose,#plgmodal .pg-mdong")) tabTruoc = null; }, true);
   })();
   /* ---------- sự kiện uỷ quyền ---------- */
   function dongKeo(k) { var o = st(k); if (!o.keo) return; o.keo = ""; veLai(k); }
@@ -370,6 +380,65 @@
     if (!list.length) return;
     window.openLB(list, bd, { kieu: "B", dai: dai, ngay: 1, veAnh: o.veAnh, sauVe: o.sauVe });
   }
+
+  /* ---------- 10/11 tối: Factory KHÔNG có pop-up ảnh chung openLB của Retail ⇒ dựng pop-up kiểu B CÙNG KHUÔN (index.html Retail:
+     không chấm đỏ — đóng bằng nền tối / Esc · mũi tên tròn ở lề (điện thoại nằm trên ảnh) · khung thông tin trên cùng · dải 14 ô (điện thoại 7)
+     chốt đáy, căn giữa, trượt theo ảnh). Retail đã có openLB thì KHÔNG dùng bản này. ---------- */
+  function lbB() {
+    if (typeof window.openLB === "function") return;
+    var css = "#lsbLb{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;background:var(--overlay,rgba(12,13,20,.72));color:white;--dai:80px;padding:64px 88px calc(var(--dai) + 14px);box-sizing:border-box}" +
+      "#lsbLb.show{display:flex}#lsbLb.ngay{--dai:62px}" +
+      "#lsbLb .nd{display:flex;align-items:center;justify-content:center;max-width:calc(100vw - 176px);max-height:calc(100vh - 78px - var(--dai))}" +
+      "#lsbLb .nd img{max-width:calc(100vw - 176px);max-height:calc(100vh - 78px - var(--dai));object-fit:contain;border-radius:10px;box-shadow:0 10px 40px color-mix(in srgb,black 60%,transparent)}" +
+      "#lsbLb .mui{position:absolute;top:calc(64px + (100vh - 78px - var(--dai)) / 2);transform:translateY(-50%);width:40px;height:40px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;" +
+        "background:color-mix(in srgb,white 16%,transparent);border:1px solid color-mix(in srgb,white 25%,transparent);color:inherit;cursor:pointer}" +
+      "#lsbLb .mui.tat{opacity:.3;pointer-events:none}#lsbLb .mui.tr{left:24px}#lsbLb .mui.sa{right:24px}" +
+      "#lsbLb .cap{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:5px 10px 5px 5px;border-radius:10px;max-width:calc(100vw - 120px);" +
+        "background:color-mix(in srgb,black 78%,transparent);border:1px solid color-mix(in srgb,white 16%,transparent);white-space:nowrap}" +
+      "#lsbLb .av{width:32px;height:32px;border-radius:50%;flex:none;overflow:hidden}#lsbLb .av:not(.co-anh){display:none}#lsbLb .av img{width:100%;height:100%;object-fit:cover;display:block}" +
+      "#lsbLb .tt{display:flex;flex-direction:column;min-width:0;padding-left:5px}#lsbLb .av.co-anh+.tt{padding-left:0}" +
+      "#lsbLb .h1{font-size:12.5px;font-weight:600;line-height:16px;overflow:hidden;text-overflow:ellipsis}#lsbLb .h1 .gach{opacity:.45;margin:0 6px}#lsbLb .h1 .ma{opacity:.8;font-weight:400}" +
+      "#lsbLb .h2{font-size:11px;opacity:.8;line-height:15px}#lsbLb .h2 .dem{opacity:.78;margin-left:6px}" +
+      "#lsbLb .dai{position:absolute;left:0;right:0;bottom:0;background:color-mix(in srgb,black 85%,transparent);border-top:1px solid color-mix(in srgb,white 12%,transparent);padding:8px 12px;overflow:hidden}" +
+      "#lsbLb .dai .tr2{display:flex;gap:10px;width:max-content;margin:0 auto}#lsbLb .o{flex:none;display:flex;flex-direction:column;align-items:center;cursor:pointer}" +
+      "#lsbLb .oo{position:relative;display:block;width:46px;height:46px;border-radius:5px;overflow:hidden;border:2px solid transparent;opacity:.5;box-sizing:border-box}#lsbLb .oo img{width:100%;height:100%;object-fit:cover;display:block}" +
+      "#lsbLb .o.on .oo{opacity:1;border-color:currentColor}#lsbLb .so{position:absolute;right:2px;bottom:2px;background:color-mix(in srgb,black 70%,transparent);font-size:9.5px;line-height:13px;border-radius:4px;padding:0 4px}" +
+      "#lsbLb .n{font-size:10.5px;opacity:.62;margin-top:4px;white-space:nowrap}#lsbLb .o.on .n{opacity:1;font-weight:600}" +
+      "@media(max-width:560px){#lsbLb{--dai:76px;padding:78px 8px calc(var(--dai) + 8px)}#lsbLb.ngay{--dai:58px}" +
+        "#lsbLb .nd,#lsbLb .nd img{max-width:calc(100vw - 16px);max-height:calc(100vh - 92px - var(--dai))}#lsbLb .mui{top:calc(78px + (100vh - 92px - var(--dai)) / 2);background:color-mix(in srgb,black 55%,transparent)}" +
+        "#lsbLb .mui.tr{left:12px}#lsbLb .mui.sa{right:12px}#lsbLb .cap{max-width:calc(100vw - 16px);width:max-content;padding:5px 12px 5px 5px}" +
+        "#lsbLb .h1 .gach{display:none}#lsbLb .h1 .ma{display:block;font-size:11px;line-height:15px}#lsbLb .dai{padding:6px 8px 10px}#lsbLb .dai .tr2{gap:8px}#lsbLb .oo{width:40px;height:40px}}";
+    var st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+    var MUI = function (h) { return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + (h < 0 ? "m15 18-6-6 6-6" : "m9 18 6-6-6-6") + '"/></svg>'; };
+    var el = document.createElement("div"); el.id = "lsbLb"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Xem ảnh");
+    el.innerHTML = '<div class="cap"></div><button type="button" class="lb-btn mui tr" aria-label="Ảnh trước">' + MUI(-1) + '</button><div class="nd"></div>' +
+      '<button type="button" class="lb-btn mui sa" aria-label="Ảnh sau">' + MUI(1) + '</button><div class="dai"><div class="tr2"></div></div>';
+    document.body.appendChild(el);
+    var L = [], I = 0, O = null;
+    function ve1() { var m = L[I]; if (!m) return; var nd = el.querySelector(".nd"), ma = String(m.ma || ""), d1 = m.tieu || m.ten || "";
+      nd.innerHTML = '<img alt="" src="' + esc(m.url) + '">'; var im = nd.querySelector("img"); im.onerror = function () { if (m.urlLui && !im.__l) { im.__l = 1; im.src = m.urlLui; } };
+      el.querySelector(".cap").innerHTML = (m.tenDu || m.email ? '<span class="av" data-anh-nv="' + esc(m.tenDu || "") + '"' + (m.email ? ' data-anh-em="' + esc(m.email) + '"' : "") + "></span>" : "") +
+        '<span class="tt"><span class="h1">' + esc(d1) + (d1 && ma ? '<span class="gach">|</span>' : "") + '<span class="ma">' + esc(ma) + "</span></span>" +
+        '<span class="h2">' + esc([m.nguoi, m.luc].filter(Boolean).join(" · ")) + (m.dem ? '<span class="dem">' + esc(m.dem) + "</span>" : "") + "</span></span>";
+      el.querySelector(".tr").classList.toggle("tat", I <= 0); el.querySelector(".sa").classList.toggle("tat", I >= L.length - 1);
+      var ds = [].slice.call(el.querySelectorAll(".dai .o")), on = el.querySelector('.dai .o[data-dai="' + m.dai + '"]'), n = innerWidth < 600 ? 7 : 14;
+      ds.forEach(function (x) { x.classList.toggle("on", x === on); }); var j = Math.max(0, ds.indexOf(on)), dau = Math.max(0, Math.min(ds.length - n, j - Math.floor(n / 2)));
+      ds.forEach(function (x, i) { x.style.display = i >= dau && i < dau + n ? "" : "none"; }); }
+    function di(k) { var i = I + k; if (i < 0 || i >= L.length) return; I = i; ve1(); }
+    function dong() { el.classList.remove("show"); el.querySelector(".nd").innerHTML = ""; }
+    el.querySelector(".tr").onclick = function (e) { e.stopPropagation(); di(-1); }; el.querySelector(".sa").onclick = function (e) { e.stopPropagation(); di(1); };
+    el.addEventListener("click", function (e) { var o = e.target.closest(".dai .o"); if (o) { I = O.dai[+o.getAttribute("data-dai")].dau; ve1(); return; } if (e.target === el || e.target.classList.contains("nd")) dong(); });
+    document.addEventListener("keydown", function (e) { if (!el.classList.contains("show")) return; if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); dong(); }
+      else if (e.key === "ArrowLeft") di(-1); else if (e.key === "ArrowRight") di(1); }, true);
+    var x0 = 0, y0 = 0; el.addEventListener("touchstart", function (e) { x0 = e.changedTouches[0].clientX; y0 = e.changedTouches[0].clientY; }, { passive: true });
+    el.addEventListener("touchend", function (e) { var dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) di(dx < 0 ? 1 : -1); }, { passive: true });
+    window.openLB = function (list, idx, opt) { L = list || []; I = idx || 0; O = opt || { dai: [] };
+      el.classList.toggle("ngay", !!O.ngay); var nhieu = L.length > 1; el.querySelector(".tr").style.display = el.querySelector(".sa").style.display = nhieu ? "" : "none";
+      el.querySelector(".dai .tr2").innerHTML = (O.dai || []).map(function (d, j) { return '<span role="button" tabindex="0" class="o" data-dai="' + j + '"><span class="oo">' +
+        (O.veAnh ? O.veAnh(d.u) : '<img loading="lazy" src="' + esc(d.u) + '" alt="">') + (d.so > 1 ? '<span class="so">' + d.so + "</span>" : "") + "</span>" + (d.ngay ? '<span class="n">' + esc(d.ngay) + "</span>" : "") + "</span>"; }).join("");
+      el.classList.add("show"); ve1(); };
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", lbB); else lbB();
 
   window.hskLichSu = { ve: ve, gan: gan, veLai: veLai, moAnh: moAnh, moNgay: moNgay, trangThai: function (k) { return st(k); } };
   /* host chỉ cần chèn HTML: MutationObserver tự gắn ô thư viện cho khung mới */
