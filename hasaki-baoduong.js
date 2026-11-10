@@ -1120,9 +1120,9 @@
       .filter(function (l) { return l.a.length; }).sort(function (a, c) { return (c.ngay + c.gio).localeCompare(a.ngay + a.gio); });
   }
   function tenVtBd(b) { return String((S.vt[b] || {}).ten || "").split("|").pop().trim(); }
-  function moBd(b, ds, id, i, ngay) {
+  function moBd(b, ds, id, i, ngay, vt) {
     var luiCua = {}; ds.forEach(function (l) { l.a.forEach(function (u, k) { luiCua[u] = l.lui[k]; }); });
-    var o = { ten: tenVtBd(b), ma: b, luot: ds, id: id, i: i || 0, lui: function (u) { return luiCua[u] || ""; } };
+    var o = { ten: tenVtBd(b), ma: b, luot: ds, id: id, i: i || 0, vt: vt || "", lui: function (u) { return luiCua[u] || ""; } };   // vt = Mục đang lọc ⇒ pop-up chỉ ảnh mục đó
     if (ngay) window.hskLichSu.moNgay(o); else window.hskLichSu.moAnh(o);
   }
   function xemAnh(y, i) {
@@ -2703,12 +2703,18 @@
   function lichSuBd(b) {
     if (!window.hskLichSu) return theLichSu(b);
     var hn = isoVN(Date.now()), ngay = []; for (var i = 0; i < NGAY_DU_LIEU; i++) ngay.push(congNgay(hn, -i));
-    return window.hskLichSu.ve({ khoa: "bd|" + b, ngay: ngay, luot: luotBd(b), sc: scBd(b), coThem: duocSua(),
+    /* 10/11 tối user duyệt «Mục»: danh sách = khung của lịch planogram yêu cầu MỚI NHẤT của vị trí (đúng như trang yêu cầu planogram);
+       khung chỉ còn ở ảnh cũ thì lich-su-ben.js tự gạch ngang. Tên khung lịch không khớp tên khung trên ảnh nào ⇒ bỏ, lấy theo ảnh */
+    var lt = luotBd(b), yMoi = ycCua(b).slice().sort(function (a, c) { return String(c["NGÀY"]).localeCompare(String(a["NGÀY"])); })[0],
+      lMoi = yMoi && (S.lich || {})[String(yMoi["SCHEDULE ID"] || "")] || lichBin(b),
+      muc = lMoi && lMoi.khung ? lMoi.khung.map(function (k) { return String((k && (k.ten || k[0])) || k || "").trim(); }).filter(Boolean) : [];
+    if (muc.length && !lt.some(function (l) { return l.khung.some(function (t) { return muc.indexOf(t) >= 0; }); })) muc = [];
+    return window.hskLichSu.ve({ khoa: "bd|" + b, ngay: ngay, luot: lt, sc: scBd(b), coThem: duocSua(), muc: muc,
       /* 10/11 tối user «mục Ảnh ở Lịch sử Bảo dưỡng phải gần như tức thì»: trước tải ẢNH GỐC ~600 KB cho từng ô ngày ⇒ dùng chung ảnh nhỏ của
          Planogram (máy chủ /anh-plg ~8 KB, lưu IndexedDB 62 ngày — mở lại 0 lượt mạng) + đã làm nóng từ lúc trang nạp (lamNongAnh) */
       img: function (u) { var H = window.HPLANOGRAM; return H && H.anhNho ? H.anhNho(u) : '<img loading="lazy" decoding="async" src="' + esc(u) + '" alt="">'; },
       sauVe: function (r) { var H = window.HPLANOGRAM; if (H && H.lazyQuet) H.lazyQuet(r); },
-      moAnh: function (id) { moBd(b, luotBd(b), id, 0, false); }, them: function (g) { g.bin = b; return lsThem(g); } });
+      moAnh: function (id, vt) { moBd(b, lt, id, 0, false, vt); }, them: function (g) { g.bin = b; return lsThem(g); } });
   }
   /* ghi 1 dòng sổ qua GAS bd_ls (lưu lạc quan do lich-su-ben.js lo) — xong thì nạp dòng thật, vẽ lại nơi đang mở */
   function lsThem(g) {
