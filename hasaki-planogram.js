@@ -1621,19 +1621,21 @@ var CSS = [
 ".hp-vtr1{display:flex;align-items:center;gap:8px;}.hp-vtpg{font-size:12px;white-space:nowrap;}.hp-vtpg:empty{display:none;}.hp-vt-tgon{display:none;}",
 "@media(max-width:768px){#hpVtModal .hp-modalbox{width:100vw!important;}body:has(#hpVtModal.show) header{translate:0 -100%;pointer-events:none}.hp-vt-tday{display:none}.hp-vt-tgon{display:inline}" +
   "#hpVtModal .hp-vtr1 .hsk-nut,#hpVtModal .hp-vtpg{min-height:28px!important;height:28px;padding:0 8px!important;font-size:13px!important;border-radius:6px}.hp-vtpg{border:1px solid var(--border,#e5e7eb);display:inline-flex;align-items:center;text-decoration:none}}",
-/* 10/11 user duyệt MẪU 7 «Thẻ nổi đổ bóng»: tiêu đề + 5 tab = MỘT thẻ trắng nổi trên nền xám nhạt (chỉ vỏ Planogram, chưa áp
-   Bảo dưỡng data-chu=bd). Vị trí mọi thành phần GIỮ NGUYÊN. Web: hd = nửa trên, tab sticky = nửa dưới, clip-path cắt bóng chỗ nối.
+/* 10/11 user duyệt MẪU 7 «Thẻ nổi đổ bóng»: tiêu đề + 5 tab = MỘT thẻ trắng nổi trên nền xám nhạt (vỏ Planogram
+   + 10/11 tối user «đồng bộ cho Bảo dưỡng» data-chu=bd). Vị trí mọi thành phần GIỮ NGUYÊN. Web: hd = nửa trên, tab sticky = nửa dưới, clip-path cắt bóng chỗ nối.
    Điện thoại: hd thẻ nổi trên, thanh tab chốt đáy thẻ nổi dưới (bóng hắt lên). */
-"#hpVtModal:is(:not([data-chu]),[data-chu='']) .hp-modalbox{background:color-mix(in srgb,var(--text) 4%,var(--surface))}" +
-  "#hpVtModal:is(:not([data-chu]),[data-chu='']) .hp-modalhd{background:var(--surface);margin:12px 12px 0;" +
+"#hpVtModal:is(:not([data-chu]),[data-chu=''],[data-chu=bd]) .hp-modalbox{background:color-mix(in srgb,var(--text) 4%,var(--surface))}" +
+  "#hpVtModal:is(:not([data-chu]),[data-chu=''],[data-chu=bd]) .hp-modalhd{background:var(--surface);margin:12px 12px 0;" +
   "border-radius:8px 8px 0 0;border-bottom:1px solid color-mix(in srgb,var(--border) 45%,transparent);" +
   "box-shadow:var(--shadow);clip-path:inset(-30px -30px 0 -30px);position:relative;z-index:5}" +
-  "@media(min-width:769px){#hpVtModal:is(:not([data-chu]),[data-chu='']) .bd-tabben.hp-vttab{margin:-14px -8px 14px;border-bottom:0;" +
+  "@media(min-width:769px){#hpVtModal:is(:not([data-chu]),[data-chu=''],[data-chu=bd]) .bd-tabben{" +
+  /* --sbw = bề rộng chỗ giữ thanh cuộn #hpVtBody (lich-su-ben.js đo) ⇒ mép phải thanh tab thẳng mép thẻ tiêu đề */
+  "margin:-14px calc(-8px - var(--sbw, 0px)) 14px -8px;border-bottom:0;" +
   "border-radius:0 0 8px 8px;box-shadow:var(--shadow);clip-path:inset(0 -30px -30px -30px)}}" +
-  "@media(max-width:768px){#hpVtModal:is(:not([data-chu]),[data-chu='']) .hp-modalhd{margin:10px 10px 0;border-radius:8px;border-bottom:0;clip-path:none}" +
-  "#hpVtModal:is(:not([data-chu]),[data-chu='']) .bd-tabben.hp-vttab{left:10px;right:10px;bottom:10px;border-radius:8px;border-top:0;" +
+  "@media(max-width:768px){#hpVtModal:is(:not([data-chu]),[data-chu=''],[data-chu=bd]) .hp-modalhd{margin:10px 10px 0;border-radius:8px;border-bottom:0;clip-path:none}" +
+  "#hpVtModal:is(:not([data-chu]),[data-chu=''],[data-chu=bd]) .bd-tabben{left:10px;right:10px;bottom:10px;border-radius:8px;border-top:0;" +
   "box-shadow:var(--shadow)}" +
-  "#hpVtModal:is(:not([data-chu]),[data-chu='']) #hpVtBody{padding-bottom:78px!important}}",
+  "#hpVtModal:is(:not([data-chu]),[data-chu=''],[data-chu=bd]) #hpVtBody{padding-bottom:78px!important}}",
 "@media(max-width:700px){#pane-planogram .hp-chiM{display:inline-flex;}#pane-planogram .hp-legrow{flex-wrap:nowrap;}" +
   /* 33 tên xổ ra thành 28 hàng (bộ đo răng cưa bắt 28/09) → 1 dải cuộn ngang; bấm tên vẫn soi ô trên sơ đồ */
   "#pane-planogram .hp-todo .hp-ptnhac{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-left:0;padding-bottom:2px;}#pane-planogram .hp-todo .hp-ptnhac .hp-ptchip{flex:0 0 auto;min-height:40px;}" +
@@ -4339,7 +4341,7 @@ function renderVt(){
   var TABS = [["tq", "Tổng quan"], ["lam", "Làm gì"], ["bc", "Báo cáo ở đâu"], ["ts", "Tài sản"], ["ls", "Lịch sử"]];
   var thanh = '<div class="bd-tabben hp-vttab" role="tablist" aria-label="Thông tin vị trí">' + TABS.map(function(t){
     return '<button type="button" role="tab" class="hp-whtab' + (t[0] === tab ? " active" : "") + '" data-ptab="' + t[0] + '" aria-selected="' + (t[0] === tab) + '">' + t[1] +
-      (t[0] === "ls" && lsVt.length ? '<span class="bd-tab-so">' + lsVt.length + "</span>" : "") + "</button>"; }).join("") + "</div>";
+      "</button>"; }).join("") + "</div>";   // 10/11 khuya user: không số cạnh tên tab
   var than = "";
   if (tab === "tq"){
     than = '<div class="hp-vthistrow">' + hist + '</div>' + '<div class="hp-vtduo hp-vtduo-dau">' + cardPt + cardBc + '</div>' +
