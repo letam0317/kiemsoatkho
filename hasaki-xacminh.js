@@ -402,6 +402,10 @@
       "html body #pane-xacminh .cl-hang1 .cl-tt .hx-tag{display:block!important;max-width:100%;box-sizing:border-box;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}" +
       "html body #pane-xacminh .cl-hang1 .cl-tt .hx-tag::before{display:inline-block;margin-right:5px;vertical-align:1px}" +
       "#pane-xacminh .cl-hang1 .cl-nut .hx-qd-cl{cursor:pointer;user-select:none}#pane-xacminh .cl-hang1 .cl-nut .hx-qd-cho{opacity:.65}" +
+      /* 10/11 chiều user (screenshot-1794292857916): thẻ điện thoại Theo tác vụ / Theo máy CÙNG KHUÔN thẻ Vi phạm — nút bên trái, CHỈ chip «treo N ngày»
+         chốt trên cùng bên phải (như chip «Chờ xử lý»); bỏ mọi chip khác (Chờ bạn quyết, Máy đang tìm, quyết định, ghi chú…) */
+      "#pane-xacminh .cl-hang1.hx-cl-vp{align-items:flex-start}#pane-xacminh .cl-hang1.hx-cl-vp .cl-nut{flex:1 1 auto!important;min-width:0;align-items:flex-start;align-self:center}" +
+      "#pane-xacminh .cl-hang1.hx-cl-vp .cl-tt{flex:none!important;align-self:flex-start;display:flex;flex-direction:column;align-items:flex-end}" +
       "#pane-xacminh .cl-item.vp .cl-data .cl-loi,#pane-xacminh .cl-item.vp .cl-data .cl-kv{" +
         "display:-webkit-box!important;-webkit-line-clamp:1!important;-webkit-box-orient:vertical!important;overflow:hidden!important;white-space:normal!important;text-overflow:clip!important;word-break:break-all}",
       /* 13/10 QC pop-up quyết định theo antd: thân có lề 24/16 (trước dính sát mép) · thanh nguồn điện thoại 1 hàng cuộn ngang · form 2 cột không khung */
@@ -441,7 +445,7 @@
       "#modal.hx-ben .hx-tb-luoi .hx-qd-ben.hx-qd-ben .hx-qd-form>.hx-qd-o:nth-child(2){grid-column:1!important;grid-row:2;min-width:0}#modal.hx-ben .hx-tb-luoi .hx-qd-ben.hx-qd-ben>#qdMsg{grid-column:1/-1!important;grid-row:3}" +
       "#qdGcBox.hx-nvm input{flex:1 0 64px;min-width:64px}" +
       "#modal.hx-ben #qdGcBox.hx-nvm,#modal.hx-ben .hx-tb-luoi .hx-qd-ben.hx-qd-ben>#qdLuu{height:36px!important;min-height:36px!important;box-sizing:border-box}" +   /* 10/11 chiều: nút Lưu cao bằng ô gõ ⇒ thẳng tâm */
-      ".hx-sao-o{flex:0 0 14px;width:14px;height:14px;margin:0 -4px;display:inline-flex;align-items:center}.hx-sao-o>.hx-sao{margin:0}" +
+      ".hx-sao-o{flex:0 0 14px;width:14px;height:14px;margin:0 -3px;display:inline-flex;align-items:center;justify-content:center}.hx-sao-o>.hx-sao{margin:0}" +
       ".hx-visao{font-size:13px;line-height:1.45;color:var(--text);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}.hx-visao.mo{display:block}",
       ".hx-sx{border:0;background:none;padding:0;font:inherit;font-weight:inherit;color:inherit;cursor:pointer;text-align:left}.hx-sx:hover,.hx-sx.on{color:var(--accent)}",
       ".hx-pd{display:flex;gap:10px;align-items:baseline;padding:8px 12px;background:#111;color:#e6efe9;font-size:14px;min-height:22px;flex-wrap:nowrap;overflow:hidden}.hx-pd>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
@@ -649,7 +653,7 @@
     var ctx = { API: function () { return API; }, phien: function () { return PHIEN; }, moThanhBen: moThanhBen, noiLai: noiLai };   // 30/10 noiLai: CCTV dò lại máy chủ khi đường hầm laptop đã chết
     if (window.HXSODO) return window.HXSODO.ve(b, ctx);
     b.innerHTML = '<div class="panel"><div class="hx-trong">Đang tải sơ đồ camera…</div></div>';
-    _sdcNap = _sdcNap || new Promise(function (ok, loi) { var s = document.createElement("script"); s.src = "hasaki-so-do-camera.js?v=20261105d"; s.onload = ok; s.onerror = function () { _sdcNap = null; loi(); }; document.head.appendChild(s); });
+    _sdcNap = _sdcNap || new Promise(function (ok, loi) { var s = document.createElement("script"); s.src = "hasaki-so-do-camera.js?v=20261110a"; s.onload = ok; s.onerror = function () { _sdcNap = null; loi(); }; document.head.appendChild(s); });
     _sdcNap.then(function () { if ($id("hxBody") === b) window.HXSODO.ve(b, ctx); }).catch(function () {
       b.innerHTML = '<div class="panel"><div class="hx-trong">Không tải được mô-đun sơ đồ camera (mất mạng?). <button type="button" class="hx-nut nho" id="sdcThuLai">Thử lại</button></div></div>';
       var t = $id("sdcThuLai"); if (t) t.onclick = veSoDo; });
@@ -738,9 +742,9 @@
     var gy = (l.cong || []).find(function (x) { return x.code === l.goiY; });
     var so = Math.max(1, (l.buocAnh || []).length), src = anhNguoi(l);
     var anh = src ? '<span class="row-media rm-cl' + (so > 1 ? " multi" : "") + '" title="Bấm để phát clip"><img class="rm-thumb" loading="lazy" decoding="async" src="' + e_(thu_(src)) + '" alt="Clip camera"><span class="rm-play"></span>' + (so > 1 ? '<span class="media-badge">' + so + '</span>' : "") + '</span>' : '<div class="cl-noimg">—</div>';
-    var chipTT = tt === "xong" ? '<span class="hx-tag good">Đã lập phiếu</span>' : tt === "da" ? '<span class="hx-tag info">' + e_(l.qd.qd) + '</span>' : tt === "luu" ? '<span class="hx-tag">Chỉ lưu vết</span>' : '<span class="hx-tag warn">Chờ bạn quyết</span>';
-    var chipNg = l.khongThayNguoi ? '<span class="hx-tag warn">không thấy người</span>' : (ng ? '<span class="hx-tag bad">' + ng + ' người nghi</span>' : '<span class="hx-tag info">có cử động</span>');
-    var chips = chipTT + chipNg + (tGC ? nhanGC(l.id) : "");
+    /* 10/11 chiều user: thẻ điện thoại chỉ giữ chip treo — lượt chưa quyết treo từ giờ ghi nhận */
+    var tLuot = tt === "cho" ? new Date(String(l.ngay) + "T" + hm(l.gioNguoi || l.tu) + ":00").getTime() : NaN;
+    var chips = isNaN(tLuot) ? "" : treoTag(Math.max(0, Math.round((Date.now() - tLuot) / 36e5)));
     var nutMo = (l.may && l.may.taskId) ? '<a class="hsk-nut phu nho vp-mo" href="https://work.hasaki.vn/tasks?task_id=' + e_(l.may.taskId) + '" target="_blank" rel="noopener" title="Mở task trên work.hasaki.vn">Mở task ↗</a>' : "";
     var nutQD = '<span role="button" tabindex="0" class="hsk-nut phu nho hx-qd-cl">' + (l.qd ? "Đổi quyết định" : "Quyết định") + '</span>';
     var uvThe = gy ? '<b>' + e_(gy.ten + " · " + gy.code) + '</b> <span class="cl-sep">|</span> cổng <b>' + e_(hm(gy.gio)) + '</b>'
@@ -748,7 +752,7 @@
     var nguonBC = [(l.chamCong || []).length ? "chấm công" : "", (l.cong || []).length ? "sổ cổng" : ""].filter(Boolean).join(" · ");
     var chot = nguoiChot(l);
     return '<div class="cl-item vp' + (tGC ? " hx-gc-mo" : "") + '" data-l="' + i + '" data-lid="' + e_(l.id) + '">' +
-      '<div class="cl-hang1">' + anh + '<span class="cl-tt">' + chips + '</span><span class="cl-nut">' + nutMo + nutQD + '</span></div>' +
+      '<div class="cl-hang1 hx-cl-vp">' + anh + '<span class="cl-nut">' + nutMo + nutQD + '</span><span class="cl-tt">' + chips + '</span></div>' +
       '<div class="cl-data cl-body">' +
         '<div class="cl-loi" title="' + e_(loiCam(l)) + '">' + e_(loiCam(l)) + '</div>' +
         '<div class="cl-kv">Vị trí: <b>' + e_(tenLoai(l.loai)) + '</b> <span class="cl-sep">|</span> <b>' + e_(l.camera) + '</b></div>' +
@@ -1661,15 +1665,20 @@
       '><img class="rm-thumb" loading="lazy" decoding="async" src="' + e_(thu_(src)) + '" alt="' + (vid ? "Clip camera" : "Ảnh bằng chứng") + '">' +
       (vid ? '<span class="rm-play"></span>' : "") + (so > 1 ? '<span class="media-badge">' + so + '</span>' : "") + '</span>';
   }
+  /* 10/11 chiều user: Tác động WMS — cụm giờ («04/11 18:55 / trước 14,8 giờ») và cụm tên + nghiệp vụ ĐỐI XỨNG quanh sao vàng: cột giờ rộng đúng
+     chữ dài nhất của danh sách (trước cố định 88 px dư chỗ bên trái sao) ⇒ hai khe quanh sao bằng nhau, cột tên mọi hàng vẫn thẳng */
+  function canGioLan(root) {
+    var gs = [].slice.call((root || document).querySelectorAll(".hx-qd-ls .hx-lan>.gio")); if (!gs.length) return;
+    gs.forEach(function (g) { g.style.minWidth = "0"; g.style.width = "max-content"; g.style.flex = "none"; });
+    var m = Math.max.apply(null, gs.map(function (g) { return Math.ceil(g.getBoundingClientRect().width); }));
+    gs.forEach(function (g) { if (m > 0) g.style.width = m + "px"; else { g.style.width = ""; g.style.minWidth = ""; } });
+  }
   function theTreo(p) {
     var b = bcPhieu(p), ai = aiPhieu(p), mm = MUC_MAY[mucMay(p)] || ["", ""], x = p.xm || {}, q = p.qdB1;
     var daXong = !!(x.daXuLy && !/hàng chờ|đang /i.test(x.daXuLy)), daQD = !!(q && !/^Cắt thêm clip/.test(q.qd || ""));
     var bc = !!(b.clip || b.moc.length || b.kho || b.trung || b.veSinh || (b.ls && b.ls.ds.some(function (y) { return y.clip; })));
     var tGC = gcCua(p.id);
-    var chips = '<span class="hx-tag ' + mm[1] + '" title="' + e_(mm[0]) + (p.goiY ? " · luật " + e_(p.goiY.luat) : "") + '">' + e_(String(mm[0]).replace(/^Máy gợi ý · /, "")) + '</span>' +
-      treoTag(p.treoGio) +
-      (p.buoc && p.buoc !== "B1" ? '<span class="hx-tag info">' + e_(p.buoc) + '</span>' : "") +
-      (tGC ? nhanGC(p.id) : "");
+    var chips = treoTag(p.treoGio);   // 10/11 chiều user: thẻ điện thoại chỉ giữ chip treo (chốt góc phải trên)
     var nutQD = '<span role="button" tabindex="0" class="hsk-nut phu nho hx-qd-cl' + (bc && p.buoc === "B1" && !daXong ? "" : " hx-qd-cho") +
       '" data-moqd="' + e_(p.id) + '">' + (daQD && p.buoc === "B1" && !daXong ? "Đổi quyết định" : "Quyết định") + '</span>';
     var cBC = dsMoTaBC(b).map(function (s) { return s.replace(/<[^>]+>/g, ""); });
@@ -1677,8 +1686,9 @@
       (cBC.length ? '<b>' + cBC[0] + '</b>' + (cBC.length > 1 ? " · " + cBC.slice(1).join(" · ") : "") : '<span class="muted">Chỉ có ảnh ghi nhận</span>');
     var tgTao = p.tao || p.giao;
     return '<div class="cl-item vp' + (tGC ? " hx-gc-mo" : "") + '" data-p="' + e_(p.id) + '">' +
-      '<div class="cl-hang1">' + anhThe(p, b) + '<span class="cl-tt">' + chips + '</span>' +
-        '<span class="cl-nut">' + (p.link ? '<a class="hsk-nut phu nho vp-mo" href="' + e_(p.link) + '" target="_blank" rel="noopener" title="Mở task trên work.hasaki.vn">Mở task ↗</a>' : "") + nutQD + '</span></div>' +
+      '<div class="cl-hang1 hx-cl-vp">' + anhThe(p, b) +
+        '<span class="cl-nut">' + (p.link ? '<a class="hsk-nut phu nho vp-mo" href="' + e_(p.link) + '" target="_blank" rel="noopener" title="Mở task trên work.hasaki.vn">Mở task ↗</a>' : "") + nutQD + '</span>' +
+        '<span class="cl-tt">' + chips + '</span></div>' +
       '<div class="cl-data cl-body">' +
         '<div class="cl-loi" title="' + e_(p.loi) + '">' + e_(p.loi) + '</div>' +
         '<div class="cl-kv">Vị trí: <b>' + e_((p.lsKho && p.lsKho.bin) || p.viTri || "—") + '</b>' + (b.kenh ? ' <span class="cl-sep">|</span> <b>' + e_(b.kenh) + '</b>' : "") + '</div>' +
@@ -2124,7 +2134,7 @@
           '<div class="hx-qd-o"><span class="lbl">Gán người khác</span><div class="hx-cb hx-nvm" id="qdGcBox"><div class="hx-nvm-hang"><div class="hx-chips"></div>' +
           '<input id="qdGc" type="text" autocomplete="off" spellcheck="false" placeholder="Gõ mail, họ tên hoặc mã NV…"></div><div class="menu"></div></div></div></div>' +
         '<button class="hx-nut" id="qdLuu" style="width:100%">Lưu quyết định</button><div id="qdMsg" class="muted" style="font-size:12px;min-height:16px"></div></div>') + '</div>';
-    tbAp();
+    tbAp(); canGioLan($id("mBody"));
     var aGN = $id("qdAnhGN"), anhI = 0;
     if (aGN) aGN.onclick = function () { if (typeof openLB === "function") openLB(anhDs.map(function (u, i) { return { url: u, title: "Ảnh ghi nhận " + (i + 1) + "/" + anhDs.length }; }), anhI); };
     $id("mBody").querySelectorAll("[data-anhi]").forEach(function (b) { b.onclick = function () { anhI = Number(b.dataset.anhi); aGN.src = anhDs[anhI]; $id("qdAnhSo").textContent = (anhI + 1) + "/" + anhDs.length;
@@ -2607,7 +2617,10 @@
       if (tai._nen) return tai._nen;
       tai._nen = Promise.resolve(tai(true)).then(function () { tai._nen = null; return !!D; }, function () { tai._nen = null; return false; }); return tai._nen; },
     /* 30/10 user «không thấy nút Theo tác vụ khi tìm task 14081936» (đã qua B1, đang B3.2 — vẫn có clip/lượt kho ở Xác minh): mọi phiếu Xác minh có dữ liệu */
-    idTacVu: function () { return D ? D.phieu.map(function (p) { return String(p.id); }) : []; },
+    /* 10/11 chiều user (screenshot-1794292603448): CHƯA có clip đề xuất thông tin vi phạm thì Vi phạm KHÔNG hiện nút «Theo tác vụ» — chỉ phiếu đã có clip
+       camera (clip khoanh giờ châm / clip lượt kho); clip lúc người kiểm chụp không tính (người trong đó là người kiểm) */
+    idTacVu: function () { return D ? D.phieu.filter(function (p) { var b = bcPhieu(p); return !!(b.clip || (b.ls && (b.ls.ds || []).some(function (y) { return y.clip; }))); })
+      .map(function (p) { return String(p.id); }) : []; },
     /* 25/10 (2) phiếu do Theo máy lập (lượt camera → máy ghi phiếu): { task_id: id lượt } */
     idTheoMay: function () { var m = {}; (D ? D.luot : []).forEach(function (l) { var t = l.may && (l.may.phieu || l.may.taskId); if (t) m[String(t)] = l.id; }); return m; },
     /* mở thanh bên ở NGAY tab đang đứng (Vi phạm gọi — user «đóng thanh bên thì vẫn về giao diện Vi phạm»): CSS Xác minh nạp trước */
