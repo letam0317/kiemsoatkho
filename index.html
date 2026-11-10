@@ -66,7 +66,7 @@ window.GOC_DL=/\.pages\.dev$|^(localhost|127\.0\.0\.1)$/.test(location.hostname)
   try{
     var tb=null; try{ tb=new URLSearchParams(location.search).get('tab'); }catch(e){}
     if(tb!=='planogram' || /khoa=/.test(location.hash||'')) return;
-    var V='20261110e';   // PHẢI khớp s.src trong moHasakiPlanogram()
+    var V='20261110f';   // PHẢI khớp s.src trong moHasakiPlanogram()
     var l=document.createElement('link'); l.rel='preload'; l.as='script'; l.href='hasaki-planogram.js?v='+V; document.head.appendChild(l);
     var GAS='https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec';
     var khoa=''; try{ khoa=localStorage.getItem('tb-khoa')||(localStorage.getItem('tk-phien')?'tk:'+localStorage.getItem('tk-phien'):''); }catch(e){}   // 22/10 phiên tài khoản thay mã thiết bị
@@ -794,9 +794,8 @@ tr.tb-dangxem>td,.cl-item.tb-dangxem{background:var(--ad-chon,color-mix(in srgb,
 #lightbox.lb-b #lbContent,#lightbox.lb-b #lbContent img,#lightbox.lb-b #lbContent video{max-width:calc(100vw - 176px); max-height:calc(100vh - 78px - var(--dai));}
 #lightbox.lb-b #lbContent .lb-th{height:min(calc(100vh - 78px - var(--dai)),640px);}
 #lightbox.lb-b #lbCount{display:none;}
-#lightbox.lb-b #lbClose,#lightbox.lb-b #lbClose.x-do{top:14px; right:14px; width:30px; height:30px; min-height:0; padding:0; border:0; border-radius:50%;
-  background:var(--bad)!important; color:inherit; font-size:18px; line-height:30px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,.4);}
-#lightbox.lb-b #lbClose::before{content:""; position:absolute; inset:-6px;}
+/* 10/11 tối user duyệt (screenshot-1794311104928): BỎ chấm đỏ đóng — đóng bằng bấm nền tối / Esc / vuốt lùi (hskLop) */
+#lightbox.lb-b #lbClose{display:none!important;}
 #lightbox.lb-b .lb-btn{top:calc(64px + (100vh - 78px - var(--dai)) / 2); width:40px; height:40px; padding:0; border-radius:50%; display:flex; align-items:center; justify-content:center;
   background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.25); color:inherit; opacity:1;}
 #lightbox.lb-b .lb-btn:hover{background:rgba(255,255,255,.28); color:inherit; border-color:rgba(255,255,255,.4);}
@@ -819,12 +818,14 @@ tr.tb-dangxem>td,.cl-item.tb-dangxem{background:var(--ad-chon,color-mix(in srgb,
 #lbDai .so{position:absolute; right:2px; bottom:2px; background:rgba(0,0,0,.7); color:inherit; font-size:9.5px; line-height:13px; border-radius:4px; padding:0 4px;}
 #lbDai .n{font-size:10.5px; color:color-mix(in srgb,currentColor 62%,transparent); margin-top:4px; white-space:nowrap;} #lbDai .lb-o.on .n{color:inherit; font-weight:600;}
 @media (max-width:600px){
-  #lightbox.lb-b{--dai:76px; padding:62px 52px calc(var(--dai) + 10px);} #lightbox.lb-b.lb-b-ngay{--dai:58px;}
-  #lightbox.lb-b #lbContent,#lightbox.lb-b #lbContent img,#lightbox.lb-b #lbContent video{max-width:calc(100vw - 104px); max-height:calc(100vh - var(--pop-tren,0px) - 72px - var(--dai));}
-  #lightbox.lb-b .lb-btn{top:calc(62px + (100vh - 72px - var(--dai)) / 2);} #lightbox.lb-b #lbPrev{left:6px;} #lightbox.lb-b #lbNext{right:6px;}
-  #lightbox.lb-b #lbClose,#lightbox.lb-b #lbClose.x-do{top:12px; right:10px; width:28px; height:28px; line-height:28px;}
-  #lightbox.lb-b #lbCaption{max-width:calc(100vw - 96px); border-radius:10px; padding:5px 10px 5px 5px;}
-  #lbCaption .lb-h1 .f0{display:none;}
+  /* 10/11 tối user duyệt (lượt 2): khung thông tin 3 hàng khít chữ — tên vị trí / mã vị trí ĐỦ (không xén) / người · ngày giờ — ảnh đại diện giữ 32 px;
+     ảnh rộng gần hết màn, mũi tên nằm đè nửa trên ảnh (nền tối mờ cho rõ) */
+  #lightbox.lb-b{--dai:76px; padding:78px 8px calc(var(--dai) + 8px);} #lightbox.lb-b.lb-b-ngay{--dai:58px;}
+  #lightbox.lb-b #lbContent,#lightbox.lb-b #lbContent img,#lightbox.lb-b #lbContent video{max-width:calc(100vw - 16px); max-height:calc(100vh - var(--pop-tren,0px) - 92px - var(--dai));}
+  #lightbox.lb-b .lb-btn{top:calc(78px + (100vh - 92px - var(--dai)) / 2); background:color-mix(in srgb,black 55%,transparent);} #lightbox.lb-b #lbPrev{left:12px;} #lightbox.lb-b #lbNext{right:12px;}
+  #lightbox.lb-b #lbCaption{width:max-content; max-width:calc(100vw - 16px); border-radius:10px; padding:5px 12px 5px 5px;}
+  #lbCaption .lb-h1 .gach{display:none;} #lbCaption .lb-h1 .ma{display:block; font-size:11px; line-height:15px;}
+  #lbCaption .lb-h1,#lbCaption .lb-h2{white-space:nowrap;}
   #lbDai{padding:6px 8px 10px;} #lbDai .tr{gap:8px;} #lbDai .oo{width:40px; height:40px;}
 }
 
@@ -1745,11 +1746,11 @@ body.side-anim:has(.wrap :is([class*="modal"],[id$="modal"],[id$="Modal"],#light
 <script src="hasaki-giaodien-antd.js?v=20261110c"></script>
 <script src="tai-khoan.js?v=20261110a"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
 <script src="tat-loc.js?v=20261109a" defer></script>
-<script src="lich-su-ben.js?v=20261110d" defer></script><!-- 10/11 tab Lịch sử thanh bên (lịch tháng + Sửa chữa) + pop-up ảnh kiểu B — dùng chung Planogram + Bảo dưỡng -->
+<script src="lich-su-ben.js?v=20261110f" defer></script><!-- 10/11 tab Lịch sử thanh bên (lịch tháng + Sửa chữa) + pop-up ảnh kiểu B — dùng chung Planogram + Bảo dưỡng -->
 <script src="loc-popup.js?v=20261108a" defer></script>
 <!-- 26/10 điện thoại: khối lọc trong pop-up gập sau nút «Bộ lọc» (cùng mẫu nút trang) -->
 <!-- 22/10 nút «✕ Tắt lọc» · 23/10 dời vào TRONG nút «Bộ lọc», đỏ khi đang lọc, ẩn khi không lọc (dùng chung Retail/Factory) -->
-<link rel="stylesheet" href="thanh-phan.css?v=20261110c"><!-- 21/10 chip trạng thái + nút dùng chung mọi tab (Mẫu 1 đánh giá 20/10) -->
+<link rel="stylesheet" href="thanh-phan.css?v=20261110f"><!-- 21/10 chip trạng thái + nút dùng chung mọi tab (Mẫu 1 đánh giá 20/10) -->
 <link rel="stylesheet" href="thanh-cuon.css?v=20261022a"><!-- 17/10 thanh cuộn chung theo theme (bản gốc hasaki/kiemsoatkho/thanh-cuon.css) -->
 <link rel="stylesheet" href="bo-loc-ngay.css?v=20261019a"><script src="bo-loc-ngay.js?v=20261023a"></script><!-- 19/10 BỘ LỌC NGÀY CHUẨN toàn dự án (taoBoLocNgay) -->
 </head>
@@ -3838,8 +3839,10 @@ function renderLB(){
     cap.style.display='flex';
     $('lbPrev').classList.toggle('tat', lbIdx<=0); $('lbNext').classList.toggle('tat', lbIdx>=lbList.length-1);
     const dai=$('lbDai'), on=dai && dai.querySelector('[data-dai="'+m.dai+'"]');
-    if(dai){ dai.querySelectorAll('.lb-o.on').forEach(x=>x!==on && x.classList.remove('on')); if(on){ on.classList.add('on');
-      const r=on.getBoundingClientRect(), rd=dai.getBoundingClientRect(); if(r.left<rd.left+8 || r.right>rd.right-8) dai.scrollLeft+=r.left-rd.left-(rd.width-r.width)/2; } }
+    /* 10/11 tối user duyệt: dải chỉ hiện 14 ô (điện thoại 7 — 14 ô không vừa bề ngang) quanh ô đang xem, cả dải căn giữa màn; đổi ảnh thì cửa sổ trượt theo */
+    if(dai){ dai.querySelectorAll('.lb-o.on').forEach(x=>x!==on && x.classList.remove('on')); if(on) on.classList.add('on');
+      const ds=[...dai.querySelectorAll('.lb-o')], n=innerWidth<600 ? 7 : 14, j=Math.max(0, ds.indexOf(on)), dau=Math.max(0, Math.min(ds.length-n, j-Math.floor(n/2)));
+      ds.forEach((x,i)=>{ x.style.display = i>=dau && i<dau+n ? '' : 'none'; }); dai.scrollLeft=0; }
   }
   else if(cap){
     if(m.title || m.sub || m.meta){
@@ -4096,7 +4099,7 @@ let _bdNap=null;
 function napModBD(){
   if(!_bdNap){
     _bdNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-baoduong.js?v=20261110e';
+      const s=document.createElement('script'); s.src='hasaki-baoduong.js?v=20261110f';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-baoduong.js'));
       document.body.appendChild(s);
     });
@@ -4136,7 +4139,7 @@ function moHasakiPlanogram(){
       '<div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:54%"></div>'+
       '<div class="sk sk-line" style="width:62%"></div></div>';
     _hpNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20261110e';   // khớp V ở <head>
+      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20261110f';   // khớp V ở <head>
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-planogram.js'));
       document.body.appendChild(s);
     });
@@ -5022,7 +5025,8 @@ function enhanceSelect(sel){
     if(tt && t.indexOf(tt)===0){ lab.textContent=''; const a=document.createElement('span'); a.className='cs-tt'; a.textContent=tt; lab.appendChild(a); lab.appendChild(document.createTextNode(t.slice(tt.length))); }
     else lab.textContent=t; };
   const dung=()=>{ list.innerHTML=''; [...sel.options].forEach((o,i)=>{
-    const li=document.createElement('li'); li.className='cs-opt'+(i===sel.selectedIndex?' sel':''); li.textContent=o.text; li.setAttribute('role','option');
+    const li=document.createElement('li'); /* 10/11: lớp của <option> (vd «bo» = mục đã bỏ, gạch ngang) */
+    li.className='cs-opt'+(i===sel.selectedIndex?' sel':'')+(o.className?' '+o.className:''); li.textContent=o.text; li.setAttribute('role','option');
     li.addEventListener('click', ev=>{ ev.stopPropagation(); sel.selectedIndex=i; dongBo();
       // Mô phỏng đúng select native: bắn 'input' TRƯỚC rồi 'change' — mọi listener đều nhận được
       sel.dispatchEvent(new Event('input',{bubbles:true}));
