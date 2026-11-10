@@ -1064,7 +1064,18 @@ td.kpi-ten{white-space:nowrap;}
 #kpiWrap thead th.kpi-col-val, #kpiWrap thead th.kpi-col-prev{text-align:right;}
 .kpi-wrap .kpi-g{border-left:1px solid var(--border);}
 .kpi-wrap tr.kpi-top td.kpi-rank{background:color-mix(in srgb,var(--bad) 8%,transparent);}
-.kpi-tieu{display:none;} #kpiPanel .panel-head>.cs{margin-left:auto; width:auto; flex:0 0 auto;}
+/* 10/11 trưa user: «LUỸ KẾ TRONG THÁNG 11/2026» cả web lẫn điện thoại — tháng chữ ĐEN, không nghiêng, giữ gạch chân; cả cụm CĂN GIỮA khung;
+   web: 3 tab Nhân viên · Quản lý · Thống kê căn lề PHẢI. Khung không cắt tràn (danh sách tháng xổ ra ngoài được). */
+#kpiPanel{overflow:visible;} #kpiPanel .panel-head{position:relative; z-index:5;}
+.kpi-cum{display:inline-flex; align-items:center; gap:6px; white-space:nowrap;}
+.kpi-tieu{display:inline; white-space:nowrap; font-size:13px; font-weight:600; letter-spacing:.04em; color:var(--text);}
+#kpiPanel .kpi-cum>.cs{flex:0 0 auto; width:auto; min-width:0; max-width:none; margin:0;}
+#kpiPanel .kpi-cum>.cs>.cs-trigger{width:auto; height:24px; min-height:0; padding:0; gap:0; font-size:13px; font-weight:600; font-style:normal; white-space:nowrap;
+  color:var(--text); background:transparent!important; border:0!important; box-shadow:none!important; border-radius:0;}
+#kpiPanel .kpi-cum>.cs>.cs-trigger .cs-lab{text-decoration:underline dotted; text-underline-offset:3px;}
+#kpiPanel .kpi-cum>.cs .cs-tt, #kpiPanel .kpi-cum>.cs .cs-caret{display:none;}
+#kpiPanel .kpi-cum>.cs>.cs-list{left:50%; right:auto; min-width:150px; translate:-50% 0;}
+#kpiPanel .panel-head{justify-content:flex-end;} #kpiPanel .kpi-cum{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);}   /* web: cụm giữa, 3 tab phải */
 @media(min-width:769px){ .kpi-wrap table{table-layout:fixed;} .kpi-wrap col.kc-rank{width:56px;} .kpi-wrap col.kc-id{width:120px;}
   .kpi-wrap col.kc-luot{width:21%;} .kpi-wrap col.kc-val{width:17%;} .kpi-wrap col.kc-prev{width:18%;} }
 /* điện thoại: Segmented chiếm trọn hàng đầu (3 nút chia đều), ô tháng xuống hàng dưới — không bị chèn mất chữ */
@@ -1077,10 +1088,8 @@ td.kpi-ten{white-space:nowrap;}
   #pane-tong #kpiChe{position:fixed; left:0; right:0; bottom:0; z-index:55; display:flex; margin:0; padding:0 2px env(safe-area-inset-bottom)!important; border-radius:0!important;
     background:var(--surface)!important; border:0!important; border-top:1px solid var(--ad-chia,var(--border))!important; box-shadow:0 -4px 12px color-mix(in srgb,var(--text) 8%,transparent);}
   #pane-tong #kpiChe .hp-whtab{min-height:48px; border-radius:0!important; font-size:12px!important;}
-  #pane-tong #kpiPanel .panel-head:has(#kpiChe){padding:8px 12px!important; flex-wrap:nowrap!important; justify-content:flex-start; gap:8px;}
-  #pane-tong .kpi-tieu{display:inline; flex:0 0 auto; white-space:nowrap; font-size:14px; font-weight:600; color:var(--text);}
-  #pane-tong #kpiPanel .panel-head>.cs{flex:0 0 auto; width:auto; min-width:0; margin:0 0 0 auto;}   /* 09/11 tối user: ô lọc tháng chốt cứng căn PHẢI */
-  #pane-tong #kpiPanel .panel-head>.cs>.cs-trigger{width:auto; height:24px; min-height:0; padding:0 8px; gap:6px; font-size:11px; white-space:nowrap;}
+  #pane-tong #kpiPanel .panel-head:has(#kpiChe){padding:8px 12px!important; flex-wrap:nowrap!important; justify-content:center; gap:8px;}   /* 10/11 trưa: cụm tiêu đề căn giữa */
+  #pane-tong #kpiPanel .kpi-cum{position:static; transform:none;}   /* điện thoại: 3 tab đã chốt đáy màn ⇒ cụm nằm thường, căn giữa bằng flex */
   #pane-tong .kpi-wrap table{table-layout:fixed; width:100%;}
   #pane-tong .kpi-wrap col.kc-rank{width:26px;} #pane-tong .kpi-wrap col.kc-id{width:0;} #pane-tong .kpi-wrap col.kc-luot{width:40px;}
   #pane-tong .kpi-wrap col.kc-val{width:52px;} #pane-tong .kpi-wrap col.kc-prev{width:84px;}
@@ -1748,24 +1757,32 @@ window.hxDoMayChu = function(){
           var nho = []; try { nho = JSON.parse(localStorage.getItem("hx-ham-ds") || "[]"); } catch(e){}
           return (Array.isArray(nho) ? nho : []).filter(function(u){ return /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(u); }).map(function(u){ return { xmHam: u }; }); }); };
     return lan(0); };
+  /* 10/11 user «tải clip/ảnh khi laptop tắt rất lâu — ép dưới 1 s»: đo 10/11 pcBangPh (Apps Script) 2,5 s + ping 0,1–0,2 s. Nay có danh sách máy dự phòng
+     ĐÃ NHỚ (hx-ham-ds) thì ping thẳng các máy đó NGAY (3 s), không chờ Apps Script; pcBangPh vẫn chạy nền để làm mới danh sách cho lần sau.
+     Không máy nào đã nhớ trả lời → mới chờ danh sách từ Apps Script như cũ. */
   var duPhong = function(){ var T = window.TK, ph = T && T.phien; if (!ph) return Promise.reject(0);
-    return layDsHam(ph).then(function(ds){
-        if (!ds.length) throw 0;
+    var nho = []; try { nho = JSON.parse(localStorage.getItem("hx-ham-ds") || "[]"); } catch(e){}
+    nho = (Array.isArray(nho) ? nho : []).filter(function(u){ return /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(u); }).map(function(u){ return { xmHam: u }; });
+    var quaGas = layDsHam(ph);
+    if (!nho.length) return quaGas.then(chonMay);
+    return chonMay(nho, 3000).catch(function(){ return quaGas.then(chonMay); }); };
+  var chonMay = function(ds, han){
+        if (!ds.length) return Promise.reject(0);
         /* 21/10 (Theo máy điện thoại «0 sự việc»): laptop thật + PC dự phòng chỉ xem cùng báo đường hầm → ping hết,
            máy KHÔNG dự phòng trả lời là lấy ngay; chỉ khi laptop im mới chịu bản chỉ xem (thiếu dữ liệu bãi xe, Theo máy trống) */
         /* 05/11 user «máy dự phòng làm đủ»: nhiều máy dự phòng → máy có dữ liệu MỚI nhất (ping.luc = giờ bản mã vừa nhận), bằng nhau thì nhiều chỗ hơn */
         return new Promise(function(ok, hong){ var con = ds.length, that = null, du = null, duDia = -1, duLuc = -1, duMa = 0;
           var chot = function(){ if (that) { window.__HX_DU_PHONG = 0; window.__HX_MA_HOA = 0; ok(that); }
             else if (du) { window.__HX_DU_PHONG = 1; window.__HX_MA_HOA = duMa; ok(du); } else hong(0); };
-          ds.forEach(function(m){ var c = new AbortController(); setTimeout(function(){ c.abort(); }, 8000);
+          ds.forEach(function(m){ var c = new AbortController(); setTimeout(function(){ c.abort(); }, han || 8000);
             fetch(m.xmHam + "/api/ping", { signal: c.signal }).then(function(r){ if (!r.ok) throw 0; return r.json().catch(function(){ return {}; }); })
               /* 22/10: nhiều bản dự phòng → máy nhiều chỗ (có gương clip đủ nhất, BANGCHUYEN-2) */
               .then(function(x){ if (x && x.duPhong) { var l = Math.floor((x.luc || 0) / 600e3);   // lệch < 10' coi như bằng nhau
                   if (!du || l > duLuc || (l === duLuc && (x.diaGB || 0) > duDia)) { du = m.xmHam; duLuc = l; duDia = x.diaGB || 0; duMa = x.maHoa ? 1 : 0; } }
                 else { that = that || m.xmHam; con = 0; chot(); } }, function(){})
-              .then(function(){ if (con > 0 && !--con) chot(); }); }); }); }); };
+              .then(function(){ if (con > 0 && !--con) chot(); }); }); }); };
   var ham = function(){ var cu = ""; try { cu = localStorage.getItem("hx-ham") || ""; } catch(e){}
-    return (cu ? ping(cu, 6000).then(function(u){ if (window.__HX_DU_PHONG) { window.__HX_DU_PHONG = 0; window.__HX_MA_HOA = 0; throw 0; } return u; }) : Promise.reject(0))
+    return (cu ? ping(cu, 2500).then(function(u){ if (window.__HX_DU_PHONG) { window.__HX_DU_PHONG = 0; window.__HX_MA_HOA = 0; throw 0; } return u; }) : Promise.reject(0))
       /* 20/10: bỏ tệp địa chỉ công khai summary/xm-may-chu.json — địa chỉ laptop cũng đi qua nhịp tim (xmHam) → pcBangPh sau đăng nhập */
       .catch(duPhong)
       .then(function(u){ if (!window.__HX_DU_PHONG) try { localStorage.setItem("hx-ham", u); } catch(e){} return u; }, duPhong)
@@ -1810,6 +1827,8 @@ window.hxThuDrive = function(){
 window.hxNoiLai = function(){
   if (window.hxNoiLai._p) return window.hxNoiLai._p;
   window.__HX_DO = null; window.__HX_MAY_CHU = 0;
+  /* 10/11: phiên đã nhớ của máy chủ vừa hỏng cũng bỏ (hx-phien-ds) — không thì đổi phiên lại lấy đúng phiên chết đó */
+  try { var apiCu = localStorage.getItem("hx-phien-api"); var mp = JSON.parse(localStorage.getItem("hx-phien-ds") || "{}"); if (apiCu && mp && mp[apiCu]) { delete mp[apiCu]; localStorage.setItem("hx-phien-ds", JSON.stringify(mp)); } } catch(e){}
   try { localStorage.removeItem("hx-phien-api"); } catch(e){}   // ép đổi phiên cả khi dò ra đúng máy cũ (phiên ở đó đã hết)
   return window.hxNoiLai._p = window.hxDoMayChu().then(function(co){ window.hxNoiLai._p = null; return co; },
     function(){ window.hxNoiLai._p = null; return false; });
@@ -1934,7 +1953,7 @@ window.hxNoiLai = function(){
     <div class="panel" id="kpiPanel" style="margin-bottom:14px">
       <div class="panel-head"><span class="kpi-che" id="kpiChe" role="tablist" aria-label="Chế độ xem">
           <button type="button" class="hp-whtab active" data-che="nv">Nhân viên</button><button type="button" class="hp-whtab" data-che="ql">Quản lý</button><button type="button" class="hp-whtab" data-che="tkn">Thống kê</button></span>
-        <span class="kpi-tieu">Luỹ kế ở tháng</span><select id="kpiThang" title="Chọn tháng/năm"></select></div>
+        <span class="kpi-cum"><span class="kpi-tieu">LUỸ KẾ TRONG THÁNG</span><select id="kpiThang" title="Chọn tháng/năm" data-tien-to="Tháng "></select></span></div>
       <!-- `data-mb-cuon`: bảng xếp hạng cột ngắn (giữ so sánh giữa các dòng). 09/11: điện thoại vừa khít, không cuộn. -->
       <div class="kpi-wrap" id="kpiWrap" data-mb-cuon="bang-xep-hang-cot-ngan"><div style="padding:16px"><div class="sk sk-line" style="width:80%"></div><div class="sk sk-line" style="width:60%"></div></div></div>
       <div class="kpi-band" id="kpiBand" hidden>   <!-- 09/11 tối user: 4 ô chỉ số gom vào chế độ «Thống kê» -->
@@ -4905,7 +4924,10 @@ function enhanceSelect(sel){
   const lab=document.createElement('span'); lab.className='cs-lab'; const car=document.createElement('span'); car.className='cs-caret';
   trig.appendChild(lab); trig.appendChild(car); wrap.appendChild(trig);
   const list=document.createElement('ul'); list.className='cs-list'; list.setAttribute('role','listbox'); wrap.appendChild(list);
-  const dongBo=()=>{ const o=sel.options[sel.selectedIndex]; lab.textContent=o?o.text:''; };
+  /* 10/11: data-tien-to — phần chữ đầu nhãn bọc .cs-tt để nơi cần (Tổng kết điện thoại) ẩn bằng CSS, danh sách vẫn đủ chữ */
+  const dongBo=()=>{ const o=sel.options[sel.selectedIndex], t=o?o.text:'', tt=sel.getAttribute('data-tien-to');
+    if(tt && t.indexOf(tt)===0){ lab.textContent=''; const a=document.createElement('span'); a.className='cs-tt'; a.textContent=tt; lab.appendChild(a); lab.appendChild(document.createTextNode(t.slice(tt.length))); }
+    else lab.textContent=t; };
   const dung=()=>{ list.innerHTML=''; [...sel.options].forEach((o,i)=>{
     const li=document.createElement('li'); li.className='cs-opt'+(i===sel.selectedIndex?' sel':''); li.textContent=o.text; li.setAttribute('role','option');
     li.addEventListener('click', ev=>{ ev.stopPropagation(); sel.selectedIndex=i; dongBo();
