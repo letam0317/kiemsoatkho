@@ -366,6 +366,21 @@
      Mật khẩu vừa nhập (MK_TAM, chỉ trong bộ nhớ) → PBKDF2 → mở hộp → Kc → giải dữ liệu / khung hình đã lưu (giai-ma-guong.js dùng chung với gương
      Xác minh). Tải lại trang = mất Kc ⇒ hỏi lại mật khẩu. Máy dự phòng không bao giờ thấy Kc hay mật khẩu rõ. ---------- */
   var GM = null, MK_TAM = "";
+  /* 10/11 user «riêng admin (tamlc) không cần mật khẩu để mở mục CCTV»: máy chủ miễn lớp mật khẩu cho phiên tamlc (so-do-camera.mjs laChu);
+     laptop tắt ⇒ Kc lấy qua Apps Script cctvKhoa bằng phiên tài khoản tamlc (laptop nạp sẵn — dayKcLenGas). Tài khoản khác: mật khẩu như cũ. */
+  var laChu = function () { var T = window.TK; return !!(T && T.nguoi && T.phien && String(T.nguoi.id || "").toLowerCase() === "tamlc"); };
+  function kcQuaTk() {
+    if (typeof window.tkGoi !== "function") return Promise.reject(new Error("Chưa nạp mô-đun tài khoản."));
+    return window.tkGoi("cctvKhoa", { phien: window.TK.phien }).then(function (j) {
+      if (!/^[A-Za-z0-9+\/]{43}=$/.test(String(j.khoa || ""))) throw new Error("Apps Script trả khoá CCTV hỏng"); var kc = tuB64(j.khoa);
+      /* khoá đọc khung neo (05/11) — trước dẫn từ mật khẩu; tamlc không nhập mật khẩu ⇒ dẫn từ Kc (chỉ ở sessionStorage như cũ) */
+      return crypto.subtle.importKey("raw", kc, "HKDF", false, ["deriveBits"])
+        .then(function (k) { return crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt: new TextEncoder().encode("hx-cctv-neo-v1"), info: new TextEncoder().encode("neo-tu-kc") }, k, 256); })
+        .then(function (b) { var u = new Uint8Array(b), t = ""; for (var i = 0; i < u.length; i++) t += String.fromCharCode(u[i]);
+          try { if (!sessionStorage.getItem(NEO_K)) sessionStorage.setItem(NEO_K, btoa(t)); } catch (e) {} NEO.key = null; }, function () {})
+        .then(function () { return kc; });
+    });
+  }
   function napGiaiMa() {
     if (window.hxGiaiMa) return Promise.resolve(window.hxGiaiMa);
     return new Promise(function (ok, hong) { var s = document.createElement("script"); s.src = "giai-ma-guong.js?v=20261022a"; s.onload = function () { ok(window.hxGiaiMa); }; s.onerror = function () { hong(new Error("Không tải được bộ giải mã")); }; document.head.appendChild(s); });
@@ -373,6 +388,9 @@
   var tuB64 = function (x) { var b = atob(x), r = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) r[i] = b.charCodeAt(i); return r; };
   function moDuPhong(j) {
     if (GM) return taiMa("cctv:du-lieu", "application/json").then(function (b) { return b.text(); }).then(JSON.parse);
+    if (!MK_TAM && laChu()) return kcQuaTk()
+      .then(function (kc) { return napGiaiMa().then(function (G) { return G.nhapKhoa(kc).then(function (kk) { return napLopPc(G, kc, kk); }); }); })
+      .then(function (x) { GM = x; return moDuPhong(j); });
     if (!MK_TAM) { setTimeout(function () { khoaLai("Nhập mật khẩu CCTV để mở."); }, 0); var e0 = new Error("cần mật khẩu"); e0.code = 428; return Promise.reject(e0); }
     var b = j.boc || {}, mk = MK_TAM; MK_TAM = "";
     if (!window.crypto || !crypto.subtle) return Promise.reject(new Error("Trình duyệt này không giải mã được (cần trang https)."));
@@ -573,7 +591,7 @@
     if (!ve._mo && $id("modal")) { ve._mo = 1; var moTruoc = $id("modal").classList.contains("show");
       new MutationObserver(function () { var mo = $id("modal").classList.contains("show"), vuaDong = moTruoc && !mo; moTruoc = mo; if (!vuaDong || !S.chon) return; S.chon = ""; dungLive(); veDiem3D(); })
       .observe($id("modal"), { attributes: true, attributeFilter: ["class"] }); }
-    if (!layThe()) return veKhoa(host);   // chưa mở khoá ⇒ chỉ màn mật khẩu, KHÔNG tải dữ liệu camera
+    if (!layThe() && !laChu()) return veKhoa(host);   // chưa mở khoá ⇒ chỉ màn mật khẩu, KHÔNG tải dữ liệu camera (10/11: tamlc miễn)
     henKhoa();
     /* 05/11 user «mở CCTV vẫn thấy "Đang dựng mặt bằng…" ~1 s rồi mới sang mặt bằng chốt»: khung 3D đã nạp ngầm từ màn mật khẩu ⇒ mở khoá xong
        hiện NGAY mặt bằng nhìn từ trên (chưa có dữ liệu camera thì biểu tượng vẽ thêm khi về) — bỏ chữ «Đang tải…» / «Đang dựng mặt bằng…» */
@@ -653,7 +671,7 @@
     var m = $id("modal"); if ((S.chon || S.hc) && m && m.classList.contains("hx-ben") && typeof window.dongModal === "function") window.dongModal();
     S.chon = ""; S.hc = null; dongChon();
     if (F) { window.removeEventListener("resize", F.vua); if (F.ro) F.ro.disconnect(); F = null; }
-    if (HOST && document.contains(HOST) && HOST.querySelector(".sdc-3d,.sdc-khoa")) veKhoa(HOST, tb);
+    if (HOST && document.contains(HOST) && HOST.querySelector(".sdc-3d,.sdc-khoa")) { if (laChu()) ve(HOST, CTX); else veKhoa(HOST, tb); }
   }
   /* tự khoá khi 30' không chạm / gõ gì trên trang (máy chủ cũng tự huỷ thẻ sau 30' không gọi) */
   var DUNG_CUOI = Date.now();
