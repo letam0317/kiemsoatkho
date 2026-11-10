@@ -1702,7 +1702,7 @@
     if (tab !== "bc") hdDung();
     return '<div class="bd-ben"><div class="bd-tabben" role="tablist" aria-label="Thông tin vị trí">' + TAB_BEN.map(function (t) {
         return '<button type="button" role="tab" class="hp-whtab' + (t[0] === tab ? " active" : "") + '" data-tab="' + t[0] + '" aria-selected="' + (t[0] === tab) + '">' + t[1] +
-          (t[0] === "ls" && lsCua(b).length ? '<span class="bd-tab-so">' + lsCua(b).length + "</span>" : "") + "</button>"; }).join("") + "</div>" +
+          "</button>"; }).join("") + "</div>" +   // 10/11 khuya user: không số cạnh tên tab
       '<div class="bd-tab-than" data-tab-than="' + tab + '">' + than + "</div></div>";
   }
 
