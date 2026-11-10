@@ -692,6 +692,7 @@
   function giuKhung(host, ngam) {
     if (!coKhung(host)) {
       if (F) { window.removeEventListener("resize", F.vua); if (F.ro) F.ro.disconnect(); }
+      gieoTren();   // trang 3D khởi động thẳng ở mặt bằng nhìn từ trên
       var bo = document.createElement("div"); bo.className = "sdc-3d cho";
       bo.innerHTML = '<iframe id="sdc3d" title="CCTV — mặt bằng kho 170 và camera" tabindex="-1" src="kho170-3d.html?v=' + V3D + '"></iframe><div class="sdc-che" id="sdcChe"></div><div class="sdc-3dtt" id="sdc3dTt" hidden></div>';
       var el = bo.querySelector("iframe"); F = { el: el, bo: bo, diem: [] };
@@ -714,6 +715,7 @@
       F.lai = F.lai || 0;
       if ((hong.length || n === 200) && F.lai < 2 && el.contentDocument && el.contentDocument.readyState === "complete") {
         F.lai++; tt3("Đang nạp lại mô hình 3D" + (hong.length ? " (tải hỏng: " + hong.join(", ") + ")" : "") + "…");
+        F.bo.classList.add("cho"); F.ve2 = false; gieoTren();   // nạp lại: giấu khung, khởi động lại thẳng ở mặt bằng
         el.src = "kho170-3d.html?v=" + V3D + "&lai=" + Date.now(); return;   // sự kiện load gọi lại choSan(el, 0)
       }
       if (n > 200) tt3("Mô hình 3D chưa dựng xong" + (hong.length ? " — tải hỏng: " + hong.join(", ") : !w || !w.THREE ? " — chưa tải được thư viện đồ hoạ" : " — trang 3D đang chạy dở") + ". Máy vẫn đang thử…");
@@ -721,7 +723,11 @@
     }
     var st = w.document.createElement("style"); st.textContent = CSS_NHUNG; w.document.head.appendChild(st);
     var bc = w.document.getElementById("bChieu"); if (bc && bc.classList.contains("on")) bc.click();   // chiếu trực giao (máy nhớ từ trang 3D) → phối cảnh: bấm chọn camera tính theo camera phối cảnh
-    F.w = w; anChu(); var hAn = setInterval(function () { if (!F || F.w !== w || !document.contains(F.el)) return clearInterval(hAn); anChu(); }, 1000);
+    F.w = w;
+    /* trang 3D trong khung bắt đầu RỜI ĐI / NẠP LẠI vì bất kỳ lý do gì (trình duyệt tự nạp lại, đổi src) ⇒ giấu khung NGAY + gieo lại góc nhìn từ trên —
+       không để lộ trang 3D thô (phối cảnh + thanh công cụ) như clip 21.30.38 */
+    w.addEventListener("pagehide", function () { if (!F || F.w !== w) return; F.bo.classList.add("cho"); F.ve2 = false; gieoTren(); });
+    anChu(); var hAn = setInterval(function () { if (!F || F.w !== w || !document.contains(F.el)) return clearInterval(hAn); anChu(); }, 1000);
     /* sơ đồ CỐ ĐỊNH: mọi thao tác đi vào lớp phủ trang cha (khung 3D pointer-events:none, không nhận phím) ⇒ trang 3D không kéo / phóng / xoay được.
        Toạ độ chạm đổi về hệ của khung (trừ mép khung) rồi chọn quả cầu gần nhất ≤ 18 px như cũ */
     var che = $id("sdcChe"), xuong = null, trongKhung = function (e) { var b = el.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
@@ -760,8 +766,18 @@
   /* 25/10 user «không lấy cả sơ đồ 3D — chỉ lấy góc nhìn từ trên xuống»: chế độ BẢN ĐỒ (kéo = dời, lăn = phóng) + chiếu TRỰC GIAO, nhìn thẳng xuống,
      vừa khung. CAM là const cấp tệp của trang 3D (không lên window) ⇒ đọc qua w.eval (cùng gốc; CSP trang có 'unsafe-eval'). datMode/datChieu tự ghi
      «kho170-cam» ⇒ trả lại giá trị cũ để mở trang 3D riêng vẫn như người dùng để. Khung dọc: xoay mặt bằng 90° (cạnh dài 116 m nằm dọc). */
+  /* 10/11 tối user (clip 21.30.38) «CCTV vẫn còn nhảy khung 3D đang dựng — phải vào THẲNG mặt bằng nhìn từ trên kho 170, đã nói nhiều lần»:
+     GỐC = trang 3D nhúng khởi động theo góc nhìn ĐÃ LƯU của máy («kho170-cam» — thường là phối cảnh nghiêng của trang 3D riêng) ⇒ mỗi lần khung
+     nạp / nạp lại nó vẽ 3D trước, mã này mới chuyển sang nhìn từ trên. Nay: TRƯỚC khi khung nạp, ghi sẵn «bản đồ + trực giao» ⇒ trang 3D khởi động
+     thẳng ở mặt bằng; đặt góc xong thì trả lại giá trị cũ của người dùng (mở trang 3D riêng vẫn như cũ). Khung nạp lại thì GIẤU (.cho) tới khi đặt xong. */
+  var GOC_CAM;   // giá trị «kho170-cam» của người dùng lúc gieo (undefined = chưa gieo)
+  function gieoTren() {
+    try { var c = localStorage.getItem("kho170-cam"); if (GOC_CAM === undefined) GOC_CAM = c; var n = {}; try { n = JSON.parse(c || "{}") || {}; } catch (e) {}
+      n.m = "map"; n.o = true; localStorage.setItem("kho170-cam", JSON.stringify(n)); } catch (e) {}
+  }
   function datTren(w) {
     var luu = null; try { luu = w.localStorage.getItem("kho170-cam"); } catch (e) {}
+    if (GOC_CAM !== undefined) { luu = GOC_CAM; GOC_CAM = undefined; }
     try { w.eval("CAM.datMode('map');CAM.datChieu(true);CAM.o.rot=false;"); } catch (e) {}
     try { if (luu == null) w.localStorage.removeItem("kho170-cam"); else w.localStorage.setItem("kho170-cam", luu); } catch (e) {}
     vuaTren(w);
