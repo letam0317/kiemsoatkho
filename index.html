@@ -1962,6 +1962,9 @@ window.hxNoiLai = function(){
             <!-- 08/11 user: viên «Cập nhật hh:mm:ss dd/mm/yyyy» cuối trang BỎ — giờ cập nhật của MỤC ĐANG XEM hiện ở đây (bấm = làm mới mục đó) -->
             <div id="dlMoi" class="dropdown-action-btn dl-moi" role="button" tabindex="0"><span class="act" id="dlMoiTen">Cập nhật</span><small class="timestamp-hint" id="tsReload"></small></div>
             <a id="btnTaiBoCai" class="dropdown-action-btn" href="CAI-PC-1LAN.bat" download="CAI-PC-1LAN.bat" style="text-decoration:none"><span class="act">Tải bộ cài PC (chạy admin)</span><small class="timestamp-hint">cài 5S cho PC nội bộ · 1 lần</small></a>
+            <!-- 12/11 user: «chuyển máy in gắn qua laptop khác, làm bộ cài (tương tự Tải bộ cài PC) ở laptop đó» — cùng đường chèn khoá với bộ cài PC; chỉ cài agent in tem -->
+            <a id="btnTaiBoCaiMayIn" class="dropdown-action-btn" href="CAI-MAY-IN-1LAN.bat" download="CAI-MAY-IN-1LAN.bat"
+               data-api="/api/bo-cai-may-in" style="text-decoration:none"><span class="act">Tải bộ cài máy in (chạy admin)</span><small class="timestamp-hint">laptop cắm máy in tem · 1 lần</small></a>
           </div>
         </div>
       </div>
@@ -5100,14 +5103,14 @@ document.addEventListener('click', ()=>csDongHet(null));
 /* 13/10 user: "cần có sẵn [khoá] luôn trong .bat cài 1 lần mà không phải làm thêm gì". Khoá KHÔNG được nằm trong file trên Pages (repo
    PUBLIC ⇒ ai cũng tải được khoá GAS = token tamlc). Nên: máy quản lý (có máy chủ 8591 + đã đăng nhập Xác minh) bấm nút → tải bản do 8591
    dựng tại chỗ có sẵn khoá; máy khác → bản công khai không khoá như cũ. */
-(function(){
-  var a=document.getElementById("btnTaiBoCai"); if(!a) return;
+["btnTaiBoCai","btnTaiBoCaiMayIn"].forEach(function(id){   // 12/11: dùng chung cho nút bộ cài máy in (tên tệp = thuộc tính download, đường 8591 = data-api)
+  var a=document.getElementById(id); if(!a) return; var tenTep=a.getAttribute("download")||"CAI-PC-1LAN.bat", api8591=a.getAttribute("data-api")||"/api/bo-cai-pc";
   /* 14/10 user: «tôi tải ngay trên nút ở audit-dc về cài — tóm gọn trong 1 lần cài». Máy BẤT KỲ: đăng nhập (cùng mật khẩu Xác minh,
      qua Apps Script — phiên 12 giờ «mt-phien») → lấy gói khoá (pcBoCai) → chèn vào CAI-PC-1LAN.bat công khai → tải về: chạy 1 lần là xong.
      Laptop (có 8591 + phiên Xác minh) vẫn lấy thẳng từ 8591; 8591 hỏng / bị Edge chặn thì rơi xuống đường Apps Script. */
   var gasPost=function(o){ return fetch(APPSCRIPT_URL,{ method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(o), signal:AbortSignal.timeout(45000) })
     .then(function(r){ return r.text(); }).then(function(t){ if(t.trim()[0]!=="{") throw new Error("Apps Script trả lỗi — thử lại"); return JSON.parse(t); }); };
-  var taiVe=function(txt){ var u=URL.createObjectURL(new Blob([txt],{type:"application/octet-stream"})), t=document.createElement("a"); t.href=u; t.download="CAI-PC-1LAN.bat"; document.body.appendChild(t); t.click(); t.remove(); setTimeout(function(){ URL.revokeObjectURL(u); },5000);
+  var taiVe=function(txt){ var u=URL.createObjectURL(new Blob([txt],{type:"application/octet-stream"})), t=document.createElement("a"); t.href=u; t.download=tenTep; document.body.appendChild(t); t.click(); t.remove(); setTimeout(function(){ URL.revokeObjectURL(u); },5000);
     if(typeof toast==="function") toast("Đã tải bộ cài CÓ SẴN KHOÁ — chuột phải → Run as administrator, chạy 1 lần là xong. Không gửi file này qua chat/email.","ok"); };
   /* 14/10 user CHỌN «bỏ hẳn đăng nhập cho mọi máy» (đã nêu rủi ro: lộ link = lộ khoá) — lấy gói khoá thẳng, không hỏi gì. */
   var quaGas=function(){   // gói khoá → chèn vào .bat công khai
@@ -5124,11 +5127,11 @@ document.addEventListener('click', ()=>csDongHet(null));
     var ph=""; try{ ph=localStorage.getItem("hx-phien")||""; }catch(e){}
     var dat=function(t){ if(lb) lb.textContent=t; };
     var gas=function(){ dat("Đang dựng bộ cài có khoá…"); return quaGas(); };
-    var p = ph ? fetch("http://127.0.0.1:8591/api/bo-cai-pc",{ headers:{ "x-hx-phien": ph }, signal: AbortSignal.timeout(8000) }).then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); }).catch(gas) : gas();
+    var p = ph ? fetch("http://127.0.0.1:8591"+api8591,{ headers:{ "x-hx-phien": ph }, signal: AbortSignal.timeout(8000) }).then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); }).catch(gas) : gas();
     dat("Đang dựng bộ cài có khoá…");
     p.then(taiVe).catch(function(e){ if(e.message!=="đã đóng" && typeof toast==="function") toast("Không tải được bộ cài có khoá: "+e.message,"loi"); }).finally(function(){ dat(cu); });
   });
-})();
+});
 </script>
 <script>
 /* ============ QC · SIDEBAR — chỉ dựng lớp điều hướng bên trái, tái dùng setTab() gốc ============
