@@ -210,7 +210,7 @@ var CSS = [
 "#pane-kk .hk-strip .ks:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(16,24,40,.12);}",
 "#pane-kk .hk-strip .v{font-size:20px;font-weight:780;letter-spacing:-.01em;line-height:1;font-variant-numeric:tabular-nums;color:var(--text,#1f2937);}",
 "#pane-kk .hk-strip .t{font-size:11px;font-weight:650;letter-spacing:.01em;color:var(--muted,#9ca3af);margin-top:4px;line-height:1.2;white-space:normal;overflow:hidden;text-overflow:ellipsis;}",
-"#pane-kk .hk-strip .v.ok{color:#059669;} #pane-kk .hk-strip .v.mut{color:var(--muted,#9ca3af);} #pane-kk .hk-strip .v.neg{color:#dc2626;} #pane-kk .hk-strip .v.pos{color:var(--accent,#326e51);}",
+"#pane-kk .hk-strip .v.ok{color:var(--good);} #pane-kk .hk-strip .v.mut{color:var(--muted,#9ca3af);} #pane-kk .hk-strip .v.neg{color:var(--bad);} #pane-kk .hk-strip .v.pos{color:var(--info);}",
 "#pane-kk .hk-strip .v.fce{color:var(--accent,#326e51);font-weight:780;}",
 /* Thanh trạng thái 100% + pill trạng thái */
 "#pane-kk .hk-stbar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:color-mix(in srgb, var(--muted,#9ca3af) 16%, transparent);margin:2px 0 10px;}",
@@ -219,7 +219,7 @@ var CSS = [
 "#pane-kk .hk-stchip{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:99px;padding:4px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;background:color-mix(in srgb,var(--cc) 14%,transparent);color:color-mix(in srgb,var(--cc) 62%,var(--text,#1f2937));transition:background .18s ease;}",
 "#pane-kk .hk-stchip:hover{background:color-mix(in srgb,var(--cc) 26%,transparent);}",
 "#pane-kk .hk-stchip .dot2{width:7px;height:7px;border-radius:50%;background:var(--cc);flex:none;}",
-"#pane-kk .hk-stchip b{font-variant-numeric:tabular-nums;font-weight:750;color:inherit;}",
+"#pane-kk .hk-stchip b{font-variant-numeric:tabular-nums;font-weight:600;color:inherit;}",
 /* Chart "Đã kiểm theo ngày": cột chồng theo kho + hàng delta so với ngày kề trước */
 "#pane-kk .hk-dhead{font-size:12px;font-weight:650;color:var(--text,#374151);margin:14px 0 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}",
 "#pane-kk .hk-legend{display:inline-flex;flex-wrap:wrap;gap:3px 10px;font-weight:400;font-size:10.5px;color:var(--muted,#6b7280);}",
@@ -850,7 +850,7 @@ function renderDaily(kind){
     var segs = parts.map(function(pt, j){ return '<div class="hk-hseg' + (j === 0 ? " top" : "") + '" style="height:' + pt.h + "px;background:" + pt.c + '"></div>'; }).join("");
     var tip = "Ngày " + d.slice(8, 10) + "/" + d.slice(5, 7) + "/" + d.slice(0, 4) + " | " + khos.map(function(w){ return w + ": " + nf(v.kho[w] || 0); }).join(" | ") + " | Tổng: " + nf(v.tot) + " " + U + (delta == null ? "" : " | " + (delta >= 0 ? "+" : "") + nf(delta) + " so với ngày trước");
     var lab = nf(v.tot);   // luôn hiện số lượng của TỪNG ngày trên cột (trước chỉ hiện ≤20 ngày/cột cao nhất/cột cuối)
-    var dHtml = '<div class="hk-hdelta" style="color:' + (delta > 0 ? "#10b981" : delta < 0 ? "#ef4444" : "var(--muted,#9ca3af)") + '">' + (delta == null ? "&nbsp;" : (delta > 0 ? "+" : "") + nf(delta)) + "</div>";
+    var dHtml = '<div class="hk-hdelta" style="color:' + (delta > 0 ? "var(--good)" : delta < 0 ? "var(--bad)" : "var(--muted,#9ca3af)") + '">' + (delta == null ? "&nbsp;" : (delta > 0 ? "+" : "") + nf(delta)) + "</div>";
     return '<div class="hk-hcol" title="' + esc(tip) + '"><div class="hk-hval">' + lab + '</div><div class="hk-hbars">' + segs + '</div><div class="hk-hdate">' + d.slice(8, 10) + "/" + d.slice(5, 7) + "</div>" + dHtml + "</div>";
   }).join("");
   el.innerHTML = '<div class="hk-histscroll"><div class="hk-histchart">' + html + "</div></div>";
