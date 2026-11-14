@@ -66,7 +66,7 @@ window.GOC_DL=/\.pages\.dev$|^(localhost|127\.0\.0\.1)$/.test(location.hostname)
   try{
     var tb=null; try{ tb=new URLSearchParams(location.search).get('tab'); }catch(e){}
     if(tb!=='planogram' || /khoa=/.test(location.hash||'')) return;
-    var V='20261110g';   // PHẢI khớp s.src trong moHasakiPlanogram()
+    var V='20261114b';   // PHẢI khớp s.src trong moHasakiPlanogram()
     var l=document.createElement('link'); l.rel='preload'; l.as='script'; l.href='hasaki-planogram.js?v='+V; document.head.appendChild(l);
     var GAS='https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec';
     var khoa=''; try{ khoa=localStorage.getItem('tb-khoa')||(localStorage.getItem('tk-phien')?'tk:'+localStorage.getItem('tk-phien'):''); }catch(e){}   // 22/10 phiên tài khoản thay mã thiết bị
@@ -629,29 +629,23 @@ thead th.c-flex, tbody td.c-flex{width:100%; padding:0; border-top:1px solid var
 
 /* ===== THANH BÊN PHẢI dùng CHUNG (16/10 user, mẫu khung việc HasakiWork): #modal.hx-ben trượt ra/ẩn vô, KHÔNG phủ nền —
    đang mở vẫn bấm được dòng khác bên trái. Vỏ ở đây (Vi phạm + Xác minh cùng gọi window.hskThanhBen); NỘI DUNG mỗi mục tự lo. ===== */
-#modal.hx-ben{left:clamp(340px,26vw,420px)!important;backdrop-filter:none;-webkit-backdrop-filter:none;width:auto;background:transparent;padding:0;overflow:visible;pointer-events:none;display:flex;align-items:stretch;opacity:1;visibility:hidden;transition:visibility 0s .3s}
+/* 14/11: bề rộng (2 nấc) · không phủ nền · hộp trượt · thẻ tiêu đề nổi · mốc điện thoại ⇒ VỎ CHUNG thanh-ben.css (luật TK-29); ở đây chỉ còn cơ chế hiện/ẩn của #modal */
+#modal.hx-ben{display:flex;opacity:1;visibility:hidden;transition:visibility 0s var(--t-cham)}
 #modal.hx-ben.show{visibility:visible;transition:none}
 #statModal.tb-nhuong,#hmModal.tb-nhuong{visibility:hidden!important;pointer-events:none!important}   /* 06/11 pop-up giữa nhường thanh bên (hskThanhBen) */
 #modal.hx-ben>*{pointer-events:auto}
-#modal.hx-ben .modal-box{pointer-events:auto;margin:0;max-width:none;height:100%;border-radius:0!important;border:0;border-left:1px solid var(--border);overflow-y:auto;overscroll-behavior:contain;container-type:inline-size;
-  box-shadow:-10px 0 28px color-mix(in srgb,#000 16%,transparent);animation:none!important;transform:translate3d(100%,0,0);transition:transform .3s var(--ez-apple);display:flex;flex-direction:column}
-#modal.hx-ben.show .modal-box{transform:none}
-#modal.hx-ben .modal-head{border-radius:0}
+#modal.hx-ben .modal-box{overflow-y:auto;overscroll-behavior:contain;container-type:inline-size;display:flex;flex-direction:column}
 /* 21/10 user: pop-up Vi phạm ở màn rộng hiển thị NHƯ Theo máy/Theo tác vụ — Đóng · Mở task bên trái, tiêu đề bên phải (mốc @container 701px vì thanh bên Vi phạm chỉ 740 px — Xác minh vẫn 821) */
 #modal.hx-ben .modal-box{container-type:inline-size}
 @container not (max-width:700px){#modal.hx-ben:not(:has(.hx-tb-luoi)) .modal-head>#mClose{order:-3}
   #modal.hx-ben:not(:has(.hx-tb-luoi)) .modal-head>#hxMoTask{order:-2}
   #modal.hx-ben:not(:has(.hx-tb-luoi)) .modal-head>#mTitle{order:1;text-align:right;margin-left:auto}}
 #modal.hx-ben #mBody{flex:1 0 auto;display:flex;flex-direction:column}
-#modal.hx-ben #mBody.hx-doi{animation:paneIn .26s var(--ez-apple)}
-@media(max-width:760px){#modal.hx-ben{left:0!important}}
+#modal.hx-ben #mBody.hx-doi{animation:paneIn var(--t-vua,.22s) var(--ez-apple)}
 /* 23/10 user «CHỈ điện thoại: thanh bên phải hiển thị thì mặc định tự ẩn thanh tiêu đề hạng mục — như Theo tác vụ/Theo máy — mọi hạng mục có thanh bên phải»:
    luật của Xác minh (hasaki-xacminh.js) đưa về VỎ CHUNG #modal.hx-ben ⇒ Vi phạm (và mục nào dùng hskThanhBen sau này) cùng luật. Planogram (#hpVtModal) có luật riêng sẵn;
    Factory #plgmodal phủ toàn màn top:0. Cùng nhịp .32s var(--ez-apple), chỉ trượt (translate) — không đổi top lúc mở (giật). */
-@media(max-width:768px){#modal.hx-ben{top:0!important}body>header,.main>header,header{transition:translate .32s var(--ez-apple)}body:has(#modal.hx-ben.show) header{translate:0 -100%;pointer-events:none}
-  body:has(#modal.hx-ben.show) #sideToggle{translate:0 -72px!important;opacity:0!important;pointer-events:none!important}}
-@media(min-width:761px){#modal.hx-ben:not(:has(.hx-tb-luoi)){left:max(clamp(260px,20vw,360px),calc(100vw - 740px - 5cm))!important}}   /* 21/10 user: dời mép trái thanh bên phải sang trái thêm 5cm (ra giữa màn hình) */
-@media(min-width:761px){#modal.hx-ben .modal-head{padding:12px 24px;min-height:56px}}
+/* 14/11: ẩn đầu trang điện thoại · bề rộng · đệm đầu thanh nay ở thanh-ben.css (user chốt 2 nấc: 720 cho Vi phạm/CCTV, rộng chỉ Xác minh — thay luật «5cm» 21/10) */
 /* dòng đang xem = nền chọn của Table antd (AD-01 cấm vạch nhấn một cạnh) */
 tr.tb-dangxem>td,.cl-item.tb-dangxem{background:var(--ad-chon,color-mix(in srgb,var(--accent) 10%,var(--surface)))!important}
 
@@ -1743,15 +1737,17 @@ body.side-anim:has(.wrap :is([class*="modal"],[id$="modal"],[id$="Modal"],#light
 <!-- 12/10 giao diện Ant Design: LIVE mặc định (user "theo ant design chưa live"); nạp ĐỒNG BỘ ở head để khung hình đầu đã đúng kiểu, tắt trong Cài đặt -->
 <script>window.AD_BI_DANH={"tonkho/kiemke":"kk","tonkho/batthuong":"kk#pane-htonbat"};   /* 15/10 link cũ → mục gộp «Tồn kho chính xác» */ window.AD_TEN='Audit Retail'; window.AD_CHUYEN={ten:'Audit Factory', app:'factory'};</script>   <!-- 13/10 user: Audit Hasaki → Audit Retail + nút sang Factory cuối thanh bên -->
 <script src="tien-ich.js?v=20261020a"></script><script src="anh-nv.js?v=20261105a"></script><!-- 05/11 ảnh đại diện NV toàn dự án: vòng tròn [data-anh-nv] tự thay ảnh --><!-- 20/10 tiện ích chung: esc/$id/hm/ngayVN — nạp TRƯỚC mọi mô-đun -->
-<script src="hasaki-giaodien-antd.js?v=20261110h"></script>
+<script src="hasaki-giaodien-antd.js?v=20261114c"></script>
 <script src="tai-khoan.js?v=20261110g"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
 <script src="tat-loc.js?v=20261109a" defer></script>
 <script src="lich-su-ben.js?v=20261110g" defer></script><!-- 10/11 tab Lịch sử thanh bên (lịch tháng + Sửa chữa) + pop-up ảnh kiểu B — dùng chung Planogram + Bảo dưỡng -->
 <script src="loc-popup.js?v=20261108a" defer></script>
 <!-- 26/10 điện thoại: khối lọc trong pop-up gập sau nút «Bộ lọc» (cùng mẫu nút trang) -->
 <!-- 22/10 nút «✕ Tắt lọc» · 23/10 dời vào TRONG nút «Bộ lọc», đỏ khi đang lọc, ẩn khi không lọc (dùng chung Retail/Factory) -->
-<link rel="stylesheet" href="thanh-phan.css?v=20261110f"><!-- 21/10 chip trạng thái + nút dùng chung mọi tab (Mẫu 1 đánh giá 20/10) -->
-<link rel="stylesheet" href="thanh-cuon.css?v=20261022a"><!-- 17/10 thanh cuộn chung theo theme (bản gốc hasaki/kiemsoatkho/thanh-cuon.css) -->
+<link rel="stylesheet" href="hieu-ung.css?v=20261114a"><!-- 14/11 biến hiệu ứng chung (TK-30) -->
+<link rel="stylesheet" href="thanh-phan.css?v=20261114c">
+<link rel="stylesheet" href="thanh-ben.css?v=20261114b"><!-- 14/11 VỎ THANH BÊN PHẢI chung Retail + Factory (TK-29) --><!-- 21/10 chip trạng thái + nút dùng chung mọi tab (Mẫu 1 đánh giá 20/10) -->
+<link rel="stylesheet" href="thanh-cuon.css?v=20261114a"><!-- 17/10 thanh cuộn chung theo theme (bản gốc hasaki/kiemsoatkho/thanh-cuon.css) -->
 <link rel="stylesheet" href="bo-loc-ngay.css?v=20261019a"><script src="bo-loc-ngay.js?v=20261023a"></script><!-- 19/10 BỘ LỌC NGÀY CHUẨN toàn dự án (taoBoLocNgay) -->
 </head>
 <body class="hx-an">
@@ -2509,7 +2505,7 @@ const nvQlCell = r => {
   const nv = nameVP(r), ql = iQLTT>=0 ? String(r[iQLTT]||'').trim() : '';
   /* 29/10 (3) user: «Phùng Thanh Trà My [10 ngày]» — số ngày vào làm gộp cạnh tên (chỉ tamlc / quyền «Lịch sử nhắc nhở») */
   const ma=codeChuanVP(r).split(',').map(x=>x.trim()).filter(Boolean), ten=String(nv||'').split(',').map(x=>x.trim()).filter(Boolean);
-  const ds = nv && nnCo() && ma.length===ten.length ? `<div class="nv-luoi">${ten.map((t,k)=>`${nnNgay(ma[k])}<b>${esc(t)}</b>`).join('')}</div>` : (nv ? `<b>${lines(nv)}</b>` : '');
+  const ds = nv && nnDuocXem() && ma.length===ten.length ? `<div class="nv-luoi">${ten.map((t,k)=>`${nnNgay(ma[k])}<b>${esc(t)}</b>`).join('')}</div>` : (nv ? `<b>${lines(nv)}</b>` : '');
   return (nv ? ds : '<span class="vp-chua-xm">chưa xác minh</span>') + (ql ? `<div class="c-ql-sub">QL: ${esc(ql)}</div>` : '');
 };
 
@@ -2970,7 +2966,7 @@ function dongBoCotTanSuat(){
 function freqCell(gi,r){
   const ds=freqDong(gi,r);
   if(!ds.length) return '<span class="row-none">—</span>';
-  const nn=nnCo();
+  const nn=nnDuocXem();   // 14/11 giữ chỗ cột nhắc nhở theo QUYỀN (sổ chưa về ⇒ ô ẩn cùng bề rộng)
   /* 30/10 user «lượt nhắc nhở NV bị ẩn bớt 4 NV» (phiếu 8 NV): hiện ĐỦ mọi NV, bỏ «+N NV khác» */
   return '<div class="freq-ds'+(nn?' co-nn':'')+'">'+ds.map(x=>'<span class="freq-c"><b>'+esc(tenNgan(x.ten))+'</b>:</span><span class="freq-c freq-lan">lần '+x.lan+'/tháng'+(nn?',':'')+'</span>'+(nn?nnNhan(r,x.c):'')).join('')+'</div>';
 }
@@ -2988,6 +2984,12 @@ function loiKpi(gi,r){ const k=kpiChu(gi,r); return k ? '<b class="loi-kpi">['+e
    sổ do canh-b11 dựng (nhac-nho-591.mjs), phát qua máy chủ Xác minh 8591 /api/nhac-nho — CHỈ tamlc hoặc tài khoản được cấp
    «Lịch sử nhắc nhở» (r.vp.nn, mục Quyền xem); máy chủ gác lần nữa. Nhắc nhở = QLTT bấm Fail ở bước ghi nhận với lý do «nhắc nhở». ===== */
 let NN=null, _nnHoi=0;
+/* 14/11 user «thông tin có trước cái có sau — các cột khác có rồi, ngày làm việc / lượt nhắc nhở 2 s sau mới hiện»: GỐC = sổ này KHÔNG có bản nhớ
+   (NG, XM_TV có) ⇒ mỗi lần mở trang chờ 1 lượt Apps Script 1,5–3 s rồi dựng lại cả bảng, cột nở. Nay (luật TK-31):
+   ① nhớ bản lần trước trên máy ≤ 12 giờ → vẽ NGAY ở lượt đầu; bản mới về mà KHÔNG đổi thì không vẽ lại;
+   ② chưa có bản nhớ (lần đầu) → ô «[N ngày]» và «n lần nhắc nhở» vẫn được GIỮ CHỖ (ẩn) theo QUYỀN, không theo dữ liệu đã về ⇒ dữ liệu về chỉ điền chữ, cột không nở.
+   Lúc vẽ vẫn kiểm quyền (nnDuocXem) — bản nhớ không mở thêm quyền. */
+try{ const c=JSON.parse(localStorage.getItem('vp-nn-nho')||'null'); if(c && c.nn && c.nn.vao && Date.now()-c.luc<432e5){ NN=c.nn; nnNap._nho=1; nnNap._chuoi=JSON.stringify(c.nn); } }catch(e){}
 function nnDuocXem(){ return typeof window.tkCoNhacNho==='function' && window.tkCoNhacNho(); }
 /* 30/10 user «laptop tắt, tamlc không xem được số ngày làm việc, nút Bởi và số lần nhắc nhở»: trước CHỈ hỏi 8591 laptop (bản dự phòng không có sổ).
    Nay: laptop bật → 8591 như cũ; laptop tắt / chưa nối / 8591 hỏng → Apps Script vpRieng (gác phiên + quyền tại đó; canh-b11 trên laptop đẩy sổ lên mỗi lượt).
@@ -3004,10 +3006,12 @@ function vpQuaLaptop(duong,ma){   // → Promise<json|null>: chỉ khi máy ch�
   return fetch(window.HX_API+duong,{headers:{'x-hx-phien':ph},signal:AbortSignal.timeout(ma)}).then(r=>r.ok?r.json():null).catch(()=>null);
 }
 function nnNap(){
-  if(NN || _nnHoi || !nnDuocXem()) return;
+  if((NN && !nnNap._nho) || _nnHoi || !nnDuocXem()) return; nnNap._nho=0;   // bản nhớ ⇒ vẫn hỏi bản mới 1 lần
   _nnHoi=1;
   vpQuaLaptop('/api/nhac-nho',15000).then(j=>j && j.vao ? j : vpRiengGas().then(g=>g && g.nhacNho))
-    .then(j=>{ if(j && j.vao){ NN=j; render(); } }).catch(()=>{}).then(()=>{ _nnHoi=0; });
+    .then(j=>{ if(j && j.vao){ const ch=JSON.stringify(j), doi=ch!==nnNap._chuoi; NN=j; nnNap._chuoi=ch;
+      try{ localStorage.setItem('vp-nn-nho', JSON.stringify({ luc: Date.now(), nn: j })); }catch(e){}
+      if(doi) render(); } }).catch(()=>{}).then(()=>{ _nnHoi=0; });
 }
 window.addEventListener('hx-du-lieu', nnNap);
 /* 29/10 user «Bởi Anh Tài/Ngọc Thành… — người gửi form ghi nhận; bổ sung ở mục quyền»: 8591 /api/nguoi-gui (sổ người gửi riêng tư + sổ tác giả),
@@ -3064,13 +3068,14 @@ function benTanSuat(r){
 }
 /* tên NV vi phạm kèm «[N ngày]» (thẻ điện thoại) — không có quyền / không ghép được mã ↔ tên thì như cũ */
 function nvNgayDs(r){ const nv=nameVP(r), ma=codeChuanVP(r).split(',').map(x=>x.trim()).filter(Boolean), ten=String(nv||'').split(',').map(x=>x.trim()).filter(Boolean);
-  return nnCo() && ma.length===ten.length ? ten.map((t,k)=>'<span class="nv-cap">'+nnNgay(ma[k])+' <b>'+esc(t)+'</b></span>').join(', ') : '<b>'+esc(nv)+'</b>'; }
+  return nnDuocXem() && ma.length===ten.length ? ten.map((t,k)=>'<span class="nv-cap">'+nnNgay(ma[k])+' <b>'+esc(t)+'</b></span>').join(', ') : '<b>'+esc(nv)+'</b>'; }
 function nnCo(){ return !!(NN && nnDuocXem()); }
 function nnDs(r,c){ const id=idTaskVP(r); return (NN.nhac||[]).filter(x=>String(x.id)!==id && (x.nv||[]).includes(c)); }
 const nnDdmm=s=>{ const m=String(s||'').match(/^\d{4}-(\d\d)-(\d\d)/); return m?m[2]+'/'+m[1]:esc(s); };
 const nnLink=x=>'<a href="https://work.hasaki.vn/tasks?task_id='+esc(x.id)+'" target="_blank" rel="noopener" data-nnid="'+esc(x.id)+'" title="'+esc((x.nguoi||'')+': '+(x.ly||'')+' — '+(x.loi||''))+'">'+nnDdmm(x.luc)+'</a>';
 function nnNhan(r,c){
-  if(!nnCo()) return '';
+  if(!nnDuocXem()) return '';
+  if(!NN) return '<span class="freq-c nn-chua nn-trong" aria-hidden="true">chưa có nhắc nhở</span>';   // 14/11 sổ chưa về: giữ chỗ (ẩn), KHÔNG kết luận
   const ds=nnDs(r,c); if(!ds.length) return '<span class="freq-c nn-chua">chưa có nhắc nhở</span>';
   const loi=_chuan(iLoi>=0?r[iLoi]:'').slice(0,45), cung=ds.filter(x=>loi && _chuan(x.loi).slice(0,45)===loi).length, moi=ds[ds.length-1];
   const tieuDe=esc(ds.map(x=>nnDdmm(x.luc)+' '+(x.nguoi||'')+': '+(x.ly||'')).join(' | '));
@@ -4142,7 +4147,7 @@ function moHasakiPlanogram(){
       '<div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:54%"></div>'+
       '<div class="sk sk-line" style="width:62%"></div></div>';
     _hpNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20261110g';   // khớp V ở <head>
+      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20261114b';   // khớp V ở <head>
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-planogram.js'));
       document.body.appendChild(s);
     });
@@ -4178,7 +4183,7 @@ let _hxNap=null;
 function napXm(){
   if(!_hxNap){
     _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261110g';
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261114a';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
       document.body.appendChild(s);
     });
@@ -4256,7 +4261,7 @@ function moHasakiKiemke(){
       '<div class="sk sk-line" style="width:68%"></div><div class="sk sk-line" style="width:52%"></div>'+
       '<div class="sk sk-line" style="width:60%"></div></div>';
     _hkNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-kiemke.js?v=20261108k';
+      const s=document.createElement('script'); s.src='hasaki-kiemke.js?v=20261114a';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-kiemke.js'));
       document.body.appendChild(s);
     });
@@ -4385,7 +4390,9 @@ window.hskCapNhat=function(ms, o){ o=o||{};
     ' title="'+esc((o.tip?o.tip+" · ":"")+"Bấm để làm mới")+'"><i class="cn-dot"></i><span class="cn-lb">Cập nhật</span> <b class="cn-gio">'+gio+'</b> <span class="cn-ngay">'+ngay+'</span></button>';
 };
 /* ===== TAB HẠNG MỤC 5S — đọc tab QUY-DINH trực tiếp (gviz), đồng bộ thời gian thực ===== */
-const TAB_QD="QUY-DINH"; let QD=[];
+const TAB_QD="QUY-DINH"; let QD=[], _qdChuoi='';
+/* 14/11 (TK-31): nhớ QUY-DINH lần trước ≤ 24 giờ ⇒ «[−X% KPI]» đầu ô Lỗi có NGAY lượt vẽ đầu; bản mới về không đổi thì không dựng lại bảng */
+try{ const c=JSON.parse(localStorage.getItem('qd-nho-'+(typeof SHEET_ID!=='undefined'?SHEET_ID:''))||'null'); if(c && Array.isArray(c.qd) && c.qd.length && Date.now()-c.luc<864e5){ QD=c.qd; _qdChuoi=JSON.stringify(c.qd); } }catch(e){}
 /* 26/10 — hạng mục QUY-DINH để TRỐNG % nhưng HR vẫn trừ thật: lấy mức đo từ Staff History → bảng KPI tháng.
    «Đóng gói sai quy định» (B3.3) → bản ghi reason 5 → COS-KPI-003-P01 Customer_Feedback_Order, trừ 2 điểm/lượt,
    không tăng theo lần (T9: 12/14 NV khớp đúng 2×số lượt; T10 phiếu ĐG 24/10 của NV 18242 đã ăn −2).
@@ -4405,8 +4412,10 @@ function taiQuyDinh(){
     QD=rows.filter(r=>/^\d+$/.test(String(r[0]).trim()));   // chỉ giữ dòng có STT là số (bỏ header phụ)
     boSungKpiHR();
     renderQuyDinh();
-    if(ROWS.length){ render(); renderKpi(); }   // QD về sau dữ liệu task -> vẽ lại Tần suất + bảng luỹ kế KPI
-    homeVeLai();
+    const ch=JSON.stringify(QD), doi=ch!==_qdChuoi; _qdChuoi=ch;
+    if(doi){ try{ localStorage.setItem('qd-nho-'+SHEET_ID, JSON.stringify({ luc: Date.now(), qd: QD })); }catch(e){} }
+    if(doi && ROWS.length){ render(); renderKpi(); }   // QD về sau dữ liệu task -> vẽ lại Tần suất + bảng luỹ kế KPI (14/11: chỉ khi KHÁC bản nhớ)
+    if(doi) homeVeLai();
   }catch(e){ $('hmWrap').innerHTML='<div class="empty-row">Lỗi đọc QUY-DINH: '+esc(e.message)+'</div>'; } delete window[cb]; };
   const s=document.createElement('script');
   s.src="https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?sheet="+encodeURIComponent(TAB_QD)+"&headers=1&tqx=out:json;responseHandler:"+cb;
@@ -4769,7 +4778,8 @@ const bbFull =u=>{const id=bbDriveId(u);return id?`https://drive.google.com/thum
   /* 29/10 (9) user (clip 18.45.25): gõ tìm ra 0 phiếu / lọc → tiêu đề cột nhảy (bảng tự chia cột theo nội dung). Lưu bề rộng cột ở lần vẽ ĐỦ phiếu;
      đang lọc (ít dòng hơn) ⇒ khoá đúng bề rộng đó (table-layout:fixed) + giữ --loi-fit/--bb-pr cũ, không tính lại theo dữ liệu đã lọc. */
   var VPK = null;
-  function vpDu(){ return typeof ROWS !== 'undefined' && document.querySelectorAll('#tbody tr[data-i]').length >= ROWS.length; }
+  /* 14/11: trước so với ROWS.length — bảng chỉ vẽ 20 dòng (VP_SO) nên không bao giờ «đủ», khoá cột không chạy */
+  function vpDu(){ return typeof ROWS !== 'undefined' && document.querySelectorAll('#tbody tr[data-i]').length >= Math.min(ROWS.length, 20); }
   function canh(){ var t = document.querySelector('#pane-task .table-wrap table'); if(!t || !t.offsetParent) return;
     var th = [].slice.call(t.tHead.rows[0].cells), cw = t.closest('.table-wrap').clientWidth;
     if(VPK && VPK.cw !== cw) VPK = null;   // đổi cỡ khung (thanh bên, cửa sổ) → đo lại ở lần vẽ đủ kế tiếp
@@ -4793,7 +4803,9 @@ const bbFull =u=>{const id=bbDriveId(u);return id?`https://drive.google.com/thum
   var henCanh = function(){ clearTimeout(hen); hen = setTimeout(canh, 80); };
   addEventListener('resize', henCanh);
   var gan = setInterval(function(){ var tb = document.getElementById('tbody'); if(!tb) return; clearInterval(gan);
-    new MutationObserver(henCanh).observe(tb, { childList: true }); henCanh();
+    /* 14/11 (qc-ve-dau: cột Lỗi co 188 px sau khi bảng đã hiện ~180 ms): căn cột chạy trễ 80 ms SAU lần vẽ ⇒ người xem thấy bảng nhảy.
+       Nay căn NGAY trong khung hình của lần vẽ (rAF, sau dongBoCotTanSuat) — lượt hẹn 80 ms giữ làm chốt chặn. */
+    new MutationObserver(function(){ requestAnimationFrame(canh); henCanh(); }).observe(tb, { childList: true }); henCanh();
     /* 29/10 (9) phông chữ web tải xong / ảnh nạp làm bảng đổi cỡ mà KHÔNG đổi DOM ⇒ bề rộng đã lưu cũ 0,6% ⇒ khi lọc cột lệch 4–8 px: đo lại */
     if (window.ResizeObserver) new ResizeObserver(function(){ if (vpDu()) henCanh(); }).observe(tb.closest('table'));
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(henCanh); }, 300);
