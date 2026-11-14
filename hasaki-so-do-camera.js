@@ -496,8 +496,9 @@
       ".sdc-mini svg{width:100%;height:100%;display:block}",
       ".sdc-hang{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}",
       ".sdc-hang .sdc-nut-chinh{margin-left:auto}",   // 06/11 nút Chỉnh sát phải, ngay dưới khung hình
-      /* 06/11 user «tăng kích thước ô camera»: máy tính — thanh bên CCTV rộng hơn thanh bên chung (mép trái 26vw → 14vw); điện thoại vốn toàn màn */
-      "#modal.hx-ben.sdc-rong{left:clamp(180px,14vw,260px)!important}",
+      /* 14/11 user «khung thanh bên phải CCTV quá to — không đồng bộ»: bỏ lớp sdc-rong (vốn là mã chết, bị luật 5cm đè ⇒ rộng ~929 px, thân không đệm);
+         nay theo VỎ CHUNG thanh-ben.css: nấc thường 720 + đệm thân chuẩn (TK-29) */
+      "#modal.hx-ben #mBody:has(>.sdc-anh){padding:var(--tb-than-dem,14px 20px 20px)}",
       ".sdc-tt{font-size:12.5px;color:var(--muted);min-height:18px;margin:6px 0}",
       ".sdc-tt b{color:var(--text)}",
       ".sdc-kep{cursor:pointer}.sdc-kep:not(.mo){display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}",
@@ -530,7 +531,7 @@
       ".sdc-chon .tx{flex:1;min-width:0}.sdc-chon .tx b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
       ".sdc-chon .tx small{display:block;color:var(--muted);font-size:11.5px}",
       ".sdc-chon .mui{flex:none;width:16px;height:16px;fill:var(--muted)}",
-      "@media(max-width:820px){#modal.hx-ben.sdc-rong{left:0!important}.sdc-3d{height:calc(100dvh - 96px);min-height:300px;border-radius:8px}.sdc-mini{height:220px}}"
+      "@media(max-width:820px){.sdc-3d{height:calc(100dvh - 96px);min-height:300px;border-radius:8px}.sdc-mini{height:220px}}"
     ].join("\n");
     document.head.appendChild(st);
   }
@@ -937,10 +938,6 @@
     var r = DS.find(function (x) { return x.c.k === k; }); if (!r) return;
     S.chon = k; veDiem3D();
     var c = r.c, TB = CTX.moThanhBen(k);
-    /* 06/11 thanh bên CCTV rộng hơn (ô camera to hơn); đóng thanh bên → gỡ lớp, thanh bên của mục khác giữ độ rộng chung */
-    var md = $id("modal"); md.classList.add("sdc-rong");
-    if (!md.__sdcRong) { md.__sdcRong = 1; var dangHien = md.classList.contains("show");   // chỉ gỡ lúc VỪA ĐÓNG (show → không show) — lúc mở lần đầu chưa có .show
-      new MutationObserver(function () { var h = md.classList.contains("show"); if (dangHien && !h) md.classList.remove("sdc-rong"); dangHien = h; }).observe(md, { attributes: true, attributeFilter: ["class"] }); }
     S.hc = { nguon: c.hc && c.hc.nguon, ao: !!r.ao, k: k, diem: (c.hc && c.hc.diem ? c.hc.diem : []).map(function (d) { return { px: d.px.slice(), m: d.m.slice() }; }), cho: null, che: "", tay: c.tay ? Object.assign({}, c.tay) : null, ghiChu: c.ghiChu || "", doi: 0 };
     $id("mTitle").innerHTML = '<span class="hx-mt1">' + e_(c.ten) + '</span><span class="hx-mt2">' + e_(c.dauGhi || c.ip) + " · kênh " + c.kenh + "</span>";
     veThan();
@@ -1085,7 +1082,8 @@
     }
   }
 
-  window.HXSODO = { ve: ve, moCam: moCam, _dem: function () { return DS.length; }, _chua: function () { return DS.filter(function (x) { return !x.diem; }).length; },
+  window.HXSODO = { ve: ve, moCam: moCam, _dem: function () { return DS.length; }, _khoaDau: function () { return DS[0] && DS[0].c.k; },   // 14/11 bộ đo qc-thanh-ben-dong-bo mở thanh bên không cần WebGL
+    _chua: function () { return DS.filter(function (x) { return !x.diem; }).length; },
     _diem: function (k) { var x = DS.find(function (y) { return y.c.k === k; }); return x && x.diem; },
     /* bộ đo: cụm chồng lớn nhất — số camera + toạ độ TRANG của tâm biểu tượng nằm trên cùng (để chạm thật) */
     _cum: function () { if (!F || !F.w || !F.huy || !F.huy.length) return null; var w = F.w, rc = camVe(), b = F.el.getBoundingClientRect(), cv = w.document.getElementById("c").getBoundingClientRect(), v = new w.THREE.Vector3(), tot = null;
