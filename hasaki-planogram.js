@@ -1540,7 +1540,9 @@ var CSS = [
 "#pane-planogram .hp-nvr .m{min-width:0;}",
 "#pane-planogram .hp-nvr .m b{display:block;font-size:13px;font-weight:620;color:var(--text,#1f2937);line-height:1.3;}",
 "#pane-planogram .hp-nvr .m small{display:block;font-size:11px;color:var(--muted,#6b7280);font-variant-numeric:tabular-nums;}",
-"#pane-planogram .hp-nvr .st{font-size:11.5px;font-weight:700;white-space:nowrap;text-align:right;}",
+/* 14/11: cột trạng thái rộng cố định — cùng một người, chip «Tất cả» ghi «chưa 1/4 ô», chip «Đã báo cáo» ghi «đã 3 ô»;
+   để tự co thì tên bên trái đổi bề rộng 21px khi đổi chip (qc-nhay-bam) */
+"#pane-planogram .hp-nvr .st{font-size:11.5px;font-weight:600;white-space:nowrap;text-align:right;min-width:68px;box-sizing:border-box;}",
 "#pane-planogram .hp-nvr .st.bad{color:#dc2626;} #pane-planogram .hp-nvr .st.ok{color:#059669;} #pane-planogram .hp-nvr .st.mut{color:var(--muted,#6b7280);font-weight:600;}",
 "#pane-planogram .hp-nvmore{appearance:none;border:0;border-top:1px solid var(--border,#e8ecf1);background:none;margin:0;font:inherit;display:block;width:100%;text-align:center;padding:10px 0 4px;min-height:42px;font-weight:700;font-size:12.5px;color:var(--accent,#326e51);cursor:pointer;}",
 /* Công cụ (cuối trang) */
