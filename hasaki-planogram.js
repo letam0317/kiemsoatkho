@@ -408,8 +408,8 @@ function ptDiLamNgay(r, dd){
 function cellStateDay(r, dd){
   if (!r) return "noreq";
   if (r.bk === "da"){
-    var ai = aiOf(r);
-    if (ai){ if (ai.kl === "KHONG_DAT") return "rework"; if (ai.kl === "CAN_XEM") return "review"; }
+    var kl = aiKl(r);
+    if (kl === "KHONG_DAT") return "rework"; if (kl === "CAN_XEM") return "review";
     return "done";
   }
   var dl = ptDiLamNgay(r, dd);
@@ -422,7 +422,7 @@ function cellState1(r){ return cellStateDay(r, ngayXem()); }
 function cellStateN(list){
   if (!list || !list.length) return "noreq";
   if (list.some(function(r){ return r.bk !== "da"; })) return "chua";      // có ngày chưa VS
-  if (list.some(function(r){ var a = aiOf(r); return a && a.kl === "KHONG_DAT"; })) return "rework";
+  if (list.some(function(r){ return aiKl(r) === "KHONG_DAT"; })) return "rework";
   return "done";
 }
 /* Cảnh báo quá hạn: mỗi vị trí, đếm số NGÀY yêu cầu GẦN NHẤT LIÊN TIẾP không báo cáo (toàn bộ dữ liệu) */
@@ -1912,14 +1912,14 @@ var NGUON = [
     build: function(H, rows, ts){ if (ts > 0) S.ai.ts = ts; S.ai.dang = false; buildAI(H, rows); },
     fail: function(){ S.ai.ok = false; S.ai.dang = false; renderAI(); } },
   { tab: TAB_CC, cb: "hpgv_cc",
-    build: function(H, rows, ts){ if (ts > 0) S.cc.ts = ts; S.cc.dang = false; buildCC(H, rows); },
-    fail: function(){ S.cc.ok = false; S.cc.dang = false; renderCC(); } },
+    build: function(H, rows, ts){ if (ts > 0) S.cc.ts = ts; S.cc.dang = false; buildCC(H, rows); if (_choPT) hienBac1(); },
+    fail: function(){ S.cc.ok = false; S.cc.dang = false; renderCC(); if (_choPT) hienBac1(); } },
   { tab: TAB_LS, cb: "hpgv_ls",
     build: function(H, rows, ts){ if (ts > 0) S.ls.ts = ts; S.ls.dang = false; buildLS(H, rows); },
     fail: function(){ S.ls.ok = false; S.ls.dang = false; veLaiVt(); } },
   { tab: TAB_CCN, cb: "hpgv_ccn",
-    build: function(H, rows, ts){ if (ts > 0) S.ccn.ts = ts; S.ccn.dang = false; buildCCN(H, rows); },
-    fail: function(){ S.ccn.ok = false; S.ccn.dang = false; veLaiVt(); } },
+    build: function(H, rows, ts){ if (ts > 0) S.ccn.ts = ts; S.ccn.dang = false; buildCCN(H, rows); if (_choPT) hienBac1(); },
+    fail: function(){ S.ccn.ok = false; S.ccn.dang = false; veLaiVt(); if (_choPT) hienBac1(); } },
   { tab: TAB_VSL, cb: "hpgv_vsl",
     build: function(H, rows){ S.vsl.dang = false; buildVSL(H, rows); },
     fail: function(){ S.vsl.ok = false; S.vsl.dang = false; veLaiVt(); } },
@@ -1948,6 +1948,10 @@ function tuCache(tab){   // vẽ ngay từ cache nếu còn hạn → true khi m
  * nhất vừa là tab quyết định lúc nào màn hình có nội dung → phải chiếm chỗ đầu hàng. */
 function bac1(){
   goiNguon(TAB_YC);
+  /* 15/11 (TK-31): chấm công hôm nay là tab NHẸ (~40 dòng) nhưng quyết định màn đầu chia 2 hay 3 ô số + danh sách nhân viên.
+     Trước đây hâm nóng lúc rảnh ⇒ ô «Chưa · đi làm / nghỉ» và tên nhân viên hiện muộn ~2 s, đẩy chú giải + sơ đồ. Nay bắn cùng YEUCAU
+     (2 lượt song song, chưa chạm trần 3 của Apps Script) và hienBac1 chờ nó như chờ nguồn tên (trần chung 2,5 s). */
+  if (S.cc.dang) goiNguon(TAB_CC);
   setTimeout(function(){
     goiNguon(TAB_PC);   // nhẹ (~20KB) mà quyết định tên người phụ trách hiện ở tooltip + pop-up
     goiNguon(TAB);
@@ -2027,6 +2031,8 @@ function loadData(){
   var btn = $id("hpReload"); if (btn) btn.disabled = true;
   _daGoi = {}; S.lastAt = Date.now();
   S.yc.dang = true; S.dangPT = true; S.ai.dang = true; S.pc.dang = true; _hetChoPT = false;
+  if (!S.cc.ok) S.cc.dang = true;   // 15/11: chấm công thuộc màn đầu (xem bac1)
+  if (!S.ccn.ok) S.ccn.dang = true;   // ngày đang xem là ngày cũ (sau nửa đêm, trước cụm 8h40) thì màn đầu cần chấm công THEO NGÀY
   /* 1) VẼ TỪ CACHE trước (đồng bộ): có cache là màn hình đủ dữ liệu ngay từ khung hình đầu —
         không spinner, không skeleton, không animation vào (tránh chớp trên nội dung đang có). */
   var coYc = tuCache(TAB_YC);
@@ -2573,12 +2579,33 @@ function buildAI(H, rows2d){
     by[id] = r; arr.push(r);
   });
   arr.sort(function(a, b){ return String(b.ngay).localeCompare(String(a.ngay)) || String(b.at).localeCompare(String(a.at)); });
-  S.ai.ok = true; S.ai.by = by; S.ai.rows = arr;
+  S.ai.ok = true; S.ai.by = by; S.ai.rows = arr; aiNhoGhi(arr);
   renderToday();   // vẽ lại chip AI ở hero
   renderWhBar();   // cập nhật số lượng AI xét duyệt trên thanh điều khiển
   renderAI();
 }
 function aiOf(r){ return S.ai.ok ? (S.ai.by[String(r.id)] || null) : null; }
+/* 15/11 (TK-31): VESINH-AI nặng nhất (664 KB) nên về sau màn đầu ~2 s ⇒ ô đổi màu, chip chú giải + dòng «ô AI chấm chưa đạt» hiện muộn, đẩy chú giải.
+   Bản nhớ localStorage CHỈ gồm mã yêu cầu → kết luận của 4 ngày gần nhất (không tên, không email): màn đầu tô theo bản nhớ, nguồn thật về thì thay. */
+var AI_NHO_K = "hp-ai-nho", _aiNho = null;
+function aiNhoDoc(){
+  if (_aiNho) return _aiNho;
+  _aiNho = {};
+  try{ var o = JSON.parse(localStorage.getItem(AI_NHO_K) || "null"); if (o && o.v && Date.now() - o.at < 36 * 3600 * 1000) _aiNho = o.v; }catch(e){}
+  return _aiNho;
+}
+function aiNhoGhi(arr){
+  try{
+    var ngay = {}; arr.forEach(function(r){ if (r.ngay) ngay[r.ngay] = 1; });
+    var giu = {}; Object.keys(ngay).sort().slice(-4).forEach(function(d){ giu[d] = 1; });
+    var v = {}; arr.forEach(function(r){ if (giu[r.ngay] && (r.kl === "KHONG_DAT" || r.kl === "CAN_XEM")) v[r.id] = r.kl; });
+    _aiNho = v; localStorage.setItem(AI_NHO_K, JSON.stringify({ at: Date.now(), v: v }));
+  }catch(e){}
+}
+function aiKl(r){
+  if (S.ai.ok){ var a = S.ai.by[String(r.id)]; return a ? a.kl : ""; }
+  return S.ai.dang ? (aiNhoDoc()[String(r.id)] || "") : "";
+}
 function buildPC(H, rows2d){
   var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
   var idx = {}; Object.keys(COLS_PC).forEach(function(k){ idx[k] = idxOf(hl, COLS_PC[k]); });
@@ -3025,9 +3052,16 @@ function moKhuMenu(e){ if (e && e.stopPropagation) e.stopPropagation(); var m = 
    hiện 2 nhịp (danh sách email trần / «Đang tải…» 0,1–0,6 s rồi mới ra tên). Nay giữ màn chờ chung tới khi nguồn tên về (hoặc hỏng),
    rồi hiện 1 lần. Chốt an toàn 2,5 s: nguồn tên chậm hơn thì vẫn hiện, không bắt chờ. */
 var _choPT = 0, _hetChoPT = false;
+/* 15/11 (TK-31): màn đầu chỉ hiện MỘT lần khi đủ nguồn tên + nguồn chấm công của NGÀY ĐANG XEM (hôm nay: CHAMCONG; 1 ngày cũ: CHAMCONG-NGAY;
+   khoảng nhiều ngày: không cần). Thiếu thì ô «Chưa · đi làm / nghỉ», thẻ Cần xử lý, tên nhân viên hiện muộn và đẩy chú giải + sơ đồ. */
+function conChoDau(){
+  if (S.dangPT) return true;
+  if (!S.yc.ok || !la1Ngay()) return false;
+  return laHomNay() ? !!S.cc.dang : !!S.ccn.dang;
+}
 function hienBac1(){
   if (!S.yc.ok) return;
-  if (S.dangPT && !_hetChoPT){ if (!_choPT) _choPT = setTimeout(function(){ _choPT = 0; _hetChoPT = true; hienBac1(); }, 2500); return; }
+  if (conChoDau() && !_hetChoPT){ if (!_choPT) _choPT = setTimeout(function(){ _choPT = 0; _hetChoPT = true; hienBac1(); }, 2500); return; }
   clearTimeout(_choPT); _choPT = 0;
   xongTai();
   renderWhBar(); renderToday(); renderList(); capNhatInfo();
@@ -3165,6 +3199,7 @@ function render(){
     capNhatInfo();
     return;
   }
+  if (S.yc.ok && conChoDau() && !_hetChoPT){ hienBac1(); return; }   // 15/11: nguồn về lẻ không được vẽ trước cửa chờ chung
   st.style.display = "none";
   renderWhBar();
   renderToday();   // KPI + sơ đồ (renderMap gọi bên trong)
