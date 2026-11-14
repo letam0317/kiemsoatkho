@@ -1951,7 +1951,9 @@ function bac1(){
   /* 15/11 (TK-31): chấm công hôm nay là tab NHẸ (~40 dòng) nhưng quyết định màn đầu chia 2 hay 3 ô số + danh sách nhân viên.
      Trước đây hâm nóng lúc rảnh ⇒ ô «Chưa · đi làm / nghỉ» và tên nhân viên hiện muộn ~2 s, đẩy chú giải + sơ đồ. Nay bắn cùng YEUCAU
      (2 lượt song song, chưa chạm trần 3 của Apps Script) và hienBac1 chờ nó như chờ nguồn tên (trần chung 2,5 s). */
-  if (S.cc.dang) goiNguon(TAB_CC);
+  /* trước cụm đồng bộ 8h40 màn hình xem NGÀY HÔM QUA ⇒ cần chấm công THEO NGÀY; sau đó cần chấm công hôm nay — nguồn đúng giờ đi cùng nhịp YEUCAU, nguồn kia đi nhịp 250 ms */
+  var som = new Date().getHours() < 9;
+  if (som ? S.ccn.dang : S.cc.dang) goiNguon(som ? TAB_CCN : TAB_CC);
   setTimeout(function(){
     goiNguon(TAB_PC);   // nhẹ (~20KB) mà quyết định tên người phụ trách hiện ở tooltip + pop-up
     goiNguon(TAB);
@@ -2713,6 +2715,7 @@ function aiLyDoKhoi(lydo, anhloi){
    mâu thuẫn. Chấm công (bậc 3) nạp khi panel xuất hiện thay vì khi bấm chế độ như trước. */
 function renderList(){
   var box = $id("hpAI"); if (!box) return;
+  if (choCuaDau()) return;
   if (!S.cc.ok && !S.cc.dang) canCC();
   if (la1Ngay() && !laHomNay()) canCCN();
   var k = khoang();
@@ -2925,6 +2928,7 @@ function btnAi(){
 /* --- KHỐI 1: VỆ SINH — thẻ Tiến độ + vỏ thẻ Cần xử lý (khối "Độ phủ yêu cầu" cũ đã gộp vào Cần xử lý, 28/09/2026) --- */
 function renderToday(){
   var box = $id("hpToday"); if (!box) return;
+  if (choCuaDau()) return;
   if (!S.yc.ok || !S.yc.rows.length){
     /* YEUCAU là tab nặng nhất nên hay về SAU PHU-TRACH — mà PHU-TRACH về là render() chạy.
        Còn đang tải thì GIỮ SKELETON, tuyệt đối không báo "chưa có dữ liệu": vài giây sau tab
@@ -3059,10 +3063,13 @@ function conChoDau(){
   if (!S.yc.ok || !la1Ngay()) return false;
   return laHomNay() ? !!S.cc.dang : !!S.ccn.dang;
 }
+/* nguồn về lẻ (phân công, ảnh, AI…) tự gọi renderToday / renderMap / renderList ⇒ trước lần hiện đầu phải giữ khung chờ, không vẽ bản thiếu chấm công */
+var _daHienDau = false;
+function choCuaDau(){ return !_daHienDau && S.yc.ok && !_hetChoPT && conChoDau(); }
 function hienBac1(){
   if (!S.yc.ok) return;
   if (conChoDau() && !_hetChoPT){ if (!_choPT) _choPT = setTimeout(function(){ _choPT = 0; _hetChoPT = true; hienBac1(); }, 2500); return; }
-  clearTimeout(_choPT); _choPT = 0;
+  clearTimeout(_choPT); _choPT = 0; _daHienDau = true;
   xongTai();
   renderWhBar(); renderToday(); renderList(); capNhatInfo();
 }
@@ -3583,6 +3590,7 @@ function moKhuMB(k){ S.mb = false; if (S.area !== k) setArea(k); renderMap(); }
 
 function renderMap(){
   var box = $id("hpMap"); if (!box) return;
+  if (choCuaDau()) return;
   if (!S.yc.ok || !S.yc.rows.length){ box.innerHTML = S.yc.dang ? SK_MAP : ""; return; }
   var k = khoang(), homNay = laHomNay(), mot = la1Ngay();
   /* byL gom theo KHOÁ Ô (khoaO) — kệ A1 có mã alias vẫn rơi đúng ô của nó */
