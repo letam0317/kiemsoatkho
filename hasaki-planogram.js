@@ -1496,6 +1496,10 @@ var CSS = [
 "#pane-planogram h2.hp-maphd{gap:8px 16px;}",
 "#pane-planogram h2.hp-maphd>.hp-maptd,#pane-planogram h2.hp-maphd>.hp-h2btn{flex:none;white-space:nowrap;}#pane-planogram h2.hp-maphd>.hp-h2btn{min-width:104px;justify-content:center;}",
 "#pane-planogram .hp-legchip{line-height:16px;}#pane-planogram h2.hp-maphd>.hp-legrow{flex:1 1 auto;margin:0;justify-content:flex-end;overflow:visible;padding:0;}",
+/* 14/11 user (clip 14.55.51): đổi ngày ⇒ dải chú giải 5 chip thành 8 chip, RỚT xuống hàng 2 và ĐẨY cả sơ đồ xuống (số chip đổi theo dữ liệu ngày).
+   Luật TK-31 «cấu trúc không theo dữ liệu»: dải LUÔN 1 hàng — vừa thì căn phải, thừa thì cuộn ngang ngay trong dải; chip không co, không xuống dòng. */
+"@media(min-width:769px){#pane-planogram h2.hp-maphd>.hp-legrow{flex:1 1 0;min-width:0;flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}" +
+  "#pane-planogram h2.hp-maphd>.hp-legrow>:first-child{margin-left:auto}#pane-planogram h2.hp-maphd>.hp-legrow>.hp-legchip{flex:none;white-space:nowrap}}",
 "@media(max-width:768px){#pane-planogram h2.hp-maphd{flex-wrap:wrap;}#pane-planogram h2.hp-maphd>.hp-legrow{order:9;flex:1 1 100%;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;}}",
 "#pane-planogram .hp-legchip .sw.trong{border:1px dashed var(--muted,#9ca3af);box-sizing:border-box;}",
 "#pane-planogram .hp-legchip .sw.ky{width:15px;height:15px;display:inline-grid;place-items:center;font-style:normal;font-size:9.5px;background:color-mix(in srgb,#dc2626 14%,transparent);color:#dc2626;}",
@@ -1567,8 +1571,8 @@ var CSS = [
   "box-shadow:0 6px 16px 0 color-mix(in srgb,var(--text) 8%,transparent),0 9px 28px 8px color-mix(in srgb,var(--text) 5%,transparent);}",
 "#hpLocSlot:not(.collapsed){transform-origin:top center;animation:popIn .22s var(--ez-spring,cubic-bezier(.16,1,.3,1));}",
 "#hpVtModal.hp-modal{align-items:stretch;justify-content:flex-end;padding:0;}" +
-"#hpVtModal .hp-modalbox{width:min(720px,96vw)!important;max-height:100vh!important;height:100vh;border-radius:0;transform:translateX(28px);}",
-"#hpVtModal.show .hp-modalbox{transform:none;}",
+/* 14/11: bề rộng · không phủ nền · hộp trượt · thẻ tiêu đề nổi ⇒ VỎ CHUNG thanh-ben.css (TK-29); ở đây chỉ còn chiều cao */
+"#hpVtModal .hp-modalbox{height:100vh;}",
 /* 22/10 user (lần 3, cả web lẫn điện thoại cùng khuôn), trái→phải:
    hàng 1 «mã vị trí» (trái) … «Ghi nhận 5S» «Đóng» (phải) · hàng 2 «Băng chuyền NN / camera» (trái) … «Yêu cầu #… ↗» (phải).
    Lưới 2 hàng; 3 khối bọc cũ display:contents để từng mục tự vào ô. */
@@ -1733,7 +1737,7 @@ var MODAL_HTML =
 '  </div>' +
 '</div>' +
 '<div id="hpVtModal" class="hp-modal">' +
-'  <div class="hp-modalbox" style="width:min(680px,96vw);">' +
+'  <div class="hp-modalbox">' +
 '    <div class="hp-modalhd"><div><div class="mt" id="hpVtTitle"></div><div class="mtsub" id="hpVtSub"></div></div>' +
 /* 21/10 user: «Yêu cầu #…» và «Ghi nhận 5S» GIỮ NGUYÊN chỗ cũ (góc phải trên), chỉ ✕ → «Đóng»; pop-up thành THANH BÊN PHẢI (CSS #hpVtModal) */
 '      <div class="hp-vtacts"><div class="hp-vtr1"><a id="hpVtPg" class="hp-ext hp-vtpg" target="_blank" rel="noopener"></a><button type="button" class="hsk-nut phu nho hp-mdong" onclick="HPLANOGRAM.closeVt()">Đóng</button></div>' +
@@ -3926,7 +3930,7 @@ function bkCua(r, dd){ return r.bk === "da" ? "da" : (dd === isoToday() ? r.bk :
    khi vỏ thuộc mục khác (data-chu) thì renderVt của Planogram bỏ qua — không vẽ đè. openViTri lấy lại vỏ cho Planogram. */
 function moVoVt(chu){
   napVo();
-  if (document.body.classList.contains("side-open")) { var tg = $id("sideToggle"); if (tg) tg.click(); else document.body.classList.remove("side-open"); }
+  thuBenTrai();
   var m = $id("hpVtModal"); m.dataset.chu = chu || "";
   if (_vtDong){ clearTimeout(_vtDong); _vtDong = 0; }
   m.style.display = "flex";
@@ -3937,11 +3941,7 @@ function openViTri(loc){
   if (!loc) return;
   var mVo = $id("hpVtModal"); if (mVo){ mVo.dataset.chu = ""; [$id("hpVtGhi"), $id("hpVtLt"), $id("hpVtPg")].forEach(function(e){ if (e) e.style.display = ""; }); }
   /* Luật thanh bên: khi thanh bên phải hiển thị thì thanh bên trái tự động ẩn */
-  if (document.body.classList.contains("side-open")) {
-    var tg = $id("sideToggle");
-    if (tg) tg.click();
-    else document.body.classList.remove("side-open");
-  }
+  thuBenTrai();
   if (VT.loc !== loc) VT.tab = "tq";   // 09/11 đổi vị trí ⇒ về tab Tổng quan
   VT.loc = loc; VT.ngay = ngayXem();
   canANH();  // ƯU TIÊN ẢNH LÊN ĐẦU: chiếm kết nối trước để ảnh về ngay, không bị nghẽn sau các tab lịch sử
@@ -3960,7 +3960,11 @@ function openViTri(loc){
 var _vtDong = 0;
 function closeVt(){ var m = $id("hpVtModal"); m.classList.remove("show"); if (window.HBAODUONG && window.HBAODUONG.benVs && !m.dataset.chu){ window.HBAODUONG.benVs.dung(); window.HBAODUONG.benVs.toanMan(false); }
   if (_vtDong) clearTimeout(_vtDong);
-  _vtDong = setTimeout(function(){ _vtDong = 0; m.style.display = "none"; $id("hpVtBody").innerHTML = ""; }, 240); }
+  /* 14/11 vỏ chung: hộp trượt ra .3s rồi mới ẩn; thanh trái đã tự thu lúc mở thì MỞ LẠI (như hskThanhBen của Vi phạm / Xác minh) */
+  if (_vtThuBen){ _vtThuBen = 0; var tg = $id("sideToggle"); if (tg && !document.body.classList.contains("side-open")) tg.click(); }
+  _vtDong = setTimeout(function(){ _vtDong = 0; m.style.display = "none"; $id("hpVtBody").innerHTML = ""; }, 320); }
+var _vtThuBen = 0;
+function thuBenTrai(){ if (!document.body.classList.contains("side-open")) return; var tg = $id("sideToggle"); if (tg) tg.click(); else document.body.classList.remove("side-open"); if (window.matchMedia && matchMedia("(min-width:769px)").matches) _vtThuBen = 1; }
 function vtNgay(d){ VT.ngay = d; canAnhNgay(); renderVt(); }   // đổi ngày NGAY TRONG pop-up cũng phải kéo tầng ảnh ngày cũ
 /* ===== CHẤM CÔNG THEO ĐÚNG NGÀY ĐANG CHỌN — cho thẻ "Phụ trách" (01/08/2026) ==================
  * Trả về cùng khuôn { c, lb, sub, subC } của ccTrangThai (+ sub2) để dùng lại y nguyên phần vẽ.
