@@ -173,7 +173,7 @@
     return { srvNow: now, may: may, viec: tatCa.map(function (t) { return { ten: t, may: chu[t] || null, canKhoa: [] }; }), chuyen: j.chuyen || [], bridge: j.bridge || [] };   // 17/10: điện thoại cũng thấy phiên trên thẻ máy
   }
   // Máy quản lý? Thanh bên dò 8591 bất đồng bộ (~1,5 s) — mở thẳng ?tab=maytram thì module chạy TRƯỚC ⇒ tự dò, đừng chờ.
-  var MAY_CHU = false, CAN_DN = false;
+  var MAY_CHU = false, CAN_DN = false, H_LAI = 0;
   function dongMayChu() {
     if (typeof window.hxDoMayChu === "function") return window.hxDoMayChu().then(function (co) { if (co) API = window.HX_API;
       /* 19/10 điện thoại qua đường hầm: chưa đổi được phiên 8591 thì đi đường Apps Script cũ (không bày ô đăng nhập riêng) */
@@ -229,7 +229,11 @@
         var doiLai = function () { return typeof window.tkDoiPhienXm === "function" && window.TK ? window.tkDoiPhienXm() : Promise.resolve(false); };
         var lay = function (lan) {
           if (!phien()) return lan ? (CAN_DN = true, null) : doiLai().then(function () { return lay(1); });
-          return goi591("/api/may-tram").then(function (j) { DIEU_KHIEN = true; CAN_DN = false; return j; })
+          return goi591("/api/may-tram").then(function (j) { DIEU_KHIEN = true; CAN_DN = false;
+            /* 15/11 máy chủ trả ngay bản đệm (cuGiay = tuổi bản đệm) để mở nhanh; bản cũ hơn 15 s ⇒ cộng tuổi vào «cập nhật N giây trước» và hỏi lại bản mới sau 2,5 s */
+            if (j && j.cuGiay > 15) { (j.may || []).forEach(function (m) { if (typeof m.tuoiGiay === "number") m.tuoiGiay += j.cuGiay; });
+              clearTimeout(H_LAI); H_LAI = setTimeout(function () { if (PANE && !PANE.classList.contains("hidden")) tai().then(ve); }, 2500); }
+            return j; })
             .catch(function (e) { if (e.ma === 401) { try { localStorage.removeItem("hx-phien"); } catch (x) {} return lay(lan); } throw e; });
         };
         return lay(0);
