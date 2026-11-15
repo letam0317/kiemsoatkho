@@ -427,7 +427,9 @@
       .then(function (r) { if (!r.ok) { var e = new Error(r.status === 404 ? "chưa có" : "HTTP " + r.status); e.code = r.status; throw e; } return G.docTron(r, khoa, GM.kk); })
       .then(function (x) { return new Blob(x.phan, { type: loai }); });
   }
-  function het428(r) { if (r.status === 428) setTimeout(function () { khoaLai("Đã khoá lại CCTV (lâu không dùng) — nhập lại mật khẩu."); }, 0); }
+  /* 15/11 qc-thanh-ben-dong-bo bắt BÃO GỌI: trang tin «tamlc miễn mật khẩu» (tk-nho trên máy) nhưng máy chủ không nhận phiên là chủ ⇒ 428 → khoaLai → laChu() → ve() → 428…
+     11.790 lượt /api/so-do-camera trong ~4 phút. 428 là lời MÁY CHỦ ⇒ luôn về màn mật khẩu, không tự tải lại */
+  function het428(r) { if (r.status === 428) setTimeout(function () { boChu(); khoaLai(laChu() ? "Máy chủ chưa nhận phiên này là tài khoản chủ — nhập mật khẩu CCTV." : "Đã khoá lại CCTV (lâu không dùng) — nhập lại mật khẩu.", 1); }, 0); }
   /* 30/10 user «laptop tắt thì CCTV không vô được (báo không kết nối được đường hầm)»: trang mở lúc laptop bật ⇒ địa chỉ còn trỏ đường hầm laptop
      đã chết (Failed to fetch) hoặc phiên của laptop bị máy dự phòng trả 401 → 1 lần dò lại máy chủ + đổi phiên (hasaki-xacminh noiLai → index.html
      hxNoiLai) rồi gọi lại; chỉ GET mới gọi lại (lệnh ghi không gửi 2 lần). */
@@ -586,6 +588,12 @@
     try { var c = document.createElement("canvas"); c.width = c.height = 1; var x = c.getContext("2d"); x.fillStyle = nen; x.fillRect(0, 0, 1, 1); x.fillStyle = v; x.fillRect(0, 0, 1, 1);
       var d = x.getImageData(0, 0, 1, 1).data; return (MAU_DEM[v + nen] = "rgb(" + d[0] + "," + d[1] + "," + d[2] + ")"); } catch (e) { return "#888888"; }
   }
+  /* máy chủ đã xác nhận phiên hiện tại là tài khoản chủ (miễn mật khẩu) — gắn đuôi phiên, đổi phiên = hỏi lại */
+  var CHU_K = "sdc-chu";
+  function duoiPhien() { return String((CTX && CTX.phien && CTX.phien()) || "").slice(-16); }
+  function chuDaNhan() { var d = duoiPhien(); if (!d) return false; try { return sessionStorage.getItem(CHU_K) === d; } catch (e) { return chuDaNhan._m === d; } }
+  function nhanChu() { var d = duoiPhien(); chuDaNhan._m = d; try { sessionStorage.setItem(CHU_K, d); } catch (e) {} }
+  function boChu() { chuDaNhan._m = ""; try { sessionStorage.removeItem(CHU_K); } catch (e) {} }
   function ve(host, ctx) {
     CTX = ctx; HOST = host; napCss();
     /* đóng thanh bên → bỏ chọn, dừng trực tiếp. CHỈ khi chuyển từ đang mở → đóng: lúc MỞ, hx-ben được gắn trước «show» ⇒ bản đầu bỏ chọn ngay khi vừa chọn (bộ đo bắt 25/10) */
@@ -593,6 +601,12 @@
       new MutationObserver(function () { var mo = $id("modal").classList.contains("show"), vuaDong = moTruoc && !mo; moTruoc = mo; if (!vuaDong || !S.chon) return; S.chon = ""; dungLive(); veDiem3D(); })
       .observe($id("modal"), { attributes: true, attributeFilter: ["class"] }); }
     if (!layThe() && !laChu()) return veKhoa(host);   // chưa mở khoá ⇒ chỉ màn mật khẩu, KHÔNG tải dữ liệu camera (10/11: tamlc miễn)
+    /* 15/11: «tamlc» ở trang chỉ là bộ nhớ trên máy — MÁY CHỦ mới quyết miễn. Lần đầu mỗi phiên hỏi /khoa (chu:1) rồi nhớ trong phiên;
+       máy chủ không nhận ⇒ màn mật khẩu ngay, 0 lượt tải dữ liệu camera (qc-so-do-camera «màn khoá») */
+    if (!layThe() && !chuDaNhan()) { hienKhung(host);
+      goi("/api/so-do-camera/khoa", { khongKhoa: 1, ms: 15000 }).then(function (j) { if (HOST !== host) return; if (j.chu) { nhanChu(); ve(host, ctx); } else veKhoa(host, "Máy chủ chưa nhận phiên này là tài khoản chủ — nhập mật khẩu CCTV."); })
+        .catch(function () { if (HOST === host) veKhoa(host); });
+      return; }
     henKhoa();
     /* 05/11 user «mở CCTV vẫn thấy "Đang dựng mặt bằng…" ~1 s rồi mới sang mặt bằng chốt»: khung 3D đã nạp ngầm từ màn mật khẩu ⇒ mở khoá xong
        hiện NGAY mặt bằng nhìn từ trên (chưa có dữ liệu camera thì biểu tượng vẽ thêm khi về) — bỏ chữ «Đang tải…» / «Đang dựng mặt bằng…» */
@@ -665,14 +679,14 @@
       var mt = $id("sdcKhoaMt"); if (mt) mt.textContent = e.code === 403 || e.code === 503 ? e.message : "Không hỏi được máy chủ: " + e.message;
     });
   }
-  function khoaLai(tb) {
+  function khoaLai(tb, tuMayChu) {
     var t = layThe(); datThe(""); NEO.key = null; try { sessionStorage.removeItem(NEO_K); } catch (e) {}   // khoá lại CCTV = bỏ luôn khoá đọc khung neo
     if (t && CTX) fetch(CTX.API() + "/api/so-do-camera/khoa-lai", { method: "POST", headers: { "x-hx-phien": CTX.phien(), "x-cctv": t } }).catch(function () {});
     dungLive(); D = null; DS = []; NAP = null; GM = null; MK_TAM = ""; Object.keys(ANH).forEach(function (k) { URL.revokeObjectURL(ANH[k]); delete ANH[k]; });
     var m = $id("modal"); if ((S.chon || S.hc) && m && m.classList.contains("hx-ben") && typeof window.dongModal === "function") window.dongModal();
     S.chon = ""; S.hc = null; dongChon();
     if (F) { window.removeEventListener("resize", F.vua); if (F.ro) F.ro.disconnect(); F = null; }
-    if (HOST && document.contains(HOST) && HOST.querySelector(".sdc-3d,.sdc-khoa")) { if (laChu()) ve(HOST, CTX); else veKhoa(HOST, tb); }
+    if (HOST && document.contains(HOST) && HOST.querySelector(".sdc-3d,.sdc-khoa")) { if (laChu() && !tuMayChu) ve(HOST, CTX); else veKhoa(HOST, tb); }
   }
   /* tự khoá khi 30' không chạm / gõ gì trên trang (máy chủ cũng tự huỷ thẻ sau 30' không gọi) */
   var DUNG_CUOI = Date.now();
