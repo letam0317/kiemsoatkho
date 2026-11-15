@@ -1635,8 +1635,8 @@ var CSS = [
   "border-radius:8px 8px 0 0;border-bottom:1px solid color-mix(in srgb,var(--border) 45%,transparent);" +
   "box-shadow:var(--shadow);clip-path:inset(-30px -30px 0 -30px);position:relative;z-index:5}" +
   "@media(min-width:769px){#hpVtModal:is(:not([data-chu]),[data-chu=''],[data-chu=bd]) .bd-tabben{" +
-  /* --sbw = bề rộng chỗ giữ thanh cuộn #hpVtBody (lich-su-ben.js đo) ⇒ mép phải thanh tab thẳng mép thẻ tiêu đề */
-  "margin:-14px calc(-8px - var(--sbw, 0px)) 14px -8px;border-bottom:0;" +
+  /* 15/11 đệm phải thân đã trừ --sbw (thanh-phan.css) ⇒ thanh tab chỉ cần lùi 8 hai bên là thẳng mép thẻ tiêu đề */
+  "margin:-14px -8px 14px;border-bottom:0;" +
   "border-radius:0 0 8px 8px;box-shadow:var(--shadow);clip-path:inset(0 -30px -30px -30px)}}" +
   "@media(max-width:768px){#hpVtModal:is(:not([data-chu]),[data-chu=''],[data-chu=bd]) .hp-modalhd{margin:10px 10px 0;border-radius:8px;border-bottom:0;clip-path:none}" +
   "#hpVtModal:is(:not([data-chu]),[data-chu=''],[data-chu=bd]) .bd-tabben{left:10px;right:10px;bottom:10px;border-radius:8px;border-top:0;" +
