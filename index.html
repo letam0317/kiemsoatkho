@@ -4025,7 +4025,7 @@ function setTab(name){
   if(name==='home'){ homeRender(); }       // 12/10 trang Tổng quan: số trên thẻ chỉ đọc dữ liệu đã có trong bộ nhớ
   if(name==='task' && _render.cho){ render(); if(!$('gmFrame').getAttribute('src') && window.__henNapForm) __henNapForm(); }   // 25/10 bảng Vi phạm hoãn vẽ lúc khung ẩn
   else if(name==='task' && window.__henNapForm && !$('gmFrame').getAttribute('src')) __henNapForm();
-  if(name==='hangmuc'){ taiQuyDinh(); }   // đọc lại QUY-DINH mỗi lần mở tab (đồng bộ mới nhất)
+  if(name==='hangmuc'){ if(QD.length && !$('hmCards').children.length){ boSungKpiHR(); renderQuyDinh(); } taiQuyDinh(); }   // đọc lại QUY-DINH mỗi lần mở tab (đồng bộ mới nhất)
   if(name==='fstock'){ moFactoryStock(); }   // LAZY: chỉ lúc này mới nạp module + fetch data Tồn kho
   if(name==='fkiemke'){ moFactoryKiemke(); } // LAZY: module Kiểm kê (tab kiemke-material riêng biệt)
   if(name==='htonbat'){ moHasakiTonbat(); }  // LAZY: module Tồn kho bất thường HASAKI (tab stock-inventory-hasaki)
@@ -4183,7 +4183,7 @@ let _hxNap=null;
 function napXm(){
   if(!_hxNap){
     _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261115a';
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261115b';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
       document.body.appendChild(s);
     });
@@ -4411,8 +4411,8 @@ function taiQuyDinh(){
     const rows=((resp.table&&resp.table.rows)||[]).map(r=>(r.c||[]).map(c=>c?(c.v==null?"":c.v):""));
     QD=rows.filter(r=>/^\d+$/.test(String(r[0]).trim()));   // chỉ giữ dòng có STT là số (bỏ header phụ)
     boSungKpiHR();
-    renderQuyDinh();
     const ch=JSON.stringify(QD), doi=ch!==_qdChuoi; _qdChuoi=ch;
+    if(doi || !$('hmCards').children.length) renderQuyDinh();   /* 15/11 (TK-31): bản mới y bản đang hiện ⇒ không dựng lại bảng + thẻ */
     if(doi){ try{ localStorage.setItem('qd-nho-'+SHEET_ID, JSON.stringify({ luc: Date.now(), qd: QD })); }catch(e){} }
     if(doi && ROWS.length){ render(); renderKpi(); }   // QD về sau dữ liệu task -> vẽ lại Tần suất + bảng luỹ kế KPI (14/11: chỉ khi KHÁC bản nhớ)
     if(doi) homeVeLai();
