@@ -109,10 +109,9 @@
          (nền riêng, chữ 15px đậm, chấm màu), mọi khung CAO BẰNG NHAU (grid-auto-rows:1fr) + cách nhau 12px. Hàng tiêu đề cột đặt NGOÀI lưới
          (để không bị kéo cao theo 1fr) và lề trái/phải khớp lề nội dung khung (viền 4 + đệm 12 · đệm 12 + viền 1). */
       ".mt-hang{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:1fr;gap:12px}" +
-        ".mt-o{position:relative;grid-template-rows:auto 1fr;padding:0 12px 10px;border:1px solid color-mix(in srgb,var(--text) 16%,var(--border));border-left:4px solid var(--muted);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.05)}" +
-        ".mt-o.sk-tot{border-left-color:var(--good)}.mt-o.sk-chu-y{border-left-color:var(--warn)}.mt-o.sk-kem{border-left-color:var(--bad,#dc2626)}" +
+        ".mt-o{position:relative;grid-template-rows:auto 1fr;padding:0 12px 10px;border:1px solid color-mix(in srgb,var(--text) 16%,var(--border));border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.05)}" +
         ".mt-o>.mt-trai{padding-left:0}.mt-tde{padding:0 13px 0 16px;margin-bottom:6px}" +
-        ".mt-o>.mt-tieu{position:static;z-index:auto;backdrop-filter:none;-webkit-backdrop-filter:none;grid-column:1/-1;display:flex;align-items:center;justify-content:flex-start;flex-wrap:nowrap;gap:8px;margin:0 -12px 10px;padding:8px 12px;background:var(--surface2);border-bottom:1px solid var(--border);border-radius:0 9px 0 0}" +
+        ".mt-o>.mt-tieu{position:static;z-index:auto;backdrop-filter:none;-webkit-backdrop-filter:none;grid-column:1/-1;display:flex;align-items:center;justify-content:flex-start;flex-wrap:nowrap;gap:8px;margin:0 -12px 10px;padding:8px 12px;background:var(--surface2);border-bottom:1px solid var(--border);border-radius:7px 7px 0 0}" +
         ".mt-o>.mt-tieu b{font-size:15px;font-weight:700;line-height:20px;color:var(--text)}.mt-o>.mt-tieu .mt-the{margin-left:auto}" +
         ".mt-den{flex:none;width:10px;height:10px;border-radius:50%;background:var(--muted)}.sk-tot .mt-den{background:var(--good)}.sk-chu-y .mt-den{background:var(--warn)}.sk-kem .mt-den{background:var(--bad,#dc2626)}",
       /* 19/10 user «chip việc nặng/nhẹ to cả web/điện thoại»: 1 dòng tóm tắt (mọi cỡ màn) + bảng chip NỔI khi bấm — khung máy không đổi cỡ.
