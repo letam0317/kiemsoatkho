@@ -38,7 +38,15 @@
     return p && p.charAt(0) === "/" ? API + p + (/^\/(anh|video|bc|cs)\//.test(p) ? (p.indexOf("?") < 0 ? "?" : "&") + "phien=" + PHIEN : "") : p;
   };
   var QD = ["Lập phiếu (NV Hasaki)", "Không phải NV Hasaki", "Xe ra / không vi phạm", "Không rõ – bỏ qua"];
-  var tenLoai = function (l) { return l === "phan-loai" ? "Khu phân loại giấy" : l === "tai-nghe" ? "Kệ giá trị cao" : "Bãi xe NCC"; };   // 05/11 + đeo tai nghe (canh-tai-nghe.mjs)
+  /* 15/11 (user «canh là hành động cố định, vị trí luôn thay đổi»): chữ theo hạng mục của lượt camera do máy chủ gửi (bảng D.hm, lượt mang l.hmSo — từ sổ cai-pc/canh-vi-tri.json).
+     Bảng dưới CHỈ là bản dự phòng cho dữ liệu cũ chưa có bảng — thêm khu / hạng mục mới KHÔNG sửa ở đây. */
+  var HM_CU = { "bai-xe": { muc: 25, tenKhu: "Bãi xe NCC", mucTen: "Gửi xe ở khu vực không được phép", viTriChon: "Bãi xe NCC/bảo vệ · {camera}", uvNgan: "chấm công gần giờ", uvTieuDe: "Chấm công gần giờ", uvKieu: "gan-gio", coXeRa: true },
+    "phan-loai": { muc: 8, tenKhu: "Khu phân loại giấy", mucTen: "Rác / giấy chưa phân loại đúng nơi", viTriChon: "{camera}", uvNgan: "trong ca", uvTieuDe: "NV PTCH đang trong ca", uvKieu: "trong-ca", coXeRa: false },
+    "tai-nghe": { muc: 19, tenKhu: "Kệ giá trị cao", mucTen: "Đeo tai nghe khi di chuyển trong kho", viTriChon: "Kệ giá trị cao", uvNgan: "chấm công gần giờ", uvTieuDe: "Chấm công gần giờ", uvKieu: "gan-gio", coXeRa: false } };
+  var KHU_CU = [["bai-xe", "Bãi xe NCC / bảo vệ"], ["phan-loai", "Khu phân loại giấy"], ["tai-nghe", "Kệ giá trị cao"]];
+  var hmL = function (l) { return (l && D && D.hm && D.hm[l.hmSo]) || HM_CU[l && HM_CU[l.loai] ? l.loai : "bai-xe"]; };
+  var dsKhu = function () { return (D && D.khu && D.khu.length ? D.khu : KHU_CU); };
+  var tenKhuLoc = function (k) { var x = dsKhu().filter(function (z) { return z[0] === k; })[0]; return x ? x[1] : k; };
   var ngayChu = function (s) { return String(s == null ? "" : s).replace(/\b(0[1-9]|1[0-2])-([0-3]\d)(?= \d{2}:\d{2})/g, "$2/$1"); };   // 13/10 chữ máy ghi "08-18 13:59" → "18/08 13:59" như mọi chỗ khác
   var soVN = function (n) { return String(n).replace(".", ","); };
   var hm = window.hskTienIch.hm;
@@ -757,14 +765,14 @@
     var nutMo = (l.may && l.may.taskId) ? '<a class="hsk-nut phu nho vp-mo" href="https://work.hasaki.vn/tasks?task_id=' + e_(l.may.taskId) + '" target="_blank" rel="noopener" title="Mở task trên work.hasaki.vn">Mở task ↗</a>' : "";
     var nutQD = '<span role="button" tabindex="0" class="hsk-nut phu nho hx-qd-cl">' + (l.qd ? "Đổi quyết định" : "Quyết định") + '</span>';
     var uvThe = gy ? '<b>' + e_(gy.ten + " · " + gy.code) + '</b> <span class="cl-sep">|</span> cổng <b>' + e_(hm(gy.gio)) + '</b>'
-      : ((l.chamCong || []).length ? '<b>' + l.chamCong.length + " NV " + (l.loai === "phan-loai" ? "trong ca" : "chấm công gần giờ") + '</b>' : '<span class="vp-chua-xm">chưa có ứng viên</span>');
+      : ((l.chamCong || []).length ? '<b>' + l.chamCong.length + " NV " + hmL(l).uvNgan + '</b>' : '<span class="vp-chua-xm">chưa có ứng viên</span>');
     var nguonBC = [(l.chamCong || []).length ? "chấm công" : "", (l.cong || []).length ? "sổ cổng" : ""].filter(Boolean).join(" · ");
     var chot = nguoiChot(l);
     return '<div class="cl-item vp' + (tGC ? " hx-gc-mo" : "") + '" data-l="' + i + '" data-lid="' + e_(l.id) + '">' +
       '<div class="cl-hang1 hx-cl-vp">' + anh + '<span class="cl-nut">' + nutMo + nutQD + '</span><span class="cl-tt">' + chips + '</span></div>' +
       '<div class="cl-data cl-body">' +
         '<div class="cl-loi" title="' + e_(loiCam(l)) + '">' + e_(loiCam(l)) + '</div>' +
-        '<div class="cl-kv">Vị trí: <b>' + e_(tenLoai(l.loai)) + '</b> <span class="cl-sep">|</span> <b>' + e_(l.camera) + '</b></div>' +
+        '<div class="cl-kv">Vị trí: <b>' + e_(hmL(l).tenKhu) + '</b> <span class="cl-sep">|</span> <b>' + e_(l.camera) + '</b></div>' +
         '<div class="cl-kv">Ghi nhận ngày: <b>' + e_(ngayGioVN(l.ngay + " " + hm(l.gioNguoi || l.tu))) + '</b>' + (l.den ? ' <span class="cl-sep">|</span> Đến: <b>' + e_(hm(l.den)) + '</b>' : "") + '</div>' +
         '<div class="cl-kv">Máy gợi ý: ' + uvThe + '</div>' +
         '<div class="cl-kv">Bằng chứng: <b>Clip camera</b>' + (nguonBC ? " · " + e_(nguonBC) : "") + '</div>' +
@@ -780,24 +788,24 @@
       var ng = (l.buocAnh || []).reduce(function (m, b) { return Math.max(m, (b.hop || []).length); }, 0);
       var gy = (l.cong || []).find(function (c) { return c.code === l.goiY; });
       return { ng: l.khongThayNguoi ? '<span class="hx-tag warn">không thấy người</span>' : (ng ? ng + " người nghi" : "có cử động"),
-        uv: gy ? '<b>' + e_(gy.ten) + '</b><div class="muted" style="font-size:12px">' + e_(gy.code) + ' · cổng ' + hm(gy.gio) + '</div>' : ((l.chamCong || []).length ? (l.chamCong.length + " NV " + (l.loai === "phan-loai" ? "trong ca" : "chấm công gần giờ")) : '<span class="muted">Chưa có ứng viên</span>'),
+        uv: gy ? '<b>' + e_(gy.ten) + '</b><div class="muted" style="font-size:12px">' + e_(gy.code) + ' · cổng ' + hm(gy.gio) + '</div>' : ((l.chamCong || []).length ? (l.chamCong.length + " NV " + hmL(l).uvNgan) : '<span class="muted">Chưa có ứng viên</span>'),
         tt: ttLuot(l) === "xong" ? '<span class="hx-tag good">Đã lập phiếu</span><div style="font-size:12px">' + e_(nguoiChot(l)) + '</div>'
           : ttLuot(l) === "da" ? '<span class="hx-tag info">' + e_(l.qd.qd) + '</span>' + (nguoiChot(l) ? '<div style="font-size:12px">' + e_(nguoiChot(l)) + '</div>' : "")
           : ttLuot(l) === "luu" ? '<span class="hx-tag">Chỉ lưu vết</span><div class="muted" style="font-size:12px">' + e_(l.lyDoLuu || "tra khi có báo lỗi phân loại") + '</div>'
           : '<span class="hx-tag warn">Chờ bạn quyết</span>' };
     };
     var loiDon = "";   // 13/10 user: GIỮ cột Lỗi (ẩn cột làm cột Bằng chứng phình ra, lãng phí) — đồng bộ với Theo tác vụ
-    var tieuDe = "Sự việc camera bắt được — " + (LOC.khu ? tenLoai(LOC.khu) : "mọi khu") + (loiDon ? '<span class="muted" style="font-weight:400;font-size:14px"> · ' + e_(loiDon) + '</span>' : "");
+    var tieuDe = "Sự việc camera bắt được — " + (LOC.khu ? tenKhuLoc(LOC.khu) : "mọi khu") + (loiDon ? '<span class="muted" style="font-weight:400;font-size:14px"> · ' + e_(loiDon) + '</span>' : "");
     var SO = LOC.soHienCam || 20, dsHien = ds.slice(0, SO);   // 09/11 chiều user: Theo máy cũng mặc định 20 dòng + «Xem thêm»
     var h = dauPanelLoc(tieuDe, ds.length + " sự việc", [
       { k: "tt", lbl: "Trạng thái", v: LOC.tt, opt: [["cho", "Chờ bạn quyết"], ["da", "Đã quyết · máy đang làm"], ["xong", "Đã lập phiếu"], ["luu", "Chỉ lưu vết (khu phân loại · xe tải che bãi)"], ["gc", "Có ghi chú (mọi trạng thái)"], ["", "Tất cả"]] },
-      { k: "khu", lbl: "Khu", v: LOC.khu, opt: [["", "Mọi khu"], ["bai-xe", "Bãi xe NCC / bảo vệ"], ["phan-loai", "Khu phân loại giấy"], ["tai-nghe", "Kệ giá trị cao"]] },
+      { k: "khu", lbl: "Khu", v: LOC.khu, opt: [["", "Mọi khu"]].concat(dsKhu()) },
       { k: "ngay", lbl: "Ngày", ngay: 1, v: LOC.ngay, coDuLieu: function (iso) { return ngays.indexOf(iso) >= 0; }, nhan: function (a, b) { return a ? "" : "14 ngày gần nhất"; },
         presets: [{ k: "today", lb: "Hôm nay" }, { k: "yesterday", lb: "Hôm qua" }, { k: "3", lb: "3 ngày" }, { k: "7", lb: "7 ngày" }, { k: "all", lb: "Tất cả" }] },
       { k: "tim", lbl: "Tìm (camera / tên / mã NV)", input: 1, v: TIM, ph: "AI Bao Ve / 2519…" }]) +
       '<div class="table-wrap"><table class="hx-chung' + (loiDon ? " an-loi" : "") + '" style="table-layout:fixed;width:100%;min-width:0"><thead><tr>' + COT_CHUNG + '</tr></thead><tbody>' +
       (dsHien.map(function (l, i) { var c = cot(l);
-        return '<tr data-l="' + i + '" data-lid="' + e_(l.id) + '"' + (gcCua(l.id) ? ' class="hx-gc-mo"' : "") + '><td><b class="hx-vt">' + e_(tenLoai(l.loai)) + '</b><div class="muted" style="font-size:12px">' + ngayVN(l.ngay) + ' ' + hm(l.gioNguoi || l.tu) + ' · ' + e_(l.camera) + '</div>' + coGC(l.id) + '</td>' +
+        return '<tr data-l="' + i + '" data-lid="' + e_(l.id) + '"' + (gcCua(l.id) ? ' class="hx-gc-mo"' : "") + '><td><b class="hx-vt">' + e_(hmL(l).tenKhu) + '</b><div class="muted" style="font-size:12px">' + ngayVN(l.ngay) + ' ' + hm(l.gioNguoi || l.tu) + ' · ' + e_(l.camera) + '</div>' + coGC(l.id) + '</td>' +
           '<td class="c-loi" style="white-space:normal"><div class="hx-l2">' + e_(loiCam(l)) + '</div></td>' +
           '<td><div class="hx-bc"><span class="hx-vthumb"><img loading="lazy" src="' + e_(anhNguoi(l)) + '" alt="Clip camera" style="width:100%;height:100%;object-fit:cover;display:block"><span class="pl">▶</span></span><div class="hx-bc-chu"><span>Clip camera</span>' + ((l.chamCong || []).length || (l.cong || []).length ? '<span class="muted">' + [(l.chamCong || []).length ? "chấm công" : "", (l.cong || []).length ? "sổ cổng" : ""].filter(Boolean).join(" · ") + '</span>' : "") + '</div></div></td>' +
           '<td style="white-space:normal">' + (/<\/div>$/.test(c.uv) ? c.uv.replace(/<\/div>$/, " · " + c.ng.replace(/<[^>]+>/g, "") + "</div>") : c.uv + '<div class="muted" style="font-size:12px">' + c.ng.replace(/<[^>]+>/g, "") + '</div>') + '</td>' +   // 1 dòng phụ: mã · giờ cổng · số người nghi
@@ -815,8 +823,7 @@
   }
 
   /* cột Lỗi của Theo máy (bảng + pop-up) — bãi xe = mục 25 (luật BX-01) · phân loại rác/giấy = mục 8 · đeo tai nghe = mục 19 (05/11) */
-  var MUC_CAM = { "phan-loai": [8, "Rác / giấy chưa phân loại đúng nơi"], "bai-xe": [25, "Gửi xe ở khu vực không được phép"], "tai-nghe": [19, "Đeo tai nghe khi di chuyển trong kho"] };
-  var loiCam = function (l) { var m = MUC_CAM[MUC_CAM[l.loai] ? l.loai : "bai-xe"], q = (QDX || []).find(function (x) { return Number(x.muc) === m[0]; });
+  var loiCam = function (l) { var h = hmL(l), m = [h.muc, h.mucTen], q = (QDX || []).find(function (x) { return Number(x.muc) === m[0]; });
     return (q ? q.cau : m[1]) + " (mục " + m[0] + ")"; };
   /* ---- pop-up lượt: CLIP (tua ×3 khúc trống, ×1 lúc có người) + bộ chọn THEO ẢNH (mỗi "Người nghi" 1 dòng: ai · vi phạm gì · ở đâu) ---- */
   function nguoiTrongAnh(l) {
@@ -831,8 +838,8 @@
     var pad = 0.03, x0 = Math.max(0, h[0] - pad), y0 = Math.max(0, h[1] - pad), x1 = Math.min(1, h[2] + pad), y1 = Math.min(1, h[3] + pad), w = x1 - x0, hh = y1 - y0;
     return "background-image:url('" + anh + "');background-size:" + (100 / w) + "% " + (100 / hh) + "%;background-position:" + (w >= 1 ? 0 : x0 / (1 - w) * 100) + "% " + (hh >= 1 ? 0 : y0 / (1 - hh) * 100) + "%";
   }
-  function viTriMacDinh(l) { return l.loai === "phan-loai" ? l.camera : l.loai === "tai-nghe" ? "Kệ giá trị cao" : "Bãi xe NCC/bảo vệ · " + l.camera; }
-  function mucMacDinh(l) { return (MUC_CAM[l.loai] || MUC_CAM["bai-xe"])[0]; }
+  function viTriMacDinh(l) { return String(hmL(l).viTriChon || "").replace("{camera}", l.camera || ""); }
+  function mucMacDinh(l) { return hmL(l).muc; }
   function moLuot(l) {
     var TB = moThanhBen(String(l.id));   // 16/10 (7) user: Theo máy đổi sang THANH BÊN như Theo tác vụ
     EV = { l: l, ng: nguoiTrongAnh(l) };
@@ -840,14 +847,14 @@
     EV.ng.forEach(function (n, i) { var c = cu.find(function (x) { return x.so === n.so; }) || (i === 0 && q.ma && !cu.length ? { ma: q.ma.split(",")[0] } : null);
       n.ma = c ? c.ma : ""; n.ten = c ? (c.ten || "") : ""; n.khong = c ? !!c.khong : false; n.muc = c && c.muc ? c.muc : mucMacDinh(l); n.viTri = c && c.viTri ? c.viTri : viTriMacDinh(l); });
     var khoa = l.may && l.may.trangThai && l.may.trangThai !== "lỗi";
-    var PL = l.loai === "phan-loai" || l.loai === "tai-nghe";   // chữ «không vi phạm» (không có chuyện xe ra)
+    var PL = !hmL(l).coXeRa;   // chữ «không vi phạm» (không có chuyện xe ra)
     /* 17/10 (3) user «Máy gợi ý … nhấn vào thì chọn được người khác như ô Là ai»: người máy gợi ý = lựa chọn SẴN của người nghi 1 (chưa ai chọn thì điền), đổi được */
     var gy0 = (l.cong || []).find(function (c) { return c.code === l.goiY; });
     if (gy0 && EV.ng[0] && !EV.ng[0].ma && !cu.length && !q.ma) { EV.ng[0].ma = gy0.code; EV.ng[0].ten = gy0.ten; }
     /* 14/10 user: pop-up Theo máy ĐỒNG BỘ vị trí với Theo tác vụ — tiêu đề 2 dòng (chỗ / ngày giờ) + Ghi chú · trái: nguồn + khung xem ·
        phải: Quyết định → Lỗi → Máy gợi ý → danh sách người (như «Ai tác động ô») */
     var nd = String(l.ngay || "").split("-"), gioL = hm(l.gioNguoi || l.tu);
-    $id("mTitle").innerHTML = '<span class="hx-mt1">' + e_(tenLoai(l.loai)) + " · " + e_(l.camera) + '</span><span class="hx-mt2">' + (nd.length === 3 ? nd[2] + "/" + nd[1] + "/" + nd[0] : e_(l.ngay)) + " " + gioL + '</span>';
+    $id("mTitle").innerHTML = '<span class="hx-mt1">' + e_(hmL(l).tenKhu) + " · " + e_(l.camera) + '</span><span class="hx-mt2">' + (nd.length === 3 ? nd[2] + "/" + nd[1] + "/" + nd[0] : e_(l.ngay)) + " " + gioL + '</span>';
     if (l.may && l.may.phieu) ganMoTask("https://work.hasaki.vn/tasks?task_id=" + encodeURIComponent(l.may.phieu)); else { var mt0 = $id("hxMoTask"); if (mt0) mt0.remove(); }
     var gy = (l.cong || []).find(function (c) { return c.code === l.goiY; });
     var dn = (l.doanNguoi || []).map(function (d) { return [giay(d[0]), giay(d[1])]; });
@@ -893,7 +900,7 @@
         '<button class="chinh" data-qd="0"' + (khoa ? " disabled" : "") + '>Lưu · lập phiếu & chuyển B1.1</button></div></div>') + '</div>';
     $id("mBody").innerHTML = h;
     tbAp();
-    ganGhiChu("luot", String(l.id), tenLoai(l.loai) + " · " + l.camera + " · " + (nd.length === 3 ? nd[2] + "/" + nd[1] + "/" + nd[0] : l.ngay) + " " + gioL);
+    ganGhiChu("luot", String(l.id), hmL(l).tenKhu + " · " + l.camera + " · " + (nd.length === 3 ? nd[2] + "/" + nd[1] + "/" + nd[0] : l.ngay) + " " + gioL);
     theoDoiDangXem("luot", String(l.id));   // 22/10 «@ai đang xử lý»
     var lvXem = function () {};   // 16/10 (7) ảnh ghi nhận đứng riêng ở cột phải — không còn đổi qua lại clip/ảnh
     if ($id("lvAnhGN")) $id("lvAnhGN").onclick = function () { openLB([{ url: anhL, title: "Ảnh ghi nhận", sub: l.camera }], 0); };
@@ -1084,7 +1091,7 @@
       var cong = (l.cong || []).filter(function (c) { return !k || (c.ten + " " + c.code).toLowerCase().indexOf(k) >= 0; });
       var cc = (l.chamCong || []).filter(function (c) { return !(l.cong || []).some(function (x) { return x.code === c.code; }) && (!k || (c.ten + " " + c.code).toLowerCase().indexOf(k) >= 0); });
       if (cong.length) h += '<div class="hx-it h">Vào cổng bảo vệ ngay sau (so trang phục)</div>' + cong.map(function (c) { return item({ ma: c.code, ten: c.ten, anh: c.anh, sao: c.code === l.goiY, s: "vào cổng " + hm(c.gio) + (c.phut != null ? " · " + (c.phut >= 0 ? "+" : "") + c.phut + " phút" : "") }); }).join("");
-      if (cc.length) h += '<div class="hx-it h">' + (l.loai === "phan-loai" ? "NV PTCH đang trong ca" : "Chấm công gần giờ") + '</div>' + cc.slice(0, 20).map(function (c) { return item({ ma: c.code, ten: c.ten, s: l.loai === "phan-loai" ? "ra " + hm(c.ra || "") : "chấm công " + hm(c.gio) }); }).join("");
+      if (cc.length) h += '<div class="hx-it h">' + hmL(l).uvTieuDe + '</div>' + cc.slice(0, 20).map(function (c) { return item({ ma: c.code, ten: c.ten, s: hmL(l).uvKieu === "trong-ca" ? "ra " + hm(c.ra || "") : "chấm công " + hm(c.gio) }); }).join("");
       var dbs0 = k.length >= 2 ? gopNv(timNvNgay(k), ds2) : [], dbs = dbs0.filter(function (c) { return !ds.some(function (x) { return x.ma === c.ma; }); });
       if (dbs.length) h += '<div class="hx-it h">Danh bạ</div>' + dbs.map(function (c) { return item({ ma: c.ma, ten: c.ten, email: c.email, chuc: c.chuc, s: gonChuc(c.chuc) || c.email }); }).join("");
       /* 10/11 chiều user (clip 11.57.05): gõ đúng người ĐÃ chọn ⇒ «Đã chọn trước đó», không phải «Không tìm thấy» */
