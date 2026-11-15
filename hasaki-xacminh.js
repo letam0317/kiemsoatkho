@@ -1829,7 +1829,10 @@
         /* 10/11 trưa user (screenshot-1794283958596): tên chỉ 2 chữ cuối (đủ họ tên ở title); sao vàng «máy gợi ý» ra Ô RIÊNG giữa giờ và tên (chỗ chấm đỏ)
            — ô luôn có (trống khi không gợi ý) ⇒ cột tên mọi hàng thẳng nhau, sao không xô tên */
         '<span class="hx-sao-o">' + (laSao(x) ? SAO_GY : "") + '</span>' +
-        '<span class="ai">' + (x.email ? cumNV(ten2Nv(x.ten), x.email, x.ttNv, x.ten) : '<b>' + e_(x.ten) + '</b>' + (x.ma ? ' <span class="muted">' + e_(x.ma) + '</span>' : "")) +
+        /* 15/11 user: người không có trong danh bạ (không có email) vẫn 2 chữ cuối + [Inactive] xám, đủ họ tên ở title */
+        '<span class="ai">' + (x.email ? cumNV(ten2Nv(x.ten), x.email, x.ttNv, x.ten)
+          : vl ? '<b>' + e_(x.ten) + '</b>' + (x.ma ? ' <span class="muted">' + e_(x.ma) + '</span>' : "")
+          : '<span class="hx-nv tt-inactive" title="' + e_(x.ten + (x.ma ? " · " + x.ma : "") + " · không có trong danh bạ") + '"><b>' + e_(ten2Nv(x.ten)) + '</b> [Inactive]</span>') +
           /* 23/10 user: clip máy cắt theo yêu cầu «Cắt thêm clip camera» → cờ ngay sau cụm tên NV (góc camera thêm ghi kèm kênh) */
           (x.them ? ' <span class="hx-tag warn" title="Máy cắt theo yêu cầu «Cắt thêm clip camera»' + (x.kenh ? " · " + e_(x.kenh) : "") + '">Thêm góc' + (x.phu && x.kenh ? " · " + e_(x.kenh) : "") + '</span>' : "") +
           (vl ? '<small><span class="hx-tag vl">Không qua hệ thống</span> ' + e_(x.loai) + (x.nguonVL === "may" ? " · máy soi camera" + (x.moTa ? " · " + e_(x.moTa.slice(0, 90)) + (x.moTa.length > 90 ? "…" : "") : "") : "") + '</small>'
