@@ -526,6 +526,7 @@
         "#modal.hx-ben .hx-tb-luoi[data-tb=tacvu] .hx-tb-khung>:is([data-tp=loi],[data-tp=goiy]),"+
         "#modal .hx-tb-luoi[data-tb=tacvu] .hx-tb-khung>:is([data-tp=loi],[data-tp=goiy]){margin-top:-6px!important}" +   /* 22/10 user: dòng Ngày ghi nhận…Máy gợi ý sát lại còn 1/2 (8 → 4px) */
         "#modal .hx-qd-anh.nhieu{position:relative}" +
+        "#modal .hx-qd-anh .hx-anh-day-trong button{flex:0 1 64px;width:auto;min-width:36px}" +   /* 15/11 qc T17: 4 ảnh × 64 + đệm = 282 > khung 269 ⇒ cuộn ngang 6 px — ô ảnh co trước, hết chỗ mới cuộn */
         "#modal .hx-qd-anh .hx-anh-day-trong{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);margin:0!important;max-width:calc(100% - 20px);padding:4px;background:rgba(0,0,0,.45);border-radius:8px;z-index:2}" +   /* 22/10 dải ảnh nhỏ nằm trong khung ảnh, sát đáy */
         /* (4) chú thích dưới clip: tối đa 2 dòng (web + điện thoại), giữ chỗ 2 dòng để clip/khung dưới không nhảy */
         "#qdPd{align-items:flex-start}#qdPd>span:not(.gio){white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.8em;line-height:1.4}",
@@ -670,7 +671,7 @@
     var ctx = { API: function () { return API; }, phien: function () { return PHIEN; }, moThanhBen: moThanhBen, noiLai: noiLai };   // 30/10 noiLai: CCTV dò lại máy chủ khi đường hầm laptop đã chết
     if (window.HXSODO) return window.HXSODO.ve(b, ctx);
     b.innerHTML = '<div class="panel"><div class="hx-trong">Đang tải sơ đồ camera…</div></div>';
-    _sdcNap = _sdcNap || new Promise(function (ok, loi) { var s = document.createElement("script"); s.src = "hasaki-so-do-camera.js?v=20261114a"; s.onload = ok; s.onerror = function () { _sdcNap = null; loi(); }; document.head.appendChild(s); });
+    _sdcNap = _sdcNap || new Promise(function (ok, loi) { var s = document.createElement("script"); s.src = "hasaki-so-do-camera.js?v=20261115a"; s.onload = ok; s.onerror = function () { _sdcNap = null; loi(); }; document.head.appendChild(s); });
     _sdcNap.then(function () { if ($id("hxBody") === b) window.HXSODO.ve(b, ctx); }).catch(function () {
       b.innerHTML = '<div class="panel"><div class="hx-trong">Không tải được mô-đun sơ đồ camera (mất mạng?). <button type="button" class="hx-nut nho" id="sdcThuLai">Thử lại</button></div></div>';
       var t = $id("sdcThuLai"); if (t) t.onclick = veSoDo; });
