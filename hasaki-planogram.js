@@ -3163,25 +3163,25 @@ function render(){
       (loiKhoa.length
         ? '<b style="color:var(--text,#1f2937)">🔒 Máy này chưa được cấp quyền đọc dữ liệu vệ sinh.</b><br>' +
           'Dữ liệu vệ sinh có tên/giờ chấm công nhân viên nên chỉ máy được cấp quyền mới đọc được. ' +
-          'Khai tên rồi bấm <b>Xin mã OTP</b> — <b>liên hệ quản trị</b> để nhận <b>4 số</b>, gõ vào ô ' +
+          'Khai tên, chọn <b>Xin mã OTP</b> — <b>liên hệ quản trị</b> để nhận <b>4 số</b>, gõ vào ô ' +
           'là máy này dùng được luôn (làm một lần). Chỉ xin được mã khi đang dùng <b>Wi-Fi công ty</b>:' +
           /* Form xin cấp quyền: input 16px (iOS không zoom), nút ≥40px, focus ring theo lệ dự án */
           '<style>#hpXinQ{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}' +
           '#hpXinQ input{flex:1 1 220px;min-width:0;min-height:40px;padding:8px 12px;font-size:16px;' +
-          'border:1px solid var(--line,#d1d5db);border-radius:10px;background:var(--bg,#fff);color:var(--text,#1f2937)}' +
+          'border:1px solid var(--line,#d1d5db);border-radius:6px;background:var(--bg,#fff);color:var(--text,#1f2937)}' +
           '#hpXinQ input:focus{outline:none;border-color:var(--accent,#2563eb);box-shadow:0 0 0 3px rgba(37,99,235,.16)}' +
           '#hpXinQ button{flex:0 0 auto;min-height:40px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;' +
-          'border:1px solid var(--accent,#2563eb);border-radius:10px;background:var(--accent,#2563eb);color:#fff}' +
+          'border:1px solid var(--accent,#2563eb);border-radius:6px;background:var(--accent,#2563eb);color:#fff}' +
           '#hpXinQ button:disabled{opacity:.55;cursor:default}' +
           '#hpXinTT{flex:1 1 100%;font-size:12.5px;min-height:1em}' +
           '#hpOtpQ{display:none;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}' +
           '#hpOtpQ.mo{display:flex}' +
           '#hpOtpQ input{flex:0 0 132px;min-width:0;min-height:40px;padding:8px 12px;font-size:20px;font-weight:700;' +
-          'letter-spacing:.32em;text-align:center;border:1px solid var(--line,#d1d5db);border-radius:10px;' +
+          'letter-spacing:.32em;text-align:center;border:1px solid var(--line,#d1d5db);border-radius:6px;' +
           'background:var(--bg,#fff);color:var(--text,#1f2937)}' +
           '#hpOtpQ input:focus{outline:none;border-color:var(--accent,#2563eb);box-shadow:0 0 0 3px rgba(37,99,235,.16)}' +
           '#hpOtpQ button{flex:0 0 auto;min-height:40px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;' +
-          'border:1px solid var(--accent,#2563eb);border-radius:10px;background:var(--accent,#2563eb);color:#fff}' +
+          'border:1px solid var(--accent,#2563eb);border-radius:6px;background:var(--accent,#2563eb);color:#fff}' +
           '#hpOtpQ button:disabled{opacity:.55;cursor:default}' +
           '#hpOtpQ .nl{flex:1 1 160px;font-size:12.5px;min-width:0}</style>' +
           '<div id="hpXinQ"><input id="hpXinTen" maxlength="60" placeholder="Bạn là ai? (tên · bộ phận)">' +
