@@ -996,7 +996,7 @@ var CSS = [
 /* `.hp-h2btn` = cùng viên với nút Chú giải, dùng cho NÚT HÀNH ĐỘNG đặt trong tiêu đề panel (10/09/2026:
    "Toàn bộ vị trí" ở h2 Sơ đồ, "Tra cứu nhân viên" ở h2 Danh sách theo dõi). Tách khỏi `.hp-whtab` để
    mắt phân biệt được: viên trong THANH LỌC = lọc, viên trong TIÊU ĐỀ = mở bảng/pop-up. */
-"#pane-planogram .hp-legbtn,#pane-planogram .hp-h2btn{border:1px solid var(--border,#d5dbe4);background:var(--surface,#fff);color:var(--text,#374151);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:650;cursor:pointer;display:inline-flex;align-items:center;gap:5px;min-height:26px;transition:background .16s ease,border-color .16s ease;}",
+"#pane-planogram .hp-legbtn,#pane-planogram .hp-h2btn{border:1px solid var(--border,#d5dbe4);background:var(--surface,#fff);color:var(--text,#374151);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:650;cursor:pointer;display:inline-flex;align-items:center;gap:5px;min-height:30px;transition:background var(--t-nhanh) var(--ez-apple),border-color var(--t-nhanh) var(--ez-apple);}",
 "#pane-planogram .hp-legbtn:hover,#pane-planogram .hp-h2btn:hover{background:color-mix(in srgb,var(--accent,#326e51) 8%,transparent);border-color:var(--accent,#326e51);}",
 "#pane-planogram a.hp-h2btn{text-decoration:none;margin-left:4px;}",
 "#pane-planogram .hp-legbtn .hp-legdot{width:7px;height:7px;border-radius:50%;background:var(--accent,#326e51);display:inline-block;}",
