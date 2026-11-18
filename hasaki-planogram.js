@@ -2956,8 +2956,8 @@ function renderToday(){
   if (!nTot){
     var wb0 = $id("hpWhBar");   // giữ tham chiếu TRƯỚC khi innerHTML xoá chỗ cũ — vẫn phải đổi được ngày khi khoảng này trống
     box.innerHTML = '<section class="hp-panel hp-fade hp-prog">' +
-      '<div class="hp-proghd"><h2>Tiến độ</h2><button type="button" class="hsk-nut" id="hpBtnLoc" onclick="HPLANOGRAM.toggleLoc()">Bộ lọc</button></div>' +
-      '<div class="hp-progloc collapsed" id="hpLocSlot"></div><div class="hp-empty">Không có yêu cầu vệ sinh trong khoảng này' +
+      '<div class="hp-proghd"><h2>Tiến độ</h2><button type="button" class="hsk-nut' + (LOC_MO ? " mo" : "") + '" id="hpBtnLoc" onclick="HPLANOGRAM.toggleLoc()">Bộ lọc</button></div>' +
+      '<div class="hp-progloc' + (LOC_MO ? "" : " collapsed") + '" id="hpLocSlot"></div><div class="hp-empty">Không có yêu cầu vệ sinh trong khoảng này' +
       (S.area ? ' ở ' + esc(areaMeta(S.area).ngan || areaMeta(S.area).short || S.area) : '') + '.</div></section>';
     ganLocVaoThe(wb0);
     var todo1 = $id("hpTodo"); if (todo1) todo1.innerHTML = "";
@@ -2987,8 +2987,8 @@ function renderToday(){
      PHẢI từ trên xuống: Đã vệ sinh · Chưa · đi làm · Chưa · nghỉ. Hai cột rộng bằng nhau. */
   box.innerHTML =
     '<section class="hp-panel hp-fade hp-prog hp-tdo">' +
-    '<div class="hp-proghd"><h2>Tiến độ</h2><button type="button" class="hsk-nut" id="hpBtnLoc" onclick="HPLANOGRAM.toggleLoc()">Bộ lọc</button></div>' +
-    '<div class="hp-progloc collapsed" id="hpLocSlot"></div>' +
+    '<div class="hp-proghd"><h2>Tiến độ</h2><button type="button" class="hsk-nut' + (LOC_MO ? " mo" : "") + '" id="hpBtnLoc" onclick="HPLANOGRAM.toggleLoc()">Bộ lọc</button></div>' +
+    '<div class="hp-progloc' + (LOC_MO ? "" : " collapsed") + '" id="hpLocSlot"></div>' +
     '<div class="hp-tdo2">' +
     '<div class="hp-tdotrai">' +
       '<div class="hp-ring" style="background:conic-gradient(' + vong + ')" role="img" aria-label="Đã vệ sinh ' + p + '%"><span><b>' + p + '%</b><small>đã xong</small></span></div>' +
@@ -3013,14 +3013,17 @@ function ganLocVaoThe(wb){
   if (slot && wb && wb.parentNode !== slot) slot.appendChild(wb);
   if (slot) {
     var btn = $id("hpBtnLoc");
-    if (!slot.classList.contains("collapsed") && (!btn || !btn.classList.contains("mo"))) slot.classList.add("collapsed");
+    if (!slot.classList.contains("collapsed") && !LOC_MO && (!btn || !btn.classList.contains("mo"))) slot.classList.add("collapsed");
   }
 }
+/* 18/11 nút «Áp dụng» chung (tat-loc.js): đổi điều kiện lọc làm thẻ Tiến độ vẽ lại ⇒ trước đây ngăn tự thu ngay; nay nhớ ngăn đang mở
+   (LOC_MO) để vẽ lại vẫn mở — chỉ «Áp dụng» / nút Bộ lọc / bấm ra ngoài mới thu. */
+var LOC_MO = false;
 function toggleLoc(){
   var slot = $id("hpLocSlot"), btn = $id("hpBtnLoc");
   if (!slot || !btn) return;
   var col = slot.classList.toggle("collapsed");
-  btn.classList.toggle("mo", !col);
+  btn.classList.toggle("mo", !col); LOC_MO = !col;
 }
 /* ===== KHU VỰC (tầng 1 khi kho có ≥3 khu) — mỗi khu 1 dòng: tên · x/y · thanh · số ô chưa làm.
  * Khu nhiều việc tồn nhất xếp lên đầu. Chỉ hiện khi đang xem "Tất cả" và có từ 3 khu — với 2 khu
