@@ -392,7 +392,9 @@ function cellCls(m){ return (m.da && !m.dashed && m.c !== CELLST.done.c ? " dala
  * Chủ ô lấy theo BẢNG PHÂN CÔNG trước (pcCua — nguồn chính thức, nạp bậc 1), rớt về cột của yêu cầu. */
 function ptDiLamNgay(r, dd){
   if (!r || !dd) return null;
-  var pc = pcCua(r.loc);
+  /* 18/11: người được giao trên planogram (PT nguồn = plg) thắng g-sheet — trước đây luôn tra chấm công chủ g-sheet nên
+     người được leader giao lại (đang đi làm) bị tính «nghỉ» khi chủ g-sheet nghỉ. */
+  var pc = r.ptNguon === "plg" && r.pt ? null : pcCua(r.loc);
   var em = (pc && pc.em) || r.pt, code = (pc && pc.code) || r.ptCode;
   if (!em && !code) return null;
   if (S.ccn.ok){
@@ -596,7 +598,8 @@ var COLS_YC = {
   ptci:   ["pt giờ vào", "pt gio vao"],
   anh:    ["ảnh", "anh", "images"],
   ptat:   ["pt lần cuối", "pt lan cuoi"],
-  ptnguon:["pt nguồn", "pt nguon"]   // 18/11 plg = giao trên planogram · gs = g-sheet · bc = suy báo cáo
+  ptnguon:["pt nguồn", "pt nguon"],
+  giaolai:["giao lại", "giao lai"]   // 18/11 "<người giao lại>|<HH:MM>|<người được giao trước>"   // 18/11 plg = giao trên planogram · gs = g-sheet · bc = suy báo cáo
 };
 /* Status ID → tên trạng thái WMS. Đo trên toàn bộ 1.246 dòng đang chạy (03/08/2026):
    1 New ×174 · 3 Waiting For Approve ×154 · 4 Approved ×5 · 7 Not Performed ×913.
@@ -2166,7 +2169,7 @@ function buildYC(H, rows2d){
       pt: String(gv(idx.pt) || "").trim(),
       ptCode: String(gv(idx.ptcode) || "").trim(),
       ptDiLam: Number(gv(idx.ptdilam)) || 0, ptCi: fmtHM(gv(idx.ptci)),
-      ptNguon: String(gv(idx.ptnguon) || "").trim(),
+      ptNguon: String(gv(idx.ptnguon) || "").trim(), giaoLai: String(gv(idx.giaolai) || "").trim(),
       anh: []   // đổ từ tab VESINH-ANH (bậc 3) — xem buildANH/ganAnh
     };
     r.bk = ycBucket(r);
@@ -3890,6 +3893,13 @@ function renderTodo(o){
     row(o.nAiDo + o.nAiVang, "warn", "ô AI chấm chưa đạt", [o.nAiDo ? nf(o.nAiDo) + " làm lại" : "", o.nAiVang ? nf(o.nAiVang) + " cần xem" : ""].filter(Boolean).join(" · "),
       "Xem ›", "HPLANOGRAM.openAiList('" + (o.nAiDo ? "KHONG_DAT" : "CAN_XEM") + "')", "ai");
   }
+  /* (3a) 18/11 user «phụ trách theo phân công mà nghỉ thì bot đã giao người khác chưa» */
+  var nghiG = ycGiaoNghi();
+  if (nghiG.length){
+    var soNg = {}; nghiG.forEach(function(r){ soNg[String(r.pt).toLowerCase()] = 1; });
+    row(nghiG.length, "bad", "yêu cầu giao cho người nghỉ", nf(Object.keys(soNg).length) + " người nghỉ · chưa được giao lại người khác",
+      "Xem ›", "HPLANOGRAM.openGiaoNghi()", "giaonghi");
+  }
   /* (3b) 18/11 user «mục Chưa phân công»: yêu cầu chưa vệ sinh mà planogram CHƯA giao người (executed_by trống) */
   var nChuaGiao = ycChuaGiao().length;
   if (nChuaGiao) row(nChuaGiao, "warn", "yêu cầu chưa phân công", "planogram chưa giao người thực hiện",
@@ -4305,6 +4315,7 @@ function renderVt(){
           (!cc.vao && !cc.ra ? '<span class="hp-vtvr-nghi">Nghỉ</span>'   /* 08/11 user: trống cả 2 ⇒ «Nghỉ», giữa vị trí 2 dòng */
             : '<span>Chấm vào <b>' + esc(cc.vao || "") + '</b></span><span>Chấm ra <b>' + esc(cc.ra || "") + '</b></span>') + '</div></div>' +   /* 08/11 user: không có giờ thì để trống */
       (cc.kbc ? (canPK(), dongHoatDong(pc.em, d, kO)) : "") +
+      dongGiaoLai(r, tuPlg) +
       (tuGS ? "" : '<div class="ln mut">g-sheet chưa phân công vị trí này' + (pc.bc ? " — bằng chứng " + esc(ngayVN(pc.bc)) : "") + '</div>') +
       /* Ghi chú của dòng BÙ trong bảng phân công vốn mở đầu đúng bằng câu "g-sheet chưa phân công
          vị trí này" (sync-phancong ghi vậy) → in tiếp cả ghi chú là lặp nguyên câu vừa đọc. Cắt vế trùng. */
@@ -5011,6 +5022,24 @@ function ycChuaGiao(){
   return ycInScope().filter(function(r){
     return r.ngay >= NGAY_GIAO_PLG && r.bk !== "da" && !r.email && r.ptNguon !== "plg" && (r.stId === 1 || r.stId === 7); });
 }
+/* Yêu cầu chưa vệ sinh, người được giao trên planogram hôm đó KHÔNG chấm công (bkNgay «khong») ⇒ bot/leader chưa giao lại */
+function ycGiaoNghi(){
+  if (!S.yc.ok || !la1Ngay()) return [];
+  return ycInScope().filter(function(r){ return r.ptNguon === "plg" && r.pt && bkNgay(r) === "khong"; });
+}
+function openGiaoNghi(){
+  showModal(ycGiaoNghi(), "Giao cho người nghỉ · " + nhanKhoang() + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req");
+}
+/* Dòng trong thẻ Phụ trách: đã giao lại (ai giao, lúc mấy giờ, thay ai) · hoặc người được giao nghỉ mà chưa ai giao lại */
+function dongGiaoLai(r, tuPlg){
+  if (!r || !tuPlg) return "";
+  var g = String(r.giaoLai || "").split("|"), boi = g[0] || "", luc = g[1] || "", tu = g[2] || "";
+  var tenG = function(em){ return ten2(tenNm(em) || "") || em; };
+  if (r.giaoLai) return '<div class="ln mut">Giao lại' + (tu ? " thay " + esc(tenG(tu)) : "") +
+    (boi ? " · bởi " + esc(tenG(boi)) : "") + (luc ? " lúc " + esc(luc) : "") + '</div>';
+  if (r.bk !== "da" && bkNgay(r) === "khong") return '<div class="ln" style="color:var(--bad);font-weight:600">Nghỉ — chưa được giao lại người khác</div>';
+  return "";
+}
 function openChuaGiao(){
   showModal(ycChuaGiao(), "Chưa phân công · " + nhanKhoang() + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req");
 }
@@ -5507,7 +5536,7 @@ window.HPLANOGRAM = {
   anhNho: function(u){ return imgAnh(u, "", false); }, lazyQuet: lazyQuet, anhLamNong: anhLamNong,   // 10/11 Bảo dưỡng › Lịch sử dùng chung ảnh nhỏ có lưu + làm nóng
   openNk: openNk, closeNk: closeNk, nkPick: nkPick, nkSearch: nkSearch, nkMoViTri: nkMoViTri, thuAnh: thuAnh, moTuChoi: moTuChoi, dongTuChoi: dongTuChoi, guiTuChoi: guiTuChoi,
   openViTri: openViTri, moVoVt: moVoVt, theTaiSan: theTaiSan, ttGocVN: ttGocVN, nutGhiCho: nutGhiCho, moAnhHet: moAnhHet, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao, openThieu: openThieu,
-  openChuaGiao: openChuaGiao, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
+  openChuaGiao: openChuaGiao, openGiaoNghi: openGiaoNghi, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
   toggleLegend: toggleLegend, closeLegend: closeLegend,
   ccSetStatus: ccSetStatus, ccSearch: ccSearch, aiSetKl: aiSetKl, aiSearch: aiSearch, moMap: moMap,
   toggleMatBang: toggleMatBang, setStHi: setStHi, togglePhong: togglePhong, moKhuMenu: moKhuMenu, nvXemHet: nvXemHet,
