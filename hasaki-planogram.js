@@ -595,7 +595,8 @@ var COLS_YC = {
   ptdilam:["pt đi làm", "pt di lam"],
   ptci:   ["pt giờ vào", "pt gio vao"],
   anh:    ["ảnh", "anh", "images"],
-  ptat:   ["pt lần cuối", "pt lan cuoi"]
+  ptat:   ["pt lần cuối", "pt lan cuoi"],
+  ptnguon:["pt nguồn", "pt nguon"]   // 18/11 plg = giao trên planogram · gs = g-sheet · bc = suy báo cáo
 };
 /* Status ID → tên trạng thái WMS. Đo trên toàn bộ 1.246 dòng đang chạy (03/08/2026):
    1 New ×174 · 3 Waiting For Approve ×154 · 4 Approved ×5 · 7 Not Performed ×913.
@@ -2165,6 +2166,7 @@ function buildYC(H, rows2d){
       pt: String(gv(idx.pt) || "").trim(),
       ptCode: String(gv(idx.ptcode) || "").trim(),
       ptDiLam: Number(gv(idx.ptdilam)) || 0, ptCi: fmtHM(gv(idx.ptci)),
+      ptNguon: String(gv(idx.ptnguon) || "").trim(),
       anh: []   // đổ từ tab VESINH-ANH (bậc 3) — xem buildANH/ganAnh
     };
     r.bk = ycBucket(r);
@@ -4269,7 +4271,11 @@ function renderVt(){
      như 2 dữ kiện rời rạc ngang cấp; đặt cạnh nhau thì so sánh được ngay:
      người được giao ↔ người thực sự làm, và biết nên đi nhắc ai. ===== */
   var pc = pcCua(loc);
-  var tuGS = !!(pc && pc.em && /g-sheet/i.test(pc.nguon));   // phân công THẬT từ g-sheet, không phải suy diễn
+  /* 18/11 user «Phụ trách theo phân công ở planogram, thời gian thực (chủ nghỉ thì leader giao người khác)»:
+     người được giao trên yêu cầu của NGÀY ĐANG XEM (executed_by, sync mỗi ~15') thắng g-sheet. */
+  var tuPlg = !!(r && r.ptNguon === "plg" && r.pt);
+  if (tuPlg) pc = { em: r.pt.toLowerCase(), code: r.ptCode || "", ten: tenNm(r.pt) || "", nguon: "planogram", bc: "", gc: "" };
+  var tuGS = tuPlg || !!(pc && pc.em && /g-sheet/i.test(pc.nguon));   // phân công THẬT (planogram / g-sheet), không phải suy diễn
   var cardPt;
   if (pc && pc.em){
     var mauNg = tuGS ? "var(--good)" : "var(--warn)";   // 09/11 cùng màu chip đúng / khác phân công
@@ -4284,7 +4290,7 @@ function renderVt(){
       .replace(/\s*·?\s*người báo cáo gần nhất khác:[^·]*/i, "").replace(/^\s*·\s*|\s*·\s*$/g, "");   // 09/11 chiều user bỏ cụm này
     cardPt =
       '<div class="hp-vtcard pt">' +
-      '<div class="hd">Phụ trách ' + chipKhung(tuGS ? "theo bảng phân công" : "suy từ báo cáo gần nhất", mauNg) + '</div>' +
+      '<div class="hd">Phụ trách ' + chipKhung(tuPlg ? "theo phân công" : tuGS ? "theo g-sheet" : "suy từ báo cáo gần nhất", mauNg) + '</div>' +
       /* 21/10 user «làm gọn cụm»: bỏ vòng chữ cái + email, 1 dòng tên · mã */
       /* 05/11 user «bổ sung avatar trước cụm tên · mã»: chỉ ẢNH (không có ảnh thì ẩn — 21/10 đã bỏ vòng chữ cái ở đây) */
       /* 08/11 user (ảnh khoanh): bỏ dòng «Ngày 07/11 · ĐI LÀM: vào … · không chấm ra / KHÔNG báo cáo vệ sinh ô này»;
