@@ -1239,7 +1239,7 @@
       v.src = url0; v.onloadedmetadata = function () { if (cu()) return;
       if (opt.phu && isFinite(v.duration) && v.duration > 0) { E = S + v.duration; tong = Math.max(1, E - S); veTl(); }
       if (t != null) v.currentTime = Math.max(0, t - giay(src[i].bd)); v.play().catch(function () {}); }; };
-    var bayGio = function () { return giay(src[idx].bd) + (v.currentTime || 0); };
+    var bayGio = function () { return giay(src[idx].bd) + gioV(v); };
     var trongNguoi = function (t) { return dn.some(function (d) { return t >= d[0] - 4 && t <= d[1] + 10; }); };
     window.__hxTua = function (t) { var i = 0; for (var k = 0; k < src.length; k++) if (giay(src[k].bd) <= t) i = k; tracks = []; prevXam = null;
       if (i !== idx || !v.src) nap(i, t); else { v.currentTime = Math.max(0, t - giay(src[i].bd)); v.play().catch(function () {}); } };
@@ -1316,7 +1316,9 @@
     }
     (function vong() { if (!document.body.contains(v) || cu()) return;   // 10/10 GIẬT LAG: dò 2,5 lần/giây (trước 5), video dừng thì KHÔNG vẽ lại lớp khung mỗi khung hình
       if (!v.paused) { if (performance.now() - lanCuoi > 400) { lanCuoi = performance.now(); doTim(); } veOv(); } requestAnimationFrame(vong); })();
-    v.addEventListener("seeked", function () { if (cu()) return; prevXam = null; doTim(); });
+    v.addEventListener("seeked", function () { if (cu()) return; prevXam = null; doTim(); veOv(); });
+    v.addEventListener("seeking", function () { if (!cu() && v.paused) veOv(); });
+    v.addEventListener("hxao", function () { if (cu()) return; tracks = []; veOv(); });   // giữ tua lùi: con trỏ + giờ theo đồng hồ ảo   // 18/11 giữ tua lùi khi clip đang dừng: con trỏ đi theo
     v.addEventListener("play", function () { if (cu()) return; $id("hxPlay").textContent = "⏸"; }); v.addEventListener("pause", function () { if (cu()) return; $id("hxPlay").textContent = "▶"; veOv(); });
     v.addEventListener("ended", function () { if (cu()) return; if (idx + 1 < src.length) nap(idx + 1, giay(src[idx + 1].bd)); });
     $id("hxPlay").onclick = function () { if (!v.src) nap(0, dn.length ? Math.max(S, dn[0][0] - 6) : S); else if (v.paused) v.play().catch(function () {}); else v.pause(); };
@@ -1330,6 +1332,39 @@
      · thanh chỉ vạch màu (bỏ số), cao 1/2; giờ NỔI theo con trỏ (không chiếm chỗ); ▶ bỏ khỏi hàng
      · tốc độ = 1 CHIP cao bằng thanh, ngang hàng, bấm mở danh sách Tự động / ×0,5 / ×1 / ×2 / ×3; chip luôn hiện TỐC ĐỘ ĐANG CHẠY
      · chạm clip = dừng, chạm lần 2 = chạy tiếp; GIỮ nửa phải = tua nhanh (×2, như Telegram), GIỮ nửa trái = tua lùi — chip hiện «Tua tới / Tua lùi» trong lúc giữ */
+  /* 18/11 user REC 17.39.24 «tua lùi vẫn giật/lag — mượt như đi tới»: clip camera có KHUNG CHÍNH mỗi 16,7 s (250 khung, đo 14494674) ⇒ mỗi bước
+     tua lùi trình duyệt giải mã lại tới 250 khung → hình đứng, nhảy (đi tới giải mã nối tiếp nên mượt). KHO KHUNG: lúc phát giữ các khung vừa hiện
+     (ảnh nhỏ 8 khung/giây, tối đa ~70 MB máy tính / ~40 MB điện thoại, video gỡ / đổi nguồn là bỏ); giữ tua lùi = chiếu ngược kho lên lớp vẽ theo
+     đồng hồ ảo v.__hxAo (con trỏ, giờ, phụ đề đọc đồng hồ này), nhả tay mới tua video 1 lần. Ngoài kho → tua video từng bước như cũ. */
+  function khoKhung(v) {
+    if (v.__hxKho) return v.__hxKho;
+    var dt = matchMedia("(max-width:768px)").matches, RONG = dt ? 360 : 480, TOI_DA = dt ? 100 : 140, ds = [];
+    var xoa = function () { ds.forEach(function (f) { try { f.b.close(); } catch (e) {} }); ds = []; };
+    var kho = v.__hxKho = { ds: function () { return ds; }, xoa: xoa };
+    if (!v.requestVideoFrameCallback || !window.createImageBitmap) return kho;
+    var cuoi = -9, dang = false;
+    var them = function (t, b) { var i = ds.length; while (i > 0 && ds[i - 1].t > t) i--;
+      if (i > 0 && t - ds[i - 1].t < 1 / 16) { try { ds[i - 1].b.close(); } catch (e) {} ds[i - 1] = { t: t, b: b }; } else ds.splice(i, 0, { t: t, b: b });
+      while (ds.length > TOI_DA) { var bo = Math.abs(ds[0].t - t) > Math.abs(ds[ds.length - 1].t - t) ? 0 : ds.length - 1; try { ds[bo].b.close(); } catch (e) {} ds.splice(bo, 1); } };
+    var lay = function (now, md) {
+      if (!document.body.contains(v)) { xoa(); return; }
+      var t = md.mediaTime;
+      if (!dang && v.videoWidth && Math.abs(t - cuoi) >= 0.125) { dang = true;
+        createImageBitmap(v, { resizeWidth: RONG, resizeHeight: Math.round(RONG * v.videoHeight / v.videoWidth), resizeQuality: "low" })
+          .then(function (b) { dang = false; cuoi = t; them(t, b); }).catch(function () { dang = false; }); }
+      v.requestVideoFrameCallback(lay); };
+    v.requestVideoFrameCallback(lay);
+    v.addEventListener("emptied", function () { xoa(); cuoi = -9; });   // đổi nguồn (Theo máy nối đoạn): khung cũ không còn đúng giờ
+    return kho;
+  }
+  function lopLui(khung, v) {   // lớp vẽ đè đúng ô video (nằm dưới lớp khoanh người #hxOv)
+    var cv = khung.querySelector("canvas.hx-lui-cv");
+    if (!cv || cv.previousElementSibling !== v) { if (cv) cv.remove(); cv = document.createElement("canvas"); cv.className = "hx-lui-cv"; cv.hidden = true; v.after(cv); }
+    var cs = getComputedStyle(v);
+    cv.style.cssText = "position:absolute;pointer-events:none;left:" + v.offsetLeft + "px;top:" + v.offsetTop + "px;width:" + v.offsetWidth + "px;height:" + v.offsetHeight + "px;object-fit:" + (cs.objectFit || "contain");
+    return cv;
+  }
+  var gioV = function (v) { return v.__hxAo != null ? v.__hxAo : (v.currentTime || 0); };
   function nangCapTl(hang, khung, v) {
     if (!hang || !khung || !v) return;
     var tl = hang.querySelector(".hx-tl"), gio = hang.querySelector("#hxGio"), toc = hang.querySelector(".hx-toc"), play = hang.querySelector("#hxPlay");
@@ -1344,30 +1379,55 @@
       document.addEventListener("click", function (ev) { if (!toc.hidden && !ev.target.closest(".hx-toc-ds,.hx-toc-chip")) { toc.hidden = true; chip.setAttribute("aria-expanded", "false"); } }); }
     var giu = "";
     function veChip() { if (!chip) return; var on = toc && toc.querySelector("[data-toc].on");
-      chip.textContent = giu === "toi" ? "Tua tới " + so(v.playbackRate) : giu === "lui" ? "Tua lùi" : (on && on.dataset.toc === "auto" ? "Tự động " : "") + so(v.playbackRate); }
-    v.addEventListener("ratechange", veChip); v.addEventListener("play", veChip); veChip();
-    var dongGio = function () { var t2 = hang.querySelector(".hx-tl"), cur = hang.querySelector("#hxCur"); if (!cur || !gio || !t2) return;
-      gio.hidden = !/\d/.test(gio.textContent);   // chưa có giờ («--:--:--») thì không nổi
-      var x = t2.offsetLeft + (parseFloat(cur.style.left) || 0) / 100 * t2.offsetWidth, w = gio.offsetWidth / 2;
-      gio.style.left = Math.max(w, Math.min(hang.clientWidth - w, x)) + "px"; };   // không tràn mép hàng
+      chip.textContent = giu === "toi" ? "Tua tới " + so(v.playbackRate) : giu === "lui" ? "Tua lùi ×2" : (on && on.dataset.toc === "auto" ? "Tự động " : "") + so(v.playbackRate); }
+    v.addEventListener("ratechange", veChip); v.addEventListener("play", veChip); veChip(); khoKhung(v);
+    /* 18/11 user (REC 17.20.55 giây 40) «giật/lag/nhảy nút thời gian khi tua lùi/tua tới»: (1) giờ nổi chỉ dời theo timeupdate (~4 lần/giây) → nhảy
+       từng nấc; nay dời MỖI KHUNG HÌNH khi đang phát / đang giữ tua; kích thước thanh đo 1 lần (đổi cỡ mới đo lại) — không ép bố cục mỗi khung.
+       (2) khung clip giữ bộ chạm/giữ của LẦN GẮN ĐẦU (khung.__hxCham) ⇒ đổi dòng Tác động WMS (video mới) mà giữ tua vẫn tua video CŨ đã gỡ:
+       video cũ tự phát lại, ghi đè giờ «11:17:51» lên clip 15:58 → nhãn giờ nhảy qua lại. Nay bộ chạm luôn đọc video ĐANG GẮN (khung.__hxCtx). */
+    var kt = null, doKt = function () { var t2 = hang.querySelector(".hx-tl"); kt = t2 ? { l: t2.offsetLeft, w: t2.offsetWidth, hw: hang.clientWidth, gw: gio ? gio.offsetWidth / 2 : 0, chu: gio ? gio.textContent.length : 0 } : null; };
+    var dongGio = function () { var cur = hang.querySelector("#hxCur"); if (!cur || !gio) return;
+      var co = /\d/.test(gio.textContent); if (gio.hidden === co) { gio.hidden = !co; kt = null; }   // chưa có giờ («--:--:--») thì không nổi
+      if (!co) return; if (!kt || kt.chu !== gio.textContent.length) doKt(); if (!kt) return;
+      var x = kt.l + (parseFloat(cur.style.left) || 0) / 100 * kt.w;
+      gio.style.left = Math.max(kt.gw, Math.min(kt.hw - kt.gw, x)) + "px"; };   // không tràn mép hàng
     dongGio();
-    v.addEventListener("timeupdate", dongGio); v.addEventListener("seeked", dongGio);
+    v.addEventListener("timeupdate", dongGio); v.addEventListener("seeked", dongGio); v.addEventListener("loadedmetadata", function () { kt = null; dongGio(); });
+    if (window.ResizeObserver && !hang.__hxRo) { hang.__hxRo = new ResizeObserver(function () { kt = null; }); hang.__hxRo.observe(hang); } else window.addEventListener("resize", function () { kt = null; });
+    var vong = v.__hxVongGio = (v.__hxVongGio || 0) + 1;   // Theo máy dùng lại 1 thẻ video: mỗi lần gắn chỉ 1 vòng sống
+    (function moiKhung() { if (vong !== v.__hxVongGio || !document.body.contains(v)) return; if (!v.paused || giu || v.seeking) dongGio(); requestAnimationFrame(moiKhung); })();
+    khung.__hxCtx = { v: v, play: play, dat: function (g) { giu = g; veChip(); } };
     if (khung.__hxCham) return; khung.__hxCham = 1;
     /* chạm / giữ trên khung clip — bỏ các cú bấm cũ trên video (tránh đảo phát 2 lần) */
     v.onclick = null;
-    var hen = 0, lap = 0, nua = "", tocCu = 1, x0 = 0, y0 = 0;
-    var thoiGiu = function () { if (giu === "toi") v.playbackRate = tocCu; clearInterval(lap); giu = ""; window.__hxGiu = false; veChip(); };
+    var hen = 0, lap = 0, nua = "", tocCu = 1, x0 = 0, y0 = 0, dangGiu = "", vGiu = null;
+    var cx = function () { return khung.__hxCtx; };
+    var luiChay = false;
+    var thoiGiu = function () { var vv = vGiu; if (dangGiu === "toi" && vv) vv.playbackRate = tocCu; clearInterval(lap);
+      if (dangGiu === "lui" && vv) { var tt = vv.__hxAo, cv = khung.querySelector("canvas.hx-lui-cv"); vv.__hxAo = null;
+        /* giữ khung đang chiếu tới khi video tua xong (không chớp đen) */
+        if (tt != null) { vv.currentTime = tt; if (cv && !cv.hidden) vv.addEventListener("seeked", function () { cv.hidden = true; }, { once: true }); }
+        else if (cv) cv.hidden = true;
+        if (luiChay) vv.play().catch(function () {}); }
+      dangGiu = ""; vGiu = null; window.__hxGiu = false; cx().dat(""); };
     khung.addEventListener("pointerdown", function (ev) { if (ev.button > 0 || ev.target.closest("button,a,.hx-pd,.hx-tl-hang")) return;
       var r = khung.getBoundingClientRect(); nua = ev.clientX - r.left > r.width / 2 ? "toi" : "lui"; x0 = ev.clientX; y0 = ev.clientY;
-      hen = setTimeout(function () { hen = 0; giu = nua; window.__hxGiu = true;
-        if (giu === "toi") { tocCu = v.playbackRate; v.playbackRate = Math.max(2, tocCu * 2); if (v.paused) v.play().catch(function () {}); }
-        else lap = setInterval(function () { v.currentTime = Math.max(0, v.currentTime - 0.6); }, 150);
-        veChip(); }, 380); });
+      hen = setTimeout(function () { hen = 0; var c = cx(), vv = c.v; if (!document.body.contains(vv)) return; dangGiu = nua; vGiu = vv; window.__hxGiu = true;
+        if (dangGiu === "toi") { tocCu = vv.playbackRate; vv.playbackRate = Math.max(2, tocCu * 2); if (vv.paused) vv.play().catch(function () {}); }
+        else { var kho = khoKhung(vv), cv = lopLui(khung, vv), g2 = cv.getContext("2d"), t = vv.currentTime || 0, moc = performance.now(), daVe = null;
+          luiChay = !vv.paused; vv.pause(); vv.__hxAo = t;
+          (function buoc(now) { if (dangGiu !== "lui" || vGiu !== vv) return;
+            t = Math.max(0, t - Math.min(0.1, (now - moc) / 1000) * 2); moc = now; vv.__hxAo = t;   // lùi ×2 theo đồng hồ thật
+            var ds = kho.ds(), f = null; for (var i = ds.length - 1; i >= 0; i--) if (ds[i].t <= t + 0.04) { f = ds[i]; break; }
+            if (f && t - f.t < 0.5) { if (f !== daVe) { if (cv.width !== f.b.width) { cv.width = f.b.width; cv.height = f.b.height; } g2.drawImage(f.b, 0, 0); daVe = f; } cv.hidden = false; }
+            else { cv.hidden = true; daVe = null; if (!vv.seeking) vv.currentTime = t; }   // ngoài kho: tua video từng bước (lượt trước xong mới tua tiếp)
+            vv.dispatchEvent(new Event("hxao")); requestAnimationFrame(buoc); })(moc); }
+        c.dat(dangGiu); }, 380); });
     khung.addEventListener("pointermove", function (ev) { if (hen && Math.abs(ev.clientX - x0) + Math.abs(ev.clientY - y0) > 12) { clearTimeout(hen); hen = 0; } });
     var nha = function (ev) { if (hen) { clearTimeout(hen); hen = 0; if (ev && ev.type === "pointerup") { khung.classList.remove("hx-cham-phat");
-        if (play && play.onclick) play.onclick(); else if (v.paused) v.play().catch(function () {}); else v.pause(); } }   // nút ▶ ẩn vẫn giữ luật nạp đoạn đầu (Theo máy)
-      else if (giu) thoiGiu(); };
-    khung.addEventListener("pointerup", nha); khung.addEventListener("pointercancel", nha); khung.addEventListener("pointerleave", function () { if (giu) thoiGiu(); });
+        var c = cx(); if (c.play && c.play.onclick) c.play.onclick(); else if (c.v.paused) c.v.play().catch(function () {}); else c.v.pause(); } }   // nút ▶ ẩn vẫn giữ luật nạp đoạn đầu (Theo máy)
+      else if (dangGiu) thoiGiu(); };
+    khung.addEventListener("pointerup", nha); khung.addEventListener("pointercancel", nha); khung.addEventListener("pointerleave", function () { if (dangGiu) thoiGiu(); });
     khung.addEventListener("click", function (ev) { if (!ev.target.closest("button,a,.hx-pd,.hx-tl-hang")) ev.stopPropagation(); }, true);
     khung.addEventListener("contextmenu", function (ev) { ev.preventDefault(); });
   }
@@ -2128,7 +2188,8 @@
       tp("clip", '<div class="hx-qd-xem"><div id="qdKhung" class="hx-qd-khung" data-khung></div>' +
         /* 17/10 (6) user «thanh thời gian ở Máy và ở Tác vụ không khớp»: cùng 1 hàng thanh thời gian (mốc số = lượt tác động) + ▶ giờ · Tự động ×1 ×2 ×3 */
         '<div class="hx-tl-hang" id="qdTlHang" hidden><div class="hx-tl" id="hxTl"></div><div class="hx-xdau"><span class="hx-vbar"><button id="hxPlay" aria-label="Phát / dừng">▶</button><span class="gio" id="hxGio">--:--:--</span>' +
-        '<span class="hx-toc"><button data-toc="auto" class="on">Tự động</button><button data-toc="1">×1</button><button data-toc="2">×2</button><button data-toc="3">×3</button></span></span></div></div>' +
+        '<span class="hx-toc"><button data-toc="auto" class="on">Tự động</button><button data-toc="0.5">×0,5</button><button data-toc="1">×1</button>' +
+        '<button data-toc="2">×2</button><button data-toc="3">×3</button></span></span></div></div>' +
         /* 19/10 (4) 1 hàng ngang trái→phải: Tác động WMS · Không qua WMS · Ảnh ghi nhận (bật/tắt ảnh DƯỚI clip, clip vẫn chạy) — bỏ khối «Ai tác động ô trước giờ ghi nhận» */
         /* 20/10 user (điện thoại): chip «Ghi nhận» (ảnh + khối thông tin) đứng ĐẦU hàng: Ghi nhận · Tác động WMS · Không qua WMS */
         '<div class="hx-xdau hx-ng-hang"><span class="hx-qd-nguon">' + (anhGN ? '<button type="button" class="hx-ng-anh" data-anhgn aria-pressed="false">Ghi nhận</button>' : "") +
@@ -2181,12 +2242,13 @@
         tl.innerHTML = moc.map(function (x) { var a = Math.max(0, gs(x) - 3), b2 = Math.min(D2, gs(x) + 8); return '<div class="dn" style="left:' + (a / D2 * 100) + '%;width:' + Math.max(0.6, (b2 - a) / D2 * 100) + '%"></div>'; }).join("") +
           moc.map(function (x) { var xx = Math.max(1.5, Math.min(98.5, gs(x) / D2 * 100)); return '<div class="mk' + (x.vl ? " ng" : "") + '" style="left:' + xx + '%" title="' + e_(x.chu) + '"></div>'; }).join("") + '<div class="cur" id="hxCur"></div>';
         tl.querySelectorAll("[data-tmk]").forEach(function (m) { m.onclick = function (ev) { ev.stopPropagation(); v.currentTime = Math.max(0, gs(moc[Number(m.dataset.tmk)]) - 2); v.play().catch(function () {}); }; }); };
-      var cap = function () { var t = v.currentTime || 0, D2 = v.duration;
+      var cap = function () { var t = gioV(v), D2 = v.duration;
         if (toc === "auto" && !window.__hxGiu) { var r = !moc.length || gan(t) ? 1 : 3; if (v.playbackRate !== r) v.playbackRate = r; }
         $id("hxGio").textContent = hms2(t); var cur = $id("hxCur"); if (cur && D2) cur.style.left = (t / D2 * 100) + "%";
         var dang = toc === "auto" && !v.paused ? String(v.playbackRate) : ""; if (dang !== tocTo) { tocTo = dang; th.querySelectorAll("[data-toc]").forEach(function (x) { x.classList.toggle("dang", x.dataset.toc === dang); }); } };
       v.addEventListener("loadedmetadata", ve); if (v.readyState >= 1) ve();
       v.addEventListener("timeupdate", cap); v.addEventListener("seeked", cap);
+      (function moiKhung() { if (!document.body.contains(v)) return; if (!v.paused || v.seeking || window.__hxGiu) cap(); requestAnimationFrame(moiKhung); })();   // 18/11 con trỏ trôi mượt, không nhảy nấc
       v.addEventListener("play", function () { $id("hxPlay").textContent = "⏸"; cap(); }); v.addEventListener("pause", function () { $id("hxPlay").textContent = "▶"; cap(); });
       $id("hxPlay").onclick = function () { if (v.paused) v.play().catch(function () {}); else v.pause(); };
       th.querySelectorAll("[data-toc]").forEach(function (b) { b.onclick = function () { toc = b.dataset.toc; th.querySelectorAll("[data-toc]").forEach(function (x) { x.classList.toggle("on", x === b); }); if (toc !== "auto") v.playbackRate = Number(toc); cap(); }; });
@@ -2219,11 +2281,11 @@
              mốc «đang» lệch < 12 s, mốc «sắp» đã có «còn N s»; gộp từ lặp liền nhau («châm châm» → «châm»), khoảng trắng thừa. */
           var gon = function (s) { var t = String(s).replace(/^Hệ thống kho ghi nhận:\s*/, "WMS: ").replace(/ lúc \d{2}\/\d{2} \d{2}:\d{2}(:\d{2})?/, "").replace(/\s+\d{2}:\d{2}(:\d{2})?\s*$/, "");
             return t.split(/\s+/).filter(function (w, i, a) { return !i || w.toLowerCase() !== a[i - 1].toLowerCase(); }).join(" ").replace(/\s+·\s+·/g, " ·"); };
-          var cap = function () { var now = bd + (v.currentTime || 0) * 1000, cur = null, toi = null;
+          var cap = function () { var now = bd + gioV(v) * 1000, cur = null, toi = null;
             sk.forEach(function (x) { if (x.t <= now + 500 && now - x.t < 12000) cur = x; if (x.t > now && (!toi || x.t < toi.t)) toi = x; });
             pd.title = cur ? cur.chu : toi ? toi.chu : ""; 
             pd.innerHTML = '<span class="gio">' + hm2(now) + '</span>' + (cur ? '<span class="ngay' + (cur.vl ? " vl" : "") + '">' + e_(gon(cur.chu)) + '</span>' : toi ? '<span class="sap' + (toi.vl ? " vl" : "") + '">còn ' + Math.ceil((toi.t - now) / 1000) + ' s: ' + e_(gon(toi.chu)) + '</span>' : '<span class="sap">đã qua các mốc — xem tiếp diễn biến sau đó</span>'); };
-          v.addEventListener("timeupdate", cap); v.addEventListener("seeked", cap); cap(); }
+          v.addEventListener("timeupdate", cap); v.addEventListener("seeked", cap); v.addEventListener("hxao", cap); cap(); }
         return; }
       if (n.k !== "lui") { k.innerHTML = '<img src="' + e_(n.url) + '" alt="' + e_(n.ten) + '" style="cursor:zoom-in">'; k.querySelector("img").onclick = function () { if (typeof openLB === "function") openLB([{ url: n.url, title: n.ten }], 0); }; return; }
       var moc = mocLui(p); delete k.dataset.khoanh;   // chế độ kéo ô của lần mở trước không được sót lại
