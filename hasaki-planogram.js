@@ -3890,6 +3890,10 @@ function renderTodo(o){
     row(o.nAiDo + o.nAiVang, "warn", "ô AI chấm chưa đạt", [o.nAiDo ? nf(o.nAiDo) + " làm lại" : "", o.nAiVang ? nf(o.nAiVang) + " cần xem" : ""].filter(Boolean).join(" · "),
       "Xem ›", "HPLANOGRAM.openAiList('" + (o.nAiDo ? "KHONG_DAT" : "CAN_XEM") + "')", "ai");
   }
+  /* (3b) 18/11 user «mục Chưa phân công»: yêu cầu chưa vệ sinh mà planogram CHƯA giao người (executed_by trống) */
+  var nChuaGiao = ycChuaGiao().length;
+  if (nChuaGiao) row(nChuaGiao, "warn", "yêu cầu chưa phân công", "planogram chưa giao người thực hiện",
+    "Xem ›", "HPLANOGRAM.openChuaGiao()", "chuagiao");
   /* (4) vị trí không có yêu cầu vệ sinh (độ phủ lịch) */
   if (S.yc.ok){
     var dp = doPhu(), thieu = dp.tot - dp.co;
@@ -4999,6 +5003,17 @@ function openYc(bk){
 function openYcAi(k){
   openAiList(k);
 }
+/* 18/11 «Chưa phân công» = yêu cầu chưa vệ sinh (New / Not Performed) mà planogram chưa giao người. Chỉ tính từ ngày planogram bắt
+   đầu giao việc (NGAY_GIAO_PLG) và khi tab đã có cột «PT nguồn» (sync bản mới) — thiếu cột thì không đoán, trả rỗng. */
+var NGAY_GIAO_PLG = "2026-11-18";
+function ycChuaGiao(){
+  if (!S.yc.ok || !S.yc.rows.some(function(r){ return r.ptNguon; })) return [];
+  return ycInScope().filter(function(r){
+    return r.ngay >= NGAY_GIAO_PLG && r.bk !== "da" && !r.email && r.ptNguon !== "plg" && (r.stId === 1 || r.stId === 7); });
+}
+function openChuaGiao(){
+  showModal(ycChuaGiao(), "Chưa phân công · " + nhanKhoang() + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req");
+}
 /* Pop-up "vị trí KHÔNG có yêu cầu báo cáo vệ sinh" (bấm dải cảnh báo ở panel Vệ sinh) */
 function openThieu(){
   var dp = doPhu();
@@ -5491,7 +5506,8 @@ window.HPLANOGRAM = {
   comboInput: comboInput, comboMenu: comboMenu, quick: quick, openAnh: openAnh, anhLui: anhLui,
   anhNho: function(u){ return imgAnh(u, "", false); }, lazyQuet: lazyQuet, anhLamNong: anhLamNong,   // 10/11 Bảo dưỡng › Lịch sử dùng chung ảnh nhỏ có lưu + làm nóng
   openNk: openNk, closeNk: closeNk, nkPick: nkPick, nkSearch: nkSearch, nkMoViTri: nkMoViTri, thuAnh: thuAnh, moTuChoi: moTuChoi, dongTuChoi: dongTuChoi, guiTuChoi: guiTuChoi,
-  openViTri: openViTri, moVoVt: moVoVt, theTaiSan: theTaiSan, ttGocVN: ttGocVN, nutGhiCho: nutGhiCho, moAnhHet: moAnhHet, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao, openThieu: openThieu, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
+  openViTri: openViTri, moVoVt: moVoVt, theTaiSan: theTaiSan, ttGocVN: ttGocVN, nutGhiCho: nutGhiCho, moAnhHet: moAnhHet, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao, openThieu: openThieu,
+  openChuaGiao: openChuaGiao, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
   toggleLegend: toggleLegend, closeLegend: closeLegend,
   ccSetStatus: ccSetStatus, ccSearch: ccSearch, aiSetKl: aiSetKl, aiSearch: aiSearch, moMap: moMap,
   toggleMatBang: toggleMatBang, setStHi: setStHi, togglePhong: togglePhong, moKhuMenu: moKhuMenu, nvXemHet: nvXemHet,
