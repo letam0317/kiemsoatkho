@@ -91,6 +91,10 @@
       ".mt2-sw{position:relative;flex:none;box-sizing:border-box;width:32px;height:18px;min-width:0;min-height:0;padding:0;margin:0;border-radius:9px;border:0;background:var(--border);cursor:pointer;line-height:0}",
       ".mt2-sw::after{content:\"\";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--surface);box-shadow:0 1px 2px color-mix(in srgb,var(--text) 25%,transparent);transition:transform var(--t-vua,.22s) var(--ez-apple,ease)}",
       ".mt2-sw.bat{background:var(--good)}.mt2-sw.bat::after{transform:translateX(14px)}.mt2-sw[disabled]{opacity:.5;cursor:wait}",
+      ".mt2-jv.tat{color:var(--muted);text-decoration:line-through;opacity:.75}.mt2-vd .r.ht .mu{margin-left:auto}",
+      ".mt2-hoi{position:fixed;inset:0;z-index:1400;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--overlay)}.mt2-hoi .pin-box h3{margin-bottom:16px}",
+      ".mt2-hoi .pin-acts{flex-direction:column}.mt2-hoi .pin-acts button{min-height:44px}",
+      ".mt2-hoi .pin-acts [data-c=may]{background:var(--accent);border-color:var(--accent);color:var(--accent-text)}.mt2-hoi .pin-acts [data-c=tatCa]{color:var(--bad)}",
       ".mt2-chan{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}.mt2-chan .nguy{margin-left:auto}.mt2-chan .hx-nut{min-height:32px;font-size:13px}",
       ".mt2-dong{display:none}.mt2-tabd{display:none}",
       /* 18/11 user «animation chưa có»: việc ĐANG CHẠY nhịp đập (dfPulse — vạch dòng điều phối, chip sơ đồ, chấm nhật ký, nút máy); đổi máy / chọn việc:
@@ -143,8 +147,8 @@
     var may = (j.may || []).map(function (m) { var tg = Math.round((now - Date.parse(m.luc)) / 1000); (m.tatCaViec || []).forEach(function (t) { if (tatCa.indexOf(t) < 0) tatCa.push(t); });
       return Object.assign({}, m, { tuoiGiay: tg, song: tg <= HET_HAN_GIAY, coKhoa: m.coCamera ? ["TOPREVIEW_USER"] : [] }); });
     may.sort(function (a, b) { return (b.song - a.song) || (b.diem || 0) - (a.diem || 0); });
-    var chu = {}; may.forEach(function (m) { if (m.song && !m.dung) (m.viecGiao || []).forEach(function (t) { if (!(m.dungViec || []).includes(t)) chu[t] = m.may; }); });
-    return { srvNow: now, may: may, viec: tatCa.map(function (t) { return { ten: t, may: chu[t] || null, canKhoa: [] }; }), chuyen: j.chuyen || [], bridge: j.bridge || [] };   // 17/10: điện thoại cũng thấy phiên trên thẻ máy
+    var vt = j.viecTat || {}, chu = {}; may.forEach(function (m) { if (m.song && !m.dung) (m.viecGiao || []).forEach(function (t) { if (!(m.dungViec || []).includes(t) && !vt[t]) chu[t] = m.may; }); });
+    return { srvNow: now, may: may, viec: tatCa.map(function (t) { return { ten: t, may: chu[t] || null, canKhoa: [] }; }), chuyen: j.chuyen || [], viecTat: vt, bridge: j.bridge || [] };   // 17/10: điện thoại cũng thấy phiên trên thẻ máy
   }
   // Máy quản lý? Thanh bên dò 8591 bất đồng bộ (~1,5 s) — mở thẳng ?tab=maytram thì module chạy TRƯỚC ⇒ tự dò, đừng chờ.
   var MAY_CHU = false, CAN_DN = false, H_LAI = 0;
@@ -316,7 +320,8 @@
     MTD.may.forEach(function (m) { (m.viecNang || []).forEach(function (t) { nangCua[t] = true; }); (m.tatCaViec || []).forEach(function (t) { if (!(t in nangCua)) nangCua[t] = false; }); });
     var mayLaptop = (MTD.may.filter(function (x) { return x.duPhong && x.dung; })[0] || {}).may;
     /* máy giữ việc: điều phối tính (viec[].may); việc chỉ chạy ở laptop → laptop */
-    var chuCua = {}; (MTD.viec || []).forEach(function (v) { chuCua[v.ten] = v.may || (v.chiLaptop ? mayLaptop : null) || null; });
+    var VT = MTD.viecTat || {};   // 18/11 việc TẮT HẲN trên mọi máy: không máy giữ, không tính «chưa có máy», chip gạch trên sơ đồ
+    var chuCua = {}; (MTD.viec || []).forEach(function (v) { chuCua[v.ten] = VT[v.ten] ? null : v.may || (v.chiLaptop ? mayLaptop : null) || null; });
     var hangMay = function (m) { return !m.song ? 3 : (m.dangChay || []).length ? 0 : m.dung ? 2 : 1; };
     var tatCa = MTD.may.slice().sort(function (a, b) { return (hangMay(a) - hangMay(b)) || ((b.diem || 0) - (a.diem || 0)) || String(a.may).localeCompare(String(b.may)); });
     var PC = tatCa.filter(function (m) { return m.ban !== "may-in"; }), MIN = tatCa.filter(function (m) { return m.ban === "may-in"; });
@@ -364,15 +369,18 @@
     var conMay = PC.some(function (m) { return m.song && !m.dung; });
     var lyChua = function (t) { var c = dangChuyen[t], k = ((MTD.viec || []).filter(function (v) { return v.ten === t; })[0] || {}).canKhoa || [];
       return c ? "Bị dừng giữa chừng ở " + c.tu + " — chờ máy khác chạy bù" : !conMay ? "Chưa có PC nào đang chạy" : k.indexOf("TOPREVIEW_USER") >= 0 ? "Cần PC có khoá camera" : "Cần PC đang chạy"; };
-    var chua = VX.filter(function (t) { return !chuCua[t]; });
+    var chua = VX.filter(function (t) { return !chuCua[t] && !VT[t]; }), soTat = Object.keys(VT).length;
     var jv = function (t) { var run = tatCa.some(function (m) { return m.song && (m.dangChay || []).indexOf(t) >= 0; }), hl = MT_VIEC ? t === MT_VIEC : chuCua[t] === MT_CHON;
-      return '<button type="button" class="mt-ct mt2-jv' + (run ? " chay" : "") + (!chuCua[t] ? " chua" : "") + (hl ? " hl" : MT_VIEC ? " mo" : "") + '" data-viec-chon="' + e_(t) + '" title="' + e_(tenV(t) + (chuCua[t] ? " → " + chuCua[t] : " — chưa có máy nhận: " + lyChua(t))) + '">' + e_(tenV(t)) + "</button>"; };
+      return '<button type="button" class="mt-ct mt2-jv' + (run ? " chay" : "") +
+        (VT[t] ? " tat" : !chuCua[t] ? " chua" : "") + (hl ? " hl" : MT_VIEC ? " mo" : "") +
+        '" data-viec-chon="' + e_(t) + '" title="' + e_(tenV(t) + (VT[t] ? " — tắt hẳn trên mọi máy" : chuCua[t] ? " → " + chuCua[t] : " — chưa có máy nhận: " + lyChua(t))) + '">' + e_(tenV(t)) + "</button>"; };
     var cv = [["Nặng", true], ["Nhẹ", false]].map(function (g) { var ds = VX.filter(function (t) { return (nangCua[t] === true) === g[1]; }); return ds.length ? '<div class="nhom">' + g[0] + "</div>" + ds.map(jv).join("") : ""; }).join("");
     var mn = PC.map(function (m) { return '<div class="mt2-mn' + (m.song && !m.dung ? "" : " mo") + (m.may === MT_CHON ? " chon" : "") + '" data-m="' + e_(m.may) + '" data-chon="' + e_(m.may) + '" title="' + e_(m.may) + '" role="button" tabindex="0">' +
       '<div class="a">' + (m.song && (m.dangChay || []).length ? '<i class="mt2-cham" title="Đang chạy"></i>' : "") + "<b>" + e_(ngan(m.may)) + "</b>" + chipSk(m) + "</div>" + chipSk(m, "dt") + "<small>giữ <b>" + giuCua(m).length +
         "</b> việc</small></div>"; }).join("");
     var sd = '<div class="mt2-the mt2-so"><div class="mt2-td"><b>Sơ đồ phân luồng</b><span class="phu">' + VX.length + " việc → " + PC.length + " máy</span>" +
-      (chua.length ? '<span class="hx-tag bad" title="' + e_(chua.map(function (t) { return tenV(t) + ": " + lyChua(t); }).join("\n")) + '">' + chua.length + " việc chưa có máy</span>" : "") + "</div>" +
+      (chua.length ? '<span class="hx-tag bad" title="' + e_(chua.map(function (t) { return tenV(t) + ": " + lyChua(t); }).join("\n")) + '">' + chua.length + " việc chưa có máy</span>" : "") +
+      (soTat ? '<span class="hx-tag khongcham">' + soTat + " việc tắt hẳn</span>" : "") + "</div>" +
       '<div class="mt2-sd" id="mt2Sd"><div class="mt2-cv">' + cv + '</div><div></div><div class="mt2-cm">' + mn + '</div><svg class="mt2-duong" id="mt2Duong" aria-hidden="true"></svg></div></div>';
 
     /* ===== KHUNG 3 · Chi tiết máy đang chọn: Nhật ký | Việc (1 chỗ sửa duy nhất) ===== */
@@ -398,8 +406,14 @@
         return '<div class="r' + (tat ? " tat" : "") + (t === MT_VIEC ? " chon" : "") + '" data-r="' + e_(t) + '">' + (dk ? '<button type="button" class="mt-x mt2-sw' + (tat ? "" : " bat") + '" role="switch" aria-checked="' + !tat + '" data-may="' + e_(MAY.may) + '" data-viec="' + e_(t) +
           '" data-dung="' + (tat ? "0" : "1") + '" aria-label="' + e_((tat ? "Bật lại " : "Tắt ") + tenV(t) + " trên " + MAY.may) + '"></button>' : "") + '<span class="t">' + e_(tenV(t)) + "</span>" + (nangCua[t] && !tat ? '<span class="hx-tag khongcham">Nặng</span>' : "") + phai + "</div>"; };
       var gs = giuM.slice().sort(function (a, b) { return ((nangCua[b] ? 1 : 0) - (nangCua[a] ? 1 : 0)) || tenV(a).localeCompare(tenV(b), "vi"); });
+      var tatMay = (MAY.dungViec || []).filter(function (t) { return !VT[t]; }), tatHan = Object.keys(VT).sort(function (a, b) { return tenV(a).localeCompare(tenV(b), "vi"); });
       return '<div class="mt2-vd" id="mt2vd-' + idMay + '"><div class="nh">Đang giữ · ' + gs.length + "</div>" + (gs.length ? gs.map(function (t) { return r(t, 0); }).join("") : '<div class="hx-trong" style="padding:12px 16px">' + (MAY.dung ? (MAY.duPhong ? "Dự phòng — chỉ làm thay khi PC chưa nhận việc" : "Đang dừng") : !MAY.song ? "Mất nhịp — việc đã sang máy khác" : "Chưa được giao việc") + "</div>") +
-        ((MAY.dungViec || []).length ? '<div class="nh">Tắt trên máy này · ' + MAY.dungViec.length + "</div>" + MAY.dungViec.map(function (t) { return r(t, 1); }).join("") : "") + "</div>"; };
+        (tatMay.length ? '<div class="nh">Tắt trên máy này · ' + tatMay.length + "</div>" + tatMay.map(function (t) { return r(t, 1); }).join("") : "") +
+        (tatHan.length ? '<div class="nh">Tắt hẳn · ' + tatHan.length + "</div>" + tatHan.map(function (t) { var o = VT[t] || {}, bd = Date.parse(o.luc || "");
+          return '<div class="r tat ht">' +
+            (DIEU_KHIEN ? '<button type="button" class="mt-x mt2-sw" role="switch" aria-checked="false" data-may="' + e_(MAY.may) + '" data-viec="' + e_(t) + '" data-dung="0" data-tatca="1"' +
+              ' aria-label="' + e_("Bật lại " + tenV(t) + " trên mọi máy") + '"></button>' : "") +
+            '<span class="t">' + e_(tenV(t)) + '</span><span class="mu">' + e_(String(o.boi || "").replace(/@.*$/, "").replace(/^TK /, "") + (bd ? " · " + gioPhut(bd) : "")) + "</span></div>"; }).join("") : "") + "</div>"; };
     var nut = !DIEU_KHIEN ? "" : !MAY.song && !MAY.dung ? '<button class="hx-nut phu" data-may="' + e_(MAY.may) + '" data-xoa="1">Gỡ</button>'
       : (MAY.song ? (MAY.capNhatYc ? '<button class="hx-nut phu" disabled title="Gửi lúc ' + e_(gioPhut(Date.parse(MAY.capNhatYc))) + ' — máy nhận trong ~1 phút">Chờ máy nhận lệnh…</button>'
         : '<button class="hx-nut" data-may="' + e_(MAY.may) + '" data-capnhat="1" title="' + e_("Lấy bản mới nhất ngay (không chờ lượt 2 giờ) · " + ((MAY.capGan || []).slice(-1)[0] || "")) + '">Cập nhật ngay</button>') : "") +
@@ -448,13 +462,20 @@
     qa("button[data-may]").forEach(function (n) {
       n.onclick = function () {
         var dung = n.dataset.dung === "1", xoa = n.dataset.xoa === "1", capNhat = n.dataset.capnhat === "1", viec = n.dataset.viec || "", cu = n.textContent, sw = n.classList.contains("mt2-sw");
-        if (dung && !window.confirm((viec ? "Tắt «" + tenV(viec) + "» trên " : "Dừng cả máy ") + n.dataset.may + "?" + (viec ? " Bộ điều phối sẽ chuyển việc này sang máy khác." : " Mọi việc của máy này sẽ chuyển sang máy khác."))) return;
+        /* 18/11 user «tắt là tắt luôn bộ canh chứ k chỉ tắt trên máy trạm đó» → «pop-up cho chọn tắt cho máy / cho cả việc là được» */
+        if (dung && viec) { hoiTat(viec, n.dataset.may).then(function (chon) { if (chon) gui(chon === "tatCa"); }); return; }
+        if (dung && !window.confirm("Dừng cả máy " + n.dataset.may + "? Mọi việc của máy này sẽ chuyển sang máy khác.")) return;
+        gui(n.dataset.tatca === "1"); };
+      var gui = function (tatCa) { var dung = n.dataset.dung === "1", xoa = n.dataset.xoa === "1", capNhat = n.dataset.capnhat === "1", viec = n.dataset.viec || "", cu = n.textContent, sw = n.classList.contains("mt2-sw");
         n.disabled = true; if (sw) n.classList.toggle("bat"); else n.textContent = "Đang gửi…";   // công tắc đổi ngay (lạc quan, lỗi thì vẽ lại theo dữ liệu)
-        (MAY_CHU ? goi591("/api/may-tram/lenh", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ may: n.dataset.may, viec: viec, dung: dung, xoa: xoa, capNhat: capNhat }) })
+        (MAY_CHU ? goi591("/api/may-tram/lenh", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ may: n.dataset.may, viec: viec, dung: dung, xoa: xoa, capNhat: capNhat, tatCa: tatCa }) })
           /* 14/10: không có 8591 (trình duyệt chặn gọi máy nội bộ / máy khác) → lệnh qua GAS bằng phiên tài khoản có quyền «làm» Xác minh */
-          : postGas({ action: "pcLenhPh", ph: phienTk(), may: n.dataset.may, viec: viec, dung: dung, xoa: xoa, capNhat: capNhat }).then(function (j) { if (j.status !== "success") throw new Error(j.message || "Apps Script từ chối"); return j; }))
+          : postGas({ action: "pcLenhPh", ph: phienTk(), may: n.dataset.may, viec: viec, dung: dung, xoa: xoa, capNhat: capNhat, tatCa: tatCa })
+            .then(function (j) { if (j.status !== "success") throw new Error(j.message || "Apps Script từ chối"); return j; }))
           .then(function (j) {
-            if (typeof toast === "function") toast(capNhat ? "Đã gửi lệnh cập nhật — " + n.dataset.may + " tự lấy bản mới trong ~1–2 phút" : xoa ? "Đã gỡ " + n.dataset.may + " khỏi danh sách" : (dung ? (viec ? "Đã tắt " : "Đã dừng ") : (viec ? "Đã bật lại " : "Đã cho chạy lại ")) + (viec ? tenV(viec) + " trên " : "") + n.dataset.may + (j.daChuyen && j.daChuyen.length ? " — đang chuyển " + j.daChuyen.map(tenV).join(", ") + " sang máy khác" : ""), "ok");
+            if (typeof toast === "function") toast(capNhat ? "Đã gửi lệnh cập nhật — " + n.dataset.may + " tự lấy bản mới trong ~1–2 phút" :
+               xoa ? "Đã gỡ " + n.dataset.may + " khỏi danh sách" : (dung ? (viec ? "Đã tắt " : "Đã dừng ") : (viec ? "Đã bật lại " : "Đã cho chạy lại ")) + (viec ? tenV(viec) + " trên " : "") + (tatCa ? "mọi máy" : n.dataset.may) +
+               (j.daChuyen && j.daChuyen.length ? " — đang chuyển " + j.daChuyen.map(tenV).join(", ") + " sang máy khác" : ""), "ok");
             return tai().then(ve);
           })
           .catch(function (e) { if (typeof toast === "function") toast("Không gửi được lệnh: " + e.message, "loi"); ve(); })
@@ -462,13 +483,27 @@
       };
     });
   }
+  /* 18/11 hộp hỏi khi gạt tắt 1 việc: chỉ máy này (điều phối chuyển máy khác) / tắt hẳn trên mọi máy / huỷ. Khung pin-box chung; vuốt lùi + Esc đóng 1 lớp. */
+  function hoiTat(viec, may) {
+    return new Promise(function (xong) {
+      var o = document.createElement("div"); o.className = "mt2-hoi"; o.setAttribute("role", "dialog"); o.setAttribute("aria-modal", "true");
+      o.innerHTML = '<div class="pin-box"><h3>Tắt «' + e_(tenV(viec)) + '»?</h3><div class="pin-acts"><button type="button" data-c="may">Chỉ trên ' + e_(ngan(may)) +
+        '</button><button type="button" data-c="tatCa">Tắt hẳn trên mọi máy</button><button type="button" data-c="">Huỷ</button></div></div>';
+      var dong = function (c, tuLop) { if (!o.parentNode) return; o.remove(); document.removeEventListener("keydown", phim, true); if (!tuLop && window.hskLop) window.hskLop.rut("mt-hoi"); xong(c || null); };
+      var phim = function (e) { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); dong(null); } };
+      o.onclick = function (e) { var b = e.target.closest("button[data-c]"); if (b) dong(b.dataset.c); else if (e.target === o) dong(null); };
+      document.addEventListener("keydown", phim, true); document.body.appendChild(o);
+      if (window.hskLop) window.hskLop.day("mt-hoi", function () { dong(null, true); });
+      var ok = o.querySelector("[data-c=may]"); if (ok) ok.focus();
+    });
+  }
   /* đường nối sơ đồ: việc → máy giữ (màu Nặng / Nhẹ), nét đứt = việc tắt trên máy đó; đậm = thuộc máy / việc đang chọn */
   function veDuong(vuaMo) {
     var so = document.getElementById("mt2Sd"), svg = document.getElementById("mt2Duong"); if (!so || !svg || !MTD) return;
     var R = so.getBoundingClientRect(), h = "", chu = {}, tat = {}, nang = {};
     var lap = (MTD.may.filter(function (x) { return x.duPhong && x.dung; })[0] || {}).may;   // việc chỉ chạy ở laptop → laptop (khớp chuCua trong ve)
-    (MTD.viec || []).forEach(function (v) { chu[v.ten] = v.may || (v.chiLaptop ? lap : null); nang[v.ten] = !!v.nang; });
-    MTD.may.forEach(function (m) { (m.viecNang || []).forEach(function (t) { nang[t] = true; }); (m.dungViec || []).forEach(function (t) { tat[t] = m.may; }); });
+    (MTD.viec || []).forEach(function (v) { chu[v.ten] = (MTD.viecTat || {})[v.ten] ? null : v.may || (v.chiLaptop ? lap : null); nang[v.ten] = !!v.nang; });
+    MTD.may.forEach(function (m) { (m.viecNang || []).forEach(function (t) { nang[t] = true; }); (m.dungViec || []).forEach(function (t) { if (!(MTD.viecTat || {})[t]) tat[t] = m.may; }); });
     so.querySelectorAll(".mt2-jv").forEach(function (j) { var t = j.dataset.viecChon, a = j.getBoundingClientRect();
       var noi = function (may, lop) { var el = so.querySelector('.mt2-mn[data-m="' + (window.CSS && CSS.escape ? CSS.escape(may) : may) + '"]'); if (!el) return; var b = el.getBoundingClientRect();
         var x1 = a.right - R.left + 2, y1 = a.top + a.height / 2 - R.top, x2 = b.left - R.left - 2, y2 = b.top + Math.min(b.height / 2, 20) - R.top, dx = (x2 - x1) * .55;
