@@ -542,18 +542,6 @@ function ttGocVN(stId, st){
   if (/cancel/i.test(st)) return { lb: "Huỷ", c: "var(--muted)" };
   return { lb: st || "—", c: "var(--muted)" };
 }
-function stBadge(r, bk){
-  var lb = r.st || "—", c = "#6b7280";
-  if (r.stId === 1 || /new/i.test(r.st)){
-    if (bk === "khong"){ lb = "Chưa · nghỉ"; c = "#64748b"; }
-    else { lb = bk === "nhac" ? "Chưa · đi làm" : "Chưa vệ sinh"; c = "#dc2626"; }
-  }
-  else if (/waiting/i.test(r.st) || r.stId === 3){ lb = "Chờ duyệt"; c = "#0891b2"; }
-  else if (/approved/i.test(r.st) || r.stId === 4){ lb = "Đã duyệt"; c = "#059669"; }
-  else if (/reject/i.test(r.st)){ lb = "Bị từ chối"; c = "#ef4444"; }
-  else if (/cancel/i.test(r.st)){ lb = "Huỷ"; c = "#6b7280"; }
-  return '<span class="badge" title="' + esc(r.st || "") + '" style="background:color-mix(in srgb,' + c + ' 15%,transparent);color:' + c + '">' + esc(lb) + '</span>';
-}
 var PAL = ["#f59e0b", "#8b5cf6", "#ef4444", "#10b981", "#ec4899", "#6366f1", "#0891b2", "#84cc16", "#2563eb", "#d97706"];
 /* Nhận diện cột theo NHÃN header (chấp nhận tiếng Anh/Việt/snake_case) */
 var COLS = {
@@ -1589,6 +1577,7 @@ var CSS = [
 "#hpVtModal #hpVtTitle,#hpVtModal #hpVtSub{display:flex;align-items:center;justify-content:flex-end;gap:8px;}" +
   ".hp-chipdau{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:2px;height:18px;padding:0 6px;border:1px solid transparent;border-radius:4px;box-sizing:border-box;" +
   "font-size:11.5px;line-height:16px;font-weight:600;white-space:nowrap;text-decoration:none;}.hp-chipdau.tt{color:rgb(255,255,255);}a.hp-chipdau:hover{filter:brightness(.92);}" +
+  ".hp-mui{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin-left:2px;vertical-align:middle;border-radius:4px}.hp-mui:hover{background:var(--surface2,var(--nen2))}.hp-ext.hp-mui:hover{text-decoration:none}" +
   ".hp-chipdau.ts{background:var(--surface2,var(--nen2));color:var(--text);border-color:var(--ad-chia,var(--border));}" +
   /* 08/11 user «vào / ra chuyên nghiệp, vách ngăn chốt cứng bên phải khung»: khối dính mép phải thẻ, 2 cột nhãn | giờ */
 /* 08/11 user «Chấm vào / Chấm ra, vách ngăn sát chữ trên + dưới ≤ 3 px, căn phải; màu, font, vách đồng bộ khung thẻ» */
@@ -1777,10 +1766,12 @@ var MODAL_HTML =
 '</div>';
 
 var THEAD_LOC = '<tr><th>Location</th><th>Executed By</th><th>Code</th><th class="nm">Name</th><th>Khu vực</th><th>Trạng thái</th></tr>';
-var THEAD_REQ = '<tr><th>Vị trí</th><th>Trạng thái duyệt</th><th>AI xét duyệt</th><th class="nm">Người thực hiện</th><th>Lúc</th><th class="nm">Phụ trách (dự kiến)</th><th>Ảnh</th><th>Planogram</th></tr>';
-var THEAD_MISS = '<tr><th>Vị trí</th><th>Khu vực</th><th>Tình trạng lịch</th><th>Yêu cầu gần nhất</th><th class="nm">Vệ sinh gần nhất</th><th>Planogram</th></tr>';
+/* 19/11 user «cột mũi tên trỏ sang planogram gộp chung mũi tên ngay sau mã vị trí» + «Chưa làm ở thanh bên phải để đồng bộ»: bỏ cột Planogram (↗ đi liền mã),
+   cột Trạng thái = chip trạng thái gốc planogram (ttGocVN) y hệt chip đầu thanh bên vị trí */
+var THEAD_REQ = '<tr><th>Vị trí</th><th>Trạng thái</th><th>AI xét duyệt</th><th class="nm">Người thực hiện</th><th>Lúc</th><th class="nm">Phụ trách (dự kiến)</th><th>Ảnh</th></tr>';
+var THEAD_MISS = '<tr><th>Vị trí</th><th>Khu vực</th><th>Tình trạng lịch</th><th>Yêu cầu gần nhất</th><th class="nm">Vệ sinh gần nhất</th></tr>';
 var THEADS = { loc: THEAD_LOC, req: THEAD_REQ, miss: THEAD_MISS };
-var NCOL = { loc: 6, req: 8, miss: 6 };
+var NCOL = { loc: 6, req: 7, miss: 5 };
 
 /* ===== TẢI DỮ LIỆU — GAS readTab (SHEET PRIVATE) là đường DUY NHẤT của 9 tab vệ sinh =====
  * VÌ SAO BỎ FALLBACK gviz cho nhóm tab này (sự cố 12/08/2026 "Chưa có dữ liệu vệ sinh"):
@@ -2146,6 +2137,10 @@ function buildCC(H, rows2d){
   var mv = $id("hpVtModal");
   if (mv && mv.classList.contains("show")) renderVt();
 }
+/* 19/11 user «yc planogram t đã kêu dừng mà vẫn liệt kê vô»: F0-A1-00-CC-00-00 · F0-A1-00-LED-00-00 · F0-A1-5L2-TD-HN/TG-00 là lịch
+   BẢO DƯỠNG thiết bị (Not Performed mỗi ngày) lọt vào VESINH-YEUCAU ⇒ cùng lúc đếm «quá 3 ngày» VÀ «chưa phân công» (trùng 4/4).
+   Vệ sinh A1 chỉ là kệ dãy 3 số (F0-A1-5xx-…) — khớp luật 3 ngày (luat-3-ngay ^F0-(A8-|A1-\d{3}-)). */
+function laOThietBi(loc){ loc = String(loc || ""); return /^F0-A1-/.test(loc) && !/^F0-A1-\d{3}-/.test(loc); }
 function buildYC(H, rows2d){
   var hl = H.map(function(h){ return String(h).replace(/\s+/g, " ").trim().toLowerCase(); });
   var idx = {}; Object.keys(COLS_YC).forEach(function(k){ idx[k] = idxOf(hl, COLS_YC[k]); });
@@ -2157,6 +2152,7 @@ function buildYC(H, rows2d){
     function gv(i){ return (i >= 0 && row[i] != null) ? row[i] : ""; }
     var loc = String(gv(idx.loc)).trim(); if (!loc) return;
     var a = areaOf(loc); if (!a) return;
+    if (laOThietBi(loc)) return;   // 19/11 ô thiết bị (cửa cuốn, đèn LED, tủ điện 5L2…) không phải kệ vệ sinh — user đã DỪNG 27/10
     var stId = Number(gv(idx.stid)) || 0;
     var r = {
       id: String(gv(idx.id)).replace(/\.0$/, "").trim(),
@@ -3337,7 +3333,7 @@ function dmChuan(){
     dm[c.bc] = { loc: c.bc, area: "A8", suy: true };
   });
   function nap(loc){
-    var a = areaOf(loc); if (!a) return;
+    var a = areaOf(loc); if (!a || laOThietBi(loc)) return;   // 19/11 ô thiết bị đã dừng — không tính «không có yêu cầu vệ sinh»
     var kk = khoaO(loc), o = dm[kk];
     if (!o) dm[kk] = { loc: loc, area: a.k, suy: false };
     else if (o.suy){ o.loc = loc; o.suy = false; }
@@ -3867,16 +3863,11 @@ function renderTodo(o){
       '<span class="go">' + nutChu + '</span></button>' + (them || ""));
   }
   var nv = nvTheoNgay(o.byL), nvChua = nv.list.filter(function(p){ return p.chua > 0; });
+  /* 19/11 user «nhấn vào từng mục cần đồng bộ hiển thị như pop-up thì pop-up hết»: mục (1) trước xổ chip tên tại chỗ — nay mở pop-up
+     yêu cầu như 4 mục còn lại (lọc theo «Phụ trách» ngay trong pop-up thay chip) */
   if (o.soiPT && nvChua.length){
-    var chips = "";
-    if (S.ptOpen || S.ptHi){
-      var ds = S.ptOpen ? nvChua : nvChua.filter(function(p){ return p.em === S.ptHi; });
-      chips = '<div class="hp-ptnhac">' + ds.map(function(p){
-        return '<button type="button" class="hp-ptchip' + (S.ptHi === p.em ? " on" : "") + '" data-e="' + esc(p.em) + '" onclick="HPLANOGRAM.setPtHi(this.getAttribute(\'data-e\'))" title="' + esc(p.em) + " — " + p.chua + ' vị trí chưa vệ sinh' + (p.unsure ? " · " + p.unsure + " ô suy từ báo cáo cũ, chưa chắc" : "") + '">' + esc(p.ten) + ' <b>' + p.chua + '</b>' + (p.unsure ? '<i class="q">?</i>' : "") + '</button>';
-      }).join("") + (S.ptHi ? '<button type="button" class="hp-ptchip clear" onclick="HPLANOGRAM.setPtHi(\'\')">Bỏ soi ✕</button>' : "") + '</div>';
-    }
     row(nvChua.length, "bad", "người đi làm " + (o.homNay ? "chưa báo cáo" : "mà không báo cáo"), nf(nv.oChua) + " vị trí của họ chưa vệ sinh",
-      S.ptOpen ? "Thu gọn ▴" : "Xem ▾", "HPLANOGRAM.togglePtNhac()", "nhac", chips);
+      "Xem ›", "HPLANOGRAM.openNhac()", "nhac");
   } else if (!o.soiPT){
     var nChua = ycInScope().filter(function(r){ return r.bk !== "da"; }).length;
     if (nChua) row(nChua, "bad", "yêu cầu chưa vệ sinh", o.mot ? "chưa đủ chấm công để tách người đi làm / nghỉ" : "trong khoảng ngày đang xem", "Xem ›", "HPLANOGRAM.openYc('chua')", "chua");
@@ -4233,7 +4224,7 @@ function renderVt(){
     var m2 = cellMeta(cellStateDay(r, d));
     /* 1 badge nhóm; badge hệ thống CHỈ thêm khi mang nghĩa khác (Chờ duyệt/Đã duyệt/Từ chối) — tránh trùng lặp.
        Hyperlink duy nhất "Yêu cầu #… ↗" ở góc phải trên pop-up. */
-    var themSt = (r.stId === 1 || /new/i.test(r.st)) ? "" : " " + stBadge(r);
+    var themSt = "";   // 19/11: trạng thái đã ở chip đầu thanh bên (ttGocVN) — không lặp badge thứ 2 (vd «Không làm» + «Not Performed»)
     /* 21/10 user: «Trạng thái» và «Báo cáo» gom 1 dòng: Trạng thái: … | Báo cáo: Chưa có ai */
     if (!r.email) rows.push(["Người báo cáo", '<span class="hp-hint">Chưa có ai</span>' + themSt, "ngang"]);   // 08/11: trạng thái lên chip đầu thanh bên
     if (r.email) {   // (trước: else của «if (!r.email)» — nay gom vào dòng Trạng thái)
@@ -5028,7 +5019,23 @@ function ycChuaGiao(){
 /* Yêu cầu chưa vệ sinh, người được giao trên planogram hôm đó KHÔNG chấm công (bkNgay «khong») ⇒ bot/leader chưa giao lại */
 function ycGiaoNghi(){
   if (!S.yc.ok || !la1Ngay()) return [];
-  return ycInScope().filter(function(r){ return r.ptNguon === "plg" && r.pt && bkNgay(r) === "khong"; });
+  return ycInScope().filter(function(r){ return r.ptNguon === "plg" && r.pt && bkNgay(r) === "khong" && !chuaToiCa(r); });
+}
+/* 19/11 đo lúc 09:25: 21 «người nghỉ» thì 10 người làm ca trưa/chiều (hôm qua vào 08:52–11:52) — chỉ là CHƯA TỚI GIỜ VÀO CA.
+   Hôm nay: người chưa chấm công mà giờ vào của NGÀY CÔNG GẦN NHẤT (VESINH-CHAMCONG-NGAY — ca xoay theo tuần nên không lấy trung vị) còn sau
+   «bây giờ − 30 phút» ⇒ chưa kết luận nghỉ. */
+function gioVaoQuen(em, code){
+  if (!S.ccn.ok) return null;
+  var o = S.ccn.em[String(em || "").toLowerCase()] || S.ccn.code[String(code || "").trim()]; if (!o || !o.d) return null;
+  var ph = Object.keys(o.d).filter(function(d){ return d < isoToday(); }).sort().reverse().slice(0, 14).map(function(d){
+    var m = String((o.d[d] || {}).vao || "").match(/^(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : -1; }).filter(function(x){ return x >= 0; });
+  return ph.length ? ph[0] : null;
+}
+function chuaToiCa(r){
+  if (!laHomNay() || !r) return false;
+  var pc = r.ptNguon === "plg" && r.pt ? null : pcCua(r.loc), q = gioVaoQuen((pc && pc.em) || r.pt, (pc && pc.code) || r.ptCode);
+  if (q == null) return false;
+  var n = new Date(); return n.getHours() * 60 + n.getMinutes() < q + 30;
 }
 function openGiaoNghi(){
   showModal(ycGiaoNghi(), "Giao cho người nghỉ · " + nhanKhoang() + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req");
@@ -5040,8 +5047,22 @@ function dongGiaoLai(r, tuPlg){
   var tenG = function(em){ return ten2(tenNm(em) || "") || em; };
   if (r.giaoLai) return '<div class="ln mut">Giao lại' + (tu ? " thay " + esc(tenG(tu)) : "") +
     (boi ? " · bởi " + esc(tenG(boi)) : "") + (luc ? " lúc " + esc(luc) : "") + '</div>';
-  if (r.bk !== "da" && bkNgay(r) === "khong") return '<div class="ln" style="color:var(--bad);font-weight:600">Nghỉ — chưa được giao lại người khác</div>';
+  if (r.bk !== "da" && bkNgay(r) === "khong" && !chuaToiCa(r)) return '<div class="ln" style="color:var(--bad);font-weight:600">Nghỉ — chưa được giao lại người khác</div>';
   return "";
+}
+/* Mục (1) Cần xử lý: đúng tập yêu cầu nvTheoNgay đếm «chưa» (1 ngày: yêu cầu đại diện ô, người phụ trách đi làm; nhiều ngày: mọi yêu cầu chưa vệ sinh có người phụ trách) */
+function ycNhac(){
+  var byL = {}, mot = la1Ngay(), out = [];
+  ycInScope().forEach(function(r){ var kk = khoaO(r.loc); (byL[kk] = byL[kk] || []).push(r); });
+  Object.keys(byL).forEach(function(kk){
+    if (S.area && !(areaOf(kk) && areaOf(kk).k === S.area)) return;
+    if (mot){ var rep = repCua(byL[kk]); if (rep && rep.pt && bkNgay(rep) === "nhac") out.push(rep); }
+    else byL[kk].forEach(function(r){ if (r.pt && r.bk !== "da") out.push(r); });
+  });
+  return out;
+}
+function openNhac(){
+  showModal(ycNhac(), "Người đi làm " + (laHomNay() ? "chưa báo cáo" : "mà không báo cáo") + " · " + nhanKhoang() + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req");
 }
 function openChuaGiao(){
   showModal(ycChuaGiao(), "Chưa phân công · " + nhanKhoang() + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req");
@@ -5149,20 +5170,19 @@ function mRender(){
       if (out.length < CAP){
         var am = areaMeta(rm.area), mm = missMeta(rm.kind);
         out.push('<tr>' +
-          '<td class="mb-hd">' + loMa(rm.loc, "") + (rm.suy ? '<small>mã suy theo sơ đồ — chưa từng thấy trong dữ liệu</small>' : '') + '</td>' +
+          '<td class="mb-hd">' + loMa(rm.loc, "") + muiPg(pgLocUrl(rm.loc), "Mở planogram lọc sẵn vị trí này (45 ngày) để soát lại lịch") + (rm.suy ? '<small>mã suy theo sơ đồ — chưa từng thấy trong dữ liệu</small>' : '') + '</td>' +
           '<td data-lb="Khu vực"><span class="hp-dot" style="background:' + am.c + '"></span> ' + esc(am.short) + '</td>' +
           '<td class="mb-tag"><span class="badge" title="' + esc(mm.sub) + '" style="background:color-mix(in srgb,' + mm.c + ' 15%,transparent);color:' + mm.c + '">' + esc(mm.lb) + '</span></td>' +
           '<td data-lb="Yêu cầu gần nhất">' + (rm.ycCuoi ? esc(ngayVN(rm.ycCuoi))
             : (rm.kind === "dung"
                 ? '<span class="mut" title="Tab yêu cầu chỉ lưu ' + nD + ' ngày gần nhất — lần phát cuối đã trôi khỏi cửa sổ này">ngoài ' + nD + ' ngày lưu</span>'
                 : '<span class="mut">chưa từng có</span>')) + '</td>' +
-          '<td class="nm" data-lb="Vệ sinh gần nhất">' + (rm.vsCuoi ? (esc(ngayVN(rm.vsCuoi)) + '<small>' + esc(rm.name || rm.email || "") + '</small>') : '<span class="mut">chưa ai từng vệ sinh</span>') + '</td>' +
-          '<td class="mb-act"><a class="hp-ext" target="_blank" rel="noopener" href="' + esc(pgLocUrl(rm.loc)) + '" title="Mở planogram lọc sẵn vị trí này (45 ngày) để soát lại lịch">Kiểm tra ↗</a></td></tr>');
+          '<td class="nm" data-lb="Vệ sinh gần nhất">' + (rm.vsCuoi ? (esc(ngayVN(rm.vsCuoi)) + '<small>' + esc(rm.name || rm.email || "") + '</small>') : '<span class="mut">chưa ai từng vệ sinh</span>') + '</td></tr>');
       }
     }
     sum = nf(rows.length) + " / " + nf(MODAL.base.length) + " vị trí · Chưa khai báo lịch: " + nf(cM.chua) + " · Đã dừng phát yêu cầu: " + nf(cM.dung);
-    if (rows.length > CAP) out.push('<tr><td colspan="6" class="empty">Hiển thị ' + nf(CAP) + ' / ' + nf(rows.length) + ' dòng — dùng bộ lọc để thu hẹp.</td></tr>');
-    if (!out.length) out.push('<tr><td colspan="6" class="empty">Không có dòng phù hợp</td></tr>');
+    if (rows.length > CAP) out.push('<tr><td colspan="5" class="empty">Hiển thị ' + nf(CAP) + ' / ' + nf(rows.length) + ' dòng — dùng bộ lọc để thu hẹp.</td></tr>');
+    if (!out.length) out.push('<tr><td colspan="5" class="empty">Không có dòng phù hợp</td></tr>');
   } else if (MODAL.mode === "req"){
     var cnt = { da: 0, nhac: 0, khong: 0, chua: 0 };
     for (var i = 0; i < rows.length; i++){ var r = rows[i];
@@ -5187,20 +5207,19 @@ function mRender(){
           : (la1Ngay() ? '<span class="mut">—</span>' : '<span class="mut">' + ngayVN(r.ngay) + '</span>');
         out.push('<tr>' +
           /* 09/11 user (pop-up «Quá 3 ngày chưa báo cáo vệ sinh»): bấm mã ở cột Vị trí = mở THANH BÊN vị trí đúng ngày; đóng ⇒ về pop-up */
-          '<td class="mb-hd"><span class="hp-dot" style="background:' + a.c + '"></span> ' + loMa(r.loc, r.ngay) + '</td>' +
-          '<td class="mb-tag">' + stBadge(r, bkNgay(r)) + '</td>' +
+          '<td class="mb-hd"><span class="hp-dot" style="background:' + a.c + '"></span> ' + loMa(r.loc, r.ngay) + muiPg(pgDetailUrl(r.id), "Mở yêu cầu #" + r.id + " trên planogram") + '</td>' +
+          '<td class="mb-tag">' + chipTT(r) + '</td>' +
           '<td' + (aim ? ' data-lb="AI"' : ' class="mb-0"') + '>' + aiCell + '</td>' +
           '<td class="nm' + (r.email ? "" : " mb-0") + '" data-lb="Người thực hiện">' + thuc + '</td>' +
           '<td' + (r.at || !la1Ngay() ? ' data-lb="Lúc"' : ' class="mb-0"') + '>' + luc + '</td>' +
           '<td class="nm" data-lb="Phụ trách">' + ptTxt + '</td>' +
-          '<td' + (r.anh.length ? ' data-lb="Ảnh"' : ' class="mb-0"') + '>' + thumbs + '</td>' +
-          '<td class="mb-act"><a class="hp-ext" target="_blank" rel="noopener" href="' + esc(pgDetailUrl(r.id)) + '" title="Mở yêu cầu #' + esc(r.id) + ' trên planogram">Mở ↗</a></td></tr>');
+          '<td' + (r.anh.length ? ' data-lb="Ảnh"' : ' class="mb-0"') + '>' + thumbs + '</td></tr>');
       }
     }
     sum = nf(rows.length) + " / " + nf(MODAL.base.length) + " yêu cầu · Đã vệ sinh: " + nf(cnt.da) +
       (laHomNay() ? " · Chưa (có đi làm): " + nf(cnt.nhac) + " · Không có ca: " + nf(cnt.khong) : " · Chưa vệ sinh: " + nf(cnt.chua));
-    if (rows.length > CAP) out.push('<tr><td colspan="8" class="empty">Hiển thị ' + nf(CAP) + ' / ' + nf(rows.length) + ' dòng — dùng bộ lọc để thu hẹp.</td></tr>');
-    if (!out.length) out.push('<tr><td colspan="8" class="empty">Không có dòng phù hợp</td></tr>');
+    if (rows.length > CAP) out.push('<tr><td colspan="7" class="empty">Hiển thị ' + nf(CAP) + ' / ' + nf(rows.length) + ' dòng — dùng bộ lọc để thu hẹp.</td></tr>');
+    if (!out.length) out.push('<tr><td colspan="7" class="empty">Không có dòng phù hợp</td></tr>');
   } else {
     var nDone = 0;
     for (var j = 0; j < rows.length; j++){ var r2 = rows[j];
@@ -5386,6 +5405,11 @@ function nkSearch(v){ NK.q = String(v || "").trim().toLowerCase(); clearTimeout(
 /* mã vị trí bấm được trong bảng pop-up (khuôn liên kết .hp-ext sẵn có) — mở thanh bên vị trí ngày d (rỗng = ngày đang xem) */
 function loMa(loc, d){ return '<a class="hp-ext" href="#" role="button" data-loc="' + esc(loc) + '" data-d="' + esc(d || "") + '" title="Xem vị trí ' + esc(loc) + '"' +
   ' onclick="HPLANOGRAM.nkMoViTri(this.getAttribute(\'data-loc\'),this.getAttribute(\'data-d\'));return false">' + esc(loc) + '</a>'; }
+/* 19/11 mũi tên ↗ sang planogram đi LIỀN sau mã vị trí (cùng biểu tượng chip đầu thanh bên) — thay cột «Planogram» riêng */
+var SVG_MUI = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>';
+function muiPg(href, tieu){ return '<a class="hp-ext hp-mui" href="' + esc(href) + '" target="_blank" rel="noopener" title="' + esc(tieu) + '" aria-label="' + esc(tieu) + '" onclick="event.stopPropagation()">' + SVG_MUI + '</a>'; }
+/* chip trạng thái gốc planogram — CÙNG khuôn chip đầu thanh bên vị trí (.hp-chipdau.tt, nền màu ttGocVN) */
+function chipTT(r){ var m = ttGocVN(r.stId, r.st); return '<span class="hp-chipdau tt" title="' + esc(r.st || "") + '" style="background:' + m.c + '">' + esc(m.lb) + '</span>'; }
 function nkMoViTri(loc, d){ openViTri(loc); if (d && d !== VT.ngay){ vtNgay(d); } }
 function nkPick(email){ NK.email = String(email || "").toLowerCase(); renderNkList(); renderNkRight(); }
 function renderNkList(){
@@ -5539,7 +5563,7 @@ window.HPLANOGRAM = {
   anhNho: function(u){ return imgAnh(u, "", false); }, lazyQuet: lazyQuet, anhLamNong: anhLamNong,   // 10/11 Bảo dưỡng › Lịch sử dùng chung ảnh nhỏ có lưu + làm nóng
   openNk: openNk, closeNk: closeNk, nkPick: nkPick, nkSearch: nkSearch, nkMoViTri: nkMoViTri, thuAnh: thuAnh, moTuChoi: moTuChoi, dongTuChoi: dongTuChoi, guiTuChoi: guiTuChoi,
   openViTri: openViTri, moVoVt: moVoVt, theTaiSan: theTaiSan, ttGocVN: ttGocVN, nutGhiCho: nutGhiCho, moAnhHet: moAnhHet, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao, openThieu: openThieu,
-  openChuaGiao: openChuaGiao, openGiaoNghi: openGiaoNghi, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
+  openChuaGiao: openChuaGiao, openGiaoNghi: openGiaoNghi, openNhac: openNhac, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
   toggleLegend: toggleLegend, closeLegend: closeLegend,
   ccSetStatus: ccSetStatus, ccSearch: ccSearch, aiSetKl: aiSetKl, aiSearch: aiSearch, moMap: moMap,
   toggleMatBang: toggleMatBang, setStHi: setStHi, togglePhong: togglePhong, moKhuMenu: moKhuMenu, nvXemHet: nvXemHet,
