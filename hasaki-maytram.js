@@ -78,6 +78,10 @@
       /* chi tiết máy */
       ".mt2-ct .mt2-td .lsb-seg{margin-left:auto;display:inline-flex}.mt2-ts{display:flex;flex-wrap:wrap;gap:4px 14px;padding:10px 16px 4px;font-size:12px;color:var(--muted)}.mt2-ts b{color:var(--text);font-weight:600}",
       ".mt2-ts b.warn{color:var(--warn)}.mt2-ts b.bad{color:var(--bad)}.mt2-ts .ly{color:var(--warn)}.mt2-ph{padding:0 16px;font-size:12px;color:var(--muted)}.mt2-ph b{color:var(--text);font-weight:600}",
+      /* 19/11 phiên work/WMS đang cấp trên máy: ảnh đại diện (anh-nv.js tự thay chữ cái) + 2 tên cuối, ngay trong nút máy của sơ đồ */
+      ".mt2-mn .ph{display:flex;align-items:center;gap:6px;min-width:0;font-size:12px;line-height:18px}" +
+        ".mt2-mn .ph .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mt2-mn .ph .k{flex:none;margin-left:auto;color:var(--muted);font-size:11px}" +
+        ".mt2-av{flex:none;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--surface);color:var(--muted);font-size:10px;font-weight:600;box-shadow:inset 0 0 0 1px var(--border)}",
       ".mt2-nk{padding:8px 16px 14px}.mt2-ev{display:grid;grid-template-columns:48px 20px minmax(0,1fr);min-height:34px}.mt2-ev .g{font-size:12px;padding-top:2px;font-variant-numeric:tabular-nums}",
       ".mt2-ev .tr{position:relative;display:flex;justify-content:center}.mt2-ev .tr::before{content:\"\";position:absolute;top:0;bottom:0;width:2px;background:var(--border)}",
       ".mt2-ev .tr i{position:relative;margin-top:5px;width:9px;height:9px;border-radius:50%;background:var(--mt-nhe);box-shadow:0 0 0 3px var(--surface)}.mt2-ev.n .tr i{background:var(--mt-nang)}",
@@ -147,8 +151,11 @@
     var may = (j.may || []).map(function (m) { var tg = Math.round((now - Date.parse(m.luc)) / 1000); (m.tatCaViec || []).forEach(function (t) { if (tatCa.indexOf(t) < 0) tatCa.push(t); });
       return Object.assign({}, m, { tuoiGiay: tg, song: tg <= HET_HAN_GIAY, coKhoa: m.coCamera ? ["TOPREVIEW_USER"] : [] }); });
     may.sort(function (a, b) { return (b.song - a.song) || (b.diem || 0) - (a.diem || 0); });
-    var vt = j.viecTat || {}, chu = {}; may.forEach(function (m) { if (m.song && !m.dung) (m.viecGiao || []).forEach(function (t) { if (!(m.dungViec || []).includes(t) && !vt[t]) chu[t] = m.may; }); });
-    return { srvNow: now, may: may, viec: tatCa.map(function (t) { return { ten: t, may: chu[t] || null, canKhoa: [] }; }), chuyen: j.chuyen || [], viecTat: vt, bridge: j.bridge || [] };   // 17/10: điện thoại cũng thấy phiên trên thẻ máy
+    var vt = j.viecTat || {}, chu = {}, them = {};   // 19/11 việc songSong (máy chủ XM dự phòng) chạy CÙNG LÚC trên nhiều máy ⇒ máy thứ 2+ vào «them»
+    may.forEach(function (m) { if (m.song && !m.dung) (m.viecGiao || []).forEach(function (t) { if ((m.dungViec || []).includes(t) || vt[t]) return;
+      if (!chu[t]) chu[t] = m.may; else (them[t] = them[t] || []).push(m.may); }); });
+    return { srvNow: now, may: may,
+      viec: tatCa.map(function (t) { return { ten: t, may: chu[t] || null, them: them[t] || [], canKhoa: [] }; }), chuyen: j.chuyen || [], viecTat: vt, bridge: j.bridge || [] };   // 17/10: điện thoại cũng thấy phiên trên thẻ máy
   }
   // Máy quản lý? Thanh bên dò 8591 bất đồng bộ (~1,5 s) — mở thẳng ?tab=maytram thì module chạy TRƯỚC ⇒ tự dò, đừng chờ.
   var MAY_CHU = false, CAN_DN = false, H_LAI = 0;
@@ -259,6 +266,10 @@
   var gioPhut = function (ms) { return gio(ms) + (Date.now() - ms > 864e5 ? " " + new Date(ms).getDate() + "/" + (new Date(ms).getMonth() + 1) : ""); };
   var lau = function (bd) { var p = Math.max(0, Math.round((Date.now() - bd) / 60000)); return p < 1 ? "vừa bắt đầu" : p < 60 ? p + " phút" : Math.floor(p / 60) + " giờ " + (p % 60) + " phút"; };
   var ngan = function (m) { return String(m).replace(/HSK-KHO170-/, "").replace(/^DESKTOP-/, ""); };
+  /* 19/11 tên người trên nút máy = 2 chữ cuối (Diệp Quốc Hải → Quốc Hải); điện thoại (đường GAS) chỉ có email ⇒ tra danh bạ anh-nv.js */
+  var ten2 = function (t) { var w = String(t || "").trim().split(/\s+/).filter(Boolean); return w.slice(-2).join(" "); };
+  var tenTuEm = function (em) { em = String(em || "").toLowerCase(); if (!em || !window.hskAnhNV || typeof window.hskAnhNV.ds !== "function") return "";
+    var x = (window.hskAnhNV.ds() || []).filter(function (n) { return n.em === em; })[0]; return x ? x.ten : ""; };
   /* 18/11 trục dòng điều phối 06–22 (mẫu user duyệt); lượt ngoài khung vẫn đếm ở cột lượt */
   var G0 = 6, G1 = 22;
   var X = function (ms) { var d = new Date(ms); return Math.max(0, Math.min(100, (d.getHours() + d.getMinutes() / 60 - G0) / (G1 - G0) * 100)); };
@@ -322,11 +333,26 @@
     /* máy giữ việc: điều phối tính (viec[].may); việc chỉ chạy ở laptop → laptop */
     var VT = MTD.viecTat || {};   // 18/11 việc TẮT HẲN trên mọi máy: không máy giữ, không tính «chưa có máy», chip gạch trên sơ đồ
     var chuCua = {}; (MTD.viec || []).forEach(function (v) { chuCua[v.ten] = VT[v.ten] ? null : v.may || (v.chiLaptop ? mayLaptop : null) || null; });
+    /* 19/11 user «kiểm tra sơ đồ đúng thực tế chưa»: may-chu-xm-du-phong chạy SONG SONG trên BANGCHUYEN-2 + QLIT (dieu-phoi songSong) mà sơ đồ chỉ nối 1 máy */
+    var phuCua = {}; (MTD.viec || []).forEach(function (v) { if (!VT[v.ten] && chuCua[v.ten] && (v.them || []).length) phuCua[v.ten] = v.them.filter(function (x) { return x !== chuCua[v.ten]; }); });
+    var thuocMay = function (t, may) { return chuCua[t] === may || (phuCua[t] || []).indexOf(may) >= 0; };
     var hangMay = function (m) { return !m.song ? 3 : (m.dangChay || []).length ? 0 : m.dung ? 2 : 1; };
     var tatCa = MTD.may.slice().sort(function (a, b) { return (hangMay(a) - hangMay(b)) || ((b.diem || 0) - (a.diem || 0)) || String(a.may).localeCompare(String(b.may)); });
     var PC = tatCa.filter(function (m) { return m.ban !== "may-in"; }), MIN = tatCa.filter(function (m) { return m.ban === "may-in"; });
     var DG = {}; tatCa.forEach(function (m) { DG[m.may] = danhGia(m); });
-    var giuCua = function (m) { return Object.keys(chuCua).filter(function (t) { return chuCua[t] === m.may && (m.dungViec || []).indexOf(t) < 0; }); };
+    var giuCua = function (m) { return Object.keys(chuCua).filter(function (t) { return thuocMay(t, m.may) && (m.dungViec || []).indexOf(t) < 0; }); };
+    /* phiên work/WMS còn sống theo máy. Tên máy trong phiên = COMPUTERNAME Windows, bị cắt 15 ký tự (HSK-KHO170-BANG = HSK-KHO170-BANGCHUYEN-2) — so tiền tố;
+       phiên không ghi máy = laptop. Gộp theo người: 1 người cấp cả work lẫn WMS = 1 dòng «work · WMS» */
+    var cungMay = function (bm, may) { bm = String(bm || ""); return !bm ? may === mayLaptop : bm === may || (bm.length === 15 && String(may).indexOf(bm) === 0); };
+    var phienMay = function (m) { var g = {}, ds = [];
+      (MTD.bridge || []).forEach(function (b) { if (!b.tuoi || !cungMay(b.may, m.may)) return; var k = String(b.email || b.sub).toLowerCase();
+        if (!g[k]) { g[k] = { ten: b.ten || tenTuEm(b.email), email: b.email || "", kenh: [], ghi: false }; ds.push(g[k]); }
+        var kn = b.kind === "wshr" ? "work" : b.kind === "wms" ? "WMS" : b.kind; if (g[k].kenh.indexOf(kn) < 0) g[k].kenh.push(kn); if (b.tamlc) g[k].ghi = true; });
+      return ds; };
+    var dongPhien = function (p) { var t2 = ten2(p.ten) || String(p.email).replace(/@.*$/, "");
+      return '<div class="ph" title="' + e_((p.ten || p.email) + (p.email ? " · " + p.email : "") + " — phiên " + p.kenh.join(" + ") + " · " + (p.ghi ? "ghi + đọc" : "chỉ đọc")) + '">' +
+        '<span class="mt2-av" data-anh-nv="' + e_(p.ten || "") + '"' + (p.email ? ' data-anh-em="' + e_(p.email) + '"' : "") + ">" + e_((t2.split(" ").pop() || "?").charAt(0).toUpperCase()) + "</span>" +
+        '<span class="t">' + e_(t2) + '</span><span class="k">' + e_(p.kenh.join(" · ")) + "</span></div>"; };
     /* chip sức khoẻ: máy Dừng ghi Dự phòng / Đã dừng; còn lại Tốt / Cần chú ý / Kém (lý do nằm ở khung chi tiết, không lặp trên thẻ) */
     var chipSk = function (m, lop) { var g = DG[m.may], c = m.dung ? (m.duPhong ? ["Dự phòng", "info"] : ["Đã dừng", "warn"]) : { tot: ["Tốt", "good"], "chu-y": ["Cần chú ý", "warn"], kem: ["Kém", "bad"] }[g.muc];
       return '<span class="hx-tag ' + c[1] + (lop ? " " + lop : "") + '">' + c[0] + "</span>"; };
@@ -370,16 +396,22 @@
     var lyChua = function (t) { var c = dangChuyen[t], k = ((MTD.viec || []).filter(function (v) { return v.ten === t; })[0] || {}).canKhoa || [];
       return c ? "Bị dừng giữa chừng ở " + c.tu + " — chờ máy khác chạy bù" : !conMay ? "Chưa có PC nào đang chạy" : k.indexOf("TOPREVIEW_USER") >= 0 ? "Cần PC có khoá camera" : "Cần PC đang chạy"; };
     var chua = VX.filter(function (t) { return !chuCua[t] && !VT[t]; }), soTat = Object.keys(VT).length;
-    var jv = function (t) { var run = tatCa.some(function (m) { return m.song && (m.dangChay || []).indexOf(t) >= 0; }), hl = MT_VIEC ? t === MT_VIEC : chuCua[t] === MT_CHON;
+    /* 19/11 đo thật: «Đồng bộ dashboard» giao QLIT mà FOQ5T89 cũng đang chạy 49 phút (cổng điều phối cho việc nhẹ chạy khi Apps Script chậm) ⇒
+       báo «chạy trùng» = việc đang chạy trên máy sống KHÔNG được giao (ngoài máy giữ + máy song song) */
+    var trung = VX.map(function (t) { var ds = PC.filter(function (m) { return m.song && (m.dangChay || []).indexOf(t) >= 0 && !thuocMay(t, m.may); }).map(function (m) { return ngan(m.may); });
+      return ds.length ? tenV(t) + ": giao " + (chuCua[t] ? ngan(chuCua[t]) : "—") + " nhưng " + ds.join(", ") + " cũng đang chạy" : ""; }).filter(Boolean);
+    var jv = function (t) { var run = tatCa.some(function (m) { return m.song && (m.dangChay || []).indexOf(t) >= 0; }), hl = MT_VIEC ? t === MT_VIEC : thuocMay(t, MT_CHON);
       return '<button type="button" class="mt-ct mt2-jv' + (run ? " chay" : "") +
         (VT[t] ? " tat" : !chuCua[t] ? " chua" : "") + (hl ? " hl" : MT_VIEC ? " mo" : "") +
-        '" data-viec-chon="' + e_(t) + '" title="' + e_(tenV(t) + (VT[t] ? " — tắt hẳn trên mọi máy" : chuCua[t] ? " → " + chuCua[t] : " — chưa có máy nhận: " + lyChua(t))) + '">' + e_(tenV(t)) + "</button>"; };
+        '" data-viec-chon="' + e_(t) + '" title="' + e_(tenV(t) + (VT[t] ? " — tắt hẳn trên mọi máy" : chuCua[t] ?
+          " → " + [chuCua[t]].concat(phuCua[t] || []).join(" + ") + ((phuCua[t] || []).length ? " (chạy song song)" : "") : " — chưa có máy nhận: " + lyChua(t))) + '">' + e_(tenV(t)) + "</button>"; };
     var cv = [["Nặng", true], ["Nhẹ", false]].map(function (g) { var ds = VX.filter(function (t) { return (nangCua[t] === true) === g[1]; }); return ds.length ? '<div class="nhom">' + g[0] + "</div>" + ds.map(jv).join("") : ""; }).join("");
     var mn = PC.map(function (m) { return '<div class="mt2-mn' + (m.song && !m.dung ? "" : " mo") + (m.may === MT_CHON ? " chon" : "") + '" data-m="' + e_(m.may) + '" data-chon="' + e_(m.may) + '" title="' + e_(m.may) + '" role="button" tabindex="0">' +
       '<div class="a">' + (m.song && (m.dangChay || []).length ? '<i class="mt2-cham" title="Đang chạy"></i>' : "") + "<b>" + e_(ngan(m.may)) + "</b>" + chipSk(m) + "</div>" + chipSk(m, "dt") + "<small>giữ <b>" + giuCua(m).length +
-        "</b> việc</small></div>"; }).join("");
+        "</b> việc</small>" + phienMay(m).map(dongPhien).join("") + "</div>"; }).join("");
     var sd = '<div class="mt2-the mt2-so"><div class="mt2-td"><b>Sơ đồ phân luồng</b><span class="phu">' + VX.length + " việc → " + PC.length + " máy</span>" +
       (chua.length ? '<span class="hx-tag bad" title="' + e_(chua.map(function (t) { return tenV(t) + ": " + lyChua(t); }).join("\n")) + '">' + chua.length + " việc chưa có máy</span>" : "") +
+      (trung.length ? '<span class="hx-tag warn" title="' + e_(trung.join("\n")) + '">' + trung.length + " việc chạy trùng</span>" : "") +
       (soTat ? '<span class="hx-tag khongcham">' + soTat + " việc tắt hẳn</span>" : "") + "</div>" +
       '<div class="mt2-sd" id="mt2Sd"><div class="mt2-cv">' + cv + '</div><div></div><div class="mt2-cm">' + mn + '</div><svg class="mt2-duong" id="mt2Duong" aria-hidden="true"></svg></div></div>';
 
@@ -390,8 +422,6 @@
     var ts = '<div class="mt2-ts" id="mt2ts-' + idMay + '"><span>RAM <b class="' + muc0(ram0, 70, 85) + '">' + ram0 + '%</b></span><span>CPU <b class="' + muc0(cpu0, 70, 90) + '">' + cpu0 + "%</b></span>" +
       (MAY.oDia || []).map(function (o) { return "<span>Ổ " + e_(o.o) + ' <b class="' + (g0.oKem[o.o] ? "bad" : g0.oCy[o.o] ? "warn" : "") + '">' + Math.round(o.trong) + " GB</b></span>"; }).join("") +
       g0.ly.filter(function (x) { return !/^(ổ |RAM |RAM đầy |CPU )/.test(x); }).map(function (x) { return '<span class="ly">' + e_(x) + "</span>"; }).join("") + "</div>";
-    var phien = (MTD.bridge || []).filter(function (b) { return (b.may || mayLaptop) === MAY.may && b.tuoi; }).map(function (b) {
-      return '<div class="mt2-ph" title="' + e_(b.email || "") + '">Phiên <b>' + e_(b.ten || b.email || "mã " + b.sub) + "</b> · " + e_(b.kind === "wshr" ? "work/hr" : b.kind === "wms" ? "WMS" : b.kind) + " · " + (b.tamlc ? "ghi + đọc" : "chỉ đọc") + "</div>"; }).join("");
     var soEv = 0, ev = function (lop, g1, nd) { return '<div class="mt2-ev ' + lop + '" id="mt2ev-' + idMay + "-" + (++soEv) + '"><span class="g">' + g1 + '</span><span class="tr"><i></i></span><div class="nd">' + nd + "</div></div>"; };
     var nk = function () { var qua = luotNgay(MAY).slice(-7), sap = {}, thuTu = [];
       sapToi(MAY, MAY.song && !MAY.dung ? giuM : []).forEach(function (k) { if (!sap[k.t]) { sap[k.t] = []; thuTu.push(k.t); } sap[k.t].push(k.a); });
@@ -422,7 +452,7 @@
     var nutTab = function (o) { return '<button type="button" class="hp-whtab' + (tab === o[0] ? " active" : "") + '" role="tab" aria-selected="' + (tab === o[0]) + '" data-tab="' + o[0] + '">' + o[1] + "</button>"; };
     var ct = '<div class="mt2-the mt2-ct' + (MT_DT ? " mo-dt" : "") + (vua === "dt" ? " vua-mo" : "") +
       '" id="mt2Ct"><div class="mt2-dau"><div class="mt2-td"><button type="button" class="mt-xo-dong mt2-dong" aria-label="Đóng">✕</button><b title="' + e_(MAY.may) + '">' + e_(ngan(MAY.may)) + "</b>" +
-      (laDT() ? chipSk(MAY) : "") + '<span class="lsb-seg" role="tablist">' + tabs.map(nutTab).join("") + "</span></div>" + ts + phien + '</div><div class="mt2-than' + (vua === "chon" ? " vua-mo" : "") + '">' + (tab === "viec" ? vd() + (nut ? '<div class="mt2-chan">' + nut + "</div>" : "") : nk()) + "</div>" +
+      (laDT() ? chipSk(MAY) : "") + '<span class="lsb-seg" role="tablist">' + tabs.map(nutTab).join("") + "</span></div>" + ts + '</div><div class="mt2-than' + (vua === "chon" ? " vua-mo" : "") + '">' + (tab === "viec" ? vd() + (nut ? '<div class="mt2-chan">' + nut + "</div>" : "") : nk()) + "</div>" +
       '<div class="bd-tabben mt2-tabd" role="tablist">' + tabs.map(function (o) { return '<button type="button" class="hp-whtab' + (tab === o[0] ? " active" : "") + '" role="tab" aria-selected="' + (tab === o[0]) +
         '" data-tab="' + o[0] + '" data-ptab="' + (o[0] === "viec" ? "lam" : "ls") + '">' + (o[0] === "viec" ? 'Việc <span class="bd-tab-so">' + giuM.length + "</span>" : o[1]) + "</button>"; }).join("") + "</div></div>";
 
@@ -502,14 +532,16 @@
     var so = document.getElementById("mt2Sd"), svg = document.getElementById("mt2Duong"); if (!so || !svg || !MTD) return;
     var R = so.getBoundingClientRect(), h = "", chu = {}, tat = {}, nang = {};
     var lap = (MTD.may.filter(function (x) { return x.duPhong && x.dung; })[0] || {}).may;   // việc chỉ chạy ở laptop → laptop (khớp chuCua trong ve)
-    (MTD.viec || []).forEach(function (v) { chu[v.ten] = (MTD.viecTat || {})[v.ten] ? null : v.may || (v.chiLaptop ? lap : null); nang[v.ten] = !!v.nang; });
+    var phu = {}; (MTD.viec || []).forEach(function (v) { chu[v.ten] = (MTD.viecTat || {})[v.ten] ? null : v.may || (v.chiLaptop ? lap : null); nang[v.ten] = !!v.nang;
+      if (chu[v.ten]) phu[v.ten] = (v.them || []).filter(function (x) { return x !== chu[v.ten]; }); });
     MTD.may.forEach(function (m) { (m.viecNang || []).forEach(function (t) { nang[t] = true; }); (m.dungViec || []).forEach(function (t) { if (!(MTD.viecTat || {})[t]) tat[t] = m.may; }); });
     so.querySelectorAll(".mt2-jv").forEach(function (j) { var t = j.dataset.viecChon, a = j.getBoundingClientRect();
       var noi = function (may, lop) { var el = so.querySelector('.mt2-mn[data-m="' + (window.CSS && CSS.escape ? CSS.escape(may) : may) + '"]'); if (!el) return; var b = el.getBoundingClientRect();
         var x1 = a.right - R.left + 2, y1 = a.top + a.height / 2 - R.top, x2 = b.left - R.left - 2, y2 = b.top + Math.min(b.height / 2, 20) - R.top, dx = (x2 - x1) * .55;
         h += '<path class="' + lop + (vuaMo && / hl/.test(lop) ? " vua-mo" : "") + '" d="M' + x1 + "," + y1 + " C" + (x1 + dx) + "," + y1 + " " + (x2 - dx) + "," + y2 + " " + x2 + "," + y2 + '"/>'; };
-      var bat = MT_VIEC ? t === MT_VIEC : chu[t] === MT_CHON;
-      if (chu[t]) noi(chu[t], (nang[t] ? "n" : "l") + (bat ? " hl" : " mo")); if (tat[t] && tat[t] !== chu[t]) noi(tat[t], "tat" + (MT_VIEC && t !== MT_VIEC ? " mo" : "")); });
+      var bat = MT_VIEC ? t === MT_VIEC : chu[t] === MT_CHON || (phu[t] || []).indexOf(MT_CHON) >= 0;
+      if (chu[t]) noi(chu[t], (nang[t] ? "n" : "l") + (bat ? " hl" : " mo"));
+      (phu[t] || []).forEach(function (x) { if (x !== tat[t]) noi(x, (nang[t] ? "n" : "l") + (bat ? " hl" : " mo")); }); if (tat[t] && tat[t] !== chu[t]) noi(tat[t], "tat" + (MT_VIEC && t !== MT_VIEC ? " mo" : "")); });
     svg.innerHTML = h;
   }
   window.addEventListener("resize", function () { clearTimeout(H_VE); H_VE = setTimeout(function () { if (PANE && !PANE.classList.contains("hidden")) { if (!laDT() && MT_DT) { MT_DT = false; if (window.hskLop) window.hskLop.rut("mt-may"); ve(); } else veDuong(); } }, 120); });
@@ -525,5 +557,6 @@
   window.addEventListener("hx-phien", function () {   // đăng xuất Xác minh trên máy quản lý → khoá lại ngay
     if (MAY_CHU && !phien()) { MTD = null; CAN_DN = true; DIEU_KHIEN = false; if (PANE && !PANE.classList.contains("hidden")) ve(); }
   });
+  window.addEventListener("hsk-anh-nv", function () { if (MTD && PANE && !PANE.classList.contains("hidden")) ve(); });   // 19/11 danh bạ về sau ⇒ điện thoại thấy tên thay đầu email
   window.HMAYTRAM = { init: init, coDuLieu: function () { return !!MTD; }, veLai: function () { if (MTD) ve(); } };   // veLai: vẽ lại như nhịp 30 s (bộ đo X3)
 })();
