@@ -494,7 +494,11 @@ function setKhoang(tu, den){
   renderWhBar(); renderToday(); renderList();
 }
 function setPtHi(e){ e = String(e || "").toLowerCase(); S.ptHi = (S.ptHi === e || !e) ? "" : e; S.stHi = ""; renderMap(); }
-function togglePtNhac(){ S.ptOpen = !S.ptOpen; renderMap(); }
+function togglePtNhac(dong){ S.ptOpen = dong ? false : !S.ptOpen; renderMap();
+  if (window.hskLop){ if (S.ptOpen) window.hskLop.day("hp-nvkeo", function(){ if (S.ptOpen){ S.ptOpen = false; renderMap(); } }); else window.hskLop.rut("hp-nvkeo"); } }
+/* ngăn kéo người: bấm ra ngoài / Esc = đóng (1 lớp) */
+document.addEventListener("click", function(e){ if (S.ptOpen && !(e.target.closest && e.target.closest(".hp-tdo"))) togglePtNhac(true); });
+document.addEventListener("keydown", function(e){ if (e.key === "Escape" && S.ptOpen && !document.querySelector("#hpModal.show,#hpVtModal.show,#hpAiModal.show")){ e.stopPropagation(); togglePtNhac(true); } }, true);
 function setNgay(d){ setKhoang(d, d); }
 function chonNgay(v){
   var ds = ycDates();   // giảm dần, ds[0] = mới nhất
@@ -750,7 +754,20 @@ var S = { ok: false, dangPT: false, all: [], area: "", lastAt: 0, tsData: 0,
   dTu: "", dDen: "", listMode: "ai", ptHi: "", ptOpen: false,   // dTu→dDen = KHOẢNG NGÀY đang xem; listMode = panel danh sách (ai | nv); ptHi = email NV đang SOI; ptOpen = panel cần-nhắc đang xổ
   mb: false, mbDang: false,   // mb = đang xem SƠ ĐỒ MẶT BẰNG (bê từ bản vẽ CAD) thay cho sơ đồ lưới; mbDang = đang nạp file dữ liệu
   locNgay: null };   // bản bộ lọc ngày dùng chung (taoBoLocNgay của index.html) — dựng 1 lần, cắm lại mỗi lần renderWhBar
-var MODAL = { base: [], preset: null, mode: "loc" };
+var MODAL = { base: [], preset: null, mode: "loc", ctx: "" };
+/* 19/11 user «chưa phân công thì làm gì có Ảnh mà AI xét duyệt — linh động cột cho đúng định nghĩa từng việc ở Cần xử lý»:
+   mỗi mục = bộ cột + bộ lọc riêng; các mục này đều là yêu cầu CHƯA vệ sinh ⇒ không có AI / Người thực hiện / Lúc / Ảnh, không lọc Trạng thái / AI. */
+var CTX_REQ = {
+  chuagiao: { cot: ["vt", "tt", "pt"], loc: ["area", "pt"], pt: "Phụ trách (g-sheet)" },
+  giaonghi: { cot: ["vt", "tt", "pt"], loc: ["area", "pt"], pt: "Người được giao" },
+  nhac:     { cot: ["vt", "tt", "pt"], loc: ["area", "pt"], pt: "Phụ trách" },
+  canhbao:  { cot: ["vt", "tt", "pt"], loc: ["area", "pt"], pt: "Phụ trách" }
+};
+var COT_REQ = ["vt", "tt", "ai", "thuc", "luc", "pt", "anh"];
+function cotReq(){ var c = CTX_REQ[MODAL.ctx]; return c ? c.cot : COT_REQ; }
+function theadReq(){ var c = CTX_REQ[MODAL.ctx] || {}, TH = { vt: "<th>Vị trí</th>", tt: "<th>Trạng thái</th>", ai: "<th>AI xét duyệt</th>", thuc: '<th class="nm">Người thực hiện</th>',
+  luc: "<th>Lúc</th>", pt: '<th class="nm">' + esc(c.pt || "Phụ trách (dự kiến)") + "</th>", anh: "<th>Ảnh</th>" };
+  return "<tr>" + cotReq().map(function(k){ return TH[k]; }).join("") + "</tr>"; }
 var NK = { email: "", q: "" };
 var PANE = null, _nmColor = {}, _nmCi = 0, _deb = null, _debT = null, _ccDeb = null, _nkDeb = null, _fitT = null, _animT = null, _fitW = 0, _fitZ = 0;   // _fitW/_fitZ: bề rộng + hệ số zoom lượt fit trước (chống rung)
 /* Bật animation VÀO cho lượt vẽ kế tiếp rồi tự tắt — chỉ dùng khi nội dung MỚI THẬT
@@ -1473,6 +1490,12 @@ var CSS = [
 "#pane-planogram .hp-tdrow .t small{display:block;font-size:11px;color:var(--muted,#6b7280);line-height:1.35;margin-top:1px;}",
 "#pane-planogram .hp-tdrow .go{font-size:12px;font-weight:650;color:var(--accent,#326e51);white-space:nowrap;}",
 "#pane-planogram .hp-todo .hp-ptnhac{margin:2px 0 8px 50px;}",
+/* 19/11 ngăn kéo NỔI người đi làm chưa báo cáo (TK-28: đè lên, không đẩy dòng dưới) — dùng lại khuôn danh sách xổ .hp-combo-menu/.hp-combo-item;
+   5 người × 40px, quá thì cuộn */
+"#pane-planogram .hp-tdo{position:relative;border-top:1px solid var(--border);}#pane-planogram .hp-tdlist>.hp-tdo:first-child{border-top:0;}#pane-planogram .hp-tdo>.hp-tdrow{border-top:0;}",
+"#pane-planogram .hp-combo-menu.hp-nvkeo{top:100%;left:50px;right:0;max-height:210px;}",
+"#pane-planogram .hp-nvkeo .hp-combo-item{justify-content:flex-start;height:40px;padding:0 11px;box-sizing:border-box;}",
+"#pane-planogram .hp-nvkeo .av{width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;color:var(--surface);font-size:11px;font-weight:600;overflow:hidden;}",
 "#pane-planogram .hp-tdok{display:flex;align-items:center;gap:8px;padding:10px 4px;font-size:13px;font-weight:650;color:#059669;}",
 "#pane-planogram .hp-tdok.mut{color:var(--muted,#6b7280);font-weight:500;}",
 "#pane-planogram .hp-tdok .ic{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,#059669 14%,transparent);font-size:12px;}",
@@ -3863,16 +3886,40 @@ function renderTodo(o){
       '<span class="go">' + nutChu + '</span></button>' + (them || ""));
   }
   var nv = nvTheoNgay(o.byL), nvChua = nv.list.filter(function(p){ return p.chua > 0; });
-  /* 19/11 user «nhấn vào từng mục cần đồng bộ hiển thị như pop-up thì pop-up hết»: mục (1) trước xổ chip tên tại chỗ — nay mở pop-up
-     yêu cầu như 4 mục còn lại (lọc theo «Phụ trách» ngay trong pop-up thay chip) */
+  /* 19/11 user «thay đổi vị trí hiển thị từ trên xuống dưới»: chưa phân công → giao cho người nghỉ → người đi làm chưa báo cáo → AI chấm chưa đạt
+     (quá N ngày + không có yêu cầu giữ cuối như cũ) */
+  /* (1) chưa phân công: yêu cầu chưa vệ sinh mà planogram CHƯA giao người (executed_by trống) */
+  var nChuaGiao = ycChuaGiao().length;
+  if (nChuaGiao) row(nChuaGiao, "warn", "yêu cầu chưa phân công", "planogram chưa giao người thực hiện",
+    "Xem ›", "HPLANOGRAM.openChuaGiao()", "chuagiao");
+  /* (2) giao cho người nghỉ — chưa ai giao lại */
+  var nghiG = ycGiaoNghi();
+  if (nghiG.length){
+    var soNg = {}; nghiG.forEach(function(r){ soNg[String(r.pt).toLowerCase()] = 1; });
+    row(nghiG.length, "bad", "yêu cầu giao cho người nghỉ", nf(Object.keys(soNg).length) + " người nghỉ · chưa được giao lại người khác",
+      "Xem ›", "HPLANOGRAM.openGiaoNghi()", "giaonghi");
+  }
+  /* (3) người đi làm chưa báo cáo — 19/11 user: bấm = NGĂN KÉO NỔI chỉ ảnh + 2 tên cuối (tối đa 5 người, quá thì cuộn); bấm 1 người = pop-up yêu cầu của người đó */
   if (o.soiPT && nvChua.length){
+    var keo = S.ptOpen ? '<div class="hp-combo-menu show hp-nvkeo" role="menu" onclick="event.stopPropagation()">' + nvChua.map(function(p){
+      var t = p.ten || p.em;
+      return '<div class="hp-combo-item" role="menuitem" tabindex="0" data-e="' + esc(p.em || p.code) + '" title="' + esc(t + " — " + p.chua + " vị trí chưa vệ sinh") + '"' +
+        ' onclick="HPLANOGRAM.moNhacNguoi(this.getAttribute(\'data-e\'))" onkeydown="if(event.key===\'Enter\')this.click()">' +
+        '<span class="av" data-anh-nv="' + esc(t) + '"' + (p.em ? ' data-anh-em="' + esc(p.em) + '"' : '') + ' style="background:' + nmColor(t) + '">' + esc(chuDau(t)) + '</span>' +
+        '<span class="nm">' + esc(ten2(t)) + '</span></div>'; }).join("") + '</div>' : "";
+    dong.push('<div class="hp-tdo' + (S.ptOpen ? " mo" : "") + '">');
     row(nvChua.length, "bad", "người đi làm " + (o.homNay ? "chưa báo cáo" : "mà không báo cáo"), nf(nv.oChua) + " vị trí của họ chưa vệ sinh",
-      "Xem ›", "HPLANOGRAM.openNhac()", "nhac");
+      S.ptOpen ? "Thu gọn ▴" : "Xem ▾", "event.stopPropagation();HPLANOGRAM.togglePtNhac()", "nhac", keo + '</div>');
   } else if (!o.soiPT){
     var nChua = ycInScope().filter(function(r){ return r.bk !== "da"; }).length;
     if (nChua) row(nChua, "bad", "yêu cầu chưa vệ sinh", o.mot ? "chưa đủ chấm công để tách người đi làm / nghỉ" : "trong khoảng ngày đang xem", "Xem ›", "HPLANOGRAM.openYc('chua')", "chua");
   }
-  /* (2) quá N ngày — tách luôn bao nhiêu ô do người phụ trách đi làm, bao nhiêu do nghỉ */
+  /* (4) AI chấm chưa đạt (chỉ khi xem 1 ngày — trạng thái AI gắn với từng báo cáo) */
+  if (o.mot && (o.nAiDo || o.nAiVang)){
+    row(o.nAiDo + o.nAiVang, "warn", "ô AI chấm chưa đạt", [o.nAiDo ? nf(o.nAiDo) + " làm lại" : "", o.nAiVang ? nf(o.nAiVang) + " cần xem" : ""].filter(Boolean).join(" · "),
+      "Xem ›", "HPLANOGRAM.openAiList('" + (o.nAiDo ? "KHONG_DAT" : "CAN_XEM") + "')", "ai");
+  }
+  /* (5) quá N ngày — tách luôn bao nhiêu ô do người phụ trách đi làm, bao nhiêu do nghỉ */
   if (o.nAlert){
     var nDi = 0, nNghi = 0;
     if (o.soiPT) Object.keys(o.alert).forEach(function(kk){
@@ -3882,22 +3929,6 @@ function renderTodo(o){
     });
     row(o.nAlert, "bad", "vị trí quá " + NGUONG_CANHBAO + " ngày chưa vệ sinh", (nDi || nNghi) ? nf(nDi) + " người phụ trách đi làm · " + nf(nNghi) + " nghỉ" : "liên tiếp không có ai báo cáo", "Xem ›", "HPLANOGRAM.openCanhBao()", "canhbao");
   }
-  /* (3) AI chấm chưa đạt (chỉ khi xem 1 ngày — trạng thái AI gắn với từng báo cáo) */
-  if (o.mot && (o.nAiDo || o.nAiVang)){
-    row(o.nAiDo + o.nAiVang, "warn", "ô AI chấm chưa đạt", [o.nAiDo ? nf(o.nAiDo) + " làm lại" : "", o.nAiVang ? nf(o.nAiVang) + " cần xem" : ""].filter(Boolean).join(" · "),
-      "Xem ›", "HPLANOGRAM.openAiList('" + (o.nAiDo ? "KHONG_DAT" : "CAN_XEM") + "')", "ai");
-  }
-  /* (3a) 18/11 user «phụ trách theo phân công mà nghỉ thì bot đã giao người khác chưa» */
-  var nghiG = ycGiaoNghi();
-  if (nghiG.length){
-    var soNg = {}; nghiG.forEach(function(r){ soNg[String(r.pt).toLowerCase()] = 1; });
-    row(nghiG.length, "bad", "yêu cầu giao cho người nghỉ", nf(Object.keys(soNg).length) + " người nghỉ · chưa được giao lại người khác",
-      "Xem ›", "HPLANOGRAM.openGiaoNghi()", "giaonghi");
-  }
-  /* (3b) 18/11 user «mục Chưa phân công»: yêu cầu chưa vệ sinh mà planogram CHƯA giao người (executed_by trống) */
-  var nChuaGiao = ycChuaGiao().length;
-  if (nChuaGiao) row(nChuaGiao, "warn", "yêu cầu chưa phân công", "planogram chưa giao người thực hiện",
-    "Xem ›", "HPLANOGRAM.openChuaGiao()", "chuagiao");
   /* (4) vị trí không có yêu cầu vệ sinh (độ phủ lịch) */
   if (S.yc.ok){
     var dp = doPhu(), thieu = dp.tot - dp.co;
@@ -3974,7 +4005,7 @@ function openCanhBao(){
     var r = rs[0] || { id: "", loc: loc, area: (areaOf(loc) || {}).k, ngay: "", stId: 1, st: "New", email: "", at: "", pt: "", ptCode: "", anh: [] };
     return Object.assign({}, r, { _streak: alert[loc] });
   });
-  showModal(base, "Quá " + NGUONG_CANHBAO + " ngày chưa báo cáo vệ sinh" + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req");
+  showModal(base, "Quá " + NGUONG_CANHBAO + " ngày chưa báo cáo vệ sinh" + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req", "canhbao");
 }
 
 /* ===== POP-UP CHI TIẾT VỊ TRÍ (bấm ô trên sơ đồ) — báo cáo của ngày + lịch sử 7 ngày ===== */
@@ -4994,7 +5025,8 @@ var FDEF_MISS = [
   { k: "area", lb: "Khu vực",         vals: function(r){ return [areaMeta(r.area).short]; } },
   { k: "kind", lb: "Tình trạng lịch", vals: function(r){ return [missMeta(r.kind).lb]; } }
 ];
-function fdefs(){ return MODAL.mode === "req" ? FDEF_REQ : MODAL.mode === "miss" ? FDEF_MISS : FDEF_LOC; }
+function fdefs(){ if (MODAL.mode === "req"){ var c = CTX_REQ[MODAL.ctx]; return c ? FDEF_REQ.filter(function(d){ return c.loc.indexOf(d.k) >= 0; }) : FDEF_REQ; }
+  return MODAL.mode === "miss" ? FDEF_MISS : FDEF_LOC; }
 function fdefOf(k){ var F = fdefs(); for (var i = 0; i < F.length; i++) if (F[i].k === k) return F[i]; return null; }
 function openAll(){ showModal(rowsInScope(), "Tất cả vị trí" + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "loc"); }
 function openArea(k){ var a = areaMeta(k); showModal(S.all.filter(function(r){ return r.area === k; }), a.lb + " · " + a.short, { k: "area", raw: a.short }, "loc"); }
@@ -5038,7 +5070,7 @@ function chuaToiCa(r){
   var n = new Date(); return n.getHours() * 60 + n.getMinutes() < q + 30;
 }
 function openGiaoNghi(){
-  showModal(ycGiaoNghi(), "Giao cho người nghỉ · " + nhanKhoang() + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req");
+  showModal(ycGiaoNghi(), "Giao cho người nghỉ · " + nhanKhoang() + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req", "giaonghi");
 }
 /* Dòng trong thẻ Phụ trách: đã giao lại (ai giao, lúc mấy giờ, thay ai) · hoặc người được giao nghỉ mà chưa ai giao lại */
 function dongGiaoLai(r, tuPlg){
@@ -5062,28 +5094,37 @@ function ycNhac(){
   return out;
 }
 function openNhac(){
-  showModal(ycNhac(), "Người đi làm " + (laHomNay() ? "chưa báo cáo" : "mà không báo cáo") + " · " + nhanKhoang() + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req");
+  showModal(ycNhac(), "Người đi làm " + (laHomNay() ? "chưa báo cáo" : "mà không báo cáo") + " · " + nhanKhoang() + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req", "nhac");
+}
+/* bấm 1 người trong ngăn kéo ⇒ pop-up đúng các yêu cầu chưa vệ sinh của người đó */
+function moNhacNguoi(k){
+  k = String(k || "").toLowerCase(); S.ptOpen = false; if (window.hskLop) window.hskLop.rut("hp-nvkeo"); renderMap();
+  var ds = ycNhac().filter(function(r){ return String(r.pt || r.ptCode || "").toLowerCase() === k; });
+  var t = ds.length ? ptTen(ds[0]) : k;
+  showModal(ds, t + " · chưa báo cáo · " + nhanKhoang(), null, "req", "nhac");
 }
 function openChuaGiao(){
-  showModal(ycChuaGiao(), "Chưa phân công · " + nhanKhoang() + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req");
+  showModal(ycChuaGiao(), "Chưa phân công · " + nhanKhoang() + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "req", "chuagiao");
 }
 /* Pop-up "vị trí KHÔNG có yêu cầu báo cáo vệ sinh" (bấm dải cảnh báo ở panel Vệ sinh) */
 function openThieu(){
   var dp = doPhu();
   showModal(dp.thieu, "Không có yêu cầu báo cáo vệ sinh · " + nhanKhoang() + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "miss");
 }
-function showModal(base, title, preset, mode){
-  MODAL.base = base || []; MODAL.preset = preset || null; MODAL.mode = mode || "loc";
+function showModal(base, title, preset, mode, ctx){
+  MODAL.base = base || []; MODAL.preset = preset || null; MODAL.mode = mode || "loc"; MODAL.ctx = ctx || "";
+  /* 19/11: pop-up mới luôn mở với ngăn Bộ lọc ĐÓNG (loc-popup.js) — trước đây mở ở pop-up trước thì pop-up sau mở sẵn */
+  var fM = $id("hpMFilters"); if (fM){ fM.classList.remove("loc-pop-mo"); var nM = fM.__locPop; if (nM){ nM.classList.remove("mo"); nM.setAttribute("aria-expanded", "false"); } }
   if (MODAL.mode === "req"){ canANH(); ganAnh(MODAL.base); }   // cột Ảnh của bảng yêu cầu (tab bậc 3)
   $id("hpMtitle").textContent = title;
   $id("hpMsub").textContent = "";   // 26/10 luật không lặp: số yêu cầu/vị trí đã ở hàng tóm tắt (hpMSum)
-  $id("hpMHead").innerHTML = THEADS[MODAL.mode] || THEAD_LOC;
+  $id("hpMHead").innerHTML = MODAL.mode === "req" ? theadReq() : (THEADS[MODAL.mode] || THEAD_LOC);
   var pg = $id("hpMPg");
   if (MODAL.mode === "loc") pg.style.display = "none";
   else { pg.style.display = ""; pg.href = pgListUrl(khoang()[0], S.area, "", khoang()[1]); }
   buildFilters();
   $id("hpMSum").textContent = "";
-  $id("hpMBody").innerHTML = '<tr><td colspan="' + (NCOL[MODAL.mode] || 6) + '" class="empty">Đang hiển thị…</td></tr>';
+  $id("hpMBody").innerHTML = '<tr><td colspan="' + (MODAL.mode === "req" ? cotReq().length : NCOL[MODAL.mode] || 6) + '" class="empty">Đang hiển thị…</td></tr>';
   var m = $id("hpModal"); m.style.display = "flex";
   requestAnimationFrame(function(){ m.classList.add("show"); setTimeout(mRender, 60); });
 }
@@ -5097,7 +5138,8 @@ function buildFilters(){
     var uniq = new Set();
     rows.forEach(function(r){ d.vals(r).forEach(function(v){ if (v) uniq.add(v); }); });
     if (uniq.size > 1){
-      html += '<div class="fld"><label>' + esc(d.lb) + '</label><div class="hp-combo" data-fk="' + d.k + '" data-lb="' + esc(d.lb) + '">' +
+      var lb = d.k === "pt" && MODAL.mode === "req" && CTX_REQ[MODAL.ctx] ? CTX_REQ[MODAL.ctx].pt : d.lb;   // nhãn lọc = tiêu đề cột của mục
+      html += '<div class="fld"><label>' + esc(lb) + '</label><div class="hp-combo" data-fk="' + d.k + '" data-lb="' + esc(lb) + '">' +
         '<input data-fk="' + d.k + '" autocomplete="off" placeholder="Tất cả…" oninput="HPLANOGRAM.comboInput(this)" onfocus="HPLANOGRAM.comboMenu(this.parentNode)">' +
         '<div class="hp-combo-menu"></div></div></div>';
     }
@@ -5205,21 +5247,25 @@ function mRender(){
           : '<span class="mut">—</span>';
         var luc = r.at ? esc((la1Ngay() ? "" : ngayVN(r.ngay) + " ") + (String(r.at).slice(11, 16) || r.at))
           : (la1Ngay() ? '<span class="mut">—</span>' : '<span class="mut">' + ngayVN(r.ngay) + '</span>');
-        out.push('<tr>' +
-          /* 09/11 user (pop-up «Quá 3 ngày chưa báo cáo vệ sinh»): bấm mã ở cột Vị trí = mở THANH BÊN vị trí đúng ngày; đóng ⇒ về pop-up */
-          '<td class="mb-hd"><span class="hp-dot" style="background:' + a.c + '"></span> ' + loMa(r.loc, r.ngay) + muiPg(pgDetailUrl(r.id), "Mở yêu cầu #" + r.id + " trên planogram") + '</td>' +
-          '<td class="mb-tag">' + chipTT(r) + '</td>' +
-          '<td' + (aim ? ' data-lb="AI"' : ' class="mb-0"') + '>' + aiCell + '</td>' +
-          '<td class="nm' + (r.email ? "" : " mb-0") + '" data-lb="Người thực hiện">' + thuc + '</td>' +
-          '<td' + (r.at || !la1Ngay() ? ' data-lb="Lúc"' : ' class="mb-0"') + '>' + luc + '</td>' +
-          '<td class="nm" data-lb="Phụ trách">' + ptTxt + '</td>' +
-          '<td' + (r.anh.length ? ' data-lb="Ảnh"' : ' class="mb-0"') + '>' + thumbs + '</td></tr>');
+        /* 09/11 user (pop-up «Quá 3 ngày chưa báo cáo vệ sinh»): bấm mã ở cột Vị trí = mở THANH BÊN vị trí đúng ngày; đóng ⇒ về pop-up */
+        var O = {
+          vt: '<td class="mb-hd"><span class="hp-dot" style="background:' + a.c + '"></span> ' + loMa(r.loc, r.ngay) + muiPg(pgDetailUrl(r.id), "Mở yêu cầu #" + r.id + " trên planogram") + '</td>',
+          tt: '<td class="mb-tag">' + chipTT(r) + '</td>',
+          ai: '<td' + (aim ? ' data-lb="AI"' : ' class="mb-0"') + '>' + aiCell + '</td>',
+          thuc: '<td class="nm' + (r.email ? "" : " mb-0") + '" data-lb="Người thực hiện">' + thuc + '</td>',
+          luc: '<td' + (r.at || !la1Ngay() ? ' data-lb="Lúc"' : ' class="mb-0"') + '>' + luc + '</td>',
+          pt: '<td class="nm" data-lb="' + esc((CTX_REQ[MODAL.ctx] || {}).pt || "Phụ trách") + '">' + ptTxt + '</td>',
+          anh: '<td' + (r.anh.length ? ' data-lb="Ảnh"' : ' class="mb-0"') + '>' + thumbs + '</td>'
+        };
+        out.push('<tr>' + cotReq().map(function(k){ return O[k]; }).join("") + '</tr>');
       }
     }
-    sum = nf(rows.length) + " / " + nf(MODAL.base.length) + " yêu cầu · Đã vệ sinh: " + nf(cnt.da) +
-      (laHomNay() ? " · Chưa (có đi làm): " + nf(cnt.nhac) + " · Không có ca: " + nf(cnt.khong) : " · Chưa vệ sinh: " + nf(cnt.chua));
-    if (rows.length > CAP) out.push('<tr><td colspan="7" class="empty">Hiển thị ' + nf(CAP) + ' / ' + nf(rows.length) + ' dòng — dùng bộ lọc để thu hẹp.</td></tr>');
-    if (!out.length) out.push('<tr><td colspan="7" class="empty">Không có dòng phù hợp</td></tr>');
+    /* mục Cần xử lý: mọi dòng cùng 1 nhóm (đều chưa vệ sinh) ⇒ tách Đã / Chưa vô nghĩa, chỉ đếm */
+    sum = nf(rows.length) + " / " + nf(MODAL.base.length) + " yêu cầu" + (CTX_REQ[MODAL.ctx] ? "" : " · Đã vệ sinh: " + nf(cnt.da) +
+      (laHomNay() ? " · Chưa (có đi làm): " + nf(cnt.nhac) + " · Không có ca: " + nf(cnt.khong) : " · Chưa vệ sinh: " + nf(cnt.chua)));
+    var nC = cotReq().length;
+    if (rows.length > CAP) out.push('<tr><td colspan="' + nC + '" class="empty">Hiển thị ' + nf(CAP) + ' / ' + nf(rows.length) + ' dòng</td></tr>');
+    if (!out.length) out.push('<tr><td colspan="' + nC + '" class="empty">Không có dòng phù hợp</td></tr>');
   } else {
     var nDone = 0;
     for (var j = 0; j < rows.length; j++){ var r2 = rows[j];
@@ -5563,7 +5609,7 @@ window.HPLANOGRAM = {
   anhNho: function(u){ return imgAnh(u, "", false); }, lazyQuet: lazyQuet, anhLamNong: anhLamNong,   // 10/11 Bảo dưỡng › Lịch sử dùng chung ảnh nhỏ có lưu + làm nóng
   openNk: openNk, closeNk: closeNk, nkPick: nkPick, nkSearch: nkSearch, nkMoViTri: nkMoViTri, thuAnh: thuAnh, moTuChoi: moTuChoi, dongTuChoi: dongTuChoi, guiTuChoi: guiTuChoi,
   openViTri: openViTri, moVoVt: moVoVt, theTaiSan: theTaiSan, ttGocVN: ttGocVN, nutGhiCho: nutGhiCho, moAnhHet: moAnhHet, closeVt: closeVt, vtNgay: vtNgay, openCanhBao: openCanhBao, openThieu: openThieu,
-  openChuaGiao: openChuaGiao, openGiaoNghi: openGiaoNghi, openNhac: openNhac, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
+  openChuaGiao: openChuaGiao, openGiaoNghi: openGiaoNghi, openNhac: openNhac, moNhacNguoi: moNhacNguoi, setPtHi: setPtHi, togglePtNhac: togglePtNhac,
   toggleLegend: toggleLegend, closeLegend: closeLegend,
   ccSetStatus: ccSetStatus, ccSearch: ccSearch, aiSetKl: aiSetKl, aiSearch: aiSearch, moMap: moMap,
   toggleMatBang: toggleMatBang, setStHi: setStHi, togglePhong: togglePhong, moKhuMenu: moKhuMenu, nvXemHet: nvXemHet,
