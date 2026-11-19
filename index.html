@@ -4515,19 +4515,19 @@ const _xenang=(tilt,boxTilt,boxY)=>`<g transform="rotate(${tilt} 100 100)">
  </g>`+_hop(24,boxY,34,26,boxTilt);
 const _canh=n=>`<svg viewBox="0 0 200 140" class="hm-svg" role="img" aria-hidden="true">${n}</svg>`;
 // --- Các cảnh: {sai, dung} ---
-// 19/11 hạng mục #33 «hoàn thành công việc được phân công»: bảng việc QL giao (✓ / ô trống) + đồng hồ hạn.
-// Màu lấy biến chung qua currentColor (--muted xám, --good xong, --bad trễ) — không viết mã màu cứng.
+// 19/11 hạng mục #33 «Tuân thủ sự điều phối của cấp quản lý…» — mẫu 10 user duyệt: QL giao khu B, NV đứng sai khu C / đúng khu B.
+// Màu lấy biến chung qua currentColor (--accent QL, --muted khu, --bad sai, --good đúng) — không viết mã màu cứng.
 const _mau=(bien,noi)=>`<g style="color:var(--${bien})">${noi}</g>`;
-const _bang3=xong=>_mau('muted',`<rect x="34" y="34" width="76" height="88" rx="5" fill="white" stroke="currentColor" stroke-width="2.6"/>`
-  +`<rect x="58" y="28" width="28" height="12" rx="3" fill="currentColor"/>`+_tx(72,54,'VIỆC ĐƯỢC GIAO',6.5,'currentColor',800))
-  +xong.map((v,i)=>{ const y=64+i*18;
-    return _mau(v?'good':'muted',`<rect x="42" y="${y}" width="10" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/>`+(v?_tx(47,y+9,'✓',10,'currentColor',800):''))
-      +_mau('muted',`<path d="M58 ${y+5} h44" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".45"/>`); }).join('');
-const _dongho=(bien,chu)=>_mau(bien,`<circle cx="150" cy="64" r="18" fill="white" stroke="currentColor" stroke-width="3"/>`
-  +`<path d="M150 64 V52 M150 64 l9 5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>`+_tx(150,96,chu,8.5,'currentColor',800));
+const _txM=(x,y,t,fs)=>_tx(x,y,t,fs,'currentColor',800);
+const _nguoiNV=(x,y,bien,nhan)=>_mau(bien,`<circle cx="${x}" cy="${y}" r="7" fill="currentColor"/>`
+  +`<path d="M${x-11} ${y+31} q0 -20 11 -20 q11 0 11 20 z" fill="currentColor"/><rect x="${x-11}" y="${y+33}" width="22" height="11" rx="3" fill="currentColor"/>`)
+  +_tx(x,y+41.5,nhan,7,'white',800);
+const _khuVuc=(x,t,bien,lien)=>_mau(bien,`<rect x="${x}" y="40" width="56" height="78" rx="4" fill="none" stroke="currentColor" stroke-width="2.2"${lien?'':' stroke-dasharray="6 4"'}/>`+_txM(x+12,54,t,10));
+const _chipQL=()=>_mau('accent','<rect x="78" y="26" width="44" height="18" rx="9" fill="currentColor"/>')+_tx(100,38.5,'QL GIAO',7.5,'white',800);
+const _baKhu=bienB=>_khuVuc(14,'A','muted')+_khuVuc(72,'B',bienB,true)+_khuVuc(130,'C','muted')+_chipQL();
 const HM_CANH={
- giaoviec:{sai:_san()+_bang3([1,0,0])+_dongho('bad','quá hạn')+_mau('muted',_tx(100,136,'bỏ dở việc quản lý phân công',7.5,'currentColor',600))+_X(172,30),
-           dung:_san()+_bang3([1,1,1])+_dongho('good','đúng hạn')+_mau('muted',_tx(100,136,'làm đủ, hoàn thành đúng hạn',7.5,'currentColor',600))+_V(172,30)},
+ giaoviec:{sai:_san()+_baKhu('accent')+_nguoiNV(158,62,'bad','NV')+_X(178,24,7),
+           dung:_san()+_baKhu('good')+_nguoiNV(100,62,'good','NV')+_V(176,26)},
  sapxep:{sai:_san()+_ke(96)+_hop(28,66,30,28,-14)+_hop(66,58,34,36,8)+_hop(104,70,26,24,-6)+_hop(140,100,30,24,18)+_X(160,60),
          dung:_san()+_ke(96)+_hop(30,68,30,26)+_hop(64,68,30,26)+_hop(98,68,30,26)+_hop(132,68,30,26)+_V(168,42)},
  fefo:{sai:_san()+_hop(40,60,52,44)+_tx(66,86,'HSD 2027',9,'#7c3aed')+_hop(110,60,52,44)+_tx(136,86,'HSD 2026',9,'#b45309')+_tx(66,52,'NGOÀI')+_tx(136,52,'TRONG')+_X(100,118),
