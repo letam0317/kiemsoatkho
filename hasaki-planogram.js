@@ -764,7 +764,11 @@ var CTX_REQ = {
   canhbao:  { cot: ["vt", "tt", "pt"], loc: ["area", "pt"], pt: "Phụ trách" }
 };
 var COT_REQ = ["vt", "tt", "ai", "thuc", "luc", "pt", "anh"];
-function cotReq(){ var c = CTX_REQ[MODAL.ctx]; return c ? c.cot : COT_REQ; }
+function cotReq(){ var c = CTX_REQ[MODAL.ctx]; if (c) return c.cot; if (MODAL.cotHien) return MODAL.cotHien;
+  /* 19/11 ngoài Cần xử lý: cột không dòng nào có dữ liệu thì bỏ (vd «Không có ca làm việc»: chưa ai làm ⇒ không AI / Người thực hiện / Lúc / Ảnh) */
+  var B = MODAL.rowsHien || MODAL.base || [], co = { ai: B.some(function(r){ return !!aiOf(r); }), thuc: B.some(function(r){ return !!r.email; }),
+    luc: !la1Ngay() || B.some(function(r){ return !!r.at; }), anh: B.some(function(r){ return !!r.email || (r.anh || []).length; }) };
+  return COT_REQ.filter(function(k){ return !(k in co) || co[k]; }); }
 function theadReq(){ var c = CTX_REQ[MODAL.ctx] || {}, TH = { vt: "<th>Vị trí</th>", tt: "<th>Trạng thái</th>", ai: "<th>AI xét duyệt</th>", thuc: '<th class="nm">Người thực hiện</th>',
   luc: "<th>Lúc</th>", pt: '<th class="nm">' + esc(c.pt || "Phụ trách (dự kiến)") + "</th>", anh: "<th>Ảnh</th>" };
   return "<tr>" + cotReq().map(function(k){ return TH[k]; }).join("") + "</tr>"; }
@@ -1118,6 +1122,24 @@ var CSS = [
 ".hp-mtbl .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:650;}",
 ".hp-mtbl tbody.is-filtering{opacity:.45;transition:opacity .12s;}",
 ".hp-mtbl small{display:block;color:var(--muted,#9ca3af);font-size:10px;}",
+/* 19/11 thẻ điện thoại pop-up yêu cầu (#hpModal): lưới cố định, mỗi dòng 1 hàng — xem mRender */
+"#hpModal .hp-mtbl td.dt{display:none;}#hpModal .hp-mtbl td.mot-hang{white-space:nowrap;}#hpModal .hp-mtbl td{vertical-align:middle;}",
+/* đầu pop-up: tiêu đề 1 hàng (… khi chật); điện thoại: «Mở planogram» chỉ còn ↗, đệm gọn */
+"#hpModal .hp-modalhd>div:first-child{min-width:0;}#hpModal .hp-modalhd .mt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}",
+"@media(max-width:768px){#hpModal .hp-modalhd{padding:6px 8px 6px 16px;min-height:56px;box-sizing:border-box;}#hpModal .hp-mpg-chu{display:none;}" +
+  "#hpMPg{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:40px;font-size:16px!important;}}",
+".hp-msum{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}",
+"@media(max-width:768px){" +
+  "#hpModal table.mbcard tr{display:grid!important;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:2px;align-items:center;padding:8px 12px;}" +
+  "#hpModal table.mbcard td.pc{display:none!important;}" +
+  "#hpModal table.mbcard td.mb-hd{grid-column:1;grid-row:1;font-size:14px;line-height:22px;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;}" +
+  "#hpModal table.mbcard td.mb-tag{grid-column:2;grid-row:1;}" +
+  "#hpModal table.mbcard td.dt{display:block!important;grid-column:1;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;font-size:12px;line-height:22px;color:var(--muted);}" +
+  "#hpModal table.mbcard td.dt b{font-weight:600;color:var(--text);}" +
+  "#hpModal table.mbcard td.dt .badge{font-size:11px;padding:0 7px;line-height:18px;vertical-align:1px;}" +
+  "#hpModal table.mbcard td.c-anh{grid-column:2;grid-row:2/span 2;justify-self:end;align-self:center;}" +
+  "#hpModal table.mbcard td[colspan]{grid-column:1/-1;}" +
+"}",
 /* thumbnail ảnh báo cáo trong pop-up (lazy — chỉ tải khi cuộn tới) */
 ".hp-thumbs{display:inline-flex;align-items:center;gap:5px;}",
 ".hp-thumbs img{width:34px;height:34px;object-fit:cover;border-radius:7px;border:1px solid var(--border,#e8ecf1);cursor:zoom-in;display:block;transition:transform .16s cubic-bezier(.32,.72,0,1);background:color-mix(in srgb, var(--muted,#9ca3af) 14%, transparent);}",
@@ -1747,7 +1769,8 @@ var MODAL_HTML =
 '<div id="hpModal" class="hp-modal">' +
 '  <div class="hp-modalbox">' +
 '    <div class="hp-modalhd"><div><div class="mt" id="hpMtitle"></div><div class="mtsub" id="hpMsub"></div></div>' +
-'      <div style="display:flex;align-items:center;gap:8px;"><a id="hpMPg" class="hp-ext" target="_blank" rel="noopener" style="display:none;font-size:12px;white-space:nowrap;">Mở planogram ↗</a>' +
+'      <div style="display:flex;align-items:center;gap:8px;">' +
+'      <a id="hpMPg" class="hp-ext" target="_blank" rel="noopener" title="Mở planogram" aria-label="Mở planogram" style="display:none;font-size:12px;white-space:nowrap;"><span class="hp-mpg-chu">Mở planogram </span>↗</a>' +
 '      <button type="button" class="hsk-nut phu nho hp-mdong" onclick="HPLANOGRAM.closeModal()">Đóng</button></div></div>' +
 '    <div class="hp-mfilters" id="hpMFilters"></div>' +
 '    <div class="hp-msum" id="hpMSum"></div>' +
@@ -5112,7 +5135,7 @@ function openThieu(){
   showModal(dp.thieu, "Không có yêu cầu báo cáo vệ sinh · " + nhanKhoang() + (S.area ? (" · " + areaMeta(S.area).short) : ""), null, "miss");
 }
 function showModal(base, title, preset, mode, ctx){
-  MODAL.base = base || []; MODAL.preset = preset || null; MODAL.mode = mode || "loc"; MODAL.ctx = ctx || "";
+  MODAL.base = base || []; MODAL.preset = preset || null; MODAL.mode = mode || "loc"; MODAL.ctx = ctx || ""; MODAL.cotHien = null;
   /* 19/11: pop-up mới luôn mở với ngăn Bộ lọc ĐÓNG (loc-popup.js) — trước đây mở ở pop-up trước thì pop-up sau mở sẵn */
   var fM = $id("hpMFilters"); if (fM){ fM.classList.remove("loc-pop-mo"); var nM = fM.__locPop; if (nM){ nM.classList.remove("mo"); nM.setAttribute("aria-expanded", "false"); } }
   if (MODAL.mode === "req"){ canANH(); ganAnh(MODAL.base); }   // cột Ảnh của bảng yêu cầu (tab bậc 3)
@@ -5205,6 +5228,9 @@ function mRender(){
     return a.loc < b.loc ? -1 : a.loc > b.loc ? 1 : 0;
   });
   var out = [], sum;
+  /* 19/11 cột theo các dòng ĐANG HIỆN (sau lọc): đổi tập cột thì vẽ lại tiêu đề */
+  if (MODAL.mode === "req" && !CTX_REQ[MODAL.ctx]){ MODAL.cotHien = null; MODAL.rowsHien = rows; var csM = cotReq(); MODAL.rowsHien = null; MODAL.cotHien = csM;
+    var thM = theadReq(); if ($id("hpMHead").innerHTML !== thM) $id("hpMHead").innerHTML = thM; }
   if (MODAL.mode === "miss"){
     var cM = { chua: 0, dung: 0 }, nD = ycDates().length;   // tab yêu cầu chỉ lưu nD ngày gần nhất
     for (var im = 0; im < rows.length; im++){ var rm = rows[im];
@@ -5232,8 +5258,11 @@ function mRender(){
       if (out.length < CAP){
         var a = areaMeta(r.area);
         var thuc = r.email ? ('<span title="' + esc(r.email) + '">' + esc(tenNm(r.email) || r.email) + '</span>') : '<span class="mut">—</span>';
+        /* 19/11 user «CẤM xuống dòng khi vẫn ghi ngang được»: tên + đi làm/nghỉ CÙNG 1 hàng; phụ trách = người làm ⇒ không lặp tên */
+        var ttCa = r.ptDiLam ? "đi làm" + (r.ptCi ? " " + esc(r.ptCi) : "") : "nghỉ";
         var ptTxt = r.pt
-          ? ('<span title="' + esc(r.pt) + '">' + esc(ptTen(r)) + '</span><small>' + (r.ptDiLam ? ("đi làm" + (r.ptCi ? " · vào " + esc(r.ptCi) : "")) : "nghỉ / không chấm công") + '</small>')
+          ? ((r.email && String(r.email).toLowerCase() === String(r.pt).toLowerCase() ? '<span class="mut" title="' + esc(r.pt) + '">người làm</span>'
+              : '<span title="' + esc(r.pt) + '">' + esc(ptTen(r)) + '</span>') + ' <span class="mut">· ' + ttCa + '</span>')
           : '<span class="mut">chưa có người nhận</span>';
         var thumbs = r.anh.length
           ? ('<span class="hp-thumbs">' +
@@ -5251,18 +5280,30 @@ function mRender(){
         var O = {
           vt: '<td class="mb-hd"><span class="hp-dot" style="background:' + a.c + '"></span> ' + loMa(r.loc, r.ngay) + muiPg(pgDetailUrl(r.id), "Mở yêu cầu #" + r.id + " trên planogram") + '</td>',
           tt: '<td class="mb-tag">' + chipTT(r) + '</td>',
-          ai: '<td' + (aim ? ' data-lb="AI"' : ' class="mb-0"') + '>' + aiCell + '</td>',
-          thuc: '<td class="nm' + (r.email ? "" : " mb-0") + '" data-lb="Người thực hiện">' + thuc + '</td>',
-          luc: '<td' + (r.at || !la1Ngay() ? ' data-lb="Lúc"' : ' class="mb-0"') + '>' + luc + '</td>',
-          pt: '<td class="nm" data-lb="' + esc((CTX_REQ[MODAL.ctx] || {}).pt || "Phụ trách") + '">' + ptTxt + '</td>',
-          anh: '<td' + (r.anh.length ? ' data-lb="Ảnh"' : ' class="mb-0"') + '>' + thumbs + '</td>'
+          ai: '<td class="pc">' + aiCell + '</td>',
+          thuc: '<td class="nm pc mot-hang">' + thuc + '</td>',
+          luc: '<td class="pc">' + luc + '</td>',
+          pt: '<td class="nm pc mot-hang">' + ptTxt + '</td>',
+          anh: '<td class="c-anh' + (r.anh.length ? "" : " mb-0") + '">' + thumbs + '</td>'
         };
-        out.push('<tr>' + cotReq().map(function(k){ return O[k]; }).join("") + '</tr>');
+        /* 19/11 user (thẻ điện thoại vỡ khung + «CẤM xuống dòng khi vẫn ghi ngang được» + «còn trống mà không khít khung»): thẻ = lưới cố định
+           dòng 1 mã ↗ | trạng thái · dòng 2 AI · người làm · giờ | ảnh · dòng 3 phụ trách · đi làm/nghỉ — mỗi dòng 1 hàng (nowrap, tên 2 chữ cuối, … khi chật).
+           Người làm = phụ trách thì không lặp dòng 3. Ô .dt chỉ hiện ở điện thoại, ô .pc chỉ hiện ở máy tính. */
+        var cs = cotReq(), emL = String(r.email || "").toLowerCase(), ptL = String(r.pt || "").toLowerCase();
+        var dtTh = (cs.indexOf("thuc") >= 0 && (r.email || aim)) ? '<td class="dt dt-th">' + (aim ? aiCell + " " : "") +
+          (r.email ? '<b>' + esc(ten2(tenNm(r.email) || r.email)) + '</b>' + (r.at ? " · " + esc(String(r.at).slice(11, 16)) : "") : "") + '</td>' : "";
+        var dtPt = (cs.indexOf("pt") >= 0 && !(r.email && emL === ptL)) ? '<td class="dt dt-pt">' + (r.pt
+          ? esc((CTX_REQ[MODAL.ctx] || {}).pt || "Phụ trách") + ' <b>' + esc(ten2(ptTen(r))) + '</b> · ' + (r.ptDiLam ? "đi làm" + (r.ptCi ? " " + esc(r.ptCi) : "") : "nghỉ")
+          : '<span class="mut">chưa có người nhận</span>') + '</td>' : "";
+        out.push('<tr>' + cs.map(function(k){ return O[k]; }).join("") + dtTh + dtPt + '</tr>');
       }
     }
     /* mục Cần xử lý: mọi dòng cùng 1 nhóm (đều chưa vệ sinh) ⇒ tách Đã / Chưa vô nghĩa, chỉ đếm */
-    sum = nf(rows.length) + " / " + nf(MODAL.base.length) + " yêu cầu" + (CTX_REQ[MODAL.ctx] ? "" : " · Đã vệ sinh: " + nf(cnt.da) +
-      (laHomNay() ? " · Chưa (có đi làm): " + nf(cnt.nhac) + " · Không có ca: " + nf(cnt.khong) : " · Chưa vệ sinh: " + nf(cnt.chua)));
+    /* 19/11: đang lọc (nhãn tiêu đề đã nói nhóm) hoặc mục Cần xử lý ⇒ chỉ đếm; còn lại tách nhóm, BỎ nhóm 0 — dòng tóm tắt luôn 1 hàng */
+    var dangLocM = !!(MODAL.preset || q || state.some(function(f){ return f.v; }));
+    var tach = [["Đã vệ sinh", cnt.da]].concat(laHomNay() ? [["Chưa · đi làm", cnt.nhac], ["Chưa · nghỉ", cnt.khong]] : [["Chưa vệ sinh", cnt.chua]])
+      .filter(function(x){ return x[1] > 0; }).map(function(x){ return x[0] + " " + nf(x[1]); });
+    sum = nf(rows.length) + " / " + nf(MODAL.base.length) + " yêu cầu" + (CTX_REQ[MODAL.ctx] || dangLocM || tach.length < 2 ? "" : " · " + tach.join(" · "));
     var nC = cotReq().length;
     if (rows.length > CAP) out.push('<tr><td colspan="' + nC + '" class="empty">Hiển thị ' + nf(CAP) + ' / ' + nf(rows.length) + ' dòng</td></tr>');
     if (!out.length) out.push('<tr><td colspan="' + nC + '" class="empty">Không có dòng phù hợp</td></tr>');
