@@ -3,7 +3,7 @@
  * Đo 375×771: khối lọc Planogram 32% · Tồn kho chính xác 21% · Tồn bất thường 23% màn (+ đầu pop-up ⇒ còn ~1/2 cho dữ liệu).
  * Cùng MẪU nút ở cấp trang (index.html .panel-head .btn-filter): hàng đầu = số dòng (msum) | nút «Bộ lọc» bên phải (28 px, mũi tên xoay),
  * bấm thì khối lọc trượt xuống (popIn); có điều kiện ⇒ «Bộ lọc · đang lọc» + màu nhấn; ✕ Tắt lọc do tat-loc.js tự gắn (khung .xx-modalbox).
- * Áp CHUNG cho mọi khối .hp-mfilters / .hk-mfilters / .ht-mfilters (pop-up module mới cùng khuôn tự có). Máy tính: không đổi gì (hàng = display:contents).
+ * Áp CHUNG cho mọi khối .hp-mfilters / .hk-mfilters / .ht-mfilters (pop-up module mới cùng khuôn tự có). 19/11: cả máy tính (trước chỉ điện thoại).
  * Không sửa từng module: khối lọc vẫn do module vẽ lại (innerHTML) — nút nằm ngoài khối nên không mất. */
 (function () {
   if (window.__LOC_POPUP) return; window.__LOC_POPUP = 1;
@@ -37,8 +37,8 @@
   function quet() { [].forEach.call(document.querySelectorAll(KHOI), gan); }
   var hT = 0; function hen() { clearTimeout(hT); hT = setTimeout(quet, 80); }
   var st = document.createElement("style");
-  st.textContent = ".loc-pop-hang{display:contents}.loc-pop-nut{display:none}" +
-    "@media (max-width:768px){" +
+  /* 19/11 user (pop-up Planogram máy tính: «các mục này gom thành nút bộ lọc luôn — bao gồm cả logic hiển thị»): áp MỌI cỡ màn, không còn chỉ ≤768px */
+  st.textContent = ".loc-pop-box{position:relative}" +   /* 19/11 máy tính: ngăn kéo neo theo khung pop-up, không tràn ra lớp phủ toàn màn */
     ".loc-pop-box>.loc-pop-hang{display:flex;align-items:center;gap:8px;order:1;padding-right:12px;border-bottom:1px solid var(--border,#e8ecf1)}" +
     ".loc-pop-hang>.hp-msum,.loc-pop-hang>.hk-msum,.loc-pop-hang>.ht-msum{flex:1 1 auto;min-width:0;border-bottom:0!important}" +
     ".loc-pop-box>.hp-mfilters,.loc-pop-box>.hk-mfilters,.loc-pop-box>.ht-mfilters{order:2}" +
@@ -57,7 +57,7 @@
     "transform:translateY(-1.5px) rotate(45deg);transition:transform .22s var(--ez-apple,ease);flex:0 0 auto}" +
     ".loc-pop-nut.mo::after{transform:translateY(1.5px) rotate(-135deg)}" +
     ".loc-pop-nut:hover,.loc-pop-nut.mo{border-color:var(--border);color:var(--text);background:var(--ad-re,var(--hover))}" +   /* 07/11 nút Bộ lọc mới: màu thường; đang lọc = .tl-dang (tat-loc.js) */
-    ".loc-pop-nut::before{content:'';position:absolute;left:-2px;right:-2px;top:-6px;bottom:-6px}}";
+    ".loc-pop-nut::before{content:'';position:absolute;left:-2px;right:-2px;top:-6px;bottom:-6px}";
   (document.head || document.documentElement).appendChild(st);
   /* pop-up module dựng muộn (tải module khi mở mục) + khối lọc vẽ lại mỗi lần mở + ô chọn đặt giá trị bằng mã (không bắn input) */
   new MutationObserver(function (ms) { if (ms.some(function (m) { return !(m.target.closest && m.target.closest(".loc-pop-nut")); })) hen(); })
