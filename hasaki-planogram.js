@@ -1909,13 +1909,26 @@ var CACHE_V = "hpc2:", CACHE_TTL = 30 * 60 * 1000;
 var CACHE_LOCAL_TABS = [TAB_ANH, TAB_ANH_CU];
 var CACHE_ANH_TTL = 2 * 60 * 60 * 1000;   // 2 giờ cho cache ảnh
 function laTabLocal(tab){ return CACHE_LOCAL_TABS.indexOf(tab) >= 0; }
+/* 19/11 user «tăng tốc tải dữ liệu vệ sinh — xuống 1 s»: đo audit-dc lần mở đầu 2,3–2,5 s = trần Apps Script (readTab 302 ~1,4 s + echo
+   ~0,4 s, không phá được); có cache 0,3 s. Cache PHIÊN mất khi đóng tab / mở lại app ⇒ lần mở nào cũng chờ 2,5 s. Nay 5 nguồn màn đầu
+   ghi THÊM ổ trình duyệt (localStorage), dùng lại trong CÙNG NGÀY giờ VN ≤ 12 giờ: vẽ ngay bản gần nhất (chip «Cập nhật HH:MM» nói đúng giờ
+   dữ liệu) rồi vẫn gọi bản mới như cũ. Nguồn nặng (AI 1 MB, Lịch sử 0,6 MB) không thuộc màn đầu ⇒ không giữ ổ (trần 5 MB chung trang).
+   Từ tab khác: index.html gọi napNen() lúc rảnh để ổ luôn có bản < 30'. */
+var CACHE_DIA_V = "hpd1:", CACHE_DIA_TTL = 12 * 60 * 60 * 1000;
+function laTabDia(tab){ return [TAB_YC, TAB, TAB_PC, TAB_CC, TAB_CCN].indexOf(tab) >= 0; }
+function ngayVNc(t){ return new Date(t + 7 * 36e5).toISOString().slice(0, 10); }
+function cacheDia(tab){
+  try{ var o = JSON.parse(localStorage.getItem(CACHE_DIA_V + tab) || "null");
+    return (o && o.H && ngayVNc(o.at) === ngayVNc(Date.now()) && Date.now() - o.at < CACHE_DIA_TTL) ? o : null; }catch(e){ return null; }
+}
 function cacheGet(tab){
   try{
     var raw = sessionStorage.getItem(CACHE_V + tab);
     var ttl = laTabLocal(tab) ? CACHE_ANH_TTL : CACHE_TTL;
     if (!raw && laTabLocal(tab)) raw = localStorage.getItem(CACHE_V + tab);
     var o = JSON.parse(raw || "null");
-    return (o && o.H && Date.now() - o.at < ttl) ? o : null;
+    if (o && o.H && Date.now() - o.at < ttl) return o;
+    return laTabDia(tab) ? cacheDia(tab) : null;
   }catch(e){ return null; }
 }
 function cacheSet(tab, H, rows, ts){
@@ -1925,6 +1938,7 @@ function cacheSet(tab, H, rows, ts){
     if (laTabLocal(tab)){
       try{ localStorage.setItem(CACHE_V + tab, payload); }catch(_){}
     }
+    if (laTabDia(tab)){ try{ localStorage.setItem(CACHE_DIA_V + tab, payload); }catch(_){} }
   }
   catch(e){ /* hết quota / chế độ riêng tư — bỏ cache, luồng chính không đổi */ }
 }
@@ -2091,9 +2105,10 @@ function loadData(){
     st.style.display = "block";
     st.innerHTML = '<div class="hp-spin"></div>Đang tải dữ liệu vệ sinh…';
     /* KHÔNG xoá trắng 2 cột — đổ skeleton giữ chỗ để khung không co về 0 rồi bung ra (giật) */
+    var wbL = traLocVe();   // TRƯỚC khi đổ khung chờ vào thẻ Tiến độ (thanh lọc đang nằm trong thẻ đó)
     $id("hpToday").innerHTML = SK_TODAY; $id("hpMap").innerHTML = SK_MAP;
     if ($id("hpTodo")) $id("hpTodo").innerHTML = SK_TODO;
-    $id("hpAI").innerHTML = ""; $id("hpWhBar").innerHTML = "";
+    $id("hpAI").innerHTML = ""; wbL.innerHTML = "";
   }
   /* 2) BẬC 1: 3 nguồn dựng màn hình (CHAMCONG + NHATKY để dành bậc 3) */
   bac1();
@@ -2981,6 +2996,7 @@ function renderToday(){
        Còn đang tải thì GIỮ SKELETON, tuyệt đối không báo "chưa có dữ liệu": vài giây sau tab
        về là có đủ, báo sớm khiến người dùng tưởng mất dữ liệu và đi chạy lại bộ sync. */
     var todo0 = $id("hpTodo");
+    traLocVe();
     if (S.yc.dang){ box.innerHTML = SK_TODAY; if (todo0) todo0.innerHTML = SK_TODO; return; }
     if (todo0) todo0.innerHTML = "";
     box.innerHTML = S.ok ? ('<section class="hp-panel hp-fade"><div class="hp-empty">Chưa có dữ liệu yêu cầu vệ sinh trong ngày (tab <code>' + esc(TAB_YC) + '</code>) — chạy <code>sync-vesinh-all.js</code> hoặc bấm "Cập nhật ngay" ở tab Tổng quan.</div></section>') : "";
@@ -3050,6 +3066,15 @@ function renderToday(){
 }
 /* 12/10: dời CHÍNH phần tử #hpWhBar (ô Ngày dùng chung taoBoLocNgay + chip khu) vào cột trái thẻ tiến độ — không dựng lại nên
    lịch, trạng thái và sự kiện còn nguyên; renderWhBar() vẫn tìm theo id như cũ. */
+/* 19/11 user «Cannot set properties of null (setting 'innerHTML') — thử tải lại trang»: thanh lọc #hpWhBar sống TRONG thẻ Tiến độ
+   (ganLocVaoThe) ⇒ quay lại tab sau > 30' (cache phiên hết hạn) loadData đổ khung chờ vào #hpToday là xoá luôn thanh lọc, dòng sau
+   tìm #hpWhBar = null ⇒ init văng. Trước MỌI lần đổ đè thẻ Tiến độ: trả thanh lọc về chỗ gốc (trên #hpTop), mất thì dựng lại. */
+function traLocVe(){
+  var wb = $id("hpWhBar"), top = $id("hpTop");
+  if (!wb){ wb = document.createElement("div"); wb.className = "hp-whbar"; wb.id = "hpWhBar"; }
+  if (top && top.parentNode && wb.nextSibling !== top) top.parentNode.insertBefore(wb, top);
+  return wb;
+}
 function ganLocVaoThe(wb){
   var slot = $id("hpLocSlot");
   if (slot && wb && wb.parentNode !== slot) slot.appendChild(wb);
@@ -3201,7 +3226,7 @@ function render(){
   var st = $id("hpState"); if (!st) return;
   var btn = $id("hpReload"); if (btn) btn.disabled = false;
   if (!S.ok && !S.yc.ok && !S.yc.dang){   // YEUCAU còn đang tải thì chưa kết luận "không có dữ liệu"
-    $id("hpWhBar").innerHTML = "";
+    traLocVe().innerHTML = "";
     $id("hpMap").innerHTML = ""; $id("hpToday").innerHTML = "";   // dọn skeleton giữ chỗ
     st.style.display = "block";
     /* NÓI ĐÚNG NGUYÊN NHÂN (12/08/2026): trước đây mọi kiểu hỏng đều in "Chưa có dữ liệu trong
@@ -5627,6 +5652,13 @@ function napVo(){
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitMaps(); });
     window.addEventListener("load", function(){ fitMaps(); });
 }
+/* 19/11 hâm nóng từ tab khác (index.html hamNongPlanogram): CHỈ gọi Apps Script lấy 4 nguồn màn đầu để ghi cache (phiên + ổ) —
+   không vẽ, không khởi động module. Nguồn nào còn bản < 30' thì bỏ qua. Callback tên riêng (đuôi N) để không đè lượt của module. */
+function napNen(){
+  if (_booted) return;
+  var can = [TAB_YC, TAB, TAB_PC, new Date().getHours() < 9 ? TAB_CCN : TAB_CC].filter(function(t){ var c = cacheGet(t); return !c || Date.now() - c.at > 30 * 60 * 1000; });
+  can.forEach(function(t, i){ setTimeout(function(){ if (_booted) return; var n = nguonOf(t); if (n) loadTab(n.tab, n.cb + "N", function(){}, function(){}); }, i * 250); });
+}
 function init(pane){
   PANE = pane;
   if (!_booted){
@@ -5643,7 +5675,7 @@ function init(pane){
 
 window.HPLANOGRAM = {
   aiThem: function(){ S.aiSo = (S.aiSo || 20) + 20; renderAiModal(); },   // 09/11 «Xem thêm 20 phiếu (còn n)»
-  init: init, reload: loadData, setArea: setArea, moKhuMB: moKhuMB, setNgay: setNgay, setKhoang: setKhoang, chonNgay: chonNgay, moLocNgay: moLocNgay, dongLocNgay: dongLocNgay, setListMode: setListMode, toggleLoc: toggleLoc,
+  init: init, napNen: napNen, reload: loadData, setArea: setArea, moKhuMB: moKhuMB, setNgay: setNgay, setKhoang: setKhoang, chonNgay: chonNgay, moLocNgay: moLocNgay, dongLocNgay: dongLocNgay, setListMode: setListMode, toggleLoc: toggleLoc,
   openAll: openAll, openArea: openArea, openStatus: openStatus, openName: openName, openYc: openYc, openYcAi: openYcAi, closeModal: closeModal,
   openAiList: openAiList, closeAiModal: closeAiModal, renderAiModal: renderAiModal,
   comboInput: comboInput, comboMenu: comboMenu, quick: quick, openAnh: openAnh, anhLui: anhLui,
