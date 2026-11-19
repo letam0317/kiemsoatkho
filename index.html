@@ -66,7 +66,7 @@ window.GOC_DL=/\.pages\.dev$|^(localhost|127\.0\.0\.1)$/.test(location.hostname)
   try{
     var tb=null; try{ tb=new URLSearchParams(location.search).get('tab'); }catch(e){}
     if(tb!=='planogram' || /khoa=/.test(location.hash||'')) return;
-    var V='20261119c';   // PHẢI khớp s.src trong moHasakiPlanogram()
+    var V='20261119d';   // PHẢI khớp s.src trong moHasakiPlanogram()
     var l=document.createElement('link'); l.rel='preload'; l.as='script'; l.href='hasaki-planogram.js?v='+V; document.head.appendChild(l);
     var GAS='https://script.google.com/macros/s/AKfycbzIE6E68VYxS0Zm1vj8Ttfd790-JYolO1C4rMoEPj7FdNOWLPb23QpUHgIZ2T_dlZPJRQ/exec';
     var khoa=''; try{ khoa=localStorage.getItem('tb-khoa')||(localStorage.getItem('tk-phien')?'tk:'+localStorage.getItem('tk-phien'):''); }catch(e){}   // 22/10 phiên tài khoản thay mã thiết bị
@@ -821,6 +821,19 @@ tr.tb-dangxem>td,.cl-item.tb-dangxem{background:var(--ad-chon,color-mix(in srgb,
   #lbCaption .lb-h1 .gach{display:none;} #lbCaption .lb-h1 .ma{display:block; font-size:11px; line-height:15px;}
   #lbCaption .lb-h1,#lbCaption .lb-h2{white-space:nowrap;}
   #lbDai{padding:6px 8px 10px;} #lbDai .tr{gap:8px;} #lbDai .oo{width:40px; height:40px;}
+}
+
+/* 19/11 user «nút chuyển ảnh về trước / ra sau đồng bộ cả link theo mẫu thanh bên Planogram, cả web / điện thoại»: MỌI pop-up ảnh
+   (kiểu A: Vi phạm, Hạng mục, Kiểm kê, Bảo dưỡng…) dùng CHUNG mũi tên tròn 40 px của kiểu B — máy tính nằm ở lề (ảnh chừa 88 px mỗi bên, không đè),
+   điện thoại nền tối đè mép ảnh; bỏ nút chữ «Trước / Sau». */
+#lightbox .lb-btn{width:40px; height:40px; padding:0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; opacity:1;
+  background:color-mix(in srgb,white 16%,transparent); border:1px solid color-mix(in srgb,white 25%,transparent);}
+#lightbox .lb-btn:hover{background:color-mix(in srgb,white 28%,transparent); color:white; border-color:color-mix(in srgb,white 40%,transparent);}
+#lightbox #lbPrev{left:24px;} #lightbox #lbNext{right:24px;}
+#lightbox:not(.lb-b) #lbContent,#lightbox:not(.lb-b) #lbContent img,#lightbox:not(.lb-b) #lbContent video{max-width:calc(100vw - 176px);}
+@media (max-width:600px){
+  #lightbox .lb-btn{background:color-mix(in srgb,black 55%,transparent);} #lightbox #lbPrev{left:12px;} #lightbox #lbNext{right:12px;}
+  #lightbox:not(.lb-b) #lbContent,#lightbox:not(.lb-b) #lbContent img,#lightbox:not(.lb-b) #lbContent video{max-width:calc(100vw - 16px);}
 }
 
 /* mượt khi mở/chuyển báo cáo */
@@ -2158,10 +2171,10 @@ window.hxNoiLai = function(){
 <div id="lightbox">
   <button id="lbClose">Đóng</button>
   <div id="lbCount"></div>
-  <button class="lb-btn" id="lbPrev">Trước</button>
+  <button class="lb-btn" id="lbPrev" aria-label="Ảnh trước"></button>
   <div id="lbContent"></div>
   <div id="lbCaption"></div>
-  <button class="lb-btn" id="lbNext">Sau</button>
+  <button class="lb-btn" id="lbNext" aria-label="Ảnh sau"></button>
 </div>
 
 <!-- ===== POP-UP MINH HOẠ HẠNG MỤC (SAI / ĐÚNG) ===== -->
@@ -3810,7 +3823,8 @@ function openLB(list, idx, opt){
   lb.classList.toggle('lb-b', !!lbOpt); lb.classList.toggle('lb-b-ngay', !!(lbOpt && lbOpt.ngay));
   $('lbPrev').style.display = multi?'':'none';
   $('lbNext').style.display = multi?'':'none';
-  $('lbPrev').innerHTML = lbOpt ? LB_MUI(-1) : 'Trước'; $('lbNext').innerHTML = lbOpt ? LB_MUI(1) : 'Sau';
+  $('lbPrev').innerHTML = LB_MUI(-1); $('lbNext').innerHTML = LB_MUI(1);   // 19/11: mọi kiểu cùng mũi tên tròn (mẫu thanh bên Planogram)
+  if(!lbOpt){ $('lbPrev').classList.remove('tat'); $('lbNext').classList.remove('tat'); }   // kiểu A quay vòng — không mờ đầu/cuối
   $('lbPrev').setAttribute('aria-label','Ảnh trước'); $('lbNext').setAttribute('aria-label','Ảnh sau');
   let dai=$('lbDai'); if(!dai){ dai=document.createElement('div'); dai.id='lbDai'; dai.className='lb-dai'; lb.appendChild(dai);
     dai.addEventListener('click', e=>{ e.stopPropagation(); const o=e.target.closest('[data-dai]'); if(!o || !lbOpt) return; lbIdx=lbOpt.dai[+o.dataset.dai].dau; renderLB(); });
@@ -4140,19 +4154,34 @@ function moHasakiMayTram(){
     .catch(e=>{ _mtNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
 }
 let _hpNap=null;
-function moHasakiPlanogram(){
-  const pane=$('pane-planogram');
+/* 19/11 user «tải dữ liệu vệ sinh xuống 1 s»: Apps Script lần đầu ~2,3 s là trần ⇒ đang ở tab khác, trang rảnh 3 s thì nạp sẵn module +
+   HPLANOGRAM.napNen() (chỉ ghi cache, không vẽ) — bấm sang Planogram là vẽ ngay từ cache (~0,3 s). Chỉ tài khoản có quyền Planogram,
+   công ty hasaki, khi ổ chưa có bản < 30' (tránh dồn tải Apps Script). */
+function hamNongPlanogram(){
+  try{
+    if(CTY_ID!=='hasaki' || !(window.TK && window.TK.nguoi && typeof window.tkCo==='function' && window.tkCo('r.planogram'))) return;
+    if((document.querySelector('.tab.active')||{dataset:{}}).dataset.tab==='planogram') return;
+    const o=JSON.parse(localStorage.getItem('hpd1:VESINH-YEUCAU')||'null'); if(o && Date.now()-o.at<30*60e3) return;
+  }catch(e){ return; }
+  napModPlanogram().then(()=>window.HPLANOGRAM && window.HPLANOGRAM.napNen && window.HPLANOGRAM.napNen()).catch(()=>{});
+}
+window.addEventListener('load', ()=>setTimeout(()=>{ ('requestIdleCallback' in window) ? requestIdleCallback(hamNongPlanogram,{timeout:4000}) : hamNongPlanogram(); }, 3000));
+function napModPlanogram(){
   if(!_hpNap){
-    pane.innerHTML='<div class="panel" style="margin-top:14px;padding:18px 16px">'+
-      '<div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:54%"></div>'+
-      '<div class="sk sk-line" style="width:62%"></div></div>';
     _hpNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20261119c';   // khớp V ở <head>
+      const s=document.createElement('script'); s.src='hasaki-planogram.js?v=20261119d';   // khớp V ở <head>
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-planogram.js'));
       document.body.appendChild(s);
     });
   }
-  _hpNap.then(()=>window.HPLANOGRAM && window.HPLANOGRAM.init(pane))
+  return _hpNap;
+}
+function moHasakiPlanogram(){
+  const pane=$('pane-planogram');
+  if(!_hpNap) pane.innerHTML='<div class="panel" style="margin-top:14px;padding:18px 16px">'+
+      '<div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:54%"></div>'+
+      '<div class="sk sk-line" style="width:62%"></div></div>';
+  napModPlanogram().then(()=>window.HPLANOGRAM && window.HPLANOGRAM.init(pane))
     .catch(e=>{ _hpNap=null; pane.innerHTML='<div class="panel" style="margin-top:14px;padding:24px;text-align:center;color:var(--muted)">'+esc(e.message)+' — thử tải lại trang.</div>'; });
 }
 /* 15/10 user «vì sao chưa đăng nhập mà xem được nhật ký?»: Xác minh + Máy trạm CHỈ mở khi đã đăng nhập tài khoản có quyền r.xacminh
