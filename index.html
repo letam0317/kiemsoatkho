@@ -1089,6 +1089,24 @@ thead th.c-loi, tbody td.c-loi{max-width:var(--loi-w);}   /* 21/10: theo vạch 
 .kpi-top .kpi-rank{color:var(--bad);}
 /* 09/11 tiêu đề pop-up task của 1 NV (Tổng kết): ảnh + 2 hàng chữ, cắt «…» thay vì cuộn */
 .st-ng{display:flex;align-items:center;gap:10px;min-width:0}
+/* 20/11 Mẫu 2 — dòng thời gian dọc trong pop-up luỹ kế (#statModal) */
+.st-sh{display:none} @media (max-width:700px){ .st-fu{display:none} .st-sh{display:inline} }
+.vtl{display:flex;flex-direction:column;padding:6px 20px 10px 4px}
+.vtl .vd-lan{white-space:nowrap}
+.vtl-dong{display:flex;gap:14px;cursor:pointer}
+.vtl-moc{flex:none;width:78px;position:relative;display:flex;flex-direction:column;align-items:flex-end;gap:4px;padding:12px 16px 0 0}
+.vtl-moc::before{content:"";position:absolute;right:-5px;top:17px;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--hover);z-index:1}
+.vtl-moc::after{content:"";position:absolute;right:-1px;top:31px;bottom:-17px;width:2px;background:var(--border)}
+.vtl-dong:last-child .vtl-moc::after{display:none}
+.vtl-nd{flex:1;min-width:0;padding:10px 8px 12px;border-bottom:1px solid var(--border)}
+.vtl-dong:last-child .vtl-nd{border-bottom:0}
+.vtl-dong:hover .vtl-nd{background:var(--hover)}
+.vtl-h1{display:flex;align-items:center;gap:10px;margin-bottom:4px;min-width:0}
+.vtl-vt{font-family:ui-monospace,Consolas,monospace;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.vtl-ng{font-weight:600}
+.vtl-kpi{margin-left:auto;white-space:nowrap;padding-left:6px}
+.vtl-loi{color:var(--text);font-size:13px;line-height:1.45}
+@media (max-width:700px){ .vtl-dong{gap:12px} .vtl{padding:4px 12px 10px 6px} .vtl-moc{width:64px;padding-right:12px} .vtl-kpi .muted{display:none} .vtl-h1{gap:6px} .vtl-vt{font-size:11.5px} .vtl-loi{font-size:12.5px} }
 .st-av{flex:none;width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;background:var(--surface2);color:var(--muted);font-size:14px;font-weight:600}
 .st-ng-t{display:flex;flex-direction:column;min-width:0}
 .st-ng-t b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1749,8 +1767,8 @@ body.side-anim:has(.wrap :is([class*="modal"],[id$="modal"],[id$="Modal"],#light
 <style>body.hx-an .tab[data-tab="xacminh"]{display:none}</style>
 <!-- 12/10 giao diện Ant Design: LIVE mặc định (user "theo ant design chưa live"); nạp ĐỒNG BỘ ở head để khung hình đầu đã đúng kiểu, tắt trong Cài đặt -->
 <script>window.AD_BI_DANH={"tonkho/kiemke":"kk","tonkho/batthuong":"kk#pane-htonbat"};   /* 15/10 link cũ → mục gộp «Tồn kho chính xác» */ window.AD_TEN='Audit Retail'; window.AD_CHUYEN={ten:'Audit Factory', app:'factory'};</script>   <!-- 13/10 user: Audit Hasaki → Audit Retail + nút sang Factory cuối thanh bên -->
-<script src="tien-ich.js?v=20261020a"></script><script src="anh-nv.js?v=20261105a"></script><!-- 05/11 ảnh đại diện NV toàn dự án: vòng tròn [data-anh-nv] tự thay ảnh --><!-- 20/10 tiện ích chung: esc/$id/hm/ngayVN — nạp TRƯỚC mọi mô-đun -->
-<script src="hasaki-giaodien-antd.js?v=20261115a"></script>
+<script src="tien-ich.js?v=20261020a"></script><script src="anh-nv.js?v=20261120a"></script><!-- 05/11 ảnh đại diện NV toàn dự án: vòng tròn [data-anh-nv] tự thay ảnh --><!-- 20/10 tiện ích chung: esc/$id/hm/ngayVN — nạp TRƯỚC mọi mô-đun -->
+<script src="hasaki-giaodien-antd.js?v=20261120b"></script>
 <script src="tai-khoan.js?v=20261110g"></script>   <!-- 14/10 đăng nhập + phân quyền (dùng chung Retail/Factory) -->
 <script src="tat-loc.js?v=20261118a" defer></script>
 <script src="lich-su-ben.js?v=20261110g" defer></script><!-- 10/11 tab Lịch sử thanh bên (lịch tháng + Sửa chữa) + pop-up ảnh kiểu B — dùng chung Planogram + Bảo dưỡng -->
@@ -3285,21 +3303,23 @@ function moKpiChiTiet(loai,idx){
   if(loai==='nv'){
     // lần của TỪNG lượt theo thứ tự thời gian của chính NV này trong tháng -> %KPI theo hạng mục
     const thuTu=new Map(); (x.list||[]).slice().sort((a,b)=>ngayMs(a[iNgayVP])-ngayMs(b[iNgayVP])).forEach((r,i)=>thuTu.set(r,i+1));
-    kpiOf=r=>{ const lan=thuTu.get(r)||1; return fmtK(kpiTheoLoi(r[iLoi],lan),lan); };
+    kpiOf=r=>{ const lan=thuTu.get(r)||1; return fmtK(kpiTheoLoi(r[iLoi],lan)); };   // 20/11 Mẫu 2: «Lần n» đã ở mốc trục, không lặp «(lần n)»
   }else{
     // QL: −0.2%/lượt xác minh được (task có mã NV), −1%/lượt không xác minh được
     kpiOf=r=>codeVP(r)?'<span class="kpi-neg">−0,2%</span> <span class="muted" style="font-size:11.5px">(XM được)</span>'
                       :'<span class="kpi-neg">−1%</span> <span class="muted" style="font-size:11.5px">(không XM)</span>';
   }
-  /* 09/11 user: tiêu đề = 2 hàng — trên: ảnh + họ tên đầy đủ, mã NV (đậm) · dưới: «Tháng 11/2026 ghi nhận 1 task» (mờ); thẳng hàng, không cuộn */
+  /* 09/11 user: tiêu đề = 2 hàng — trên: ảnh + họ tên đầy đủ, mã NV (đậm) · dưới: «Tháng 11/2026 ghi nhận 1 task» (mờ); thẳng hàng, không cuộn
+     20/11 user duyệt Mẫu 2 (dòng thời gian dọc): QL trực tiếp CHUNG mọi lần ⇒ lên dòng mờ (điện thoại: 2 chữ cuối), không lặp ở từng lần */
+  const qls=loai==='nv'?[...new Set(rows.map(r=>String(iQLTT>=0?r[iQLTT]||'':'').trim()).filter(Boolean))]:[];
+  const ql1=qls.length===1?qls[0]:'', ten2=t=>String(t).trim().split(/\s+/).slice(-2).join(' ');
+  const phu='<span class="st-fu">Tháng '+thang+'/'+nam+' ghi nhận '+rows.length+' task'+(ql1?' · QL '+esc(ql1):'')+'</span>'+
+    '<span class="st-sh">T'+thang+'/'+nam+' · '+rows.length+' task'+(ql1?' · QL '+esc(ten2(ql1)):'')+'</span>';
   $('stTitle').innerHTML='<span class="st-ng"><span class="st-av" data-anh-nv="'+esc(x.ten)+'">'+esc(String(x.ten||'?').trim().split(/\s+/).pop().charAt(0))+'</span>'+
-    '<span class="st-ng-t"><b>'+esc(loai==='nv'?(x.ten+' '+x.id):(x.ten+' — Quản lý nghiệp vụ'))+'</b><small>Tháng '+thang+'/'+nam+' ghi nhận '+rows.length+' task</small></span></span>';
-  $('stBody').innerHTML=rowsTableDocHTML(rows,kpiOf);
-  $('statModal').classList.add('fit');       // khung modal ôm sát bảng dọc theo số lần vi phạm
-  // Đặt width khung = ĐÚNG bề rộng bảng theo số lần (kẹp trần 95vw) -> hết khoảng trắng phải
-  const wKhung=+(($('stBody').querySelector('.vdoc-wrap')||{}).dataset||{}).w||0;
-  const boxFit=document.querySelector('#statModal .modal-box');
-  if(boxFit) boxFit.style.width = wKhung ? Math.min(wKhung+2, Math.round(innerWidth*0.95))+'px' : '';
+    '<span class="st-ng-t"><b>'+esc(loai==='nv'?(x.ten+' '+x.id):(x.ten+' — Quản lý nghiệp vụ'))+'</b><small>'+phu+'</small></span></span>';
+  $('stBody').innerHTML=rowsTimelineHTML(rows,kpiOf,loai==='ql'?'nv':(qls.length>1?'ql':''));
+  $('statModal').classList.remove('fit');    // khung cỡ chuẩn TK-33 (LỚN), không ép bề rộng theo số lần
+  const b2=document.querySelector('#statModal .modal-box'); if(b2) b2.style.width='';
   hienModal('statModal');
 }
 
@@ -3534,39 +3554,19 @@ function rowsTableHTML(rows, kpiOf, nhanCot, opt){
     <th class="c-ngay">Thời gian</th><th class="c-vitri">Vị trí</th><th class="c-loi">Lỗi vi phạm</th><th class="c-nv">${nhanNV}</th>
     <th class="c-ql">QL trực tiếp</th><th class="c-status">Trạng thái</th>${kpiOf?'<th class="c-extra">'+nhan+'</th>':''}</tr></thead><tbody>${tr}</tbody></table>`;
 }
-/* Bảng DỌC cho pop-up luỹ kế: cột 1 = TÊN TRƯỜNG (đóng băng khi cuộn ngang), mỗi cột sau = 1 LẦN vi phạm.
-   Số "Lần n" đánh theo thời gian (Lần 1 sớm nhất) nhưng HIỂN THỊ lần MỚI NHẤT sát cột thông tin.
-   Bấm bất kỳ Ô/TIÊU ĐỀ của 1 lần -> mở chi tiết task của lần đó (rê chuột tô CẢ CỘT). */
-function rowsTableDocHTML(rows, kpiOf){
+/* 20/11 MẪU 2 user duyệt — DÒNG THỜI GIAN DỌC cho pop-up luỹ kế 1 người: mỗi lần 1 nút trên trục, MỚI NHẤT TRÊN CÙNG
+   (số «Lần n» đánh theo thời gian, Lần 1 sớm nhất); hàng 1 = vị trí · trạng thái · KPI (phải), hàng 2 = lỗi. Bấm cả dòng = chi tiết task.
+   them: 'nv' = in tên NV vi phạm từng lần (pop-up của QL) · 'ql' = in QL từng lần (NV có nhiều QL trong tháng). */
+function rowsTimelineHTML(rows, kpiOf, them){
   const asc = rows.slice().sort((a,b)=>(ngayMs(a[iNgayVP])||0)-(ngayMs(b[iNgayVP])||0));
-  const cols = asc.map((r,i)=>({r, lan:i+1})).reverse();     // mới nhất đứng trước
-  const fields = [
-    ['Ngày tạo WF',   r=>iCreatedAt>=0&&r[iCreatedAt]?esc(fmtNgay(r[iCreatedAt])):'—'],
-    ['Ngày ghi nhận', r=>esc(fmtNgay(r[iNgayVP]))],
-    ['Vị trí',        r=>esc(r[iViTri]||'—')],
-    ['Lỗi vi phạm',   r=>esc(r[iLoi]||'—')],
-    ['NV vi phạm',    r=>lines(nameVP(r))],
-    ['QL trực tiếp',  r=>iQLTT>=0?lines(r[iQLTT]):'—'],
-    ['Trạng thái',    r=>statusCell(r)],
-  ];
-  if(kpiOf) fields.push(['KPI trừ', r=>kpiOf(r)]);
   const p2=n=>String(n).padStart(2,'0');
   const ngayNgan=r=>{const t=ngayMs(r[iNgayVP]); if(t==null) return ''; const d=new Date(t); return p2(d.getDate())+'/'+p2(d.getMonth()+1);};
-  const head = '<tr><th class="vd-f vd-corner"></th>'
-    + cols.map(c=>`<th class="vd-h" data-i="${ROWS.indexOf(c.r)}" title="Bấm xem chi tiết task"><div class="vd-hbox"><span class="vd-lan">Lần ${c.lan}</span><span class="vd-d">${ngayNgan(c.r)}</span></div></th>`).join('') + '</tr>';
-  const body = fields.map(([lbl,fn])=>
-    `<tr><th class="vd-f">${lbl}</th>${cols.map(c=>`<td data-i="${ROWS.indexOf(c.r)}" title="Bấm xem chi tiết task"><div class="vd-c">${fn(c.r)}</div></td>`).join('')}</tr>`).join('');
-  // TABLE-LAYOUT:FIXED + colgroup chia cột CỨNG: ô không thể phình/tràn — chữ dài BẮT BUỘC
-  // xuống dòng trong ô. Ít lần -> width:max(100%,...) giãn đều cho cân; nhiều lần -> cuộn ngang.
-  const mob = window.matchMedia && matchMedia('(max-width:700px)').matches;
-  const WF = mob ? 100 : 132, WL = mob ? 172 : 220;          // cột thông tin / mỗi cột Lần (px)
-  const colgroup = `<colgroup><col style="width:${WF}px">${cols.map(()=>`<col style="width:${WL}px">`).join('')}</colgroup>`;
-  // data-w = bề rộng chuẩn theo số lần -> moKpiChiTiet đặt width khung modal ĐÚNG px này
-  // (ôm khít, không khoảng trắng phải); bảng width:100% giãn lấp đầy khung, thiếu chỗ thì cuộn ngang
-  /* `data-mb-cuon`: miễn trừ luật ⑩ — bảng này là MA TRẬN đã lật (mỗi HÀNG là một trường, mỗi CỘT là
-     một LẦN vi phạm) với cột trường đóng băng bên trái. Không phải "bảng nhiều cột bị bóp" mà là
-     dạng so sánh nhiều lượt cạnh nhau; đổi sang thẻ thì mất đúng phép so sánh đó. */
-  return `<div class="vdoc-wrap" data-mb-cuon="ma-tran-lan-vi-pham" data-w="${WF + cols.length*WL}"><table class="vdoc" style="table-layout:fixed; width:100%; min-width:${WF + cols.length*WL}px">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  return '<div class="vtl">'+asc.map((r,i)=>({r,lan:i+1})).reverse().map(({r,lan})=>{
+    const ph = them==='nv' ? '<b class="vtl-ng">'+esc(nameVP(r))+'</b> · ' : them==='ql' && iQLTT>=0 && r[iQLTT] ? '<b class="vtl-ng">QL '+esc(r[iQLTT])+'</b> · ' : '';   // người của từng lần: đầu dòng lỗi (hàng 1 giữ vị trí · trạng thái · KPI)
+    return '<div class="vtl-dong" data-i="'+ROWS.indexOf(r)+'" title="Bấm xem chi tiết task"><div class="vtl-moc"><span class="vd-lan">Lần '+lan+'</span><span class="vd-d">'+ngayNgan(r)+'</span></div>'+
+      '<div class="vtl-nd"><div class="vtl-h1"><span class="vtl-vt">'+esc(r[iViTri]||'—')+'</span>'+statusCell(r)+'<span class="vtl-kpi">'+(kpiOf?kpiOf(r):'')+'</span></div>'+
+      '<div class="vtl-loi">'+ph+esc(r[iLoi]||'—')+'</div></div></div>';
+  }).join('')+'</div>';
 }
 function moThongKe(key){
   const s=STATS[key]; if(!s) return;
