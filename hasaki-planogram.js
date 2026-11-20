@@ -407,6 +407,18 @@ function ptDiLamNgay(r, dd){
   return null;
 }
 /* trạng thái 1 ô cho 1 NGÀY cụ thể dd (r = yêu cầu của ô ngày đó, hoặc null) */
+/* 20/11 user «lọc đang là 19/11 — ngày này Hầm nghỉ, sao vẫn hiện chấm công 09:34? áp dụng toàn bộ planogram theo ngày lọc»:
+   cột ptDiLam/ptCi của VESINH-YEUCAU là chấm công LÚC ĐỒNG BỘ (hôm nay) ⇒ chỉ đúng khi xem hôm nay. Chữ «đi làm hh:mm / nghỉ»
+   lấy chấm công CỦA NGÀY ĐANG LỌC (cùng nguồn ptDiLamNgay quyết định nhóm Chưa · đi làm / nghỉ). */
+function caNgayTxt(r, dd){
+  dd = dd || r.ngay || ngayXem();
+  var dl = ptDiLamNgay(r, dd);
+  if (dl === false) return "nghỉ";
+  if (dl == null) return "chưa có chấm công";
+  var pc = r.ptNguon === "plg" && r.pt ? null : pcCua(r.loc), cn = ccNgayCua((pc && pc.em) || r.pt, (pc && pc.code) || r.ptCode, dd);
+  var vao = cn && cn.co ? cn.vao : (dd === isoToday() ? r.ptCi : "");
+  return "đi làm" + (vao ? " " + vao : "");
+}
 function cellStateDay(r, dd){
   if (!r) return "noreq";
   if (r.bk === "da"){
@@ -3717,7 +3729,7 @@ function renderMap(){
            đáng biết); trùng nhau thì in 2 lần cùng một cái tên + cùng một trạng thái đi làm. */
         var trungPc = !!(pcO && pcO.em && r.pt && String(r.pt).toLowerCase() === String(pcO.em).toLowerCase());
         if (r.pt && !trungPc){
-          ptTxt = "\nPhụ trách theo yêu cầu: " + ptTen(r) + (homNay ? (r.ptDiLam ? " (đi làm" + (r.ptCi ? " · vào " + r.ptCi : "") + ")" : " (nghỉ)") : "");
+          ptTxt = "\nPhụ trách theo yêu cầu: " + ptTen(r) + " (" + caNgayTxt(r) + ")";
           var ptA = ptAtCua(r);
           if (ptA) ptTxt += "\n   theo báo cáo gần nhất " + ngayVN(ptA) + (ptKhongChac(r) ? " — ⚠ " + ptTuoi(r) + " ngày trước, CHƯA CHẮC còn phụ trách" : "");
         } else if (trungPc && ptKhongChac(r)){
@@ -5284,7 +5296,7 @@ function mRender(){
         var a = areaMeta(r.area);
         var thuc = r.email ? ('<span title="' + esc(r.email) + '">' + esc(tenNm(r.email) || r.email) + '</span>') : '<span class="mut">—</span>';
         /* 19/11 user «CẤM xuống dòng khi vẫn ghi ngang được»: tên + đi làm/nghỉ CÙNG 1 hàng; phụ trách = người làm ⇒ không lặp tên */
-        var ttCa = r.ptDiLam ? "đi làm" + (r.ptCi ? " " + esc(r.ptCi) : "") : "nghỉ";
+        var ttCa = esc(caNgayTxt(r));   // 20/11 theo ngày đang lọc, không theo chấm công lúc đồng bộ
         var ptTxt = r.pt
           ? ((r.email && String(r.email).toLowerCase() === String(r.pt).toLowerCase() ? '<span class="mut" title="' + esc(r.pt) + '">người làm</span>'
               : '<span title="' + esc(r.pt) + '">' + esc(ptTen(r)) + '</span>') + ' <span class="mut">· ' + ttCa + '</span>')
@@ -5318,7 +5330,7 @@ function mRender(){
         var dtTh = (cs.indexOf("thuc") >= 0 && (r.email || aim)) ? '<td class="dt dt-th">' + (aim ? aiCell + " " : "") +
           (r.email ? '<b>' + esc(ten2(tenNm(r.email) || r.email)) + '</b>' + (r.at ? " · " + esc(String(r.at).slice(11, 16)) : "") : "") + '</td>' : "";
         var dtPt = (cs.indexOf("pt") >= 0 && !(r.email && emL === ptL)) ? '<td class="dt dt-pt">' + (r.pt
-          ? esc((CTX_REQ[MODAL.ctx] || {}).pt || "Phụ trách") + ' <b>' + esc(ten2(ptTen(r))) + '</b> · ' + (r.ptDiLam ? "đi làm" + (r.ptCi ? " " + esc(r.ptCi) : "") : "nghỉ")
+          ? esc((CTX_REQ[MODAL.ctx] || {}).pt || "Phụ trách") + ' <b>' + esc(ten2(ptTen(r))) + '</b> · ' + esc(caNgayTxt(r))
           : '<span class="mut">chưa có người nhận</span>') + '</td>' : "";
         out.push('<tr>' + cs.map(function(k){ return O[k]; }).join("") + dtTh + dtPt + '</tr>');
       }
@@ -5687,6 +5699,7 @@ window.HPLANOGRAM = {
   ccSetStatus: ccSetStatus, ccSearch: ccSearch, aiSetKl: aiSetKl, aiSearch: aiSearch, moMap: moMap,
   toggleMatBang: toggleMatBang, setStHi: setStHi, togglePhong: togglePhong, moKhuMenu: moKhuMenu, nvXemHet: nvXemHet,
   ghiNhan5S: ghiNhan5S, _soan5S: soanGhiNhan5S, _luyTien: luyTien, _tinhTrangPT: tinhTrangPT, _chuKy: chuKy, _chup: chupPopup,   // _…: cho bộ đo qc-ghi-nhan-5s-planogram.mjs
+  _caNgayTxt: caNgayTxt,   // 20/11 bộ đo: chữ đi làm/nghỉ theo ngày lọc
   _S: S, _areaOf: areaOf, _render: render, _soan5S: soanGhiNhan5S, _anhMau: veAnhMauLuyTien, _chup: chupPopup   // _areaOf/_render: cho bộ đo qc-vesinh-muctieu.mjs (giả lập 25 khu)
 };
 })();
