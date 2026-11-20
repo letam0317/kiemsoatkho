@@ -4662,6 +4662,17 @@ function mienCungKhu(em, kO, d){
   return ra;
 }
 function nguoiChiuNgay(loc, d, pc){
+  var luatMoi0 = d >= LUAT_MIEN_CUNG_KHU_TU;
+  /* 20/11 user «giờ đã có nút phân công — gán người thì CHỈ người được phân công mới thấy để làm ⇒ Nga không bị tính (api giao
+     sai người). CẬP NHẬT LUẬT»: yêu cầu ĐÃ GIAO trên planogram (PT nguồn plg) → người chịu = NGƯỜI ĐƯỢC GIAO, thắng camera lẫn
+     g-sheet. Cùng luật vipham-vesinh.tinhSoViPham (giaoBC). */
+  var rg = null; (S.yc.rows || []).forEach(function(x){ if (!rg && x.ngay === d && khoaO(x.loc) === khoaO(loc) && x.ptNguon === "plg" && x.pt) rg = x; });
+  if (rg){
+    var emG = String(rg.pt).toLowerCase(), oG = S.ccn.ok ? S.ccn.em[emG] : null;
+    var kg = { em: emG, ten: ptTen(rg) || (oG && oG.ten) || emG, code: rg.ptCode || (oG && oG.code) || "", giao: true };
+    if (luatMoi0){ var mg = mienCungKhu(emG, khoaO(loc), d); if (mg) kg.mien = mg; }
+    return kg;
+  }
   var kO = khoaO(loc), cam = CAMERA_BAN[kO] ? String(CAMERA_BAN[kO]).replace(/\s*\(dự đoán\)$/, "") : "";
   var ds = (cam && S.pk.ok) ? (S.pk.by[d + "|" + cam] || []) : [];
   var luatMoi = d >= LUAT_MIEN_CUNG_KHU_TU;
