@@ -233,7 +233,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
      · Thứ tự: cất cánh khi cảnh cũ còn hiện 100% → 2 nền mờ chéo trong lúc bay → đáp khi cảnh mới đã hiện 100% ⇒ độ mờ nền không làm lệch màu lúc hoán đổi.
      · Giữa đường: 4 góc nội suy (bay cong nhẹ, nhô 10%), màu / nét / hình chuyển dần (2 lớp tô sẵn, chỉ đổi độ mờ — nhẹ máy). */
   var CANH = [[c9, ve9], [document.getElementById("c6"), ve6], [document.getElementById("c4"), ve4], [c1, ve1]];
-  var GIU = 9000, CHEO = 2400, DOC = 900, TRE = .14, BAYp = .82, M0 = .14, M1 = .82, GIAM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var GIU = 9000, CHEO = 2400, DOC = 900, TRE = .05, BAYp = .9, M0 = .05, M1 = .9, GIAM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   function tichPhan(pha) {   // đồng hồ cảnh trong một chu kỳ: tốc độ 0→1 (DOC ms) · 1 · 1→0 (DOC ms) · 0 suốt lượt chuyển
     if (pha < DOC) { var u = pha / DOC; return DOC * (u * u * u - u * u * u * u / 2); }
     if (pha < GIU - DOC) return DOC / 2 + pha - DOC;
@@ -255,12 +255,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
     function () { return L6.map(function (b) { var h = tam(b.el); return { el: b.el, k: b.k, x: h.x, y: h.y, a: h.a, sw: b.sw, mau: b.mau, mo: 1 }; }); },
     function () { return L4.map(function (b) { var h = tam(b.el); return { el: b.el, k: b.k, x: h.x, y: h.y, a: h.a, sw: "1.6", mau: [63, 138, 116], mo: .8 }; }); },
     function () { var H = san.offsetHeight * .28;   // mặt nạ mờ về chân trời (0 → 1 trong 28% đầu sàn): bản bay mang đúng độ mờ tại tâm biểu tượng
-      return L1.filter(function (b) { var y = b.y + 19.25 - D1; return y > H * .47 && y < H * 1.4; })   // lọc trước theo hàng (mờ quá / quá gần) ⇒ chỉ đo vài chục phần tử
+      return L1.filter(function (b) { var y = b.y + 19.25 - D1; return y > H * .3 && y < H * 1.4; })   // lọc trước theo hàng (mờ quá / quá gần) ⇒ chỉ đo vài chục phần tử
         .map(function (b) { var h = tam(b.el); return { el: b.el, k: b.k, x: h.x, y: h.y, a: h.a, sw: "0.935", mau: [159, 224, 198], mo: .75 * Math.min(1, Math.max(0, (b.y + 19.25 - D1) / H)) }; }); }
   ];
   function doBT(ci) {   // biểu tượng đang thấy trọn trên màn của cảnh ci
     var W = innerWidth, H = innerHeight;
-    return BT[ci]().filter(function (b) { return b.a > 14 && b.mo > .35 && b.x > b.a && b.x < W - b.a && b.y > b.a && b.y < H - b.a; });
+    return BT[ci]().filter(function (b) { return b.a > 14 && b.mo > .22 && b.x > b.a / 2 && b.x < W - b.a / 2 && b.y > b.a / 2 && b.y < H - b.a / 2; });
   }
   function doGoc(ds) {   // 4 góc thật (trên-trái, trên-phải, dưới-phải, dưới-trái) của ô 24×24 trên màn, cho cả loạt: cắm hết chấm đo → đọc → gỡ (1 lần tính bố cục)
     var cam = ds.map(function (b) { return b.goc ? null : [[0, 0], [24, 0], [24, 24], [0, 24]].map(function (g) { var r = document.createElementNS(NS, "rect");
@@ -293,9 +293,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
     A.sort(function (a, b) { return (Math.hypot(a.x - cx, a.y - cy) / a.a) - (Math.hypot(b.x - cx, b.y - cy) / b.a); });   // ưu tiên biểu tượng to, gần giữa
     var cap = [], dung = {};
     for (var a = 0; a < A.length && cap.length < SO_M; a++) { var tot = -1, dTot = 1e9;
-      for (var b = 0; b < B.length; b++) { if (dung[b]) continue; var dd = Math.hypot(A[a].x - B[b].x, A[a].y - B[b].y) + (A[a].k === B[b].k ? 0 : 5000);
+      for (var b = 0; b < B.length; b++) { if (dung[b] || A[a].k !== B[b].k) continue; var dd = Math.hypot(A[a].x - B[b].x, A[a].y - B[b].y);   // CHỈ ghép cùng hình (khác hình phải hoà chéo 2 nửa trong suốt ⇒ mờ tụt giữa đường)
         if (dd < dTot) { dTot = dd; tot = b; } }
-      if (tot < 0) break; dung[tot] = 1; cap.push({ A: A[a], B: B[tot] }); }
+      if (tot < 0) continue; dung[tot] = 1; cap.push({ A: A[a], B: B[tot] }); }
     var gA = doGoc(cap.map(function (c) { return c.A; })), gB = doGoc(cap.map(function (c) { return c.B; }));
     cap.forEach(function (c, q) { var u = BAY[q];
       c.gA = gA[q]; c.gB = gB[q];
@@ -320,9 +320,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
       var dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy) || 1, ox = -dy / L * c.cong * vong, oy = dx / L * c.cong * vong, z = 1 + .1 * vong;
       for (k = 0; k < 8; k += 2) { g[k] = cx + (g[k] - cx) * z + ox; g[k + 1] = cy + (g[k + 1] - cy) * z + oy; }   // bay cong nhẹ + nhô giữa đường
       u.el.style.transform = maTran(g);
-      var h = Math.min(1, Math.max(0, (e - .3) / .4));
-      dat(u.el, "opacity", nb(A.mo, B.mo, e).toFixed(2));
-      dat(u.l2, "opacity", h.toFixed(2)); if (c.doiK) dat(u.l1, "opacity", (1 - h).toFixed(2));   // màu · nét (và hình nếu khác loại) chuyển dần giữa đường
+      var h = (1 - Math.cos(Math.PI * t)) / 2;   // màu · nét lớp cảnh mới phủ dần suốt đường bay
+      dat(u.el, "opacity", nb(A.mo, B.mo, (1 - Math.cos(Math.PI * t)) / 2).toFixed(3));   // độ mờ đổi theo hình sin của THỜI GIAN (không theo quãng đường cubic dốc giữa)
+      dat(u.l2, "opacity", h.toFixed(3));   // màu · nét (và hình nếu khác loại) chuyển dần giữa đường
     }
   }
   function ketThuc() {
@@ -337,7 +337,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
     var tg = now - t0 + (window.__dnLech || 0), dt = innerWidth <= 768;   // __dnLech: bộ đo nhảy tới từng cảnh
     var n = Math.floor(tg / CHU), i = ((n % 4) + 4) % 4, pha = tg - n * CHU, j = (i + 1) % 4;
     var Cc = (n + 1) * (GIU - DOC), C = n * (GIU - DOC) + tichPhan(pha);   // Cc: đồng hồ lúc cảnh đứng (suốt lượt chuyển)
-    var p = pha < GIU ? 0 : (pha - GIU) / CHEO, mo = em(Math.min(1, Math.max(0, (p - M0) / (M1 - M0))));   // nền mờ chéo giữa lúc cất cánh xong và lúc bắt đầu đáp
+    var p = pha < GIU ? 0 : (pha - GIU) / CHEO, mo = (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, (p - M0) / (M1 - M0))))) / 2;   // 21/11 tối: mờ chéo hình sin trải dài (không dồn giữa)   // nền mờ chéo giữa lúc cất cánh xong và lúc bắt đầu đáp
     if (ke && ke.n !== n) ketThuc();
     if (ke && ke.cap) C = Cc;   // đã đo chỗ cất cánh ⇒ giữ cảnh đứng đúng trạng thái đã đo
     var veNen = MUC < 2 || p > 0 || (++dem & 1) === 0;
