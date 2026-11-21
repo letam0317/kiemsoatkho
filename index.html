@@ -907,12 +907,21 @@ html body .cl-hang1.m1>.cl-tt .xm-tv{border:0!important; background:none!importa
 .cl-qlc>span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .cl-qlc b{color:var(--text);}
 /* 21/11 user chốt mẫu 12 «góc gập» (dog-ear): ảnh VUÔNG BO 34 px, góc phải trên gập thành tam giác màu theo mức
    (lần 1 vàng · 2 cam · ≥3 đỏ = trừ KPI) chứa số lần/tháng; dải mờ đáy ảnh = số ngày làm việc. Góc + dải là anh em của [data-anh-nv] (anh-nv.js xoá chữ bên trong khi gắn ảnh). */
-.cl-avn{position:relative; flex:none; display:inline-flex; width:34px; height:34px; border-radius:9px; overflow:hidden;}
-.cl-av{width:34px; height:34px; border-radius:9px; background:var(--surface2); color:var(--muted); display:inline-grid; place-items:center; font-size:13px; font-weight:600; overflow:hidden;}
+:root{--av:32px; --av-bo:8px; --av-nho:20px; --av-nho-bo:5px;}   /* 21/11 user duyệt: ảnh đại diện NV 2 cỡ dùng chung — 32 (đứng riêng, có dải số / góc gập) · 20 (cùng hàng chữ) */
+.cl-avn{position:relative; flex:none; display:inline-flex; width:var(--av); height:var(--av); border-radius:var(--av-bo);}
+.cl-av{width:var(--av); height:var(--av); border-radius:var(--av-bo); background:var(--surface2); color:var(--muted); display:inline-grid; place-items:center; font-size:13px; font-weight:600; overflow:hidden;}
 .cl-av img{width:100%; height:100%; object-fit:cover;}
-.cl-gap{position:absolute; right:0; top:0; width:18px; height:18px; clip-path:polygon(0 0,100% 0,100% 100%); color:white; font-size:9px; font-weight:600; line-height:1; text-align:right; padding:1px 2px 0 0; box-sizing:border-box;}
+.cl-gap{position:absolute; right:0; top:0; width:16px; height:16px; border-top-right-radius:var(--av-bo); clip-path:polygon(0 0,100% 0,100% 100%); color:white; font-size:9px; font-weight:600; line-height:1; text-align:right;
+  padding:1px 2px 0 0; box-sizing:border-box;}
 .cl-gap.m1{background:hsl(40 96% 53%);} .cl-gap.m2{background:hsl(28 96% 53%);} .cl-gap.m3{background:var(--bad);}
-.cl-day{position:absolute; left:0; right:0; bottom:0; height:11px; font-size:8px; line-height:11px; font-weight:600; text-align:center; color:white; background:rgba(0,0,0,.45); font-variant-numeric:tabular-nums;}
+.cl-day{position:absolute; left:0; right:0; bottom:0; height:10px; font-size:8px; line-height:10px; font-weight:600; text-align:center; color:white; background:rgba(0,0,0,.45); border-radius:0 0 var(--av-bo) var(--av-bo);
+  font-variant-numeric:tabular-nums;}   /* 21/11 user giữ MẪU BAN ĐẦU (Screenshot_21-11-2026_15549_): dải tối mờ trong ảnh */
+/* 21/11 user «khung vuông, kích thước đồng bộ tất cả những nơi hiển thị — lấy Vi phạm làm mẫu» + duyệt phân tích cỡ: 32 (--av) cho ảnh đứng riêng ·
+   20 (--av-nho) cho ảnh cùng hàng chữ (chip ô gõ, Máy trạm, ô con thu gọn, dòng lịch sử) — mọi nơi vuông bo 25%. */
+.st-av, .kpi-av, #lbCaption .lb-av, #lsbLb .av, #pane-planogram .hp-nvr .av, #pane-planogram .hp-vtcard .av, #pane-planogram .hp-nvkeo .av,
+#pane-baoduong .bd-nt-av .bd-av, #pane-baoduong .bd-kav-1 .bd-av{width:var(--av)!important; height:var(--av)!important; border-radius:var(--av-bo)!important; flex:none;}
+.mt2-av, .hx-av, #pane-planogram .hp-vtls-ng .av, #pane-baoduong .bd-kn .bd-av, #pane-baoduong .bd-pc-ng .bd-av{width:var(--av-nho)!important; height:var(--av-nho)!important; border-radius:var(--av-nho-bo)!important; flex:none;}
+[data-anh-nv]{border-radius:25%!important;} [data-anh-nv]>img{border-radius:inherit!important;}
 .cl-av.trong{background:transparent; border:1.5px dashed var(--border); color:var(--muted); box-sizing:border-box;} .cl-av.them{background:var(--surface2); color:var(--muted); font-size:12px;}
 .cl-chua{margin-left:-6px; color:var(--muted); white-space:nowrap;}
 .rm-vid{background:var(--surface2);}
@@ -4177,7 +4186,7 @@ let _bdNap=null;
 function napModBD(){
   if(!_bdNap){
     _bdNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-baoduong.js?v=20261110f';
+      const s=document.createElement('script'); s.src='hasaki-baoduong.js?v=20261121a';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-baoduong.js'));
       document.body.appendChild(s);
     });
