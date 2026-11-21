@@ -14,7 +14,8 @@
    Đăng nhập dùng đúng tai-khoan.js (window.tkDangNhap) ⇒ cùng phiên tk-phien/tk-nho với dashboard. Đã có phiên ⇒ vào thẳng dashboard.
    Chuyển động: chỉ transform/opacity, chạy bằng requestAnimationFrame (không keyframe riêng — luật TK-30); ẩn tab / giảm chuyển động ⇒ đứng yên. */
 window.TK_TRANG_DN = 1;
-(function () { try { if (localStorage.getItem("tk-phien") && !/[?&]o-lai=1/.test(location.search)) location.replace("./"); } catch (e) {} })();
+window.DN_VE = (function () { var v = new URLSearchParams(location.search).get("ve") || ""; return /^\/(retail|factory)\//.test(v) && !/^\/\//.test(v) ? v : "./"; })();   // 21/11 quay lại đúng link khi bị đưa sang đây
+(function () { try { if (localStorage.getItem("tk-phien") && !/[?&]o-lai=1/.test(location.search)) location.replace(window.DN_VE); } catch (e) {} })();
 </script>
 <style>
 *{box-sizing:border-box;margin:0}
@@ -64,6 +65,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .dn-nut{height:32px;border:1px solid var(--accent);border-radius:6px;background:var(--accent);color:#fff;font:inherit;font-size:14px;cursor:pointer}
 .dn-nut:disabled{opacity:.6;cursor:wait}
 .dn-lk{color:var(--accent);text-align:center;text-decoration:none}
+.dn-khach{min-height:20px;display:flex;justify-content:center}.dn-khach [hidden]{display:none}.dn-ngoai{font-size:13px;color:var(--muted)}
 .dn-st{min-height:20px;font-size:13px;color:var(--muted)}.dn-st.loi{color:var(--bad)}
 @media(max-width:768px){
   .dn-vung{justify-content:center;align-items:flex-end;padding:14px 14px max(14px,env(safe-area-inset-bottom))}
@@ -90,7 +92,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
       <label>Tài khoản<input name="id" autocomplete="username" required placeholder="vd: tamlc"></label>
       <label>Mật khẩu<input name="mk" type="password" autocomplete="current-password" required></label>
       <button type="submit" class="dn-nut">Đăng nhập</button>
-      <a class="dn-lk" href="./">Xem không đăng nhập</a>
+      <div class="dn-khach" id="dnKhach"><a class="dn-lk" id="dnLkKhach" href="./" hidden>Xem không đăng nhập</a><span class="dn-ngoai" id="dnNgoai" hidden>Ngoài Wi-Fi công ty — cần đăng nhập</span></div>
       <div class="dn-st" id="dnSt" role="status"></div>
     </form>
   </div>
@@ -274,11 +276,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
     var nut = f.querySelector("button"); nut.disabled = true; st.className = "dn-st"; st.textContent = "Đang kiểm tra…";
     window.tkDangNhap(f.id.value, f.mk.value).then(function () {
       try { localStorage.setItem("tk-id", f.id.value.trim().toLowerCase().replace(/@.*$/, "")); } catch (e) {}
-      location.replace("./");
+      location.replace(window.DN_VE);
     }).catch(function (e) { st.className = "dn-st loi"; st.textContent = e.message || "Không đăng nhập được"; nut.disabled = false; f.mk.select(); });
   };
+  /* 21/11 chế độ khách chỉ ở Wi-Fi công ty: kiểm mạng xong mới hiện «Xem không đăng nhập» (chỗ giữ sẵn 20px — không nhảy); ngoài mạng hiện 1 dòng */
+  var lkK = document.getElementById("dnLkKhach"), ngoai = document.getElementById("dnNgoai"); lkK.href = window.DN_VE;
+  addEventListener("load", function () {
+    if (typeof window.tkMang !== "function") { ngoai.hidden = false; return; }
+    window.tkMang().then(function (r) { (r.cty ? lkK : ngoai).hidden = false; });
+  });
 })();
 </script>
-<script src="tai-khoan.js?v=20261121dn"></script>
+<script src="tai-khoan.js?v=20261121mg"></script>
 </body>
 </html>
