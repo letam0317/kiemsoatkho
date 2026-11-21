@@ -2,10 +2,10 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-visual">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#0c241e">
-<title>Đăng nhập · Audit Hasaki</title>
+<title>Đăng nhập · Audit Retail</title>
 <link rel="icon" href="hasaki-logo.png">
 <link rel="stylesheet" href="hieu-ung.css">
 <script>
@@ -22,7 +22,8 @@ window.DN_VE = (function () { var v = new URLSearchParams(location.search).get("
 :root{--accent:#1677ff;--border:#d9d9d9;--text:rgba(0,0,0,.88);--muted:rgba(0,0,0,.45);--bad:#ff4d4f}
 html,body{height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;font-size:14px;color:var(--text);background:#0c241e;overflow:hidden}
-#dnNen{position:fixed;inset:0;overflow:hidden}
+/* 21/11 tối: nền cao theo màn LỚN NHẤT (lvh) ⇒ bàn phím ảo mở không bóp / xô nền */
+#dnNen{position:fixed;left:0;top:0;width:100%;height:100vh;height:100lvh;overflow:hidden}
 .dn-canh{position:absolute;inset:0;overflow:hidden;opacity:0;will-change:opacity}
 .dn-canh svg.dn-full{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .dn-ic{fill:none;stroke-linecap:round;stroke-linejoin:round}
@@ -48,11 +49,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 #c1 .chan{position:absolute;left:0;right:0;top:41%;height:3px;background:linear-gradient(90deg,transparent,#bff5df,transparent);box-shadow:0 0 40px 10px rgba(127,230,190,.35);will-change:opacity}
 /* lớp MORPH: bản bay của biểu tượng giữa 2 cảnh (ẩn ngoài lượt chuyển) */
 #dnMorph{position:absolute;inset:0;z-index:2;pointer-events:none}
-/* 21/11 chiều: bản bay 64 px (vẽ một lần ở cỡ lớn ⇒ phóng to không nhoè) gồm 2 lớp tô sẵn — lớp màu/nét cảnh cũ + lớp cảnh mới — chỉ hoà chéo độ mờ (GPU),
+/* 21/11 tối: bản bay = ô 24 px dựng bằng matrix3d lên đúng 4 góc biểu tượng thật; 2 lớp tô sẵn (màu/nét cảnh cũ + cảnh mới) chỉ đổi độ mờ,
    không đổi màu / nét từng khung (đổi màu kéo cả cây SVG tính lại kiểu + bố cục mỗi khung) */
-.dn-mp{position:absolute;left:0;top:0;width:64px;height:64px;display:none;transform-origin:50% 50%;will-change:transform,opacity}
-.dn-mp i{position:absolute;inset:0}.dn-mp svg{display:block;width:64px;height:64px}
-#c1 .neo{position:absolute;width:38px;height:38px}
+.dn-mp{position:absolute;left:0;top:0;width:24px;height:24px;display:none;transform-origin:0 0}
+.dn-mp i{position:absolute;inset:0}.dn-mp svg{display:block;width:24px;height:24px}
+#c1 .f1{position:absolute;width:38.5px;height:38.5px;stroke-width:.935}
 /* thẻ đăng nhập — cố định một chỗ cho cả 4 cảnh (không nhảy vị trí khi đổi nền) */
 .dn-vung{position:relative;z-index:5;height:100%;display:flex;align-items:center;justify-content:flex-end;padding:16px clamp(16px,8vw,120px)}
 .dn-the{width:100%;max-width:370px;padding:28px;border-radius:14px;display:flex;flex-direction:column;gap:18px;background:rgba(255,255,255,.88);
@@ -73,7 +74,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .dn-bao svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .dn-st{min-height:32px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted)}.dn-st:empty{min-height:0}
 @media(max-width:768px){
-  .dn-vung{justify-content:center;align-items:flex-end;padding:14px 14px max(28px,env(safe-area-inset-bottom))}
+  /* 21/11 tối (user): khung đăng nhập điện thoại lên TRÊN ⇒ bàn phím ảo bật lên không che ô nhập, trang không phải cuộn / xô nền */
+  .dn-vung{justify-content:center;align-items:flex-start;padding:max(20px,calc(env(safe-area-inset-top) + 12px)) 14px 14px}
   /* 21/11 user: khung điện thoại nhỏ lại 7/10 + nền trong suốt kiểu kính iPhone (lớp mờ + ánh viền trên); ô nhập giữ chữ 16px (iOS không tự phóng to) */
   .dn-the{max-width:280px;padding:16px 16px 14px;gap:12px;border-radius:22px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35);
     background:linear-gradient(145deg,rgba(255,255,255,.26),rgba(255,255,255,.06)),rgba(18,40,34,.40);
@@ -84,7 +86,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
   .dn-f input{height:34px;padding:3px 10px;font-size:16px;border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.82);text-shadow:none}
   .dn-nut{height:34px;font-size:14.5px;text-shadow:none}.dn-lk{color:#e3efff;font-size:13px}
   .dn-khach,.dn-st{min-height:28px}.dn-st{color:rgba(255,255,255,.85)}.dn-bao{font-size:11.5px;padding:5px 8px;gap:5px;white-space:nowrap}.dn-bao svg{width:14px;height:14px}
-  #c9 svg.dn-full{transform:translate(34%,-22%) scale(1.15)}
+  #c9 svg.dn-full{transform:translate(45%,20%) scale(.75)}
   #c6 .mat{width:900px}
   #c4 .luoi{grid-template-columns:repeat(4,1fr);gap:22px;padding:22px}#c4 .nm{border-radius:20px}
 }
@@ -103,7 +105,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 </div>
 <main class="dn-vung">
   <div class="dn-the" role="dialog" aria-labelledby="dnTt">
-    <div class="dn-hieu"><img src="hasaki-logo.png" alt=""><span><b>AUDIT HASAKI</b><i>Kiểm soát kho</i></span></div>
+    <div class="dn-hieu"><img src="hasaki-logo.png" alt=""><span><b>AUDIT RETAIL</b><i>Kiểm soát kho</i></span></div>
     <div class="dn-tt" id="dnTt">Đăng nhập</div>
     <form class="dn-f" id="dnF" autocomplete="on">
       <label>Tài khoản<input name="id" autocomplete="username" required placeholder="vd: tamlc"></label>
@@ -176,7 +178,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
     [].forEach.call(mat.querySelectorAll(".o.cao"), function (el, i) { CAO.push({ el: el, ph: i * 1.7, bien: 24 + (i * 13) % 36 }); }); })();
   function ve6(tg, dt) {
     var lx = Math.sin(tg * .00018) * 3, ly = Math.cos(tg * .00014) * 2.5; RZ6 = -38 + lx;
-    mat.style.transform = "translate(" + (dt ? "-50%,-80%" : "-62%,-48%") + ") rotateX(" + (56 + ly).toFixed(2) + "deg) rotateZ(" + RZ6.toFixed(2) + "deg)";
+    mat.style.transform = "translate(" + (dt ? "-50%,-28%" : "-62%,-48%") + ") rotateX(" + (56 + ly).toFixed(2) + "deg) rotateZ(" + RZ6.toFixed(2) + "deg)";
     for (var i = 0; i < CAO.length; i++) { var c = CAO[i]; c.el.style.transform = "translateZ(" + (c.bien * (.55 + .45 * Math.sin(tg * .0012 + c.ph))).toFixed(1) + "px)"; }
   }
 
@@ -191,44 +193,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
       if (s.v !== v) s.el.style.transform = "scale(" + (s.v = v) + ")"; }
   }
 
-  /* ---------- cảnh 1: sàn 3D — hoạ tiết trôi về chân trời ---------- */
+  /* ---------- cảnh 1: sàn 3D — hoạ tiết trôi về chân trời ----------
+     21/11 tối: biểu tượng SÀN là phần tử thật (không còn ảnh nền) ⇒ ẩn/hiện được từng cái để MORPH khớp tuyệt đối; trời (bóng phản chiếu) vẫn là ảnh nền.
+     Chỉ giữ biểu tượng có lúc lọt màn (đo 3 vị trí trôi) ⇒ ít phần tử; cả mặt sàn là một lớp GPU tĩnh, chỉ dịch. */
+  var MAU_SAN = "#9fe0c6";   // một màu cho trời (ảnh nền) + sàn (phần tử thật) + bản bay
   var o1 = (function () { var s = "", k = 0, o = 70; for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) { var key = KEY[(k++ * 5) % KEY.length], x = c * o + (r % 2) * o / 2 + o * .2, y = r * o + o * .2, sc = o * .55 / 24;
-      s += '<g transform="translate(' + x + " " + y + ") scale(" + sc + ')" fill="none" stroke="#9fe0c6" stroke-width="' + (1.5 / sc) + '" stroke-linecap="round" stroke-linejoin="round">' + IC[key] + "</g>"; }
+      s += '<g transform="translate(' + x + " " + y + ") scale(" + sc + ')" fill="none" stroke="' + MAU_SAN + '" stroke-width="' + (1.5 / sc) + '" stroke-linecap="round" stroke-linejoin="round">' + IC[key] + "</g>"; }
     return "url(data:image/svg+xml;base64," + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="280" height="280" viewBox="0 0 280 280">' + s + "</svg>") + ")"; })();
-  var san = document.querySelector("#c1 .san"), troi = document.querySelector("#c1 .troi"), chan = document.querySelector("#c1 .chan");
-  san.style.backgroundImage = troi.style.backgroundImage = o1;
+  var san = document.querySelector("#c1 .san"), troi = document.querySelector("#c1 .troi"), chan = document.querySelector("#c1 .chan"), D1 = 0;
+  troi.style.backgroundImage = o1; san.style.stroke = MAU_SAN;
   function ve1(tg) {
-    var d = (tg * .03) % 280;
+    var d = D1 = (tg * .03) % 280;
     san.style.transform = "perspective(700px) rotateX(64deg) translate3d(0," + (-d).toFixed(1) + "px,0)";
     troi.style.transform = "perspective(700px) rotateX(-64deg) translate3d(0," + d.toFixed(1) + "px,0)";
     chan.style.opacity = (.75 + .25 * Math.sin(tg * .0015)).toFixed(2);
   }
-
-  /* mỏ neo vô hình trên sàn: đúng ô 38,5 px của từng biểu tượng hoạ tiết (ô 280, 4×4, so le) ⇒ biết biểu tượng sàn nằm đâu trên màn để MORPH.
-     Chỉ dựng neo ở dải giữa sàn (phần lọt màn) ⇒ đo nhanh. */
   var L1 = [];
-  function datNeo() {
-    [].forEach.call(san.querySelectorAll(".neo"), function (x) { x.remove(); });
-    var W = san.offsetWidth, tu = Math.floor(W * .2 / 280), den = Math.ceil(W * .8 / 280), h = "";
-    for (var ty = 0; ty < 4; ty++) for (var tx = tu; tx < den; tx++) for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
+  function dungSan() {
+    var W = san.offsetWidth, H = san.offsetHeight, h = "", giu = san.style.transform;
+    for (var ty = 0; ty * 280 < H + 280; ty++) for (var tx = 0; tx * 280 < W; tx++) for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
       var k = r * 4 + c, x = tx * 280 + c * 70 + (r % 2) * 35 + 14, y = ty * 280 + r * 70 + 14;
-      h += '<i class="neo" data-k="' + KEY[(k * 5) % KEY.length] + '" style="left:' + x + "px;top:" + y + 'px"></i>'; }
-    san.insertAdjacentHTML("beforeend", h);
-    L1 = [].map.call(san.querySelectorAll(".neo"), function (el) { return { el: el, k: el.dataset.k }; });
+      h += '<svg class="dn-ic f1" viewBox="0 0 24 24" style="left:' + x + "px;top:" + y + 'px" data-y="' + y + '"><use href="#dn-' + KEY[(k * 5) % KEY.length] + '"/></svg>'; }
+    san.innerHTML = h;
+    var tat = [].slice.call(san.children), thay = tat.map(function () { return 0; }), VW = innerWidth, VH = innerHeight;
+    [0, 140, 279].forEach(function (d) { san.style.transform = "perspective(700px) rotateX(64deg) translate3d(0," + (-d) + "px,0)";
+      tat.forEach(function (el, q) { if (thay[q]) return; var b = el.getBoundingClientRect(); if (b.right > 0 && b.left < VW && b.bottom > 0 && b.top < VH && b.width > 1) thay[q] = 1; }); });
+    tat.forEach(function (el, q) { if (!thay[q]) el.remove(); });
+    san.style.transform = giu;
+    L1 = [].map.call(san.children, function (el) { return { el: el, k: el.firstChild.getAttribute("href").slice(4), y: +el.dataset.y }; });
   }
-  datNeo();
+  var c1 = document.getElementById("c1"); dungSan();
 
   /* ---------- luân phiên 9 → 6 → 4 → 1 — chuyển cảnh MORPH ----------
-     21/11 chiều (user «morph chưa mượt, biểu tượng chưa nối đúng vị trí, bị nhảy đồng thời; nền không cần tương tác chuột; máy yếu nhất cũng mượt»):
-     · BỎ theo chuột / nghiêng máy — nền tự chạy.
-     · ĐỒNG HỒ CẢNH: chuyển động chậm dần về 0 trước lượt chuyển, ĐỨNG YÊN suốt lượt chuyển, nhanh dần lại sau ⇒ chỗ cất cánh / chỗ đáp đo một lần là ĐÚNG
-       tới khi đáp (trước đây cảnh mới vẫn chạy nên đáp lệch rồi giật). Không dừng gắt vì tốc độ đổi theo đường cong trơn.
-     · Đo trước, chia khung: cảnh mới đo ~0,4 s trước lượt, cảnh cũ ~0,15 s trước ⇒ không dồn một khung nặng lúc bắt đầu.
-     · Bản bay mang đúng hình của biểu tượng thật (cỡ · góc xoay · độ dẹt phối cảnh · nét · màu · độ mờ) và HOÀ CHÉO với biểu tượng thật lúc cất cánh / đáp
-       ⇒ không «bật» hình; so le thời điểm theo thứ tự gần giữa → xa ⇒ không nhảy đồng loạt; khác loại thì hoà chéo hình giữa đường (bỏ lật 180°).
-     · Bỏ đổ bóng (filter) trên bản bay; cảnh đứng yên thì không vẽ lại; máy yếu (đo FPS) ⇒ bỏ kính mờ, rồi mới hạ nhịp nền 30 khung/giây. */
-  var CANH = [[c9, ve9], [document.getElementById("c6"), ve6], [document.getElementById("c4"), ve4], [document.getElementById("c1"), ve1]];
-  var GIU = 9000, CHEO = 2200, DOC = 900, TRE = .3, GIAM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+     21/11 chiều: bỏ tương tác chuột; ĐỒNG HỒ CẢNH (chậm dần → đứng yên suốt lượt chuyển → nhanh dần) ⇒ chỗ cất cánh / đáp đo một lần là đúng.
+     21/11 tối (user «kích thước / màu / hiệu ứng icon khi chuyển chưa ăn khớp — đồng bộ tới mức không phát hiện khác biệt, icon luôn là MỘT dù ở mẫu nào»):
+     · Đo đúng 4 GÓC của biểu tượng thật trên màn (chấm đo 0 px trong chính SVG đó ⇒ tính cả nghiêng 3D, phối cảnh, sóng phồng) và dựng bản bay bằng
+       ma trận chiếu (matrix3d) lên đúng tứ giác ấy ⇒ lúc cất cánh / đáp bản bay TRÙNG từng điểm ảnh với biểu tượng thật: cùng hình, cỡ, phối cảnh,
+       nét (cùng stroke-width hệ 24), màu, độ mờ ⇒ HOÁN ĐỔI TỨC THÌ (không hoà chéo, không nhân đôi).
+     · Thứ tự: cất cánh khi cảnh cũ còn hiện 100% → 2 nền mờ chéo trong lúc bay → đáp khi cảnh mới đã hiện 100% ⇒ độ mờ nền không làm lệch màu lúc hoán đổi.
+     · Giữa đường: 4 góc nội suy (bay cong nhẹ, nhô 10%), màu / nét / hình chuyển dần (2 lớp tô sẵn, chỉ đổi độ mờ — nhẹ máy). */
+  var CANH = [[c9, ve9], [document.getElementById("c6"), ve6], [document.getElementById("c4"), ve4], [c1, ve1]];
+  var GIU = 9000, CHEO = 2400, DOC = 900, TRE = .14, BAYp = .82, M0 = .14, M1 = .82, GIAM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   function tichPhan(pha) {   // đồng hồ cảnh trong một chu kỳ: tốc độ 0→1 (DOC ms) · 1 · 1→0 (DOC ms) · 0 suốt lượt chuyển
     if (pha < DOC) { var u = pha / DOC; return DOC * (u * u * u - u * u * u * u / 2); }
     if (pha < GIU - DOC) return DOC / 2 + pha - DOC;
@@ -240,22 +245,38 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
   if ((navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4) haMuc();
 
   var L6 = [].map.call(mat.querySelectorAll(".o svg"), function (el) { var cao = el.parentNode.classList.contains("cao");
-    return { el: el, k: el.firstChild.getAttribute("href").slice(4), sw: cao ? 1.8 : 1.6, mau: cao ? [234, 255, 245] : [127, 184, 163] }; });
+    return { el: el, k: el.firstChild.getAttribute("href").slice(4), sw: cao ? "1.8" : "1.6", mau: cao ? [234, 255, 245] : [127, 184, 163] }; });
   var L4 = SONG.map(function (s) { return { el: s.el, k: s.el.firstChild.getAttribute("href").slice(4) }; });
-  function hop(el, th) {   // tâm + cạnh thật + độ dẹt của biểu tượng vuông đã xoay th° rồi nghiêng (bao ngoài của hình vuông xoay = a(|cos|+|sin|))
-    var r = el.getBoundingClientRect(), g = th * Math.PI / 180, c = Math.abs(Math.cos(g)) + Math.abs(Math.sin(g));
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2, a: r.width / c, kk: r.width ? r.height / r.width : 1 };
-  }
-  var BT = [   // biểu tượng của từng cảnh: chỗ · cỡ a · độ dẹt kk · góc th · nét vis (px) · màu · độ mờ mo · nen (vẽ trong ảnh nền, không ẩn được)
+  var tam = function (el) { var r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, a: Math.sqrt(r.width * r.height) }; };
+  var BT = [   // biểu tượng từng cảnh: tâm x,y · cỡ a (để lọc / ghép) · sw nét hệ 24 · màu · độ mờ mo
     function () { var r = c9svg.getBoundingClientRect(), s = Math.max(r.width / 1600, r.height / 1000), ox = r.left + (r.width - 1600 * s) / 2, oy = r.top + (r.height - 1000 * s) / 2;
-      return DIEM.map(function (p) { return { el: p.el, k: p.k, x: ox + (p.X + p.sz / 2) * s, y: oy + (p.Y + p.sz / 2) * s, a: p.sz * s, kk: 1, th: 0, vis: p.vis * s, mau: p.mau, mo: p.mo }; }); },
-    function () { return L6.map(function (b) { var h = hop(b.el, RZ6); return { el: b.el, k: b.k, x: h.x, y: h.y, a: h.a, kk: h.kk, th: RZ6, vis: b.sw * h.a / 24, mau: b.mau, mo: 1 }; }); },
-    function () { return L4.map(function (b) { var h = hop(b.el, 0); return { el: b.el, k: b.k, x: h.x, y: h.y, a: h.a, kk: h.kk, th: 0, vis: 1.6 * h.a / 24, mau: [63, 138, 116], mo: .8 }; }); },
-    function () { return L1.map(function (b) { var h = hop(b.el, 0); return { el: b.el, k: b.k, x: h.x, y: h.y, a: h.a, kk: h.kk, th: 0, vis: 1.5 * h.a / 38.5, mau: [159, 224, 198], mo: .75, nen: 1 }; }); }
+      return DIEM.map(function (p) { var X = ox + p.X * s, Y = oy + p.Y * s, z = p.sz * s;
+        return { el: p.el, k: p.k, x: X + z / 2, y: Y + z / 2, a: z, sw: p.w, mau: p.mau, mo: +p.o, goc: [X, Y, X + z, Y, X + z, Y + z, X, Y + z] }; }); },
+    function () { return L6.map(function (b) { var h = tam(b.el); return { el: b.el, k: b.k, x: h.x, y: h.y, a: h.a, sw: b.sw, mau: b.mau, mo: 1 }; }); },
+    function () { return L4.map(function (b) { var h = tam(b.el); return { el: b.el, k: b.k, x: h.x, y: h.y, a: h.a, sw: "1.6", mau: [63, 138, 116], mo: .8 }; }); },
+    function () { var H = san.offsetHeight * .28;   // mặt nạ mờ về chân trời (0 → 1 trong 28% đầu sàn): bản bay mang đúng độ mờ tại tâm biểu tượng
+      return L1.filter(function (b) { var y = b.y + 19.25 - D1; return y > H * .47 && y < H * 1.4; })   // lọc trước theo hàng (mờ quá / quá gần) ⇒ chỉ đo vài chục phần tử
+        .map(function (b) { var h = tam(b.el); return { el: b.el, k: b.k, x: h.x, y: h.y, a: h.a, sw: "0.935", mau: [159, 224, 198], mo: .75 * Math.min(1, Math.max(0, (b.y + 19.25 - D1) / H)) }; }); }
   ];
-  function doBT(ci) {   // biểu tượng đang thấy trên màn của cảnh ci
+  function doBT(ci) {   // biểu tượng đang thấy trọn trên màn của cảnh ci
     var W = innerWidth, H = innerHeight;
-    return BT[ci]().filter(function (b) { return b.a > 12 && b.mo > .35 && b.x > -20 && b.x < W + 20 && b.y > -20 && b.y < H + 20; });
+    return BT[ci]().filter(function (b) { return b.a > 14 && b.mo > .35 && b.x > b.a && b.x < W - b.a && b.y > b.a && b.y < H - b.a; });
+  }
+  function doGoc(ds) {   // 4 góc thật (trên-trái, trên-phải, dưới-phải, dưới-trái) của ô 24×24 trên màn, cho cả loạt: cắm hết chấm đo → đọc → gỡ (1 lần tính bố cục)
+    var cam = ds.map(function (b) { return b.goc ? null : [[0, 0], [24, 0], [24, 24], [0, 24]].map(function (g) { var r = document.createElementNS(NS, "rect");
+      r.setAttribute("x", g[0]); r.setAttribute("y", g[1]); r.setAttribute("width", "0"); r.setAttribute("height", "0"); b.el.appendChild(r); return r; }); });
+    var kq = ds.map(function (b, q) { if (!cam[q]) return b.goc; var o = []; cam[q].forEach(function (r) { var x = r.getBoundingClientRect(); o.push(x.left, x.top); }); return o; });
+    cam.forEach(function (c) { if (c) c.forEach(function (r) { r.remove(); }); });
+    return kq;
+  }
+  function maTran(g) {   // ma trận chiếu ô 24×24 (gốc 0 0) → tứ giác g (Heckbert), dạng CSS matrix3d
+    var x0 = g[0], y0 = g[1], x1 = g[2], y1 = g[3], x2 = g[4], y2 = g[5], x3 = g[6], y3 = g[7];
+    var sx = x0 - x1 + x2 - x3, sy = y0 - y1 + y2 - y3, a, b, d, e, G = 0, Hh = 0;
+    if (Math.abs(sx) < 1e-6 && Math.abs(sy) < 1e-6) { a = x1 - x0; b = x3 - x0; d = y1 - y0; e = y3 - y0; }
+    else { var dx1 = x1 - x2, dx2 = x3 - x2, dy1 = y1 - y2, dy2 = y3 - y2, det = dx1 * dy2 - dx2 * dy1 || 1e-6;
+      G = (sx * dy2 - dx2 * sy) / det; Hh = (dx1 * sy - sx * dy1) / det;
+      a = x1 - x0 + G * x1; b = x3 - x0 + Hh * x3; d = y1 - y0 + G * y1; e = y3 - y0 + Hh * y3; }
+    return "matrix3d(" + [a / 24, d / 24, 0, G / 24, b / 24, e / 24, 0, Hh / 24, 0, 0, 1, 0, x0, y0, 0, 1].map(function (v) { return +v.toFixed(6); }).join(",") + ")";
   }
   var lopM = document.createElement("div"); lopM.id = "dnMorph"; lopM.setAttribute("aria-hidden", "true"); document.getElementById("dnNen").appendChild(lopM);
   var SO_M = innerWidth <= 768 ? 18 : 30, BAY = [];
@@ -275,11 +296,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
       for (var b = 0; b < B.length; b++) { if (dung[b]) continue; var dd = Math.hypot(A[a].x - B[b].x, A[a].y - B[b].y) + (A[a].k === B[b].k ? 0 : 5000);
         if (dd < dTot) { dTot = dd; tot = b; } }
       if (tot < 0) break; dung[tot] = 1; cap.push({ A: A[a], B: B[tot] }); }
+    var gA = doGoc(cap.map(function (c) { return c.A; })), gB = doGoc(cap.map(function (c) { return c.B; }));
     cap.forEach(function (c, q) { var u = BAY[q];
-      c.tre = q / Math.max(1, cap.length) * TRE; c.cong = (q % 2 ? 1 : -1) * (18 + (q * 37) % 42); c.doiK = c.A.k !== c.B.k;
+      c.gA = gA[q]; c.gB = gB[q];
+      c.tre = q / Math.max(1, cap.length) * TRE; c.cong = (q % 2 ? 1 : -1) * (16 + (q * 37) % 36); c.doiK = c.A.k !== c.B.k;
       [[u.l1, c.A], [u.l2, c.B]].forEach(function (x) { var sv = x[0].firstChild; sv.firstChild.setAttribute("href", "#dn-" + x[1].k);
-        sv.style.stroke = "rgb(" + x[1].mau.join(",") + ")"; sv.style.strokeWidth = (x[1].vis * 24 / x[1].a).toFixed(2); });   // tô sẵn một lần
-      dat(u.l1, "opacity", "1"); dat(u.l2, "opacity", "0"); dat(u.el, "opacity", "0"); u.el.style.display = "block"; });
+        sv.style.stroke = "rgb(" + x[1].mau.join(",") + ")"; sv.style.strokeWidth = x[1].sw; });   // tô sẵn một lần, đúng nét hệ 24 của biểu tượng thật
+      dat(u.l1, "opacity", "1"); dat(u.l2, "opacity", "0"); dat(u.el, "visibility", "hidden"); u.el.style.display = "block"; c.pha = 0; });
     ke.cap = cap;
   }
   var nb = function (a, b, e) { return a + (b - a) * e; };
@@ -287,37 +310,43 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
   function veMorph(p) {   // p: 0→1 tiến độ lượt chuyển
     var cap = ke.cap;
     for (var q = 0; q < cap.length; q++) { var c = cap[q], A = c.A, B = c.B, u = BAY[q];
-      var t = Math.min(1, Math.max(0, (p - c.tre) / (1 - TRE))), e = em(t), vong = Math.sin(Math.PI * e);
-      var fi = Math.min(1, t / .14), fo = Math.max(0, (t - .86) / .14);
-      var x = nb(A.x, B.x, e), y = nb(A.y, B.y, e), dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy) || 1;
-      x += -dy / L * c.cong * vong; y += dx / L * c.cong * vong;   // bay theo đường cong nhẹ
-      var a = nb(A.a, B.a, e), kk = nb(A.kk, B.kk, e), th = nb(A.th, B.th, e), g = Math.min(1, Math.max(0, (e - .3) / .4));
-      u.el.style.transform = "translate3d(" + (x - 32).toFixed(1) + "px," + (y - 32).toFixed(1) + "px,0) scale(1," + kk.toFixed(3) + ") rotate(" + th.toFixed(1) + "deg) scale(" + (a / 64 * (1 + .12 * vong)).toFixed(3) + ")";
-      dat(u.el, "opacity", (nb(A.mo, B.mo, e) * fi * (1 - fo)).toFixed(2));
-      dat(u.l2, "opacity", g.toFixed(2)); if (c.doiK) dat(u.l1, "opacity", (1 - g).toFixed(2));   // hoà chéo màu · nét (và hình nếu khác loại) giữa đường
-      dat(A.el, "opacity", (A.mo * (1 - fi)).toFixed(2));   // hoà chéo lúc cất cánh: biểu tượng thật mờ dần đúng lúc bản bay hiện
-      if (!B.nen) dat(B.el, "opacity", (B.mo * fo).toFixed(2));   // … và lúc đáp: biểu tượng thật hiện dần đúng lúc bản bay tan
+      var t = Math.min(1, Math.max(0, (p - c.tre) / BAYp)), pha = t <= 0 ? 0 : t >= 1 ? 2 : 1;
+      if (pha !== c.pha) {   // hoán đổi tức thì: bản bay trùng khít biểu tượng thật ở 2 đầu
+        dat(A.el, "visibility", pha >= 1 ? "hidden" : ""); dat(B.el, "visibility", pha === 1 ? "hidden" : "");
+        dat(u.el, "visibility", pha === 1 ? "visible" : "hidden"); c.pha = pha; }
+      if (pha !== 1) continue;
+      var e = em(t), vong = Math.sin(Math.PI * e), g = [], cx = 0, cy = 0;
+      for (var k = 0; k < 8; k++) { g[k] = nb(c.gA[k], c.gB[k], e); if (k & 1) cy += g[k] / 4; else cx += g[k] / 4; }
+      var dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy) || 1, ox = -dy / L * c.cong * vong, oy = dx / L * c.cong * vong, z = 1 + .1 * vong;
+      for (k = 0; k < 8; k += 2) { g[k] = cx + (g[k] - cx) * z + ox; g[k + 1] = cy + (g[k + 1] - cy) * z + oy; }   // bay cong nhẹ + nhô giữa đường
+      u.el.style.transform = maTran(g);
+      var h = Math.min(1, Math.max(0, (e - .3) / .4));
+      dat(u.el, "opacity", nb(A.mo, B.mo, e).toFixed(2));
+      dat(u.l2, "opacity", h.toFixed(2)); if (c.doiK) dat(u.l1, "opacity", (1 - h).toFixed(2));   // màu · nét (và hình nếu khác loại) chuyển dần giữa đường
     }
   }
   function ketThuc() {
     if (!ke) return;
-    if (ke.cap) ke.cap.forEach(function (c, q) { dat(c.A.el, "opacity", ""); if (!c.B.nen) dat(c.B.el, "opacity", ""); BAY[q].el.style.display = "none"; });
+    if (ke.cap) ke.cap.forEach(function (c, q) { dat(c.A.el, "visibility", ""); dat(c.B.el, "visibility", ""); BAY[q].el.style.display = "none"; });
     ke = null;
   }
   var em = function (t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
   var t0 = window.__dnT0 = performance.now(), dem = 0, fps = { n: 0, tong: 0, truoc: 0 }, CHU = GIU + CHEO;
   function khung(now) {
+    if (window.__dnDung) { requestAnimationFrame(khung); return; }   // bộ đo: đứng hình để so điểm ảnh lúc hoán đổi
     var tg = now - t0 + (window.__dnLech || 0), dt = innerWidth <= 768;   // __dnLech: bộ đo nhảy tới từng cảnh
     var n = Math.floor(tg / CHU), i = ((n % 4) + 4) % 4, pha = tg - n * CHU, j = (i + 1) % 4;
     var Cc = (n + 1) * (GIU - DOC), C = n * (GIU - DOC) + tichPhan(pha);   // Cc: đồng hồ lúc cảnh đứng (suốt lượt chuyển)
-    var p = pha < GIU ? 0 : (pha - GIU) / CHEO, mo = em(p);
+    var p = pha < GIU ? 0 : (pha - GIU) / CHEO, mo = em(Math.min(1, Math.max(0, (p - M0) / (M1 - M0))));   // nền mờ chéo giữa lúc cất cánh xong và lúc bắt đầu đáp
     if (ke && ke.n !== n) ketThuc();
     if (ke && ke.cap) C = Cc;   // đã đo chỗ cất cánh ⇒ giữ cảnh đứng đúng trạng thái đã đo
     var veNen = MUC < 2 || p > 0 || (++dem & 1) === 0;
-    for (var k = 0; k < 4; k++) { var a = k === i ? 1 - mo : k === j ? mo : 0, c = CANH[k], v = a > 0 ? "visible" : "hidden";
+    for (var k = 0; k < 4; k++) { var a = k === i ? 1 - mo : k === j ? mo : 0, c = CANH[k];
+      if (k === j && ke && a < .002) a = .002;   // hâm nóng: cảnh mới đã đo xong thì hiện mờ 0,2% ⇒ GPU vẽ sẵn lúc nền gần đứng, không dồn vào khung đầu lượt chuyển
+      var v = a > 0 ? "visible" : "hidden";
       if (c.mo !== a) { c[0].style.opacity = a.toFixed(3); c.mo = a; }
       if (c.vi !== v) { c[0].style.visibility = v; c.vi = v; }
-      if (a > 0 && veNen) veCanh(k, C, dt); }
+      if (a > .002 && veNen) veCanh(k, C, dt); }
     if (pha >= GIU - 420 && !ke) chuanBiB(n, i, j, Cc, dt);
     else if (pha >= GIU - 150 && ke && !ke.cap) chuanBiA(Cc, dt);
     if (p > 0) { if (!ke) chuanBiB(n, i, j, Cc, dt); if (!ke.cap) chuanBiA(Cc, dt); veMorph(p); }
@@ -326,11 +355,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
       fps.truoc = now; }
     if (!GIAM && !document.hidden) requestAnimationFrame(khung);
   }
-  var hRs = 0; addEventListener("resize", function () { clearTimeout(hRs); hRs = setTimeout(function () { ketThuc(); datNeo(); DA = [NaN, NaN, NaN, NaN]; if (GIAM) ve9(0); }, 300); });
+  var hRs = 0, rongTruoc = innerWidth; addEventListener("resize", function () { if (innerWidth === rongTruoc) return; rongTruoc = innerWidth;   // chỉ đổi cao (bàn phím ảo) ⇒ bỏ qua, nền giữ nguyên
+    clearTimeout(hRs); hRs = setTimeout(function () { ketThuc(); dungSan(); DA = [NaN, NaN, NaN, NaN]; if (GIAM) ve9(0); }, 300); });
   if (GIAM) { CANH[0][0].style.opacity = 1; CANH[0][0].style.visibility = "visible"; ve9(0); }
   else requestAnimationFrame(khung);
   document.addEventListener("visibilitychange", function () { fps.truoc = 0; if (!document.hidden && !GIAM) requestAnimationFrame(khung); });
-  window.__dnKe = function () { return ke; };   // bộ đo: so chỗ đáp đã đo với chỗ thật của biểu tượng lúc đáp
+  window.__dnKe = function () { return ke; }; window.__dnMa = maTran; window.__dnCanh = CANH;   // bộ đo: so chỗ đáp đã đo với chỗ thật của biểu tượng lúc đáp
   window.__dnVe = khung;   // bộ đo chụp đúng từng cảnh
 
   /* ---------- đăng nhập: đi qua tai-khoan.js (cùng phiên dashboard) ---------- */
