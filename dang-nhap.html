@@ -74,7 +74,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .dn-bao{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:#fff1f0;border:1px solid #ffa39e;color:#cf1322;font-size:13px;font-weight:600;line-height:1.3;text-shadow:none}
 .dn-bao svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .dn-st{min-height:32px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted)}.dn-st:empty{min-height:0}
-.dn-nut.dn-mo{display:none}.dn-than-i{display:flex;flex-direction:column;gap:18px}
+.dn-nut.dn-mo{display:none}
+/* 21/11 tối (user): «Ngoài Wi-Fi công ty» GHIM CỨNG ở đầu trang, trên cả khung đăng nhập (máy tính + điện thoại) */
+.dn-dinh{position:fixed;left:0;right:0;top:max(12px,env(safe-area-inset-top));z-index:10;display:flex;justify-content:center;padding:0 16px;pointer-events:none}
+.dn-dinh .dn-bao{pointer-events:auto;font-size:13.5px;padding:7px 12px;box-shadow:0 6px 18px rgba(0,0,0,.18)}.dn-than-i{display:flex;flex-direction:column;gap:18px}
 /* 21/11 tối: đăng nhập thành công ⇒ nút thành ✓ xanh, khung lùi mờ, nền tiến nhẹ, màn chuyển sang nền dashboard trong lúc trang Tổng quan (đã tải sẵn) mở */
 .dn-nut.xong{background:var(--good);border-color:var(--good)}
 .dn-man{position:fixed;inset:0;z-index:20;background:var(--nen-dash);opacity:0;pointer-events:none;transition:opacity .3s var(--ez-apple) .1s}
@@ -150,6 +153,7 @@ html.dn-xong #dnNen{transform:scale(1.04);transition:transform .5s var(--ez-appl
   </div>
 </main>
 <div class="dn-man" aria-hidden="true"></div>
+<div class="dn-dinh" id="dnDinh" role="status"></div>
 <script>
 (function () {
   /* ---------- bộ biểu tượng tượng hình (lưới 24, nét) ---------- */
@@ -437,6 +441,7 @@ html.dn-xong #dnNen{transform:scale(1.04);transition:transform .5s var(--ez-appl
   /* 21/11 chế độ khách chỉ ở Wi-Fi công ty. 21/11 tối (user «hiển thị tức thời»): hiện NGAY theo kết quả mạng đã nhớ (tk-mang), rồi kiểm lại ngay khi
      tai-khoan.js tải xong (DOMContentLoaded — không chờ ảnh / sự kiện load), sửa nếu đã đổi mạng; chưa từng nhớ thì hiện khi có kết quả */
   var lkK = document.getElementById("dnLkKhach"), ngoai = document.getElementById("dnNgoai"); lkK.href = window.DN_VE;
+  document.getElementById("dnDinh").appendChild(ngoai);   // dời viên ngoài mạng lên dải ghim đầu trang
   var hienMang = function (cty) { lkK.hidden = !cty; ngoai.hidden = !!cty; };
   try { var mn = JSON.parse(localStorage.getItem("tk-mang") || "null"); if (mn) hienMang(!!mn.cty); } catch (e) {}
   var kiemMang = function () { if (typeof window.tkMang !== "function") return hienMang(false); window.tkMang().then(function (r) { hienMang(!!r.cty); }); };
@@ -444,6 +449,6 @@ html.dn-xong #dnNen{transform:scale(1.04);transition:transform .5s var(--ez-appl
   addEventListener("pageshow", function (e) { if (e.persisted) HTML.classList.remove("dn-xong"); });
 })();
 </script>
-<script src="tai-khoan.js?v=20261121mg"></script>
+<script src="tai-khoan.js?v=20261121dn"></script>
 </body>
 </html>
