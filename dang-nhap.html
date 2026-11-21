@@ -14,7 +14,9 @@
    Đăng nhập dùng đúng tai-khoan.js (window.tkDangNhap) ⇒ cùng phiên tk-phien/tk-nho với dashboard. Đã có phiên ⇒ vào thẳng dashboard.
    Chuyển động: chỉ transform/opacity, chạy bằng requestAnimationFrame (không keyframe riêng — luật TK-30); ẩn tab / giảm chuyển động ⇒ đứng yên. */
 window.TK_TRANG_DN = 1;
-window.DN_VE = (function () { var v = new URLSearchParams(location.search).get("ve") || ""; return /^\/(retail|factory)\//.test(v) && !/^\/\//.test(v) ? v : "./"; })();   // 21/11 quay lại đúng link khi bị đưa sang đây
+window.DN_VE = (function () { var v = new URLSearchParams(location.search).get("ve") || "", m = /^\/(retail|factory)\//.exec(v); return m ? "/" + m[1] + "/" : "./"; })();
+   // 21/11 tối (user): đăng nhập / vào xem xong LUÔN về Tổng quan của đúng ứng dụng (Retail · Factory), không về link sâu
+window.DN_FAC = /^\/factory\//.test(window.DN_VE);   // vào từ link Factory ⇒ khung mang hiệu Audit Factory   // 21/11 quay lại đúng link khi bị đưa sang đây
 (function () { if (window.matchMedia && matchMedia("(max-width:768px)").matches) document.documentElement.classList.add("dn-gon"); })();   // điện thoại mở ở dạng THANH GỌN (không chớp khung to)
 (function () { try { if (localStorage.getItem("tk-phien") && !/[?&]o-lai=1/.test(location.search)) location.replace(window.DN_VE); } catch (e) {} })();
 </script>
@@ -145,7 +147,7 @@ html.dn-xong #dnNen{transform:scale(1.04);transition:transform .5s var(--ez-appl
 </div>
 <main class="dn-vung">
   <div class="dn-the" role="dialog" aria-labelledby="dnTt">
-    <div class="dn-hieu"><img src="hasaki-logo.png" alt=""><span><b>AUDIT RETAIL</b><i>Kiểm soát kho</i></span>
+    <div class="dn-hieu"><img src="hasaki-logo.png" alt="" id="dnLogo"><span><b id="dnTen">AUDIT RETAIL</b><i>Kiểm soát kho</i></span>
       <button type="button" class="dn-nut dn-mo" id="dnMo" aria-expanded="false" tabindex="-1">Đăng nhập<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div>
     <div class="dn-than"><div class="dn-than-i">
     <div class="dn-tt" id="dnTt">Đăng nhập</div>
@@ -408,6 +410,7 @@ html.dn-xong #dnNen{transform:scale(1.04);transition:transform .5s var(--ez-appl
     st.innerHTML = '<span class="dn-bao"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg><span></span></span>';
     st.querySelector(".dn-bao>span").textContent = msg; };
   try { var nho = localStorage.getItem("tk-id"); if (nho) { f.id.value = nho; } } catch (e) {}
+  if (window.DN_FAC) { document.getElementById("dnLogo").src = "/factory/factory-logo.png"; document.getElementById("dnTen").textContent = "AUDIT FACTORY"; document.title = "Đăng nhập · Audit Factory"; }
   var HTML = document.documentElement, mqDt = matchMedia("(max-width:768px)"), the = document.querySelector(".dn-the"), vung = document.querySelector(".dn-vung");
   var oNhap = function () { return f.id.value ? f.mk : f.id; };
   if (!mqDt.matches) oNhap().focus();
@@ -454,7 +457,7 @@ html.dn-xong #dnNen{transform:scale(1.04);transition:transform .5s var(--ez-appl
     nutV.tabIndex = cty === true ? 0 : -1; nutV.setAttribute("aria-label", cty === true ? "Kéo sang phải để xem không cần đăng nhập" : "");
     chuV.textContent = cty === true ? "Vuốt để xem không cần đăng nhập" : cty === false ? "Ngoài Wi-Fi công ty — cần đăng nhập" : "Đang kiểm tra Wi-Fi…"; };
   hienMang(null);
-  var vaoKhach = function () { HTML.classList.add("dn-xong"); location.replace(window.DN_VE); };
+  var vaoKhach = function () { try { sessionStorage.setItem("tk-khach", "1"); } catch (e) {} HTML.classList.add("dn-xong"); location.replace(window.DN_VE); };   // chọn xem khách: nhớ trong PHIÊN duyệt (đóng tab ⇒ lần sau vào lại màn đăng nhập)
   var keo = null, maxV = function () { return vuot.clientWidth - nutV.offsetWidth - 10; };
   nutV.addEventListener("pointerdown", function (e) { if (!vuot.classList.contains("mo-duoc")) return;
     e.preventDefault(); e.stopPropagation(); keo = { x0: e.clientX, x: 0, m: maxV() }; nutV.setPointerCapture(e.pointerId); vuot.classList.add("dang-keo"); });
