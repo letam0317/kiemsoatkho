@@ -15,11 +15,12 @@
    Chuyển động: chỉ transform/opacity, chạy bằng requestAnimationFrame (không keyframe riêng — luật TK-30); ẩn tab / giảm chuyển động ⇒ đứng yên. */
 window.TK_TRANG_DN = 1;
 window.DN_VE = (function () { var v = new URLSearchParams(location.search).get("ve") || ""; return /^\/(retail|factory)\//.test(v) && !/^\/\//.test(v) ? v : "./"; })();   // 21/11 quay lại đúng link khi bị đưa sang đây
+(function () { if (window.matchMedia && matchMedia("(max-width:768px)").matches) document.documentElement.classList.add("dn-gon"); })();   // điện thoại mở ở dạng THANH GỌN (không chớp khung to)
 (function () { try { if (localStorage.getItem("tk-phien") && !/[?&]o-lai=1/.test(location.search)) location.replace(window.DN_VE); } catch (e) {} })();
 </script>
 <style>
 *{box-sizing:border-box;margin:0}
-:root{--accent:#1677ff;--border:#d9d9d9;--text:rgba(0,0,0,.88);--muted:rgba(0,0,0,.45);--bad:#ff4d4f}
+:root{--accent:#1677ff;--border:#d9d9d9;--text:rgba(0,0,0,.88);--muted:rgba(0,0,0,.45);--bad:#ff4d4f;--good:rgb(82,196,26);--nen-dash:rgb(245,245,245)}
 html,body{height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;font-size:14px;color:var(--text);background:#0c241e;overflow:hidden}
 /* 21/11 tối: nền cao theo màn LỚN NHẤT (lvh) ⇒ bàn phím ảo mở không bóp / xô nền */
@@ -73,15 +74,39 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .dn-bao{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:#fff1f0;border:1px solid #ffa39e;color:#cf1322;font-size:13px;font-weight:600;line-height:1.3;text-shadow:none}
 .dn-bao svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .dn-st{min-height:32px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted)}.dn-st:empty{min-height:0}
+.dn-nut.dn-mo{display:none}.dn-than-i{display:flex;flex-direction:column;gap:18px}
+/* 21/11 tối: đăng nhập thành công ⇒ nút thành ✓ xanh, khung lùi mờ, nền tiến nhẹ, màn chuyển sang nền dashboard trong lúc trang Tổng quan (đã tải sẵn) mở */
+.dn-nut.xong{background:var(--good);border-color:var(--good)}
+.dn-man{position:fixed;inset:0;z-index:20;background:var(--nen-dash);opacity:0;pointer-events:none;transition:opacity .3s var(--ez-apple) .1s}
+html.dn-xong .dn-man{opacity:1}
+html.dn-xong .dn-the{transform:scale(.97);opacity:0;transition:transform .36s var(--ez-apple),opacity .28s ease .05s}
+html.dn-xong #dnNen{transform:scale(1.04);transition:transform .5s var(--ez-apple)}
 @media(max-width:768px){
   /* 21/11 tối (user): khung đăng nhập điện thoại lên TRÊN ⇒ bàn phím ảo bật lên không che ô nhập, trang không phải cuộn / xô nền */
-  .dn-vung{justify-content:center;align-items:flex-start;padding:max(20px,calc(env(safe-area-inset-top) + 12px)) 14px 14px}
+  /* 21/11 tối (user «kết hợp mẫu 6 + 7, sáng tạo / chuyên nghiệp hơn»): THANH GỌN kính ở ~1/7 màn (nền lộ trên + dưới) — chạm thì CHÍNH thanh đó nở
+     xuống thành khung (cùng bề ngang, mép trên đứng yên, bo góc / đệm / hàng ô nhập trượt mở), nút «Đăng nhập» trên thanh rút vào; chạm nền / Esc / vuốt lùi
+     thì thu lại. Khung mở vẫn ở nửa trên ⇒ bàn phím không che. «Xem không đăng nhập» / báo ngoài mạng = viên nổi dưới khung, hiện ngay từ kết quả nhớ. */
+  .dn-vung{flex-direction:column;justify-content:flex-start;align-items:center;gap:10px;padding:calc(max(16px,env(safe-area-inset-top)) + 13vh) 16px 16px}
   /* 21/11 user: khung điện thoại nhỏ lại 7/10 + nền trong suốt kiểu kính iPhone (lớp mờ + ánh viền trên); ô nhập giữ chữ 16px (iOS không tự phóng to) */
-  .dn-the{max-width:280px;padding:16px 16px 14px;gap:12px;border-radius:22px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35);
+  .dn-the{max-width:340px;padding:12px 12px 14px 14px;gap:0;border-radius:24px;transition:padding .45s var(--ez-apple),border-radius .45s var(--ez-apple),transform .36s var(--ez-apple),opacity .28s ease;
+    color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35);
     background:linear-gradient(145deg,rgba(255,255,255,.26),rgba(255,255,255,.06)),rgba(18,40,34,.40);
     -webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.38);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -1px 0 rgba(255,255,255,.12),0 14px 36px rgba(0,0,0,.30)}
-  .dn-hieu{gap:8px}.dn-hieu img{width:28px;height:28px}.dn-hieu b{font-size:13.5px}.dn-hieu i{font-size:11px;color:rgba(255,255,255,.78)}
+  .dn-hieu{gap:9px;min-height:40px}.dn-hieu img{width:32px;height:32px}.dn-hieu>span{flex:1;min-width:0}
+  .dn-nut.dn-mo{display:inline-flex;align-items:center;gap:2px;height:40px;max-width:150px;padding:0 10px 0 16px;border:0;border-radius:20px;background:var(--accent);color:white;
+    font:inherit;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-shadow:none;cursor:pointer;box-shadow:0 4px 14px rgba(22,119,255,.35);
+    transition:max-width .45s var(--ez-apple),padding .45s var(--ez-apple),opacity .25s ease,transform .45s var(--ez-apple)}
+  .dn-nut.dn-mo svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .dn-nut.dn-mo:active{transform:scale(.96)}
+  html:not(.dn-gon) .dn-nut.dn-mo{max-width:0;padding:0;opacity:0;pointer-events:none}
+  .dn-than{display:grid;grid-template-rows:1fr;transition:grid-template-rows .45s var(--ez-apple)}
+  .dn-than-i{min-height:0;overflow:hidden;gap:12px;transition:opacity .3s ease .08s,transform .45s var(--ez-apple)}.dn-than-i>:first-child{margin-top:12px}
+  html.dn-gon .dn-than{grid-template-rows:0fr}html.dn-gon .dn-than-i{opacity:0;transform:translateY(-8px);transition:opacity .18s ease,transform .45s var(--ez-apple)}
+  html.dn-gon .dn-the{padding:8px 8px 8px 12px;border-radius:28px;cursor:pointer}
+  .dn-vung>.dn-khach{min-height:32px}
+  .dn-vung>.dn-khach .dn-lk:not([hidden]){display:inline-flex;white-space:nowrap;align-items:center;gap:4px;height:32px;padding:0 14px;border-radius:16px;color:white;font-size:13px;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.3);
+    background:rgba(18,40,34,.42);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.32)}.dn-hieu b{font-size:13.5px}.dn-hieu i{font-size:11px;color:rgba(255,255,255,.78)}
   .dn-tt{font-size:16px}.dn-f{gap:9px}.dn-f label{font-size:12.5px;gap:3px}
   .dn-f input{height:34px;padding:3px 10px;font-size:16px;border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.82);text-shadow:none}
   .dn-nut{height:34px;font-size:14.5px;text-shadow:none}.dn-lk{color:#e3efff;font-size:13px}
@@ -105,7 +130,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 </div>
 <main class="dn-vung">
   <div class="dn-the" role="dialog" aria-labelledby="dnTt">
-    <div class="dn-hieu"><img src="hasaki-logo.png" alt=""><span><b>AUDIT RETAIL</b><i>Kiểm soát kho</i></span></div>
+    <div class="dn-hieu"><img src="hasaki-logo.png" alt=""><span><b>AUDIT RETAIL</b><i>Kiểm soát kho</i></span>
+      <button type="button" class="dn-nut dn-mo" id="dnMo" aria-expanded="false" tabindex="-1">Đăng nhập<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div>
+    <div class="dn-than"><div class="dn-than-i">
     <div class="dn-tt" id="dnTt">Đăng nhập</div>
     <form class="dn-f" id="dnF" autocomplete="on">
       <label>Tài khoản<input name="id" autocomplete="username" required placeholder="vd: tamlc"></label>
@@ -119,8 +146,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
       </div>
       <div class="dn-st" id="dnSt" role="status"></div>
     </form>
+    </div></div>
   </div>
 </main>
+<div class="dn-man" aria-hidden="true"></div>
 <script>
 (function () {
   /* ---------- bộ biểu tượng tượng hình (lưới 24, nét) ---------- */
@@ -369,22 +398,50 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
     st.innerHTML = '<span class="dn-bao"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg><span></span></span>';
     st.querySelector(".dn-bao>span").textContent = msg; };
   try { var nho = localStorage.getItem("tk-id"); if (nho) { f.id.value = nho; } } catch (e) {}
-  (f.id.value ? f.mk : f.id).focus();
+  var HTML = document.documentElement, mqDt = matchMedia("(max-width:768px)"), the = document.querySelector(".dn-the"), vung = document.querySelector(".dn-vung");
+  var oNhap = function () { return f.id.value ? f.mk : f.id; };
+  if (!mqDt.matches) oNhap().focus();
+  /* điện thoại: thanh gọn ⇄ khung (cùng một phần tử nở / thu) */
+  var dangMo = function () { return !HTML.classList.contains("dn-gon"); };
+  function mo() { if (dangMo()) return; HTML.classList.remove("dn-gon"); document.getElementById("dnMo").setAttribute("aria-expanded", "true");
+    oNhap().focus({ preventScroll: true });   // gọi ngay trong lượt chạm ⇒ iOS bật bàn phím
+    try { history.pushState({ dnMo: 1 }, ""); } catch (e) {} }
+  function thu(tuLui) { if (!mqDt.matches || !dangMo()) return; HTML.classList.add("dn-gon"); document.getElementById("dnMo").setAttribute("aria-expanded", "false");
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    if (!tuLui && history.state && history.state.dnMo) history.back(); }
+  the.addEventListener("click", function (e) { if (mqDt.matches && !dangMo()) { e.preventDefault(); mo(); } });
+  vung.addEventListener("click", function (e) { if (e.target === vung) thu(); });   // chạm nền (ngoài khung / viên) ⇒ thu lại
+  addEventListener("popstate", function () { thu(true); });
+  addEventListener("keydown", function (e) { if (e.key === "Escape") thu(); });
+  function datCho() {   // điện thoại: viên khách / ngoài mạng nằm dưới khung; máy tính: trong khung như cũ
+    var k = document.getElementById("dnKhach");
+    if (mqDt.matches) { if (k.parentNode !== vung) vung.appendChild(k); } else { if (k.parentNode === vung) f.insertBefore(k, st); HTML.classList.remove("dn-gon"); } }
+  datCho(); if (mqDt.addEventListener) mqDt.addEventListener("change", datCho);
+  /* tải sẵn trang Tổng quan (HTML + JS + CSS) lúc rảnh ⇒ đăng nhập xong mở gần như tức thì */
+  function taiSan() { var ve = new URL(window.DN_VE, location.href).href;
+    var them = function (u) { var l = document.createElement("link"); l.rel = "prefetch"; l.href = u; document.head.appendChild(l); };
+    fetch(ve, { credentials: "same-origin" }).then(function (r) { return r.text(); }).then(function (t) { var dd = {};
+      t.replace(/<(?:script[^>]+src|link[^>]+href)="([^"]+\.(?:js|css)(?:\?[^"]*)?)"/g, function (_, u) { var a = new URL(u, ve); if (a.origin === location.origin && !dd[a.href]) { dd[a.href] = 1; them(a.href); } }); })
+      .catch(function () {}); }
+  (window.requestIdleCallback || function (c) { setTimeout(c, 1200); })(taiSan);
   f.onsubmit = function (ev) {
     ev.preventDefault();
     if (typeof window.tkDangNhap !== "function") { return hienLoiDn("Chưa tải xong — bấm lại sau giây lát"); }
     var nut = f.querySelector("button"); nut.disabled = true; st.className = "dn-st"; st.textContent = "Đang kiểm tra…";
     window.tkDangNhap(f.id.value, f.mk.value).then(function () {
       try { localStorage.setItem("tk-id", f.id.value.trim().toLowerCase().replace(/@.*$/, "")); } catch (e) {}
+      nut.classList.add("xong"); nut.textContent = "✓"; st.textContent = ""; HTML.classList.add("dn-xong");   // hiệu ứng chạy trong lúc trình duyệt mở trang (giữ màn cũ tới khi trang mới vẽ)
       location.replace(window.DN_VE);
     }).catch(function (e) { hienLoiDn(e.message || "Không đăng nhập được"); nut.disabled = false; f.mk.select(); });
   };
-  /* 21/11 chế độ khách chỉ ở Wi-Fi công ty: kiểm mạng xong mới hiện «Xem không đăng nhập» (chỗ giữ sẵn 20px — không nhảy); ngoài mạng hiện 1 dòng */
+  /* 21/11 chế độ khách chỉ ở Wi-Fi công ty. 21/11 tối (user «hiển thị tức thời»): hiện NGAY theo kết quả mạng đã nhớ (tk-mang), rồi kiểm lại ngay khi
+     tai-khoan.js tải xong (DOMContentLoaded — không chờ ảnh / sự kiện load), sửa nếu đã đổi mạng; chưa từng nhớ thì hiện khi có kết quả */
   var lkK = document.getElementById("dnLkKhach"), ngoai = document.getElementById("dnNgoai"); lkK.href = window.DN_VE;
-  addEventListener("load", function () {
-    if (typeof window.tkMang !== "function") { ngoai.hidden = false; return; }
-    window.tkMang().then(function (r) { (r.cty ? lkK : ngoai).hidden = false; });
-  });
+  var hienMang = function (cty) { lkK.hidden = !cty; ngoai.hidden = !!cty; };
+  try { var mn = JSON.parse(localStorage.getItem("tk-mang") || "null"); if (mn) hienMang(!!mn.cty); } catch (e) {}
+  var kiemMang = function () { if (typeof window.tkMang !== "function") return hienMang(false); window.tkMang().then(function (r) { hienMang(!!r.cty); }); };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", kiemMang); else kiemMang();
+  addEventListener("pageshow", function (e) { if (e.persisted) HTML.classList.remove("dn-xong"); });
 })();
 </script>
 <script src="tai-khoan.js?v=20261121mg"></script>
