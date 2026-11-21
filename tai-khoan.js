@@ -95,7 +95,7 @@
   window.tkMang = tkMang;
   var veDangNhap = function () { var u = location.pathname + location.search + location.hash;
     location.replace("/retail/dang-nhap" + (/\.pages\.dev$/.test(location.hostname) ? "" : ".html") + "?ve=" + encodeURIComponent(u)); };   // máy chủ xem trước không tự bỏ .html
-  var BAT_CUA_MANG = location.hostname !== "audit-dc.pages.dev";   // 21/11: bản chính CHƯA bật — chờ user duyệt «live» thì đổi thành true (xem trước qua đường hầm đã bật)
+  var BAT_CUA_MANG = true;   // 21/11 user (3G vẫn xem được Tổng kết/Vi phạm/Quy định) ⇒ bật cả bản chính
   function cuaMang() {
     if (!BAT_CUA_MANG || window.TK_TRANG_DN || NOI_BO || TK.phien || !/^\/(retail|factory)\//.test(location.pathname) || /\/dang-nhap/.test(location.pathname)) return;   // không bao giờ vòng lặp
     var m = mangNho();
