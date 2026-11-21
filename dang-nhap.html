@@ -65,11 +65,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .dn-nut{height:32px;border:1px solid var(--accent);border-radius:6px;background:var(--accent);color:#fff;font:inherit;font-size:14px;cursor:pointer}
 .dn-nut:disabled{opacity:.6;cursor:wait}
 .dn-lk{color:var(--accent);text-align:center;text-decoration:none}
-.dn-khach{min-height:20px;display:flex;justify-content:center}.dn-khach [hidden]{display:none}.dn-ngoai{font-size:13px;color:var(--muted)}
-.dn-st{min-height:20px;font-size:13px;color:var(--muted)}.dn-st.loi{color:var(--bad)}
+/* 21/11 user «tăng độ nhận diện thông báo»: ngoài mạng / lỗi = viên đỏ đặc có biểu tượng, nổi trên mọi nền (kể cả kính); chỗ giữ sẵn ⇒ không nhảy */
+.dn-khach{min-height:32px;display:flex;align-items:center;justify-content:center}.dn-khach [hidden]{display:none}
+.dn-bao{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:#fff1f0;border:1px solid #ffa39e;color:#cf1322;font-size:13px;font-weight:600;line-height:1.3;text-shadow:none}
+.dn-bao svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dn-st{min-height:32px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted)}.dn-st:empty{min-height:0}
 @media(max-width:768px){
-  .dn-vung{justify-content:center;align-items:flex-end;padding:14px 14px max(14px,env(safe-area-inset-bottom))}
-  .dn-the{padding:22px 18px}.dn-f input,.dn-nut{height:40px;font-size:16px}
+  .dn-vung{justify-content:center;align-items:flex-end;padding:14px 14px max(28px,env(safe-area-inset-bottom))}
+  /* 21/11 user: khung điện thoại nhỏ lại 7/10 + nền trong suốt kiểu kính iPhone (lớp mờ + ánh viền trên); ô nhập giữ chữ 16px (iOS không tự phóng to) */
+  .dn-the{max-width:280px;padding:16px 16px 14px;gap:12px;border-radius:22px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35);
+    background:linear-gradient(145deg,rgba(255,255,255,.26),rgba(255,255,255,.06)),rgba(18,40,34,.40);
+    -webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.38);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -1px 0 rgba(255,255,255,.12),0 14px 36px rgba(0,0,0,.30)}
+  .dn-hieu{gap:8px}.dn-hieu img{width:28px;height:28px}.dn-hieu b{font-size:13.5px}.dn-hieu i{font-size:11px;color:rgba(255,255,255,.78)}
+  .dn-tt{font-size:16px}.dn-f{gap:9px}.dn-f label{font-size:12.5px;gap:3px}
+  .dn-f input{height:34px;padding:3px 10px;font-size:16px;border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.82);text-shadow:none}
+  .dn-nut{height:34px;font-size:14.5px;text-shadow:none}.dn-lk{color:#e3efff;font-size:13px}
+  .dn-khach,.dn-st{min-height:28px}.dn-st{color:rgba(255,255,255,.85)}.dn-bao{font-size:11.5px;padding:5px 8px;gap:5px;white-space:nowrap}.dn-bao svg{width:14px;height:14px}
   #c9 svg.dn-full{transform:translate(34%,-22%) scale(1.15)}
   #c6 .mat{width:900px}
   #c4 .luoi{grid-template-columns:repeat(4,1fr);gap:22px;padding:22px}#c4 .nm{border-radius:20px}
@@ -92,7 +104,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
       <label>Tài khoản<input name="id" autocomplete="username" required placeholder="vd: tamlc"></label>
       <label>Mật khẩu<input name="mk" type="password" autocomplete="current-password" required></label>
       <button type="submit" class="dn-nut">Đăng nhập</button>
-      <div class="dn-khach" id="dnKhach"><a class="dn-lk" id="dnLkKhach" href="./" hidden>Xem không đăng nhập</a><span class="dn-ngoai" id="dnNgoai" hidden>Ngoài Wi-Fi công ty — cần đăng nhập</span></div>
+      <div class="dn-khach" id="dnKhach">
+        <a class="dn-lk" id="dnLkKhach" href="./" hidden>Xem không đăng nhập</a>
+        <span class="dn-bao dn-ngoai" id="dnNgoai" hidden><svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M2 2l20 20M8.5 16.4a5 5 0 0 1 7 0M5 12.6a10 10 0 0 1 4.2-2.4M19 12.6a10 10 0 0 0-2.8-1.9M1.4 9a15 15 0 0 1 4.5-2.8M12 4.5a15 15 0 0 1 10.6 4.4"/>
+          <circle cx="12" cy="20" r="1"/></svg>Ngoài Wi-Fi công ty — cần đăng nhập</span>
+      </div>
       <div class="dn-st" id="dnSt" role="status"></div>
     </form>
   </div>
@@ -268,16 +285,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 
   /* ---------- đăng nhập: đi qua tai-khoan.js (cùng phiên dashboard) ---------- */
   var f = document.getElementById("dnF"), st = document.getElementById("dnSt");
+  var hienLoiDn = function (msg) { st.className = "dn-st loi";
+    st.innerHTML = '<span class="dn-bao"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg><span></span></span>';
+    st.querySelector(".dn-bao>span").textContent = msg; };
   try { var nho = localStorage.getItem("tk-id"); if (nho) { f.id.value = nho; } } catch (e) {}
   (f.id.value ? f.mk : f.id).focus();
   f.onsubmit = function (ev) {
     ev.preventDefault();
-    if (typeof window.tkDangNhap !== "function") { st.className = "dn-st loi"; st.textContent = "Chưa tải xong — bấm lại sau giây lát"; return; }
+    if (typeof window.tkDangNhap !== "function") { return hienLoiDn("Chưa tải xong — bấm lại sau giây lát"); }
     var nut = f.querySelector("button"); nut.disabled = true; st.className = "dn-st"; st.textContent = "Đang kiểm tra…";
     window.tkDangNhap(f.id.value, f.mk.value).then(function () {
       try { localStorage.setItem("tk-id", f.id.value.trim().toLowerCase().replace(/@.*$/, "")); } catch (e) {}
       location.replace(window.DN_VE);
-    }).catch(function (e) { st.className = "dn-st loi"; st.textContent = e.message || "Không đăng nhập được"; nut.disabled = false; f.mk.select(); });
+    }).catch(function (e) { hienLoiDn(e.message || "Không đăng nhập được"); nut.disabled = false; f.mk.select(); });
   };
   /* 21/11 chế độ khách chỉ ở Wi-Fi công ty: kiểm mạng xong mới hiện «Xem không đăng nhập» (chỗ giữ sẵn 20px — không nhảy); ngoài mạng hiện 1 dòng */
   var lkK = document.getElementById("dnLkKhach"), ngoai = document.getElementById("dnNgoai"); lkK.href = window.DN_VE;
