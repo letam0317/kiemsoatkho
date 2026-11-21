@@ -103,8 +103,8 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
                 @click="chonNV(nv)"
                 class="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-slate-100 last:border-0 flex items-center gap-2 text-xs transition"
               >
-                <!-- 09/11 user: ảnh đại diện trước tên (anh-nv.js tự gắn ảnh vào [data-anh-nv]) -->
-                <span class="w-7 h-7 shrink-0 rounded-full bg-slate-100 text-slate-500 text-[11px] font-semibold inline-flex items-center justify-center overflow-hidden" :data-anh-nv="nv.name" :data-anh-em="nv.email"
+                <!-- 09/11 user: ảnh đại diện trước tên (anh-nv.js tự gắn ảnh vào [data-anh-nv]) · 21/11 đồng bộ: vuông 32 bo 8 như mọi nơi -->
+                <span class="w-8 h-8 shrink-0 rounded-[8px] bg-slate-100 text-slate-500 text-[11px] font-semibold inline-flex items-center justify-center overflow-hidden" :data-anh-nv="nv.name" :data-anh-em="nv.email"
                       ><span x-text="String(nv.name||'?').trim().split(/\s+/).pop().charAt(0)"></span></span>
                 <!-- Cột 1: HỌ VÀ TÊN (Chiếm phần lớn không gian, không bị trống thừa) -->
                 <div class="flex-1 min-w-0 font-semibold text-slate-900 truncate" x-text="nv.name"></div>
@@ -130,7 +130,7 @@ history.replaceState(null,'',location.pathname+location.search+con);}}catch(e){}
             <div class="sticky top-0 bg-slate-100 border-b border-slate-200 px-3 py-2 text-[11px] font-bold text-slate-600 uppercase tracking-wider" x-text="'Đã chọn · ' + form.nhanVienViPhamList.length + ' người'"></div>
             <template x-for="(nv, idx) in form.nhanVienViPhamList" :key="nv.code || nv.email || idx">
               <div class="px-3 py-2 border-b border-slate-100 last:border-0 flex items-center gap-2 text-xs" :title="nv.name + ' · ' + nv.code + ' · ' + nv.email">
-                <span class="w-7 h-7 shrink-0 rounded-full bg-slate-100 text-slate-500 text-[11px] font-semibold inline-flex items-center justify-center overflow-hidden"
+                <span class="w-8 h-8 shrink-0 rounded-[8px] bg-slate-100 text-slate-500 text-[11px] font-semibold inline-flex items-center justify-center overflow-hidden"
                       :data-anh-nv="nv.name" :data-anh-em="nv.email"><span x-text="String(nv.name||'?').trim().split(/\s+/).pop().charAt(0)"></span></span>
                 <div class="flex-1 min-w-0"><div class="font-semibold text-slate-900 truncate" x-text="String(nv.name||'').trim().split(/\s+/).slice(-2).join(' ')"></div>
                   <div class="font-mono text-[11px] text-slate-500" x-text="nv.code"></div></div>
