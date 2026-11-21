@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0c241e">
+<title>Đăng nhập · Audit Hasaki</title>
+<link rel="icon" href="hasaki-logo.png">
+<link rel="stylesheet" href="hieu-ung.css">
+<script>
+/* 21/11 TRANG ĐĂNG NHẬP — trang mặc định khi vào audit-dc.pages.dev (_redirects «/ → /retail/dang-nhap»). User chọn 4 nền LUÂN PHIÊN theo thứ tự
+   mẫu 9 (quả cầu biểu tượng) → 6 (ô nổi 3D) → 4 (dập nổi) → 1 (sàn 3D) + «hiệu ứng chuyển động 3d mượt» (Tệp xuất › Mẫu trang đăng nhập hoạ tiết 3D 21-11-2026.pdf).
+   Đăng nhập dùng đúng tai-khoan.js (window.tkDangNhap) ⇒ cùng phiên tk-phien/tk-nho với dashboard. Đã có phiên ⇒ vào thẳng dashboard.
+   Chuyển động: chỉ transform/opacity, chạy bằng requestAnimationFrame (không keyframe riêng — luật TK-30); ẩn tab / giảm chuyển động ⇒ đứng yên. */
+window.TK_TRANG_DN = 1;
+(function () { try { if (localStorage.getItem("tk-phien") && !/[?&]o-lai=1/.test(location.search)) location.replace("./"); } catch (e) {} })();
+</script>
+<style>
+*{box-sizing:border-box;margin:0}
+:root{--accent:#1677ff;--border:#d9d9d9;--text:rgba(0,0,0,.88);--muted:rgba(0,0,0,.45);--bad:#ff4d4f}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;font-size:14px;color:var(--text);background:#0c241e;overflow:hidden}
+#dnNen{position:fixed;inset:0;overflow:hidden}
+.dn-canh{position:absolute;inset:0;overflow:hidden;opacity:0;will-change:opacity}
+.dn-canh svg.dn-full{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.dn-ic{fill:none;stroke-linecap:round;stroke-linejoin:round}
+/* cảnh 9 — quả cầu */
+#c9{background:radial-gradient(ellipse at 30% 50%,#174a3e,#061512 75%)}
+/* cảnh 6 — ô nổi 3D */
+#c6{background:linear-gradient(135deg,#f6fbf8,#dbece4);perspective:1600px}
+#c6 .mat{position:absolute;left:50%;top:50%;width:1500px;display:grid;grid-template-columns:repeat(10,1fr);gap:22px;transform-style:preserve-3d;will-change:transform}
+#c6 .o{aspect-ratio:1;border-radius:22px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 0 #e3efe9,6px 8px 14px rgba(23,63,53,.14);will-change:transform}
+#c6 .o svg{width:46%;height:46%;stroke:#7fb8a3;stroke-width:1.6}
+#c6 .o.cao{background:linear-gradient(145deg,#3f8a74,#286858);box-shadow:18px 22px 30px rgba(23,63,53,.22)}#c6 .o.cao svg{stroke:#eafff5;stroke-width:1.8}
+/* cảnh 4 — dập nổi */
+#c4{background:#e4ece8;perspective:1400px}
+#c4 .luoi{position:absolute;inset:-60px;display:grid;grid-template-columns:repeat(8,1fr);gap:34px;padding:40px;transform-style:preserve-3d;will-change:transform}
+#c4 .nm{aspect-ratio:1;border-radius:28px;background:#e4ece8;box-shadow:10px 10px 22px #c2cdc7,-10px -10px 22px #fff;display:flex;align-items:center;justify-content:center}
+#c4 .nm.lom{box-shadow:inset 8px 8px 16px #c2cdc7,inset -8px -8px 16px #fff}
+#c4 .nm svg{width:42%;height:42%;stroke:#3f8a74;stroke-width:1.6;opacity:.8;will-change:transform}
+/* cảnh 1 — sàn 3D */
+#c1{background:radial-gradient(ellipse at 50% 38%,#2c7a64 0,#123a31 45%,#071a16 100%)}
+#c1 .san,#c1 .troi{position:absolute;left:-60%;right:-60%;height:160%;background-repeat:repeat;background-size:280px;will-change:transform}
+#c1 .san{top:42%;transform-origin:50% 0;-webkit-mask-image:linear-gradient(transparent 0,#000 28%);mask-image:linear-gradient(transparent 0,#000 28%);opacity:.75}
+#c1 .troi{bottom:58%;transform-origin:50% 100%;-webkit-mask-image:linear-gradient(#000 72%,transparent);mask-image:linear-gradient(#000 72%,transparent);opacity:.32}
+#c1 .chan{position:absolute;left:0;right:0;top:41%;height:3px;background:linear-gradient(90deg,transparent,#bff5df,transparent);box-shadow:0 0 40px 10px rgba(127,230,190,.35);will-change:opacity}
+/* thẻ đăng nhập — cố định một chỗ cho cả 4 cảnh (không nhảy vị trí khi đổi nền) */
+.dn-vung{position:relative;z-index:5;height:100%;display:flex;align-items:center;justify-content:flex-end;padding:16px clamp(16px,8vw,120px)}
+.dn-the{width:100%;max-width:370px;padding:28px;border-radius:14px;display:flex;flex-direction:column;gap:18px;background:rgba(255,255,255,.88);
+  -webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);border:1px solid rgba(255,255,255,.7);
+  box-shadow:0 24px 60px rgba(0,0,0,.28),0 2px 6px rgba(0,0,0,.08);animation:fadeIn var(--t-cham) var(--ez-apple)}
+.dn-hieu{display:flex;align-items:center;gap:10px}.dn-hieu img{width:38px;height:38px;border-radius:50%}
+.dn-hieu b{display:block;font-size:17px;font-weight:600;letter-spacing:.06em}.dn-hieu i{display:block;font-style:normal;font-size:12px;color:var(--muted)}
+.dn-tt{font-size:20px;font-weight:600}
+.dn-f{display:flex;flex-direction:column;gap:12px}.dn-f label{display:flex;flex-direction:column;gap:4px}
+.dn-f input{height:32px;padding:4px 11px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);font:inherit;font-size:14px}
+.dn-f input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(22,119,255,.18)}
+.dn-nut{height:32px;border:1px solid var(--accent);border-radius:6px;background:var(--accent);color:#fff;font:inherit;font-size:14px;cursor:pointer}
+.dn-nut:disabled{opacity:.6;cursor:wait}
+.dn-lk{color:var(--accent);text-align:center;text-decoration:none}
+.dn-st{min-height:20px;font-size:13px;color:var(--muted)}.dn-st.loi{color:var(--bad)}
+@media(max-width:768px){
+  .dn-vung{justify-content:center;align-items:flex-end;padding:14px 14px max(14px,env(safe-area-inset-bottom))}
+  .dn-the{padding:22px 18px}.dn-f input,.dn-nut{height:40px;font-size:16px}
+  #c9 svg.dn-full{transform:translate(34%,-22%) scale(1.15)}
+  #c6 .mat{width:900px}
+  #c4 .luoi{grid-template-columns:repeat(4,1fr);gap:22px;padding:22px}#c4 .nm{border-radius:20px}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="dnIc"></defs></svg>
+<div id="dnNen" aria-hidden="true">
+  <div class="dn-canh" id="c9"></div>
+  <div class="dn-canh" id="c6"><div class="mat"></div></div>
+  <div class="dn-canh" id="c4"><div class="luoi"></div></div>
+  <div class="dn-canh" id="c1"><div class="troi"></div><div class="san"></div><div class="chan"></div></div>
+</div>
+<main class="dn-vung">
+  <div class="dn-the" role="dialog" aria-labelledby="dnTt">
+    <div class="dn-hieu"><img src="hasaki-logo.png" alt=""><span><b>AUDIT HASAKI</b><i>Kiểm soát kho</i></span></div>
+    <div class="dn-tt" id="dnTt">Đăng nhập</div>
+    <form class="dn-f" id="dnF" autocomplete="on">
+      <label>Tài khoản<input name="id" autocomplete="username" required placeholder="vd: tamlc"></label>
+      <label>Mật khẩu<input name="mk" type="password" autocomplete="current-password" required></label>
+      <button type="submit" class="dn-nut">Đăng nhập</button>
+      <a class="dn-lk" href="./">Xem không đăng nhập</a>
+      <div class="dn-st" id="dnSt" role="status"></div>
+    </form>
+  </div>
+</main>
+<script>
+(function () {
+  /* ---------- bộ biểu tượng tượng hình (lưới 24, nét) ---------- */
+  var IC = {
+    kinh: '<circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L20 20"/>',
+    khien: '<path d="M12 3l7 2.5v6c0 5-3.2 8.2-7 9.5-3.8-1.3-7-4.5-7-9.5v-6z"/><path d="M8.8 12l2.2 2.2 4.2-4.4"/>',
+    ke: '<path d="M4 3v18M20 3v18M4 8.5h16M4 14h16M4 19.5h16"/><rect x="6.5" y="5.2" width="4" height="3.3"/><rect x="12.5" y="10.7" width="5" height="3.3"/><rect x="7" y="16.2" width="3.5" height="3.3"/>',
+    cam: '<rect x="3" y="7" width="12" height="7" rx="2"/><path d="M15 9l5-2v7l-5-2M6 14v4H3"/>',
+    ma: '<path d="M4 5v14M6.5 5v14M9.5 5v14M11.5 5v14M14.5 5v14M17 5v14M20 5v14"/>',
+    co: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+    cole: '<path d="M15 4a5 5 0 0 0-4.6 6.9L4 17.3V20h2.7l6.4-6.4A5 5 0 0 0 20 9l-3 1-2-2 1-3z"/>',
+    bang: '<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 3h6v3H9zM8 11l1.5 1.5 3-3M14 11h2M8 16.5h8"/>',
+    thung: '<path d="M3 8l9-4 9 4v9l-9 4-9-4zM3 8l9 4 9-4M12 12v9"/>',
+    quet: '<path d="M3 6h13a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-5l-2 7H6l2-7H5a2 2 0 0 1-2-2zM20.5 6.5l2-1M20.5 11.5l2 1M21 9h2"/>',
+    choi: '<path d="M15 3l-4 9M7 12h8l2 9H5zM9 15v5M12 15v5"/>',
+    ghim: '<path d="M12 21s-6-5.5-6-10a6 6 0 0 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/>'
+  };
+  var KEY = Object.keys(IC), NS = "http://www.w3.org/2000/svg";
+  document.getElementById("dnIc").innerHTML = KEY.map(function (k) { return '<symbol id="dn-' + k + '" viewBox="0 0 24 24">' + IC[k] + "</symbol>"; }).join("");
+  var svgIc = function (k) { return '<svg class="dn-ic" viewBox="0 0 24 24"><use href="#dn-' + k + '"/></svg>'; };
+  var hat = 6, rd = function () { return (hat = (hat * 16807) % 2147483647) / 2147483647; };
+
+  /* ---------- cảnh 9: quả cầu biểu tượng xoay ---------- */
+  var c9 = document.getElementById("c9"), N = 64, R = 330, CX = 520, CY = 500, DIEM = [];
+  (function () {
+    var s = '<svg class="dn-full" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"><defs><radialGradient id="dnQc" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#3f8a74" stop-opacity=".55"/><stop offset="1" stop-color="#0c241e" stop-opacity="0"/></radialGradient></defs>' +
+      '<circle cx="' + CX + '" cy="' + CY + '" r="' + (R + 30) + '" fill="url(#dnQc)"/><g id="dnVt" fill="none" stroke="#7fb8a3"></g><g id="dnDiem"></g></svg>';
+    c9.innerHTML = s;
+    var vt = c9.querySelector("#dnVt"), h = "";
+    for (var k = -2; k <= 2; k++) { var f = Math.sqrt(1 - Math.pow(k * .38, 2)); h += '<ellipse cx="' + CX + '" cy="' + (CY + k * R * .38) + '" rx="' + R * f + '" ry="' + R * .22 * f + '" stroke-opacity=".18"/>'; }
+    for (k = 0; k < 4; k++) h += '<ellipse class="kt" cx="' + CX + '" cy="' + CY + '" rx="' + R + '" ry="' + R + '" stroke-opacity=".14"/>';
+    vt.innerHTML = h;
+    var g = c9.querySelector("#dnDiem");
+    for (var i = 0; i < N; i++) { var y = 1 - (i + .5) * 2 / N, r = Math.sqrt(1 - y * y), t = i * 2.39996;
+      var u = document.createElementNS(NS, "use"); u.setAttribute("href", "#dn-" + KEY[i % KEY.length]); u.setAttribute("width", "24"); u.setAttribute("height", "24");
+      u.setAttribute("class", "dn-ic"); g.appendChild(u); DIEM.push({ x: Math.cos(t) * r, y: y, z: Math.sin(t) * r, el: u }); }
+  })();
+  var KT = c9.querySelectorAll(".kt");
+  function ve9(tg, nx, ny) {
+    var ry = tg * .00011 + nx * .35, rx = .42 + ny * .25, cy = Math.cos(ry), sy = Math.sin(ry), cx = Math.cos(rx), sx = Math.sin(rx);
+    for (var i = 0; i < DIEM.length; i++) { var p = DIEM[i], x3 = p.x * cy + p.z * sy, z1 = -p.x * sy + p.z * cy, y2 = p.y * cx - z1 * sx, z2 = p.y * sx + z1 * cx;
+      var d = (z2 + 1) / 2, sz = 18 + d * 34, sc = sz / 24;
+      p.el.setAttribute("transform", "translate(" + (CX + x3 * R - sz / 2).toFixed(1) + " " + (CY + y2 * R - sz / 2).toFixed(1) + ") scale(" + sc.toFixed(3) + ")");
+      p.el.setAttribute("stroke", d > .55 ? "#bff5df" : "#7fb8a3"); p.el.setAttribute("stroke-width", ((1.4 + d * 1.4) / sc).toFixed(2)); p.el.setAttribute("opacity", (.2 + d * .8).toFixed(2)); }
+    for (var k = 0; k < KT.length; k++) KT[k].setAttribute("rx", (R * Math.abs(Math.cos(k * Math.PI / 4 + ry))).toFixed(1));
+  }
+
+  /* ---------- cảnh 6: ô nổi 3D — mặt nghiêng lắc nhẹ, ô xanh nhô lên hạ xuống ---------- */
+  var mat = document.querySelector("#c6 .mat"), CAO = [];
+  (function () { var h = ""; for (var i = 0; i < 80; i++) { var cao = rd() < .18; h += '<div class="o' + (cao ? " cao" : "") + '">' + svgIc(KEY[(i * 5) % KEY.length]) + "</div>"; } mat.innerHTML = h;
+    [].forEach.call(mat.querySelectorAll(".o.cao"), function (el, i) { CAO.push({ el: el, ph: i * 1.7, bien: 24 + (i * 13) % 36 }); }); })();
+  function ve6(tg, nx, ny, dt) {
+    var lx = Math.sin(tg * .00018) * 3 + nx * 6, ly = Math.cos(tg * .00014) * 2.5 + ny * 5;
+    mat.style.transform = "translate(" + (dt ? "-50%,-80%" : "-62%,-48%") + ") rotateX(" + (56 + ly).toFixed(2) + "deg) rotateZ(" + (-38 + lx).toFixed(2) + "deg)";
+    for (var i = 0; i < CAO.length; i++) { var c = CAO[i]; c.el.style.transform = "translateZ(" + (c.bien * (.55 + .45 * Math.sin(tg * .0012 + c.ph))).toFixed(1) + "px)"; }
+  }
+
+  /* ---------- cảnh 4: dập nổi — cả mặt nghiêng theo chuột / tự lắc; biểu tượng phồng lên theo làn sóng chéo ---------- */
+  var luoi = document.querySelector("#c4 .luoi"), SONG = [];
+  (function () { var h = ""; for (var i = 0; i < 64; i++) h += '<div class="nm' + (i % 3 === 2 ? " lom" : "") + '">' + svgIc(KEY[(i * 7) % KEY.length]) + "</div>"; luoi.innerHTML = h;
+    [].forEach.call(luoi.querySelectorAll("svg"), function (el, i) { SONG.push({ el: el, c: i % 8, r: Math.floor(i / 8) }); }); })();
+  function ve4(tg, nx, ny, dt) {
+    luoi.style.transform = "rotateX(" + (Math.sin(tg * .0002) * 4 + ny * 6).toFixed(2) + "deg) rotateY(" + (Math.cos(tg * .00017) * 4 + nx * 6).toFixed(2) + "deg)";
+    var cot = dt ? 4 : 8;
+    for (var i = 0; i < SONG.length; i++) { var s = SONG[i], c = i % cot, r = Math.floor(i / cot), w = Math.sin(tg * .0016 - (c + r) * .55);
+      s.el.style.transform = "scale(" + (1 + Math.max(0, w) * .22).toFixed(3) + ")"; }
+  }
+
+  /* ---------- cảnh 1: sàn 3D — hoạ tiết trôi về chân trời ---------- */
+  var o1 = (function () { var s = "", k = 0, o = 70; for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) { var key = KEY[(k++ * 5) % KEY.length], x = c * o + (r % 2) * o / 2 + o * .2, y = r * o + o * .2, sc = o * .55 / 24;
+      s += '<g transform="translate(' + x + " " + y + ") scale(" + sc + ')" fill="none" stroke="#9fe0c6" stroke-width="' + (1.5 / sc) + '" stroke-linecap="round" stroke-linejoin="round">' + IC[key] + "</g>"; }
+    return "url(data:image/svg+xml;base64," + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="280" height="280" viewBox="0 0 280 280">' + s + "</svg>") + ")"; })();
+  var san = document.querySelector("#c1 .san"), troi = document.querySelector("#c1 .troi"), chan = document.querySelector("#c1 .chan");
+  san.style.backgroundImage = troi.style.backgroundImage = o1;
+  function ve1(tg, nx) {
+    var d = (tg * .03) % 280, lx = nx * 4;
+    san.style.transform = "perspective(700px) rotateX(64deg) rotateZ(" + lx.toFixed(2) + "deg) translate3d(0," + (-d).toFixed(1) + "px,0)";
+    troi.style.transform = "perspective(700px) rotateX(-64deg) rotateZ(" + (-lx).toFixed(2) + "deg) translate3d(0," + d.toFixed(1) + "px,0)";
+    chan.style.opacity = (.75 + .25 * Math.sin(tg * .0015)).toFixed(2);
+  }
+
+  /* ---------- luân phiên 9 → 6 → 4 → 1, mờ chéo mượt ---------- */
+  var CANH = [[document.getElementById("c9"), ve9], [document.getElementById("c6"), ve6], [document.getElementById("c4"), ve4], [document.getElementById("c1"), ve1]];
+  var GIU = 9000, CHEO = 1600, GIAM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var tro = { x: 0, y: 0 }, muc = { x: 0, y: 0 };
+  addEventListener("pointermove", function (e) { muc.x = e.clientX / innerWidth * 2 - 1; muc.y = e.clientY / innerHeight * 2 - 1; }, { passive: true });
+  addEventListener("deviceorientation", function (e) { if (e.gamma == null) return; muc.x = Math.max(-1, Math.min(1, e.gamma / 30)); muc.y = Math.max(-1, Math.min(1, (e.beta - 45) / 30)); }, { passive: true });
+  var em = function (t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+  var t0 = performance.now();
+  function khung(now) {
+    var tg = now - t0 + (window.__dnLech || 0), dt = innerWidth <= 768;   // __dnLech: bộ đo nhảy tới từng cảnh
+    tro.x += (muc.x - tro.x) * .05; tro.y += (muc.y - tro.y) * .05;   // chuột / nghiêng máy: theo trễ cho mượt
+    var chu = GIU + CHEO, i = Math.floor(tg / chu) % 4, pha = tg % chu, j = (i + 1) % 4;
+    var mo = pha < GIU ? 0 : em((pha - GIU) / CHEO);
+    for (var k = 0; k < 4; k++) { var a = k === i ? 1 - mo : k === j ? mo : 0, c = CANH[k];
+      c[0].style.opacity = a.toFixed(3); c[0].style.visibility = a > 0 ? "visible" : "hidden";
+      if (a > 0) c[1](tg, tro.x, tro.y, dt); }
+    if (!GIAM && !document.hidden) requestAnimationFrame(khung);
+  }
+  if (GIAM) { CANH[0][0].style.opacity = 1; ve9(0, 0, 0); ve6(0, 0, 0, innerWidth <= 768); }
+  else requestAnimationFrame(khung);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && !GIAM) requestAnimationFrame(khung); });
+  window.__dnVe = khung;   // bộ đo chụp đúng từng cảnh
+
+  /* ---------- đăng nhập: đi qua tai-khoan.js (cùng phiên dashboard) ---------- */
+  var f = document.getElementById("dnF"), st = document.getElementById("dnSt");
+  try { var nho = localStorage.getItem("tk-id"); if (nho) { f.id.value = nho; } } catch (e) {}
+  (f.id.value ? f.mk : f.id).focus();
+  f.onsubmit = function (ev) {
+    ev.preventDefault();
+    if (typeof window.tkDangNhap !== "function") { st.className = "dn-st loi"; st.textContent = "Chưa tải xong — bấm lại sau giây lát"; return; }
+    var nut = f.querySelector("button"); nut.disabled = true; st.className = "dn-st"; st.textContent = "Đang kiểm tra…";
+    window.tkDangNhap(f.id.value, f.mk.value).then(function () {
+      try { localStorage.setItem("tk-id", f.id.value.trim().toLowerCase().replace(/@.*$/, "")); } catch (e) {}
+      location.replace("./");
+    }).catch(function (e) { st.className = "dn-st loi"; st.textContent = e.message || "Không đăng nhập được"; nut.disabled = false; f.mk.select(); });
+  };
+})();
+</script>
+<script src="tai-khoan.js?v=20261121dn"></script>
+</body>
+</html>
