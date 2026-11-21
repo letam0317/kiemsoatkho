@@ -20,7 +20,8 @@ window.DN_VE = (function () { var v = new URLSearchParams(location.search).get("
 </script>
 <style>
 *{box-sizing:border-box;margin:0}
-:root{--accent:#1677ff;--border:#d9d9d9;--text:rgba(0,0,0,.88);--muted:rgba(0,0,0,.45);--bad:#ff4d4f;--good:rgb(82,196,26);--nen-dash:rgb(245,245,245)}
+:root{--accent:#1677ff;--border:#d9d9d9;--text:rgba(0,0,0,.88);--muted:rgba(0,0,0,.45);--bad:#ff4d4f;
+  --good:rgb(82,196,26);--xanh-dn:rgb(40,104,88);--do-nhat:rgb(255,241,240);--do-vien:rgb(255,163,158);--do-dam:rgb(207,19,34);--nen-dash:rgb(245,245,245)}
 html,body{height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;font-size:14px;color:var(--text);background:#0c241e;overflow:hidden}
 /* 21/11 tối: nền cao theo màn LỚN NHẤT (lvh) ⇒ bàn phím ảo mở không bóp / xô nền */
@@ -70,14 +71,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .dn-nut:disabled{opacity:.6;cursor:wait}
 .dn-lk{color:var(--accent);text-align:center;text-decoration:none}
 /* 21/11 user «tăng độ nhận diện thông báo»: ngoài mạng / lỗi = viên đỏ đặc có biểu tượng, nổi trên mọi nền (kể cả kính); chỗ giữ sẵn ⇒ không nhảy */
-.dn-khach{min-height:32px;display:flex;align-items:center;justify-content:center}.dn-khach [hidden]{display:none}
 .dn-bao{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:#fff1f0;border:1px solid #ffa39e;color:#cf1322;font-size:13px;font-weight:600;line-height:1.3;text-shadow:none}
 .dn-bao svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .dn-st{min-height:32px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted)}.dn-st:empty{min-height:0}
 .dn-nut.dn-mo{display:none}
-/* 21/11 tối (user): «Ngoài Wi-Fi công ty» GHIM CỨNG ở đầu trang, trên cả khung đăng nhập (máy tính + điện thoại) */
-.dn-dinh{position:fixed;left:0;right:0;top:max(12px,env(safe-area-inset-top));z-index:10;display:flex;justify-content:center;padding:0 16px;pointer-events:none}
-.dn-dinh .dn-bao{pointer-events:auto;font-size:13.5px;padding:7px 12px;box-shadow:0 6px 18px rgba(0,0,0,.18)}.dn-than-i{display:flex;flex-direction:column;gap:18px}
+/* 21/11 tối (user chọn mẫu 2 «rãnh vuốt kiểu mở khoá»): lối XEM KHÔNG ĐĂNG NHẬP gộp vào khung — 3 trạng thái cùng một chỗ (không nhảy):
+   · Wi-Fi công ty: nút mắt kéo sang phải hết rãnh ⇒ vào xem (thả giữa chừng thì trượt về) · Ngoài Wi-Fi: rãnh khoá đỏ, ổ khoá, chạm ⇒ mở ô đăng nhập
+   · Đang kiểm tra: rãnh mờ «Đang kiểm tra Wi-Fi…». Thay viên ngoài mạng ghim đầu trang (không nói 2 lần cùng một ý). */
+.dn-vuot{position:relative;display:flex;align-items:center;gap:10px;height:44px;margin-top:2px;padding:4px;border-radius:22px;font-size:13px;font-weight:600;
+  background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.08);user-select:none;-webkit-user-select:none;--p:0}
+.dn-vuot-nut{position:relative;z-index:1;flex:none;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:white;color:var(--xanh-dn);
+  box-shadow:0 2px 8px rgba(0,0,0,.22);touch-action:none;transition:transform .4s var(--ez-apple),background .25s}
+.dn-vuot-nut svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dn-vuot-chu{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:calc(1 - var(--p) * 1.6);color:var(--text)}
+.dn-vuot-mui{margin-right:10px;letter-spacing:-3px;color:var(--muted);opacity:calc(1 - var(--p) * 2)}
+.dn-vuot.mo-duoc .dn-vuot-nut{cursor:grab}.dn-vuot.dang-keo .dn-vuot-nut{transition:none;cursor:grabbing}
+.dn-vuot.khoa{background:var(--do-nhat);border-color:var(--do-vien);cursor:pointer}.dn-vuot.khoa .dn-vuot-nut{color:var(--do-dam);background:white}
+.dn-vuot.khoa .dn-vuot-chu{color:var(--do-dam)}.dn-vuot.khoa .dn-vuot-mui,.dn-vuot.cho .dn-vuot-mui{display:none}.dn-vuot.cho{opacity:.7}.dn-vuot.cho .dn-vuot-chu{color:var(--muted)}.dn-than-i{display:flex;flex-direction:column;gap:18px}
 /* 21/11 tối: đăng nhập thành công ⇒ nút thành ✓ xanh, khung lùi mờ, nền tiến nhẹ, màn chuyển sang nền dashboard trong lúc trang Tổng quan (đã tải sẵn) mở */
 .dn-nut.xong{background:var(--good);border-color:var(--good)}
 .dn-man{position:fixed;inset:0;z-index:20;background:var(--nen-dash);opacity:0;pointer-events:none;transition:opacity .3s var(--ez-apple) .1s}
@@ -107,13 +117,15 @@ html.dn-xong #dnNen{transform:scale(1.04);transition:transform .5s var(--ez-appl
   .dn-than-i{min-height:0;overflow:hidden;gap:12px;transition:opacity .3s ease .08s,transform .45s var(--ez-apple)}.dn-than-i>:first-child{margin-top:12px}
   html.dn-gon .dn-than{grid-template-rows:0fr}html.dn-gon .dn-than-i{opacity:0;transform:translateY(-8px);transition:opacity .18s ease,transform .45s var(--ez-apple)}
   html.dn-gon .dn-the{padding:8px 8px 8px 12px;border-radius:28px;cursor:pointer}
-  .dn-vung>.dn-khach{min-height:32px}
-  .dn-vung>.dn-khach .dn-lk:not([hidden]){display:inline-flex;white-space:nowrap;align-items:center;gap:4px;height:32px;padding:0 14px;border-radius:16px;color:white;font-size:13px;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.3);
-    background:rgba(18,40,34,.42);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.32)}.dn-hieu b{font-size:13.5px}.dn-hieu i{font-size:11px;color:rgba(255,255,255,.78)}
   .dn-tt{font-size:16px}.dn-f{gap:9px}.dn-f label{font-size:12.5px;gap:3px}
   .dn-f input{height:34px;padding:3px 10px;font-size:16px;border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.82);text-shadow:none}
   .dn-nut{height:34px;font-size:14.5px;text-shadow:none}.dn-lk{color:#e3efff;font-size:13px}
-  .dn-khach,.dn-st{min-height:28px}.dn-st{color:rgba(255,255,255,.85)}.dn-bao{font-size:11.5px;padding:5px 8px;gap:5px;white-space:nowrap}.dn-bao svg{width:14px;height:14px}
+  .dn-vuot{margin-top:10px;background:rgba(0,0,0,.22);border-color:rgba(255,255,255,.22)}
+  .dn-vuot-chu{background:linear-gradient(90deg,rgba(255,255,255,.55),white 50%,rgba(255,255,255,.55));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+  .dn-vuot-mui{color:rgba(255,255,255,.7)}
+  .dn-vuot.khoa{background:rgba(255,77,79,.22);border-color:rgba(255,163,158,.55)}.dn-vuot.khoa .dn-vuot-chu{background:none;color:white}
+  .dn-vuot.cho .dn-vuot-chu{background:none;color:rgba(255,255,255,.75)}
+  .dn-st{min-height:28px}.dn-st{color:rgba(255,255,255,.85)}.dn-bao{font-size:11.5px;padding:5px 8px;gap:5px;white-space:nowrap}.dn-bao svg{width:14px;height:14px}
   #c9 svg.dn-full{transform:translate(45%,20%) scale(.75)}
   #c6 .mat{width:900px}
   #c4 .luoi{grid-template-columns:repeat(4,1fr);gap:22px;padding:22px}#c4 .nm{border-radius:20px}
@@ -141,19 +153,13 @@ html.dn-xong #dnNen{transform:scale(1.04);transition:transform .5s var(--ez-appl
       <label>Tài khoản<input name="id" autocomplete="username" required placeholder="vd: tamlc"></label>
       <label>Mật khẩu<input name="mk" type="password" autocomplete="current-password" required></label>
       <button type="submit" class="dn-nut">Đăng nhập</button>
-      <div class="dn-khach" id="dnKhach">
-        <a class="dn-lk" id="dnLkKhach" href="./" hidden>Xem không đăng nhập</a>
-        <span class="dn-bao dn-ngoai" id="dnNgoai" hidden><svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M2 2l20 20M8.5 16.4a5 5 0 0 1 7 0M5 12.6a10 10 0 0 1 4.2-2.4M19 12.6a10 10 0 0 0-2.8-1.9M1.4 9a15 15 0 0 1 4.5-2.8M12 4.5a15 15 0 0 1 10.6 4.4"/>
-          <circle cx="12" cy="20" r="1"/></svg>Ngoài Wi-Fi công ty — cần đăng nhập</span>
-      </div>
       <div class="dn-st" id="dnSt" role="status"></div>
     </form>
     </div></div>
+    <div class="dn-vuot cho" id="dnVuot" role="status"><span class="dn-vuot-nut" tabindex="-1"></span><span class="dn-vuot-chu"></span><span class="dn-vuot-mui" aria-hidden="true">›››</span></div>
   </div>
 </main>
 <div class="dn-man" aria-hidden="true"></div>
-<div class="dn-dinh" id="dnDinh" role="status"></div>
 <script>
 (function () {
   /* ---------- bộ biểu tượng tượng hình (lưới 24, nét) ---------- */
@@ -417,10 +423,7 @@ html.dn-xong #dnNen{transform:scale(1.04);transition:transform .5s var(--ez-appl
   vung.addEventListener("click", function (e) { if (e.target === vung) thu(); });   // chạm nền (ngoài khung / viên) ⇒ thu lại
   addEventListener("popstate", function () { thu(true); });
   addEventListener("keydown", function (e) { if (e.key === "Escape") thu(); });
-  function datCho() {   // điện thoại: viên khách / ngoài mạng nằm dưới khung; máy tính: trong khung như cũ
-    var k = document.getElementById("dnKhach");
-    if (mqDt.matches) { if (k.parentNode !== vung) vung.appendChild(k); } else { if (k.parentNode === vung) f.insertBefore(k, st); HTML.classList.remove("dn-gon"); } }
-  datCho(); if (mqDt.addEventListener) mqDt.addEventListener("change", datCho);
+  if (mqDt.addEventListener) mqDt.addEventListener("change", function () { if (!mqDt.matches) HTML.classList.remove("dn-gon"); });
   /* tải sẵn trang Tổng quan (HTML + JS + CSS) lúc rảnh ⇒ đăng nhập xong mở gần như tức thì */
   function taiSan() { var ve = new URL(window.DN_VE, location.href).href;
     var them = function (u) { var l = document.createElement("link"); l.rel = "prefetch"; l.href = u; document.head.appendChild(l); };
@@ -440,9 +443,30 @@ html.dn-xong #dnNen{transform:scale(1.04);transition:transform .5s var(--ez-appl
   };
   /* 21/11 chế độ khách chỉ ở Wi-Fi công ty. 21/11 tối (user «hiển thị tức thời»): hiện NGAY theo kết quả mạng đã nhớ (tk-mang), rồi kiểm lại ngay khi
      tai-khoan.js tải xong (DOMContentLoaded — không chờ ảnh / sự kiện load), sửa nếu đã đổi mạng; chưa từng nhớ thì hiện khi có kết quả */
-  var lkK = document.getElementById("dnLkKhach"), ngoai = document.getElementById("dnNgoai"); lkK.href = window.DN_VE;
-  document.getElementById("dnDinh").appendChild(ngoai);   // dời viên ngoài mạng lên dải ghim đầu trang
-  var hienMang = function (cty) { lkK.hidden = !cty; ngoai.hidden = !!cty; };
+  var vuot = document.getElementById("dnVuot"), nutV = vuot.querySelector(".dn-vuot-nut"), chuV = vuot.querySelector(".dn-vuot-chu");
+  var IC_V = { mat: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    khoa: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    wifi: '<path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 9a15 15 0 0 1 20 0"/><circle cx="12" cy="19.5" r="1"/>' };
+  var hienMang = function (cty) {   // true: vuốt được · false: khoá (ngoài Wi-Fi) · null: đang kiểm tra
+    var k = cty === true ? "mo-duoc" : cty === false ? "khoa" : "cho";
+    vuot.className = "dn-vuot " + k; nutV.style.transform = ""; vuot.style.setProperty("--p", 0);
+    nutV.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + IC_V[cty === true ? "mat" : cty === false ? "khoa" : "wifi"] + "</svg>";
+    nutV.tabIndex = cty === true ? 0 : -1; nutV.setAttribute("aria-label", cty === true ? "Kéo sang phải để xem không cần đăng nhập" : "");
+    chuV.textContent = cty === true ? "Vuốt để xem không cần đăng nhập" : cty === false ? "Ngoài Wi-Fi công ty — cần đăng nhập" : "Đang kiểm tra Wi-Fi…"; };
+  hienMang(null);
+  var vaoKhach = function () { HTML.classList.add("dn-xong"); location.replace(window.DN_VE); };
+  var keo = null, maxV = function () { return vuot.clientWidth - nutV.offsetWidth - 10; };
+  nutV.addEventListener("pointerdown", function (e) { if (!vuot.classList.contains("mo-duoc")) return;
+    e.preventDefault(); e.stopPropagation(); keo = { x0: e.clientX, x: 0, m: maxV() }; nutV.setPointerCapture(e.pointerId); vuot.classList.add("dang-keo"); });
+  nutV.addEventListener("pointermove", function (e) { if (!keo) return; keo.x = Math.max(0, Math.min(keo.m, e.clientX - keo.x0));
+    nutV.style.transform = "translateX(" + keo.x + "px)"; vuot.style.setProperty("--p", (keo.x / keo.m).toFixed(3)); });
+  var tha = function () { if (!keo) return; var du = keo.x >= keo.m * .82, m = keo.m; keo = null; vuot.classList.remove("dang-keo");
+    if (du) { nutV.style.transform = "translateX(" + m + "px)"; vuot.style.setProperty("--p", 1); vaoKhach(); }   // tới đích ⇒ vào xem
+    else { nutV.style.transform = ""; vuot.style.setProperty("--p", 0); } };   // thả giữa chừng ⇒ trượt về
+  nutV.addEventListener("pointerup", tha); nutV.addEventListener("pointercancel", tha);
+  nutV.addEventListener("keydown", function (e) { if (vuot.classList.contains("mo-duoc") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); vaoKhach(); } });
+  vuot.addEventListener("click", function (e) { if (vuot.classList.contains("mo-duoc") || vuot.classList.contains("cho")) e.stopPropagation();   // vuốt không làm nở khung
+    else if (!mqDt.matches) oNhap().focus(); });   // rãnh khoá: điện thoại ⇒ nở khung (sự kiện lên thẻ); máy tính ⇒ vào ô nhập
   try { var mn = JSON.parse(localStorage.getItem("tk-mang") || "null"); if (mn) hienMang(!!mn.cty); } catch (e) {}
   var kiemMang = function () { if (typeof window.tkMang !== "function") return hienMang(false); window.tkMang().then(function (r) { hienMang(!!r.cty); }); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", kiemMang); else kiemMang();
