@@ -873,14 +873,16 @@
       /* 08/11 Người thực hiện: 1 lưới căn giữa khung — hàng 1 «Người thực hiện · PTCH · bắt tay · Bảo trì» cùng 12/600; dưới ảnh + tên thẳng cột */
       B + " .bd-ben .hp-vtrow>.bd-nt-hang{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px 14px}" +
         B + " .bd-nt-ng{display:inline-flex;flex-direction:column;align-items:center;gap:4px;min-width:44px;text-align:center}" +
-        B + " .bd-nt-av{position:relative;display:inline-flex}" + B + " .bd-nt-av .bd-av{width:32px;height:32px;font-size:13px}" + B + " .bd-nt-ng.vuong .bd-nt-av .bd-av{border-radius:8px}" +
-        B + " .bd-nt-hh{position:absolute;right:-6px;bottom:-3px;min-width:18px;height:14px;padding:0 3px;border-radius:4px;font-size:9px;line-height:14px;font-weight:600;" +
-        "color:rgb(255,255,255);box-shadow:0 0 0 1.5px var(--surface)}" + B + " .bd-nt-hh.pt{background:rgb(46,125,79)}" + B + " .bd-nt-hh.bt{background:rgb(31,95,153)}" +
+        B + " .bd-nt-av{position:relative;display:inline-flex}" + 
+        B + " .bd-nt-av .bd-av{width:var(--av,32px);height:var(--av,32px);font-size:13px;border-radius:var(--av-bo,8px)}" + B + " .bd-nt-ng.vuong .bd-nt-av .bd-av{border-radius:var(--av-bo,8px)}" +
+        B + " .bd-nt-hh{position:absolute;left:0;right:0;bottom:0;height:10px;border-radius:0 0 var(--av-bo,8px) var(--av-bo,8px);font-size:8px;line-height:10px;font-weight:600;text-align:center;letter-spacing:.2px;" +
+        "color:rgb(255,255,255);background:rgba(0,0,0,.45)}"   /* 21/11 user: Y KHUÔN dải số ngày Vi phạm (dải tối mờ trong ảnh) — chữ PTCH / BT / CĐ */ +
         B + " .bd-nt-ten{font-size:12.5px;line-height:16px;color:var(--text);white-space:nowrap}" + B + " .bd-nt-ic{align-self:flex-start;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--accent);margin-top:8px}" +
         B + " .bd-nt-ic small{font-family:Roboto,system-ui,sans-serif;font-size:10px;line-height:13px;text-transform:lowercase;white-space:nowrap;color:inherit}" +
-        B + " .bd-nt-av>.bd-nt-doi{position:absolute;top:-7px;right:-9px;z-index:1;width:18px;height:18px;min-width:0;min-height:0;margin:0;padding:0;border-radius:50%;" +
-          "display:inline-flex;align-items:center;justify-content:center;background:var(--surface);box-shadow:0 0 0 1px var(--ad-chia,var(--border))}" +
-        B + " .bd-nt-av>.bd-nt-doi svg{width:11px;height:11px}" + B + " .bd-nt-av>.bd-nt-doi::before{content:'';position:absolute;inset:-8px}" +   /* vùng bấm nới, không đổi hình */
+        B + " .bd-nt-av>.bd-nt-doi{position:absolute;top:0;right:0;z-index:1;width:16px;height:16px;min-width:0;min-height:0;margin:0;padding:0;border:0;border-radius:0 var(--av-bo,8px) 0 0;" +
+          "display:inline-flex;align-items:flex-start;justify-content:flex-end;background:none;color:var(--surface)}" +
+        B + " .bd-nt-av>.bd-nt-doi::after{content:'';position:absolute;inset:0;z-index:-1;background:var(--accent);clip-path:polygon(0 0,100% 0,100% 100%);border-top-right-radius:var(--av-bo,8px)}" +
+        B + " .bd-nt-av>.bd-nt-doi svg{width:9px;height:9px;margin:1px 1px 0 0}" + B + " .bd-nt-av>.bd-nt-doi::before{content:'';position:absolute;inset:-8px}" +   /* vùng bấm nới, không đổi hình */
         B + " .bd-nt-td," + B + " .bd-nt-bp{display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:20px;font-weight:600;white-space:nowrap}" +
         B + " .bd-nt-td{color:var(--muted)}" + B + " .bd-nt-ic{display:flex;align-items:center;justify-content:center;color:var(--accent)}",
       B + " .bd-nt-ngang{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:6px 16px}" + B + " .bd-nt .bd-pc-ng{min-width:0}" +
@@ -1794,8 +1796,10 @@
        2 chữ cuối tên dưới ảnh; bên CHÍNH đứng trước (có Bảo trì ⇒ Bảo trì chính), icon bắt tay ngăn với bên phối hợp */
     /* 09/11 user (screenshot-1794197584820): «nút đổi người để ở MÍ TRÊN CÙNG BÊN PHẢI avatar — cố định, không di chuyển tùm lum» ⇒ ⇆ nằm TRONG khung ảnh
        người đầu của nhóm (tuyệt đối, góc trên phải), không còn là 1 ô riêng trong hàng (trước rớt dòng khi hàng chật) */
+    /* 21/11 user «avatar Bảo dưỡng chuyển sang dạng như Vi phạm cho đồng bộ — thay thâm niên bằng viết tắt nghiệp vụ (PTCH)»: khuôn GÓC GẬP — ảnh vuông bo 34,
+       dải đáy ảnh = PTCH / BT / CĐ (màu nghiệp vụ như cũ), góc phải trên = nút đổi người thành góc gập (tam giác) — vùng bấm nới giữ nguyên */
     var the = function (t, bt, nut) { return '<span class="bd-nt-ng' + (bt ? " vuong" : "") + '" title="' + esc(t) + " · " + (bt ? nhanBt : "PTCH") + '"><span class="bd-nt-av">' + avatar(t) +
-      '<b class="bd-nt-hh ' + (bt ? "bt" : "pt") + '">' + (bt ? "BT" : "PT") + '</b>' + (nut || "") + '</span><span class="bd-nt-ten">' + o(String(t).split(" ").slice(-2).join(" ")) + "</span></span>"; };
+      '<b class="bd-nt-hh ' + (bt ? "bt" : "pt") + '">' + (bt ? (chiKt ? "CĐ" : "BT") : "PTCH") + '</b>' + (nut || "") + '</span><span class="bd-nt-ten">' + o(String(t).split(" ").slice(-2).join(" ")) + "</span></span>"; };
     var chua = function (bt, nut) { return '<span class="bd-nt-ng chua' + (bt ? " vuong" : "") + '">' +
       '<span class="bd-nt-av"><span class="bd-av bd-av-chua">' + SVG_NG_N + '</span>' + (nut || "") + '</span><span class="bd-nt-ten bd-do">Chưa giao</span></span>'; };
     var nhom = function (x, bt) { return x.ten.length ? x.ten.map(function (t, i) { return the(t, bt, i ? "" : doi(x)); }).join("") : chua(bt, doi(x)); };
