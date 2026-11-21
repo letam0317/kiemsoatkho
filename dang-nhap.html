@@ -31,9 +31,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 /* cảnh 6 — ô nổi 3D */
 #c6{background:linear-gradient(135deg,#f6fbf8,#dbece4);perspective:1600px}
 #c6 .mat{position:absolute;left:50%;top:50%;width:1500px;display:grid;grid-template-columns:repeat(10,1fr);gap:22px;transform-style:preserve-3d;will-change:transform}
-#c6 .o{aspect-ratio:1;border-radius:22px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 0 #e3efe9,6px 8px 14px rgba(23,63,53,.14);will-change:transform}
+#c6 .o{aspect-ratio:1;border-radius:22px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 0 #e3efe9,6px 8px 14px rgba(23,63,53,.14)}
 #c6 .o svg{width:46%;height:46%;stroke:#7fb8a3;stroke-width:1.6}
-#c6 .o.cao{background:linear-gradient(145deg,#3f8a74,#286858);box-shadow:18px 22px 30px rgba(23,63,53,.22)}#c6 .o.cao svg{stroke:#eafff5;stroke-width:1.8}
+#c6 .o.cao{will-change:transform;background:linear-gradient(145deg,#3f8a74,#286858);box-shadow:18px 22px 30px rgba(23,63,53,.22)}#c6 .o.cao svg{stroke:#eafff5;stroke-width:1.8}
 /* cảnh 4 — dập nổi */
 #c4{background:#e4ece8;perspective:1400px}
 #c4 .luoi{position:absolute;inset:-60px;display:grid;grid-template-columns:repeat(8,1fr);gap:34px;padding:40px;transform-style:preserve-3d;will-change:transform}
@@ -48,8 +48,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 #c1 .chan{position:absolute;left:0;right:0;top:41%;height:3px;background:linear-gradient(90deg,transparent,#bff5df,transparent);box-shadow:0 0 40px 10px rgba(127,230,190,.35);will-change:opacity}
 /* lớp MORPH: bản bay của biểu tượng giữa 2 cảnh (ẩn ngoài lượt chuyển) */
 #dnMorph{position:absolute;inset:0;z-index:2;pointer-events:none}
-.dn-mp{position:absolute;left:0;top:0;width:24px;height:24px;display:none;transform-origin:50% 50%;will-change:transform,opacity}
-.dn-mp svg{width:24px;height:24px;stroke:currentColor;stroke-width:1.8;filter:drop-shadow(0 0 4px rgba(127,230,190,.35))}
+/* 21/11 chiều: bản bay 64 px (vẽ một lần ở cỡ lớn ⇒ phóng to không nhoè) gồm 2 lớp tô sẵn — lớp màu/nét cảnh cũ + lớp cảnh mới — chỉ hoà chéo độ mờ (GPU),
+   không đổi màu / nét từng khung (đổi màu kéo cả cây SVG tính lại kiểu + bố cục mỗi khung) */
+.dn-mp{position:absolute;left:0;top:0;width:64px;height:64px;display:none;transform-origin:50% 50%;will-change:transform,opacity}
+.dn-mp i{position:absolute;inset:0}.dn-mp svg{display:block;width:64px;height:64px}
 #c1 .neo{position:absolute;width:38px;height:38px}
 /* thẻ đăng nhập — cố định một chỗ cho cả 4 cảnh (không nhảy vị trí khi đổi nền) */
 .dn-vung{position:relative;z-index:5;height:100%;display:flex;align-items:center;justify-content:flex-end;padding:16px clamp(16px,8vw,120px)}
@@ -86,6 +88,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
   #c6 .mat{width:900px}
   #c4 .luoi{grid-template-columns:repeat(4,1fr);gap:22px;padding:22px}#c4 .nm{border-radius:20px}
 }
+/* 21/11 chiều: máy yếu (đo FPS) ⇒ bỏ kính mờ trên thẻ — nền chạy phía sau không phải làm mờ lại mỗi khung */
+.dn-yeu .dn-the{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(255,255,255,.96)}
+@media(max-width:768px){.dn-yeu .dn-the{background:linear-gradient(145deg,rgba(255,255,255,.14),rgba(255,255,255,.04)),rgba(14,34,29,.88)}}
 </style>
 </head>
 <body>
@@ -149,37 +154,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
     var g = c9.querySelector("#dnDiem");
     for (var i = 0; i < N; i++) { var y = 1 - (i + .5) * 2 / N, r = Math.sqrt(1 - y * y), t = i * 2.39996;
       var u = document.createElementNS(NS, "use"); u.setAttribute("href", "#dn-" + KEY[i % KEY.length]); u.setAttribute("width", "24"); u.setAttribute("height", "24");
-      u.setAttribute("class", "dn-ic"); g.appendChild(u); DIEM.push({ x: Math.cos(t) * r, y: y, z: Math.sin(t) * r, el: u }); }
+      u.setAttribute("class", "dn-ic"); g.appendChild(u); DIEM.push({ x: Math.cos(t) * r, y: y, z: Math.sin(t) * r, el: u, k: KEY[i % KEY.length] }); }
   })();
-  var KT = c9.querySelectorAll(".kt");
-  function ve9(tg, nx, ny) {
-    var ry = tg * .00011 + nx * .35, rx = .42 + ny * .25, cy = Math.cos(ry), sy = Math.sin(ry), cx = Math.cos(rx), sx = Math.sin(rx);
+  var KT = c9.querySelectorAll(".kt"), c9svg = c9.querySelector("svg");
+  function ve9(tg) {   // 21/11 chiều: bỏ theo chuột; chỉ ghi thuộc tính khi giá trị đổi (SVG vẽ lại ít hơn)
+    var ry = tg * .00011, rx = .42, cy = Math.cos(ry), sy = Math.sin(ry), cx = Math.cos(rx), sx = Math.sin(rx);
     for (var i = 0; i < DIEM.length; i++) { var p = DIEM[i], x3 = p.x * cy + p.z * sy, z1 = -p.x * sy + p.z * cy, y2 = p.y * cx - z1 * sx, z2 = p.y * sx + z1 * cx;
-      var d = (z2 + 1) / 2, sz = 18 + d * 34, sc = sz / 24;
-      p.el.setAttribute("transform", "translate(" + (CX + x3 * R - sz / 2).toFixed(1) + " " + (CY + y2 * R - sz / 2).toFixed(1) + ") scale(" + sc.toFixed(3) + ")");
-      p.el.setAttribute("stroke", d > .55 ? "#bff5df" : "#7fb8a3"); p.el.setAttribute("stroke-width", ((1.4 + d * 1.4) / sc).toFixed(2)); p.el.setAttribute("opacity", (.2 + d * .8).toFixed(2)); }
+      var d = (z2 + 1) / 2, sz = 18 + d * 34, sc = sz / 24, sang = d > .55;
+      p.X = CX + x3 * R - sz / 2; p.Y = CY + y2 * R - sz / 2; p.sz = sz; p.mo = .2 + d * .8; p.vis = 1.4 + d * 1.4; p.mau = sang ? [191, 245, 223] : [127, 184, 163];
+      p.el.setAttribute("transform", "translate(" + p.X.toFixed(1) + " " + p.Y.toFixed(1) + ") scale(" + sc.toFixed(3) + ")");
+      var st = sang ? "#bff5df" : "#7fb8a3", w = (p.vis / sc).toFixed(2), o = p.mo.toFixed(2);
+      if (p.st !== st) p.el.setAttribute("stroke", p.st = st);
+      if (p.w !== w) p.el.setAttribute("stroke-width", p.w = w);
+      if (p.o !== o) p.el.setAttribute("opacity", p.o = o); }
     for (var k = 0; k < KT.length; k++) KT[k].setAttribute("rx", (R * Math.abs(Math.cos(k * Math.PI / 4 + ry))).toFixed(1));
   }
 
   /* ---------- cảnh 6: ô nổi 3D — mặt nghiêng lắc nhẹ, ô xanh nhô lên hạ xuống ---------- */
-  var mat = document.querySelector("#c6 .mat"), CAO = [];
+  var mat = document.querySelector("#c6 .mat"), CAO = [], RZ6 = -38;
   (function () { var h = ""; for (var i = 0; i < 80; i++) { var cao = rd() < .18; h += '<div class="o' + (cao ? " cao" : "") + '">' + svgIc(KEY[(i * 5) % KEY.length]) + "</div>"; } mat.innerHTML = h;
     [].forEach.call(mat.querySelectorAll(".o.cao"), function (el, i) { CAO.push({ el: el, ph: i * 1.7, bien: 24 + (i * 13) % 36 }); }); })();
-  function ve6(tg, nx, ny, dt) {
-    var lx = Math.sin(tg * .00018) * 3 + nx * 6, ly = Math.cos(tg * .00014) * 2.5 + ny * 5;
-    mat.style.transform = "translate(" + (dt ? "-50%,-80%" : "-62%,-48%") + ") rotateX(" + (56 + ly).toFixed(2) + "deg) rotateZ(" + (-38 + lx).toFixed(2) + "deg)";
+  function ve6(tg, dt) {
+    var lx = Math.sin(tg * .00018) * 3, ly = Math.cos(tg * .00014) * 2.5; RZ6 = -38 + lx;
+    mat.style.transform = "translate(" + (dt ? "-50%,-80%" : "-62%,-48%") + ") rotateX(" + (56 + ly).toFixed(2) + "deg) rotateZ(" + RZ6.toFixed(2) + "deg)";
     for (var i = 0; i < CAO.length; i++) { var c = CAO[i]; c.el.style.transform = "translateZ(" + (c.bien * (.55 + .45 * Math.sin(tg * .0012 + c.ph))).toFixed(1) + "px)"; }
   }
 
-  /* ---------- cảnh 4: dập nổi — cả mặt nghiêng theo chuột / tự lắc; biểu tượng phồng lên theo làn sóng chéo ---------- */
+  /* ---------- cảnh 4: dập nổi — cả mặt tự lắc; biểu tượng phồng lên theo làn sóng chéo ---------- */
   var luoi = document.querySelector("#c4 .luoi"), SONG = [];
   (function () { var h = ""; for (var i = 0; i < 64; i++) h += '<div class="nm' + (i % 3 === 2 ? " lom" : "") + '">' + svgIc(KEY[(i * 7) % KEY.length]) + "</div>"; luoi.innerHTML = h;
     [].forEach.call(luoi.querySelectorAll("svg"), function (el, i) { SONG.push({ el: el, c: i % 8, r: Math.floor(i / 8) }); }); })();
-  function ve4(tg, nx, ny, dt) {
-    luoi.style.transform = "rotateX(" + (Math.sin(tg * .0002) * 4 + ny * 6).toFixed(2) + "deg) rotateY(" + (Math.cos(tg * .00017) * 4 + nx * 6).toFixed(2) + "deg)";
+  function ve4(tg, dt) {
+    luoi.style.transform = "rotateX(" + (Math.sin(tg * .0002) * 4).toFixed(2) + "deg) rotateY(" + (Math.cos(tg * .00017) * 4).toFixed(2) + "deg)";
     var cot = dt ? 4 : 8;
-    for (var i = 0; i < SONG.length; i++) { var s = SONG[i], c = i % cot, r = Math.floor(i / cot), w = Math.sin(tg * .0016 - (c + r) * .55);
-      s.el.style.transform = "scale(" + (1 + Math.max(0, w) * .22).toFixed(3) + ")"; }
+    for (var i = 0; i < SONG.length; i++) { var s = SONG[i], c = i % cot, r = Math.floor(i / cot), w = Math.sin(tg * .0016 - (c + r) * .55), v = (1 + Math.max(0, w) * .22).toFixed(3);
+      if (s.v !== v) s.el.style.transform = "scale(" + (s.v = v) + ")"; }
   }
 
   /* ---------- cảnh 1: sàn 3D — hoạ tiết trôi về chân trời ---------- */
@@ -188,99 +197,140 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
     return "url(data:image/svg+xml;base64," + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="280" height="280" viewBox="0 0 280 280">' + s + "</svg>") + ")"; })();
   var san = document.querySelector("#c1 .san"), troi = document.querySelector("#c1 .troi"), chan = document.querySelector("#c1 .chan");
   san.style.backgroundImage = troi.style.backgroundImage = o1;
-  function ve1(tg, nx) {
-    var d = (tg * .03) % 280, lx = nx * 4;
-    san.style.transform = "perspective(700px) rotateX(64deg) rotateZ(" + lx.toFixed(2) + "deg) translate3d(0," + (-d).toFixed(1) + "px,0)";
-    troi.style.transform = "perspective(700px) rotateX(-64deg) rotateZ(" + (-lx).toFixed(2) + "deg) translate3d(0," + d.toFixed(1) + "px,0)";
+  function ve1(tg) {
+    var d = (tg * .03) % 280;
+    san.style.transform = "perspective(700px) rotateX(64deg) translate3d(0," + (-d).toFixed(1) + "px,0)";
+    troi.style.transform = "perspective(700px) rotateX(-64deg) translate3d(0," + d.toFixed(1) + "px,0)";
     chan.style.opacity = (.75 + .25 * Math.sin(tg * .0015)).toFixed(2);
   }
 
-  /* mỏ neo vô hình trên sàn: đúng chỗ từng biểu tượng của hoạ tiết nền (ô 280, 4×4, so le) ⇒ biết biểu tượng sàn đang nằm đâu trên màn để MORPH */
+  /* mỏ neo vô hình trên sàn: đúng ô 38,5 px của từng biểu tượng hoạ tiết (ô 280, 4×4, so le) ⇒ biết biểu tượng sàn nằm đâu trên màn để MORPH.
+     Chỉ dựng neo ở dải giữa sàn (phần lọt màn) ⇒ đo nhanh. */
+  var L1 = [];
   function datNeo() {
     [].forEach.call(san.querySelectorAll(".neo"), function (x) { x.remove(); });
-    var W = san.offsetWidth, h = "";
-    for (var ty = 0; ty < 5; ty++) for (var tx = 0; tx * 280 < W; tx++) for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
+    var W = san.offsetWidth, tu = Math.floor(W * .2 / 280), den = Math.ceil(W * .8 / 280), h = "";
+    for (var ty = 0; ty < 4; ty++) for (var tx = tu; tx < den; tx++) for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
       var k = r * 4 + c, x = tx * 280 + c * 70 + (r % 2) * 35 + 14, y = ty * 280 + r * 70 + 14;
       h += '<i class="neo" data-k="' + KEY[(k * 5) % KEY.length] + '" style="left:' + x + "px;top:" + y + 'px"></i>'; }
     san.insertAdjacentHTML("beforeend", h);
+    L1 = [].map.call(san.querySelectorAll(".neo"), function (el) { return { el: el, k: el.dataset.k }; });
   }
-  datNeo(); var hRs = 0; addEventListener("resize", function () { clearTimeout(hRs); hRs = setTimeout(datNeo, 300); });
+  datNeo();
 
-  /* ---------- luân phiên 9 → 6 → 4 → 1 — chuyển cảnh MORPH (user 21/11): biểu tượng cảnh cũ BAY sang đúng chỗ biểu tượng cùng loại ở cảnh mới ----------
-     Mỗi cảnh khai «biểu tượng đang thấy» (phần tử thật, đo getBoundingClientRect nên đúng cả khi nghiêng 3D). Đầu lượt chuyển: ghép cặp cùng loại gần nhất,
-     ẩn cặp đó ở 2 cảnh, lớp #dnMorph vẽ bản bay (vị trí · cỡ · màu nội suy, đường cong nhẹ, so le thời điểm, lật 3D giữa đường); nền 2 cảnh mờ chéo.
-     Hết lượt: hiện lại biểu tượng thật ở cảnh mới — vị trí trùng khít nên không giật. */
-  var CANH = [[document.getElementById("c9"), ve9], [document.getElementById("c6"), ve6], [document.getElementById("c4"), ve4], [document.getElementById("c1"), ve1]];
-  var GIU = 9000, CHEO = 2200, GIAM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var BT = [   // phần tử biểu tượng + loại + màu của từng cảnh
-    function () { return DIEM.map(function (p) { return { el: p.el, k: (p.el.getAttribute("href") || "").slice(4), mo: +p.el.getAttribute("opacity") || 0 }; }); },
-    function () { return [].map.call(mat.querySelectorAll(".o svg"), function (el) { return { el: el, k: el.firstChild.getAttribute("href").slice(4), mo: 1 }; }); },
-    function () { return [].map.call(luoi.querySelectorAll(".nm svg"), function (el) { return { el: el, k: el.firstChild.getAttribute("href").slice(4), mo: 1 }; }); },
-    function () { return [].map.call(san.querySelectorAll(".neo"), function (el) { return { el: el, k: el.dataset.k, mo: 1, mau: "rgb(159,224,198)", neo: 1 }; }); }
+  /* ---------- luân phiên 9 → 6 → 4 → 1 — chuyển cảnh MORPH ----------
+     21/11 chiều (user «morph chưa mượt, biểu tượng chưa nối đúng vị trí, bị nhảy đồng thời; nền không cần tương tác chuột; máy yếu nhất cũng mượt»):
+     · BỎ theo chuột / nghiêng máy — nền tự chạy.
+     · ĐỒNG HỒ CẢNH: chuyển động chậm dần về 0 trước lượt chuyển, ĐỨNG YÊN suốt lượt chuyển, nhanh dần lại sau ⇒ chỗ cất cánh / chỗ đáp đo một lần là ĐÚNG
+       tới khi đáp (trước đây cảnh mới vẫn chạy nên đáp lệch rồi giật). Không dừng gắt vì tốc độ đổi theo đường cong trơn.
+     · Đo trước, chia khung: cảnh mới đo ~0,4 s trước lượt, cảnh cũ ~0,15 s trước ⇒ không dồn một khung nặng lúc bắt đầu.
+     · Bản bay mang đúng hình của biểu tượng thật (cỡ · góc xoay · độ dẹt phối cảnh · nét · màu · độ mờ) và HOÀ CHÉO với biểu tượng thật lúc cất cánh / đáp
+       ⇒ không «bật» hình; so le thời điểm theo thứ tự gần giữa → xa ⇒ không nhảy đồng loạt; khác loại thì hoà chéo hình giữa đường (bỏ lật 180°).
+     · Bỏ đổ bóng (filter) trên bản bay; cảnh đứng yên thì không vẽ lại; máy yếu (đo FPS) ⇒ bỏ kính mờ, rồi mới hạ nhịp nền 30 khung/giây. */
+  var CANH = [[c9, ve9], [document.getElementById("c6"), ve6], [document.getElementById("c4"), ve4], [document.getElementById("c1"), ve1]];
+  var GIU = 9000, CHEO = 2200, DOC = 900, TRE = .3, GIAM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function tichPhan(pha) {   // đồng hồ cảnh trong một chu kỳ: tốc độ 0→1 (DOC ms) · 1 · 1→0 (DOC ms) · 0 suốt lượt chuyển
+    if (pha < DOC) { var u = pha / DOC; return DOC * (u * u * u - u * u * u * u / 2); }
+    if (pha < GIU - DOC) return DOC / 2 + pha - DOC;
+    if (pha < GIU) { var v = (GIU - pha) / DOC; return GIU - DOC - DOC * (v * v * v - v * v * v * v / 2); }
+    return GIU - DOC;
+  }
+  var MUC = 0;   // mức nhẹ tải: 0 đủ · 1 bỏ kính mờ · 2 nền 30 khung/giây
+  function haMuc() { MUC++; document.documentElement.classList.add("dn-yeu"); if (MUC >= 2) document.documentElement.classList.add("dn-yeu2"); }
+  if ((navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4) haMuc();
+
+  var L6 = [].map.call(mat.querySelectorAll(".o svg"), function (el) { var cao = el.parentNode.classList.contains("cao");
+    return { el: el, k: el.firstChild.getAttribute("href").slice(4), sw: cao ? 1.8 : 1.6, mau: cao ? [234, 255, 245] : [127, 184, 163] }; });
+  var L4 = SONG.map(function (s) { return { el: s.el, k: s.el.firstChild.getAttribute("href").slice(4) }; });
+  function hop(el, th) {   // tâm + cạnh thật + độ dẹt của biểu tượng vuông đã xoay th° rồi nghiêng (bao ngoài của hình vuông xoay = a(|cos|+|sin|))
+    var r = el.getBoundingClientRect(), g = th * Math.PI / 180, c = Math.abs(Math.cos(g)) + Math.abs(Math.sin(g));
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2, a: r.width / c, kk: r.width ? r.height / r.width : 1 };
+  }
+  var BT = [   // biểu tượng của từng cảnh: chỗ · cỡ a · độ dẹt kk · góc th · nét vis (px) · màu · độ mờ mo · nen (vẽ trong ảnh nền, không ẩn được)
+    function () { var r = c9svg.getBoundingClientRect(), s = Math.max(r.width / 1600, r.height / 1000), ox = r.left + (r.width - 1600 * s) / 2, oy = r.top + (r.height - 1000 * s) / 2;
+      return DIEM.map(function (p) { return { el: p.el, k: p.k, x: ox + (p.X + p.sz / 2) * s, y: oy + (p.Y + p.sz / 2) * s, a: p.sz * s, kk: 1, th: 0, vis: p.vis * s, mau: p.mau, mo: p.mo }; }); },
+    function () { return L6.map(function (b) { var h = hop(b.el, RZ6); return { el: b.el, k: b.k, x: h.x, y: h.y, a: h.a, kk: h.kk, th: RZ6, vis: b.sw * h.a / 24, mau: b.mau, mo: 1 }; }); },
+    function () { return L4.map(function (b) { var h = hop(b.el, 0); return { el: b.el, k: b.k, x: h.x, y: h.y, a: h.a, kk: h.kk, th: 0, vis: 1.6 * h.a / 24, mau: [63, 138, 116], mo: .8 }; }); },
+    function () { return L1.map(function (b) { var h = hop(b.el, 0); return { el: b.el, k: b.k, x: h.x, y: h.y, a: h.a, kk: h.kk, th: 0, vis: 1.5 * h.a / 38.5, mau: [159, 224, 198], mo: .75, nen: 1 }; }); }
   ];
-  var lopM = document.createElement("div"); lopM.id = "dnMorph"; lopM.setAttribute("aria-hidden", "true"); document.getElementById("dnNen").appendChild(lopM);
-  var SO_M = innerWidth <= 768 ? 22 : 36, BAY = [];
-  for (var q = 0; q < SO_M; q++) { var d0 = document.createElement("div"); d0.className = "dn-mp"; d0.innerHTML = '<svg class="dn-ic" viewBox="0 0 24 24"><use/></svg>'; lopM.appendChild(d0); BAY.push(d0); }
-  var mau3 = function (s) { var m = String(s).match(/\d+(\.\d+)?/g) || [127, 184, 163]; return [+m[0], +m[1], +m[2]]; };
   function doBT(ci) {   // biểu tượng đang thấy trên màn của cảnh ci
     var W = innerWidth, H = innerHeight;
-    return BT[ci]().map(function (b) { var r = b.el.getBoundingClientRect(), s = b.neo ? Math.sqrt(Math.max(1, r.width * r.height)) * 1.1 : Math.max(r.width, r.height);
-      return { el: b.el, k: b.k, x: r.left + r.width / 2, y: r.top + r.height / 2, s: s, mo: b.mo, mau: b.mau || getComputedStyle(b.el).stroke || "rgb(127,184,163)" }; })
-      .filter(function (b) { return b.s > 12 && b.mo > .35 && b.x > -20 && b.x < W + 20 && b.y > -20 && b.y < H + 20; });
+    return BT[ci]().filter(function (b) { return b.a > 12 && b.mo > .35 && b.x > -20 && b.x < W + 20 && b.y > -20 && b.y < H + 20; });
   }
-  var morph = null;
-  function batDau(n, i, j, tg) {
-    CANH[j][0].style.visibility = "visible"; CANH[j][1](tg + CHEO, tro.x, tro.y, innerWidth <= 768);   // dựng trước cảnh mới ĐÚNG thời điểm kết thúc để đo chỗ đáp
-    var A = doBT(i), B = doBT(j), cx = innerWidth * .4, cy = innerHeight / 2;
-    A.sort(function (a, b) { return (Math.hypot(a.x - cx, a.y - cy) / a.s) - (Math.hypot(b.x - cx, b.y - cy) / b.s); });   // ưu tiên biểu tượng to, gần giữa
+  var lopM = document.createElement("div"); lopM.id = "dnMorph"; lopM.setAttribute("aria-hidden", "true"); document.getElementById("dnNen").appendChild(lopM);
+  var SO_M = innerWidth <= 768 ? 18 : 30, BAY = [];
+  var LOP_BAY = '<i><svg class="dn-ic" viewBox="0 0 24 24"><use/></svg></i>';
+  for (var q = 0; q < SO_M; q++) { var d0 = document.createElement("div"); d0.className = "dn-mp"; d0.innerHTML = LOP_BAY + LOP_BAY; lopM.appendChild(d0);
+    BAY.push({ el: d0, l1: d0.firstChild, l2: d0.lastChild }); }
+  var DA = [NaN, NaN, NaN, NaN];   // đồng hồ cảnh mà mỗi cảnh đang vẽ — trùng thì khỏi vẽ lại
+  function veCanh(k, C, dt) { if (DA[k] !== C) { CANH[k][1](C, dt); DA[k] = C; } }
+  var ke = null;   // kế hoạch lượt chuyển {n, i, j, B, cap}
+  function chuanBiB(n, i, j, Cc, dt) { ketThuc(); veCanh(j, Cc, dt); ke = { n: n, i: i, j: j, B: doBT(j), cap: null }; }   // cảnh mới dựng sẵn đúng trạng thái đứng
+  function chuanBiA(Cc, dt) {
+    veCanh(ke.i, Cc, dt);
+    var A = doBT(ke.i), B = ke.B, cx = innerWidth * .4, cy = innerHeight / 2;
+    A.sort(function (a, b) { return (Math.hypot(a.x - cx, a.y - cy) / a.a) - (Math.hypot(b.x - cx, b.y - cy) / b.a); });   // ưu tiên biểu tượng to, gần giữa
     var cap = [], dung = {};
     for (var a = 0; a < A.length && cap.length < SO_M; a++) { var tot = -1, dTot = 1e9;
       for (var b = 0; b < B.length; b++) { if (dung[b]) continue; var dd = Math.hypot(A[a].x - B[b].x, A[a].y - B[b].y) + (A[a].k === B[b].k ? 0 : 5000);
         if (dd < dTot) { dTot = dd; tot = b; } }
-      if (tot < 0) break; dung[tot] = 1; cap.push([A[a], B[tot]]); }
-    cap.forEach(function (c, q) { c[0].el.style.visibility = c[1].el.style.visibility = "hidden";
-      var u = BAY[q], m0 = mau3(c[0].mau), m1 = mau3(c[1].mau);
-      u.firstChild.firstChild.setAttribute("href", "#dn-" + c[0].k); u.style.display = "block";
-      c.push({ m0: m0, m1: m1, tre: (q / cap.length) * .22, cong: (q % 2 ? 1 : -1) * (40 + (q * 37) % 80), lat: (q % 3 - 1) * 180, doiK: c[0].k !== c[1].k }); });
-    morph = { n: n, i: i, j: j, cap: cap };
+      if (tot < 0) break; dung[tot] = 1; cap.push({ A: A[a], B: B[tot] }); }
+    cap.forEach(function (c, q) { var u = BAY[q];
+      c.tre = q / Math.max(1, cap.length) * TRE; c.cong = (q % 2 ? 1 : -1) * (18 + (q * 37) % 42); c.doiK = c.A.k !== c.B.k;
+      [[u.l1, c.A], [u.l2, c.B]].forEach(function (x) { var sv = x[0].firstChild; sv.firstChild.setAttribute("href", "#dn-" + x[1].k);
+        sv.style.stroke = "rgb(" + x[1].mau.join(",") + ")"; sv.style.strokeWidth = (x[1].vis * 24 / x[1].a).toFixed(2); });   // tô sẵn một lần
+      dat(u.l1, "opacity", "1"); dat(u.l2, "opacity", "0"); dat(u.el, "opacity", "0"); u.el.style.display = "block"; });
+    ke.cap = cap;
   }
+  var nb = function (a, b, e) { return a + (b - a) * e; };
+  function dat(el, k, v) { if (el["_" + k] !== v) { el.style[k] = v; el["_" + k] = v; } }   // chỉ ghi khi đổi ⇒ trình duyệt khỏi tính lại kiểu từng khung
   function veMorph(p) {   // p: 0→1 tiến độ lượt chuyển
-    morph.cap.forEach(function (c, q) {
-      var A = c[0], B = c[1], o = c[2], t = Math.min(1, Math.max(0, (p - o.tre) / (1 - .22))), e = em(t), u = BAY[q];
-      var x = A.x + (B.x - A.x) * e, y = A.y + (B.y - A.y) * e, s = A.s + (B.s - A.s) * e, vong = Math.sin(Math.PI * e);
-      var dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy) || 1; x += -dy / L * o.cong * vong; y += dx / L * o.cong * vong;   // bay theo đường cong
-      if (o.doiK && t >= .5 && !o.daDoi) { u.firstChild.firstChild.setAttribute("href", "#dn-" + B.k); o.daDoi = 1; }   // khác loại: đổi hình ở giữa đường (lúc đang lật)
-      var m = [0, 1, 2].map(function (k) { return Math.round(o.m0[k] + (o.m1[k] - o.m0[k]) * e); });
-      u.style.transform = "translate3d(" + (x - 12).toFixed(1) + "px," + (y - 12).toFixed(1) + "px,0) perspective(600px)" +
-        " rotateY(" + (o.lat * vong).toFixed(1) + "deg) rotateX(" + (25 * vong).toFixed(1) + "deg) scale(" + (s / 24 * (1 + .25 * vong)).toFixed(3) + ")";
-      u.style.color = "rgb(" + m.join(",") + ")"; u.style.opacity = (A.mo + (1 - A.mo) * e).toFixed(2);
-    });
+    var cap = ke.cap;
+    for (var q = 0; q < cap.length; q++) { var c = cap[q], A = c.A, B = c.B, u = BAY[q];
+      var t = Math.min(1, Math.max(0, (p - c.tre) / (1 - TRE))), e = em(t), vong = Math.sin(Math.PI * e);
+      var fi = Math.min(1, t / .14), fo = Math.max(0, (t - .86) / .14);
+      var x = nb(A.x, B.x, e), y = nb(A.y, B.y, e), dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy) || 1;
+      x += -dy / L * c.cong * vong; y += dx / L * c.cong * vong;   // bay theo đường cong nhẹ
+      var a = nb(A.a, B.a, e), kk = nb(A.kk, B.kk, e), th = nb(A.th, B.th, e), g = Math.min(1, Math.max(0, (e - .3) / .4));
+      u.el.style.transform = "translate3d(" + (x - 32).toFixed(1) + "px," + (y - 32).toFixed(1) + "px,0) scale(1," + kk.toFixed(3) + ") rotate(" + th.toFixed(1) + "deg) scale(" + (a / 64 * (1 + .12 * vong)).toFixed(3) + ")";
+      dat(u.el, "opacity", (nb(A.mo, B.mo, e) * fi * (1 - fo)).toFixed(2));
+      dat(u.l2, "opacity", g.toFixed(2)); if (c.doiK) dat(u.l1, "opacity", (1 - g).toFixed(2));   // hoà chéo màu · nét (và hình nếu khác loại) giữa đường
+      dat(A.el, "opacity", (A.mo * (1 - fi)).toFixed(2));   // hoà chéo lúc cất cánh: biểu tượng thật mờ dần đúng lúc bản bay hiện
+      if (!B.nen) dat(B.el, "opacity", (B.mo * fo).toFixed(2));   // … và lúc đáp: biểu tượng thật hiện dần đúng lúc bản bay tan
+    }
   }
   function ketThuc() {
-    if (!morph) return;
-    morph.cap.forEach(function (c, q) { c[0].el.style.visibility = c[1].el.style.visibility = ""; BAY[q].style.display = "none"; c[2].daDoi = 0; });
-    morph = null;
+    if (!ke) return;
+    if (ke.cap) ke.cap.forEach(function (c, q) { dat(c.A.el, "opacity", ""); if (!c.B.nen) dat(c.B.el, "opacity", ""); BAY[q].el.style.display = "none"; });
+    ke = null;
   }
-  var tro = { x: 0, y: 0 }, muc = { x: 0, y: 0 };
-  addEventListener("pointermove", function (e) { muc.x = e.clientX / innerWidth * 2 - 1; muc.y = e.clientY / innerHeight * 2 - 1; }, { passive: true });
-  addEventListener("deviceorientation", function (e) { if (e.gamma == null) return; muc.x = Math.max(-1, Math.min(1, e.gamma / 30)); muc.y = Math.max(-1, Math.min(1, (e.beta - 45) / 30)); }, { passive: true });
   var em = function (t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
-  var t0 = window.__dnT0 = performance.now();
+  var t0 = window.__dnT0 = performance.now(), dem = 0, fps = { n: 0, tong: 0, truoc: 0 }, CHU = GIU + CHEO;
   function khung(now) {
     var tg = now - t0 + (window.__dnLech || 0), dt = innerWidth <= 768;   // __dnLech: bộ đo nhảy tới từng cảnh
-    tro.x += (muc.x - tro.x) * .05; tro.y += (muc.y - tro.y) * .05;   // chuột / nghiêng máy: theo trễ cho mượt
-    var chu = GIU + CHEO, n = Math.floor(tg / chu), i = n % 4, pha = tg % chu, j = (i + 1) % 4;
+    var n = Math.floor(tg / CHU), i = ((n % 4) + 4) % 4, pha = tg - n * CHU, j = (i + 1) % 4;
+    var Cc = (n + 1) * (GIU - DOC), C = n * (GIU - DOC) + tichPhan(pha);   // Cc: đồng hồ lúc cảnh đứng (suốt lượt chuyển)
     var p = pha < GIU ? 0 : (pha - GIU) / CHEO, mo = em(p);
-    if (morph && (morph.n !== n || p === 0)) ketThuc();   // hết lượt chuyển (hoặc nhảy cảnh) ⇒ trả biểu tượng thật
-    for (var k = 0; k < 4; k++) { var a = k === i ? 1 - mo : k === j ? mo : 0, c = CANH[k];
-      c[0].style.opacity = a.toFixed(3); c[0].style.visibility = a > 0 ? "visible" : "hidden";
-      if (a > 0) c[1](tg, tro.x, tro.y, dt); }
-    if (p > 0) { if (!morph) batDau(n, i, j, tg); veMorph(p); }
+    if (ke && ke.n !== n) ketThuc();
+    if (ke && ke.cap) C = Cc;   // đã đo chỗ cất cánh ⇒ giữ cảnh đứng đúng trạng thái đã đo
+    var veNen = MUC < 2 || p > 0 || (++dem & 1) === 0;
+    for (var k = 0; k < 4; k++) { var a = k === i ? 1 - mo : k === j ? mo : 0, c = CANH[k], v = a > 0 ? "visible" : "hidden";
+      if (c.mo !== a) { c[0].style.opacity = a.toFixed(3); c.mo = a; }
+      if (c.vi !== v) { c[0].style.visibility = v; c.vi = v; }
+      if (a > 0 && veNen) veCanh(k, C, dt); }
+    if (pha >= GIU - 420 && !ke) chuanBiB(n, i, j, Cc, dt);
+    else if (pha >= GIU - 150 && ke && !ke.cap) chuanBiA(Cc, dt);
+    if (p > 0) { if (!ke) chuanBiB(n, i, j, Cc, dt); if (!ke.cap) chuanBiA(Cc, dt); veMorph(p); }
+    if (MUC < 2 && tg > 1500) {   // đo FPS 90 khung: chậm ⇒ hạ mức nhẹ tải
+      if (fps.truoc) { fps.tong += now - fps.truoc; if (++fps.n === 90) { if (fps.tong / 90 > 21) haMuc(); fps.n = fps.tong = 0; } }
+      fps.truoc = now; }
     if (!GIAM && !document.hidden) requestAnimationFrame(khung);
   }
-  if (GIAM) { CANH[0][0].style.opacity = 1; ve9(0, 0, 0); ve6(0, 0, 0, innerWidth <= 768); }
+  var hRs = 0; addEventListener("resize", function () { clearTimeout(hRs); hRs = setTimeout(function () { ketThuc(); datNeo(); DA = [NaN, NaN, NaN, NaN]; if (GIAM) ve9(0); }, 300); });
+  if (GIAM) { CANH[0][0].style.opacity = 1; CANH[0][0].style.visibility = "visible"; ve9(0); }
   else requestAnimationFrame(khung);
-  document.addEventListener("visibilitychange", function () { if (!document.hidden && !GIAM) requestAnimationFrame(khung); });
+  document.addEventListener("visibilitychange", function () { fps.truoc = 0; if (!document.hidden && !GIAM) requestAnimationFrame(khung); });
+  window.__dnKe = function () { return ke; };   // bộ đo: so chỗ đáp đã đo với chỗ thật của biểu tượng lúc đáp
   window.__dnVe = khung;   // bộ đo chụp đúng từng cảnh
 
   /* ---------- đăng nhập: đi qua tai-khoan.js (cùng phiên dashboard) ---------- */
