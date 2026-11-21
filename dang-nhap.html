@@ -45,6 +45,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 #c1 .san{top:42%;transform-origin:50% 0;-webkit-mask-image:linear-gradient(transparent 0,#000 28%);mask-image:linear-gradient(transparent 0,#000 28%);opacity:.75}
 #c1 .troi{bottom:58%;transform-origin:50% 100%;-webkit-mask-image:linear-gradient(#000 72%,transparent);mask-image:linear-gradient(#000 72%,transparent);opacity:.32}
 #c1 .chan{position:absolute;left:0;right:0;top:41%;height:3px;background:linear-gradient(90deg,transparent,#bff5df,transparent);box-shadow:0 0 40px 10px rgba(127,230,190,.35);will-change:opacity}
+/* lớp MORPH: bản bay của biểu tượng giữa 2 cảnh (ẩn ngoài lượt chuyển) */
+#dnMorph{position:absolute;inset:0;z-index:2;pointer-events:none}
+.dn-mp{position:absolute;left:0;top:0;width:24px;height:24px;display:none;transform-origin:50% 50%;will-change:transform,opacity}
+.dn-mp svg{width:24px;height:24px;stroke:currentColor;stroke-width:1.8;filter:drop-shadow(0 0 4px rgba(127,230,190,.35))}
+#c1 .neo{position:absolute;width:38px;height:38px}
 /* thẻ đăng nhập — cố định một chỗ cho cả 4 cảnh (không nhảy vị trí khi đổi nền) */
 .dn-vung{position:relative;z-index:5;height:100%;display:flex;align-items:center;justify-content:flex-end;padding:16px clamp(16px,8vw,120px)}
 .dn-the{width:100%;max-width:370px;padding:28px;border-radius:14px;display:flex;flex-direction:column;gap:18px;background:rgba(255,255,255,.88);
@@ -171,22 +176,87 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
     chan.style.opacity = (.75 + .25 * Math.sin(tg * .0015)).toFixed(2);
   }
 
-  /* ---------- luân phiên 9 → 6 → 4 → 1, mờ chéo mượt ---------- */
+  /* mỏ neo vô hình trên sàn: đúng chỗ từng biểu tượng của hoạ tiết nền (ô 280, 4×4, so le) ⇒ biết biểu tượng sàn đang nằm đâu trên màn để MORPH */
+  function datNeo() {
+    [].forEach.call(san.querySelectorAll(".neo"), function (x) { x.remove(); });
+    var W = san.offsetWidth, h = "";
+    for (var ty = 0; ty < 5; ty++) for (var tx = 0; tx * 280 < W; tx++) for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
+      var k = r * 4 + c, x = tx * 280 + c * 70 + (r % 2) * 35 + 14, y = ty * 280 + r * 70 + 14;
+      h += '<i class="neo" data-k="' + KEY[(k * 5) % KEY.length] + '" style="left:' + x + "px;top:" + y + 'px"></i>'; }
+    san.insertAdjacentHTML("beforeend", h);
+  }
+  datNeo(); var hRs = 0; addEventListener("resize", function () { clearTimeout(hRs); hRs = setTimeout(datNeo, 300); });
+
+  /* ---------- luân phiên 9 → 6 → 4 → 1 — chuyển cảnh MORPH (user 21/11): biểu tượng cảnh cũ BAY sang đúng chỗ biểu tượng cùng loại ở cảnh mới ----------
+     Mỗi cảnh khai «biểu tượng đang thấy» (phần tử thật, đo getBoundingClientRect nên đúng cả khi nghiêng 3D). Đầu lượt chuyển: ghép cặp cùng loại gần nhất,
+     ẩn cặp đó ở 2 cảnh, lớp #dnMorph vẽ bản bay (vị trí · cỡ · màu nội suy, đường cong nhẹ, so le thời điểm, lật 3D giữa đường); nền 2 cảnh mờ chéo.
+     Hết lượt: hiện lại biểu tượng thật ở cảnh mới — vị trí trùng khít nên không giật. */
   var CANH = [[document.getElementById("c9"), ve9], [document.getElementById("c6"), ve6], [document.getElementById("c4"), ve4], [document.getElementById("c1"), ve1]];
-  var GIU = 9000, CHEO = 1600, GIAM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var GIU = 9000, CHEO = 2200, GIAM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var BT = [   // phần tử biểu tượng + loại + màu của từng cảnh
+    function () { return DIEM.map(function (p) { return { el: p.el, k: (p.el.getAttribute("href") || "").slice(4), mo: +p.el.getAttribute("opacity") || 0 }; }); },
+    function () { return [].map.call(mat.querySelectorAll(".o svg"), function (el) { return { el: el, k: el.firstChild.getAttribute("href").slice(4), mo: 1 }; }); },
+    function () { return [].map.call(luoi.querySelectorAll(".nm svg"), function (el) { return { el: el, k: el.firstChild.getAttribute("href").slice(4), mo: 1 }; }); },
+    function () { return [].map.call(san.querySelectorAll(".neo"), function (el) { return { el: el, k: el.dataset.k, mo: 1, mau: "rgb(159,224,198)", neo: 1 }; }); }
+  ];
+  var lopM = document.createElement("div"); lopM.id = "dnMorph"; lopM.setAttribute("aria-hidden", "true"); document.getElementById("dnNen").appendChild(lopM);
+  var SO_M = innerWidth <= 768 ? 22 : 36, BAY = [];
+  for (var q = 0; q < SO_M; q++) { var d0 = document.createElement("div"); d0.className = "dn-mp"; d0.innerHTML = '<svg class="dn-ic" viewBox="0 0 24 24"><use/></svg>'; lopM.appendChild(d0); BAY.push(d0); }
+  var mau3 = function (s) { var m = String(s).match(/\d+(\.\d+)?/g) || [127, 184, 163]; return [+m[0], +m[1], +m[2]]; };
+  function doBT(ci) {   // biểu tượng đang thấy trên màn của cảnh ci
+    var W = innerWidth, H = innerHeight;
+    return BT[ci]().map(function (b) { var r = b.el.getBoundingClientRect(), s = b.neo ? Math.sqrt(Math.max(1, r.width * r.height)) * 1.1 : Math.max(r.width, r.height);
+      return { el: b.el, k: b.k, x: r.left + r.width / 2, y: r.top + r.height / 2, s: s, mo: b.mo, mau: b.mau || getComputedStyle(b.el).stroke || "rgb(127,184,163)" }; })
+      .filter(function (b) { return b.s > 12 && b.mo > .35 && b.x > -20 && b.x < W + 20 && b.y > -20 && b.y < H + 20; });
+  }
+  var morph = null;
+  function batDau(n, i, j, tg) {
+    CANH[j][0].style.visibility = "visible"; CANH[j][1](tg + CHEO, tro.x, tro.y, innerWidth <= 768);   // dựng trước cảnh mới ĐÚNG thời điểm kết thúc để đo chỗ đáp
+    var A = doBT(i), B = doBT(j), cx = innerWidth * .4, cy = innerHeight / 2;
+    A.sort(function (a, b) { return (Math.hypot(a.x - cx, a.y - cy) / a.s) - (Math.hypot(b.x - cx, b.y - cy) / b.s); });   // ưu tiên biểu tượng to, gần giữa
+    var cap = [], dung = {};
+    for (var a = 0; a < A.length && cap.length < SO_M; a++) { var tot = -1, dTot = 1e9;
+      for (var b = 0; b < B.length; b++) { if (dung[b]) continue; var dd = Math.hypot(A[a].x - B[b].x, A[a].y - B[b].y) + (A[a].k === B[b].k ? 0 : 5000);
+        if (dd < dTot) { dTot = dd; tot = b; } }
+      if (tot < 0) break; dung[tot] = 1; cap.push([A[a], B[tot]]); }
+    cap.forEach(function (c, q) { c[0].el.style.visibility = c[1].el.style.visibility = "hidden";
+      var u = BAY[q], m0 = mau3(c[0].mau), m1 = mau3(c[1].mau);
+      u.firstChild.firstChild.setAttribute("href", "#dn-" + c[0].k); u.style.display = "block";
+      c.push({ m0: m0, m1: m1, tre: (q / cap.length) * .22, cong: (q % 2 ? 1 : -1) * (40 + (q * 37) % 80), lat: (q % 3 - 1) * 180, doiK: c[0].k !== c[1].k }); });
+    morph = { n: n, i: i, j: j, cap: cap };
+  }
+  function veMorph(p) {   // p: 0→1 tiến độ lượt chuyển
+    morph.cap.forEach(function (c, q) {
+      var A = c[0], B = c[1], o = c[2], t = Math.min(1, Math.max(0, (p - o.tre) / (1 - .22))), e = em(t), u = BAY[q];
+      var x = A.x + (B.x - A.x) * e, y = A.y + (B.y - A.y) * e, s = A.s + (B.s - A.s) * e, vong = Math.sin(Math.PI * e);
+      var dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy) || 1; x += -dy / L * o.cong * vong; y += dx / L * o.cong * vong;   // bay theo đường cong
+      if (o.doiK && t >= .5 && !o.daDoi) { u.firstChild.firstChild.setAttribute("href", "#dn-" + B.k); o.daDoi = 1; }   // khác loại: đổi hình ở giữa đường (lúc đang lật)
+      var m = [0, 1, 2].map(function (k) { return Math.round(o.m0[k] + (o.m1[k] - o.m0[k]) * e); });
+      u.style.transform = "translate3d(" + (x - 12).toFixed(1) + "px," + (y - 12).toFixed(1) + "px,0) perspective(600px)" +
+        " rotateY(" + (o.lat * vong).toFixed(1) + "deg) rotateX(" + (25 * vong).toFixed(1) + "deg) scale(" + (s / 24 * (1 + .25 * vong)).toFixed(3) + ")";
+      u.style.color = "rgb(" + m.join(",") + ")"; u.style.opacity = (A.mo + (1 - A.mo) * e).toFixed(2);
+    });
+  }
+  function ketThuc() {
+    if (!morph) return;
+    morph.cap.forEach(function (c, q) { c[0].el.style.visibility = c[1].el.style.visibility = ""; BAY[q].style.display = "none"; c[2].daDoi = 0; });
+    morph = null;
+  }
   var tro = { x: 0, y: 0 }, muc = { x: 0, y: 0 };
   addEventListener("pointermove", function (e) { muc.x = e.clientX / innerWidth * 2 - 1; muc.y = e.clientY / innerHeight * 2 - 1; }, { passive: true });
   addEventListener("deviceorientation", function (e) { if (e.gamma == null) return; muc.x = Math.max(-1, Math.min(1, e.gamma / 30)); muc.y = Math.max(-1, Math.min(1, (e.beta - 45) / 30)); }, { passive: true });
   var em = function (t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
-  var t0 = performance.now();
+  var t0 = window.__dnT0 = performance.now();
   function khung(now) {
     var tg = now - t0 + (window.__dnLech || 0), dt = innerWidth <= 768;   // __dnLech: bộ đo nhảy tới từng cảnh
     tro.x += (muc.x - tro.x) * .05; tro.y += (muc.y - tro.y) * .05;   // chuột / nghiêng máy: theo trễ cho mượt
-    var chu = GIU + CHEO, i = Math.floor(tg / chu) % 4, pha = tg % chu, j = (i + 1) % 4;
-    var mo = pha < GIU ? 0 : em((pha - GIU) / CHEO);
+    var chu = GIU + CHEO, n = Math.floor(tg / chu), i = n % 4, pha = tg % chu, j = (i + 1) % 4;
+    var p = pha < GIU ? 0 : (pha - GIU) / CHEO, mo = em(p);
+    if (morph && (morph.n !== n || p === 0)) ketThuc();   // hết lượt chuyển (hoặc nhảy cảnh) ⇒ trả biểu tượng thật
     for (var k = 0; k < 4; k++) { var a = k === i ? 1 - mo : k === j ? mo : 0, c = CANH[k];
       c[0].style.opacity = a.toFixed(3); c[0].style.visibility = a > 0 ? "visible" : "hidden";
       if (a > 0) c[1](tg, tro.x, tro.y, dt); }
+    if (p > 0) { if (!morph) batDau(n, i, j, tg); veMorph(p); }
     if (!GIAM && !document.hidden) requestAnimationFrame(khung);
   }
   if (GIAM) { CANH[0][0].style.opacity = 1; ve9(0, 0, 0); ve6(0, 0, 0, innerWidth <= 768); }
