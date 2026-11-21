@@ -734,7 +734,9 @@
   }
   function demTag(v) { var c = {}; v.forEach(function (y) { c[y.loai] = (c[y.loai] || 0) + 1; });
     return Object.keys(c).map(function (k) { return '<span class="hx-tag ' + NHAN[k][0] + '">' + NHAN[k][1] + ' · ' + c[k] + '</span>'; }).join(""); }
-  function treoTag(h) { return h == null ? "" : '<span class="hx-tag ' + (h > 48 ? "bad" : "warn") + '">treo ' + (h > 72 ? Math.round(h / 24) + " ngày" : h + "h") + '</span>'; }
+  /* 21/11 user «không hiển thị khung Mở task / Quyết định» trên thẻ: có url ⇒ chip treo là liên kết mở task (↗) như chip «Chờ xử lý ↗» ở Vi phạm; Quyết định = bấm thẻ */
+  function treoTag(h, url) { if (h == null) return ""; var c = "hx-tag " + (h > 48 ? "bad" : "warn"), t = "treo " + (h > 72 ? Math.round(h / 24) + " ngày" : h + "h");
+    return url ? '<a class="' + c + '" href="' + e_(url) + '" target="_blank" rel="noopener" title="Mở task trên work.hasaki.vn">' + t + ' ↗</a>' : '<span class="' + c + '">' + t + '</span>'; }
   function moNV(x, giu) {
     var v = x.viec.filter(function (y) { return giu ? y.loai === "dang-giu" : y.loai !== "dang-giu"; }).sort(function (a, b) { return b.muc - a.muc || (b.treoGio || 0) - (a.treoGio || 0); });
     $id("mTitle").innerHTML = e_(x.ten || "(chưa rõ tên)") + (x.ma ? ' <span class="stat-sub">mã ' + e_(x.ma) + '</span>' : "");
@@ -762,21 +764,14 @@
     var anh = src ? '<span class="row-media rm-cl' + (so > 1 ? " multi" : "") + '" title="Bấm để phát clip"><img class="rm-thumb" loading="lazy" decoding="async" src="' + e_(thu_(src)) + '" alt="Clip camera"><span class="rm-play"></span>' + (so > 1 ? '<span class="media-badge">' + so + '</span>' : "") + '</span>' : '<div class="cl-noimg">—</div>';
     /* 10/11 chiều user: thẻ điện thoại chỉ giữ chip treo — lượt chưa quyết treo từ giờ ghi nhận */
     var tLuot = tt === "cho" ? new Date(String(l.ngay) + "T" + hm(l.gioNguoi || l.tu) + ":00").getTime() : NaN;
-    var chips = isNaN(tLuot) ? "" : treoTag(Math.max(0, Math.round((Date.now() - tLuot) / 36e5)));
-    var nutMo = (l.may && l.may.taskId) ? '<a class="hsk-nut phu nho vp-mo" href="https://work.hasaki.vn/tasks?task_id=' + e_(l.may.taskId) + '" target="_blank" rel="noopener" title="Mở task trên work.hasaki.vn">Mở task ↗</a>' : "";
-    var nutQD = '<span role="button" tabindex="0" class="hsk-nut phu nho hx-qd-cl">' + (l.qd ? "Đổi quyết định" : "Quyết định") + '</span>';
-    var uvThe = gy ? '<b>' + e_(gy.ten + " · " + gy.code) + '</b> <span class="cl-sep">|</span> cổng <b>' + e_(hm(gy.gio)) + '</b>'
-      : ((l.chamCong || []).length ? '<b>' + l.chamCong.length + " NV " + hmL(l).uvNgan + '</b>' : '<span class="vp-chua-xm">chưa có ứng viên</span>');
-    var nguonBC = [(l.chamCong || []).length ? "chấm công" : "", (l.cong || []).length ? "sổ cổng" : ""].filter(Boolean).join(" · ");
+    var chips = isNaN(tLuot) ? "" : treoTag(Math.max(0, Math.round((Date.now() - tLuot) / 36e5)), l.may && l.may.taskId ? "https://work.hasaki.vn/tasks?task_id=" + l.may.taskId : "");   // 21/11 chip = Mở task ↗
     var chot = nguoiChot(l);
     return '<div class="cl-item vp' + (tGC ? " hx-gc-mo" : "") + '" data-l="' + i + '" data-lid="' + e_(l.id) + '">' +
-      '<div class="cl-hang1 hx-cl-vp">' + anh + '<span class="cl-nut">' + nutMo + nutQD + '</span><span class="cl-tt">' + chips + '</span></div>' +
+      /* 21/11 user duyệt Mẫu 1 (hàng danh sách 3 vùng): ảnh · lỗi 2 dòng + vị trí · trạng thái; điện thoại BỎ dòng Máy gợi ý / Bằng chứng */
+      '<div class="cl-hang1 hx-cl-vp m1">' + anh + '<div class="cl-giua"><div class="cl-l2" title="' + e_(loiCam(l)) + '">' + e_(loiCam(l)) + '</div>' +
+        '<div class="cl-phu1">' + e_(hmL(l).tenKhu) + '</div></div><span class="cl-tt">' + chips + '</span></div>' +
       '<div class="cl-data cl-body">' +
-        '<div class="cl-loi" title="' + e_(loiCam(l)) + '">' + e_(loiCam(l)) + '</div>' +
-        '<div class="cl-kv">Vị trí: <b>' + e_(hmL(l).tenKhu) + '</b> <span class="cl-sep">|</span> <b>' + e_(l.camera) + '</b></div>' +
         '<div class="cl-kv">Ghi nhận ngày: <b>' + e_(ngayGioVN(l.ngay + " " + hm(l.gioNguoi || l.tu))) + '</b>' + (l.den ? ' <span class="cl-sep">|</span> Đến: <b>' + e_(hm(l.den)) + '</b>' : "") + '</div>' +
-        '<div class="cl-kv">Máy gợi ý: ' + uvThe + '</div>' +
-        '<div class="cl-kv">Bằng chứng: <b>Clip camera</b>' + (nguonBC ? " · " + e_(nguonBC) : "") + '</div>' +
         (chot ? '<div class="cl-kv">Đã chốt: <b>' + e_(chot) + '</b></div>' : "") +
       '</div></div>';
   }
@@ -1753,25 +1748,17 @@
   function theTreo(p) {
     var b = bcPhieu(p), ai = aiPhieu(p), mm = MUC_MAY[mucMay(p)] || ["", ""], x = p.xm || {}, q = p.qdB1;
     var daXong = !!(x.daXuLy && !/hàng chờ|đang /i.test(x.daXuLy)), daQD = !!(q && !/^Cắt thêm clip/.test(q.qd || ""));
-    var bc = !!(b.clip || b.moc.length || b.kho || b.trung || b.veSinh || (b.ls && b.ls.ds.some(function (y) { return y.clip; })));
     var tGC = gcCua(p.id);
-    var chips = treoTag(p.treoGio);   // 10/11 chiều user: thẻ điện thoại chỉ giữ chip treo (chốt góc phải trên)
-    var nutQD = '<span role="button" tabindex="0" class="hsk-nut phu nho hx-qd-cl' + (bc && p.buoc === "B1" && !daXong ? "" : " hx-qd-cho") +
-      '" data-moqd="' + e_(p.id) + '">' + (daQD && p.buoc === "B1" && !daXong ? "Đổi quyết định" : "Quyết định") + '</span>';
-    var cBC = dsMoTaBC(b).map(function (s) { return s.replace(/<[^>]+>/g, ""); });
-    var chuBC = (q && p.goiY && p.goiY.canBan ? '<span class="hx-tag warn" style="white-space:normal">Máy chưa làm được: ' + e_(p.goiY.canBan) + '</span> ' : "") +   // 23/10
-      (cBC.length ? '<b>' + cBC[0] + '</b>' + (cBC.length > 1 ? " · " + cBC.slice(1).join(" · ") : "") : '<span class="muted">Chỉ có ảnh ghi nhận</span>');
+    var chips = treoTag(p.treoGio, p.link);   // 10/11 chiều user: thẻ điện thoại chỉ giữ chip treo (chốt góc phải trên) · 21/11 chip = Mở task ↗
     var tgTao = p.tao || p.giao;
     return '<div class="cl-item vp' + (tGC ? " hx-gc-mo" : "") + '" data-p="' + e_(p.id) + '">' +
-      '<div class="cl-hang1 hx-cl-vp">' + anhThe(p, b) +
-        '<span class="cl-nut">' + (p.link ? '<a class="hsk-nut phu nho vp-mo" href="' + e_(p.link) + '" target="_blank" rel="noopener" title="Mở task trên work.hasaki.vn">Mở task ↗</a>' : "") + nutQD + '</span>' +
+      /* 21/11 user duyệt Mẫu 1 (hàng danh sách 3 vùng): ảnh · lỗi 2 dòng + vị trí · chip treo; bấm thẻ = thanh bên; điện thoại BỎ dòng Máy gợi ý / Bằng chứng */
+      '<div class="cl-hang1 hx-cl-vp m1">' + anhThe(p, b) +
+        '<div class="cl-giua"><div class="cl-l2" title="' + e_(p.loi) + '">' + e_(p.loi) + '</div>' +
+        '<div class="cl-phu1">' + e_((p.lsKho && p.lsKho.bin) || p.viTri || "—") + '</div></div>' +
         '<span class="cl-tt">' + chips + '</span></div>' +
       '<div class="cl-data cl-body">' +
-        '<div class="cl-loi" title="' + e_(p.loi) + '">' + e_(p.loi) + '</div>' +
-        '<div class="cl-kv">Vị trí: <b>' + e_((p.lsKho && p.lsKho.bin) || p.viTri || "—") + '</b>' + (b.kenh ? ' <span class="cl-sep">|</span> <b>' + e_(b.kenh) + '</b>' : "") + '</div>' +
         '<div class="cl-kv">Ghi nhận ngày: <b>' + e_(ngayGioVN(p.ngayVP)) + '</b>' + (tgTao ? ' <span class="cl-sep">|</span> Tạo: <b>' + e_(ngayGioNgan(tgTao)) + '</b>' : "") + '</div>' +
-        '<div class="cl-kv">Máy gợi ý: ' + (ai ? '<b>' + e_(ai) + '</b>' : '<span class="vp-chua-xm">chưa có ứng viên</span>') + '</div>' +
-        '<div class="cl-kv">Bằng chứng: ' + chuBC + '</div>' +
         (p.mayTao ? '<div class="cl-kv">Phiếu do: <b>' + e_(p.mayTao) + '</b>' + (ngGui_(p) ? ' <span class="cl-sep">|</span> Người gửi: <b>' + e_(ngGui_(p)) + '</b>' : "") + '</div>' : "") +
         ((daXong || daQD) ? '<div class="cl-kv">Đã quyết: <b>' + e_(daXong ? String(x.daXuLy).slice(0, 60) : q.qd) + '</b></div>' : "") +
       '</div></div>';
