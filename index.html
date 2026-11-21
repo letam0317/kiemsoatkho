@@ -881,6 +881,40 @@ thead th.c-status, tbody td.c-status{width:118px; white-space:normal;}   /* 21/1
 tbody td.c-status .xm-tv{margin-top:4px;}
 .cl-hang1 .cl-tt:has(.xm-tv){gap:6px;}
 .cl-hang1 .cl-tt .xm-tv{min-height:28px!important; height:28px; padding:0 10px!important; font-size:12px!important; white-space:nowrap;}
+/* 21/11 user «căn khoảng cách khung ảnh / Bởi–Biên bản / trạng thái–Theo tác vụ–Theo máy cho đồng bộ» — MỘT khuôn cho Vi phạm · Theo tác vụ · Theo máy:
+   ảnh 72 · cách 10 · mỗi cột 2 tầng 28 px, khe 16 ⇒ tầng 1 chạm mép trên ảnh, tầng 2 chạm mép dưới; ô trống vẫn giữ chỗ (thẻ không lệch nhau).
+   Tầng 1: Bởi · trạng thái (treo N ngày ↗) — tầng 2: + Biên bản · Theo tác vụ › / Theo máy ›. Đè cả CSS bơm của hasaki-xacminh.js (#pane-xacminh). */
+html body .cl-hang1{align-items:flex-start!important; gap:10px!important; min-height:72px!important;}
+html body .cl-hang1>.cl-nut, html body .cl-hang1>.cl-tt{display:grid!important; grid-template-rows:28px 28px; row-gap:16px!important; gap:16px 0!important;
+  align-items:center!important; align-content:start!important; align-self:flex-start!important; min-width:0;}
+html body .cl-hang1>.cl-nut{flex:1 1 auto!important; justify-items:start!important;}
+html body .cl-hang1>.cl-tt{flex:0 1 auto!important; justify-items:end!important; margin-left:auto;}
+html body .cl-hang1>.cl-nut>*, html body .cl-hang1>.cl-tt>*{max-width:100%; min-width:0;}
+/* 21/11 user duyệt «Mẫu 1 · Hàng danh sách 3 vùng» (Vi phạm · Theo tác vụ · Theo máy, điện thoại): ảnh 56 · giữa lỗi 2 dòng + dòng phụ «Bởi · vị trí» ·
+   cuối hàng trạng thái căn đỉnh, dưới là chữ đi tới (Theo tác vụ › / Theo máy ›) dạng liên kết, không khung. Bấm cả hàng = mở như cũ. «+ Biên bản» xuống cuối phần dữ liệu. */
+html body .cl-hang1.m1{align-items:flex-start!important; gap:10px!important; min-height:0!important;}
+html body .cl-hang1.m1 .rm-cl .rm-thumb, html body .cl-hang1.m1>.cl-noimg{width:56px; height:56px; border-radius:8px;}
+.cl-hang1.m1>.cl-giua{flex:1 1 auto; min-width:0;}
+.cl-hang1.m1 .cl-l2{font-size:13px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; white-space:normal; word-break:break-word; margin:0 0 3px;}
+.cl-hang1.m1 .cl-phu1{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.cl-hang1.m1 .cl-phu1 .tg-boi{display:inline; overflow:visible;}
+html body .cl-hang1.m1>.cl-tt{display:flex!important; flex-direction:column!important; align-items:flex-end!important; gap:6px!important; flex:none!important; max-width:none;}
+html body .cl-hang1.m1>.cl-tt .xm-tv{border:0!important; background:none!important; box-shadow:none!important; padding:0!important; height:auto!important; min-height:0!important;
+  color:var(--accent)!important; font-size:12px!important; font-weight:400!important; line-height:18px;}
+.cl-ngh{display:grid; grid-template-columns:minmax(0,1fr) 128px; column-gap:8px; align-items:center; margin-top:4px; min-height:44px;}
+.cl-ngr{display:flex; align-items:center; justify-content:center; flex-wrap:nowrap; overflow:visible; gap:10px 12px; padding:7px 0 5px; min-width:0;}
+.cl-ngr .cl-ten{margin-left:2px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;} .cl-qlc{display:flex; flex-direction:column; gap:3px; color:var(--muted); min-width:0;}
+.cl-qlc>span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .cl-qlc b{color:var(--text);}
+/* 21/11 user chốt mẫu 12 «góc gập» (dog-ear): ảnh VUÔNG BO 34 px, góc phải trên gập thành tam giác màu theo mức
+   (lần 1 vàng · 2 cam · ≥3 đỏ = trừ KPI) chứa số lần/tháng; dải mờ đáy ảnh = số ngày làm việc. Góc + dải là anh em của [data-anh-nv] (anh-nv.js xoá chữ bên trong khi gắn ảnh). */
+.cl-avn{position:relative; flex:none; display:inline-flex; width:34px; height:34px; border-radius:9px; overflow:hidden;}
+.cl-av{width:34px; height:34px; border-radius:9px; background:var(--surface2); color:var(--muted); display:inline-grid; place-items:center; font-size:13px; font-weight:600; overflow:hidden;}
+.cl-av img{width:100%; height:100%; object-fit:cover;}
+.cl-gap{position:absolute; right:0; top:0; width:18px; height:18px; clip-path:polygon(0 0,100% 0,100% 100%); color:white; font-size:9px; font-weight:600; line-height:1; text-align:right; padding:1px 2px 0 0; box-sizing:border-box;}
+.cl-gap.m1{background:hsl(40 96% 53%);} .cl-gap.m2{background:hsl(28 96% 53%);} .cl-gap.m3{background:var(--bad);}
+.cl-day{position:absolute; left:0; right:0; bottom:0; height:11px; font-size:8px; line-height:11px; font-weight:600; text-align:center; color:white; background:rgba(0,0,0,.45); font-variant-numeric:tabular-nums;}
+.cl-av.trong{background:transparent; border:1.5px dashed var(--border); color:var(--muted); box-sizing:border-box;} .cl-av.them{background:var(--surface2); color:var(--muted); font-size:12px;}
+.cl-chua{margin-left:-6px; color:var(--muted); white-space:nowrap;}
 .rm-vid{background:var(--surface2);}
 /* watermark hasaki tách layer riêng -> không vẽ lại khi cuộn */
 #hskMark{transform:translateZ(0);}
@@ -1104,8 +1138,10 @@ thead th.c-loi, tbody td.c-loi{max-width:var(--loi-w);}   /* 21/10: theo vạch 
 .vtl-h1{display:flex;align-items:center;gap:10px;margin-bottom:4px;min-width:0}
 .vtl-vt{font-family:ui-monospace,Consolas,monospace;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .vtl-ng{font-weight:600}
-.vtl-kpi{margin-left:auto;white-space:nowrap;padding-left:6px}
-.vtl-loi{color:var(--text);font-size:13px;line-height:1.45}
+.vtl-kpi{flex:none;min-width:46px;white-space:nowrap}   /* 21/11 KPI chốt trái, bề rộng cố định ⇒ Location thẳng cột */
+.vtl-sep{flex:none;color:var(--border)}
+.vtl-tt{flex:none;margin-left:auto}   /* trạng thái chốt phải */
+.vtl-loi{color:var(--text);font-size:13px;line-height:1.45;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}   /* 21/11 user: hạng mục quá 2 dòng thì cắt (web + điện thoại) */
 @media (max-width:700px){ .vtl-dong{gap:12px} .vtl{padding:4px 12px 10px 6px} .vtl-moc{width:64px;padding-right:12px} .vtl-kpi .muted{display:none} .vtl-h1{gap:6px} .vtl-vt{font-size:11.5px} .vtl-loi{font-size:12.5px} }
 .st-av{flex:none;width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;background:var(--surface2);color:var(--muted);font-size:14px;font-weight:600}
 .st-ng-t{display:flex;flex-direction:column;min-width:0}
@@ -1776,7 +1812,7 @@ body.side-anim:has(.wrap :is([class*="modal"],[id$="modal"],[id$="Modal"],#light
 <!-- 26/10 điện thoại: khối lọc trong pop-up gập sau nút «Bộ lọc» (cùng mẫu nút trang) -->
 <!-- 22/10 nút «✕ Tắt lọc» · 23/10 dời vào TRONG nút «Bộ lọc», đỏ khi đang lọc, ẩn khi không lọc (dùng chung Retail/Factory) -->
 <link rel="stylesheet" href="hieu-ung.css?v=20261114a"><!-- 14/11 biến hiệu ứng chung (TK-30) -->
-<link rel="stylesheet" href="thanh-phan.css?v=20261119a">
+<link rel="stylesheet" href="thanh-phan.css?v=20261121a">
 <link rel="stylesheet" href="thanh-ben.css?v=20261114b"><!-- 14/11 VỎ THANH BÊN PHẢI chung Retail + Factory (TK-29) --><!-- 21/10 chip trạng thái + nút dùng chung mọi tab (Mẫu 1 đánh giá 20/10) -->
 <link rel="stylesheet" href="thanh-cuon.css?v=20261114a"><!-- 17/10 thanh cuộn chung theo theme (bản gốc hasaki/kiemsoatkho/thanh-cuon.css) -->
 <link rel="stylesheet" href="bo-loc-ngay.css?v=20261019a"><script src="bo-loc-ngay.js?v=20261023a"></script><!-- 19/10 BỘ LỌC NGÀY CHUẨN toàn dự án (taoBoLocNgay) -->
@@ -3116,6 +3152,25 @@ function nnNhan(r,c){
 }
 /* 29/10 (6) user: «[  10 ngày] Lê Chí Tâm · [1138 ngày] Lê Chí Tâm» — số ngày đứng TRƯỚC tên, ô số rộng cố định 4 chữ số (số ngắn vẫn căn về
    đúng chỗ đó, không tự co) ⇒ tên các NV thẳng cột giữa mọi dòng. Không có ngày vào làm → ô trống cùng bề rộng. */
+/* 21/11 user duyệt mẫu B (thẻ Vi phạm điện thoại): hàng người = ảnh đại diện riêng từng người (không chồng mép), nhãn mép phải TRÊN = số lần vi phạm
+   trong tháng, DƯỚI = số ngày làm việc (chỉ người có quyền nhắc nhở); 1 người thêm 2 chữ cuối tên, từ 2 người chỉ ảnh. Cột phải: QL / nhắc nhở. Bỏ hàng Tần suất. */
+function theNguoi(gi,r){
+  let ds=freqDong(gi,r);
+  if(!ds.length){ const ma=codeChuanVP(r).split(',').map(x=>x.trim()), ten=String(nameVP(r)||'').split(',').map(x=>x.trim()).filter(Boolean);
+    ds=ten.map((t,k)=>({c:ma[k]||'', ten:t, lan:0})); }
+  const ql=iQLTT>=0&&r[iQLTT]?tenNganDs(r[iQLTT]):'';
+  /* 21/11 user: thẻ chưa xác minh được NV vẫn CAO BẰNG thẻ có NV — giữ hàng người với ô trống «Chưa xác minh» · 21/11 user: ảnh (1 hay nhiều người) CĂN GIỮA cột trái; >4 người: 3 ảnh + vòng «+N» (hàng không xuống dòng) */
+  const av=x=>{ const v=nnCo()&&x.c&&NN.vao[x.c], n=v&&v.vao?nnSoNgay(v.vao):null;
+    return `<span class="cl-avn" title="${esc(x.ten)}${x.lan?' · lần '+x.lan+'/tháng':''}${n!=null?' · '+n+' ngày làm việc':''}"><span class="cl-av" data-anh-nv="${esc(x.ten)}">${esc(String(x.ten).trim().split(/\s+/).pop().charAt(0))}</span>`+
+      (x.lan?`<b class="cl-gap m${Math.min(x.lan,3)}">${x.lan}</b>`:'')+(n!=null?`<span class="cl-day">${n}</span>`:'')+'</span>'; };   // 21/11 mẫu 12 «góc gập»: góc phải trên = lần/tháng, đáy ảnh = ngày làm việc
+  let nn='';
+  if(nnDuocXem() && NN && ds.length){ const so=ds.reduce((m,x)=>m+(x.c?nnDs(r,x.c).length:0),0); nn=so?`<b>${so}</b> lần nhắc nhở`:'chưa có nhắc nhở'; }
+  const hien=ds.length>4?ds.slice(0,3):ds, them=ds.length-hien.length;
+  const trong='<span class="cl-avn"><span class="cl-av trong" aria-hidden="true">?</span></span><span class="cl-chua">Chưa xác minh</span>';
+  return `<div class="cl-ngh"><span class="cl-ngr">${ds.length?'':trong}${hien.map(av).join('')}${them?`
+    <span class="cl-avn"><span class="cl-av them" title="${esc(ds.slice(3).map(x=>x.ten).join(', '))}">+${them}</span></span>`:''}${ds.length===1?`<b class="cl-ten">${esc(tenNgan(ds[0].ten))}</b>`:''}</span>`+
+    `<span class="cl-qlc">${ql?`<span><span class="cl-sep">|</span> QL: <b>${esc(ql)}</b></span>`:''}${nn?`<span><span class="cl-sep">|</span> ${nn}</span>`:''}</span></div>`;
+}
 function nnNgay(c){ const v=nnCo()&&NN.vao[c]; const n=v&&v.vao?nnSoNgay(v.vao):null;
   return n==null ? '<span class="nn-ngay nn-trong" aria-hidden="true">[<span class="so4">0000</span> ngày]</span>'
     : '<span class="nn-ngay" title="Vào làm '+esc(v.vao)+'">[<span class="so4">'+n+'</span> ngày]</span>'; }
@@ -3491,16 +3546,15 @@ function _render(){
     const anh=thumbCell(r,gi,'cl');
     /* 21/10 user (ảnh 12:18): hàng 1 = ảnh · chip trạng thái · 2 nút gọn (Mở task / + Biên bản) vừa chiều cao ảnh; hàng 2 = dữ liệu sát lề trái, mỗi dòng 1 hàng không gãy; số ảnh ở góc ảnh */
     return `<div class="cl-item vp" data-i="${gi}">
-      <div class="cl-hang1">${anh}<span class="cl-nut">${ngBoi(r)}${bbCell(r, false)}</span><span class="cl-tt">${chipStatus(r)}${xmTvChip(r)}</span></div>
+      <div class="cl-hang1 m1">${anh}<div class="cl-giua">
+        <div class="cl-l2" title="${esc(r[iLoi]||'')}">${esc(r[iLoi]||'')}</div>
+        <div class="cl-phu1">${ngBoi(r)?ngBoi(r)+' · ':''}<span class="cl-vt">${esc(r[iViTri]||'—')}</span></div></div>
+      <span class="cl-tt">${chipStatus(r)}${xmTvChip(r)}</span></div>
       <div class="cl-data">
-        <div class="cl-loi" title="${esc(r[iLoi]||'')}">${esc(r[iLoi]||'')}</div>
         <div class="cl-chot">
-          <div class="cl-chot-t">Vị trí: <b>${esc(r[iViTri]||'—')}</b></div><div class="cl-chot-p"><span class="cl-sep">|</span> <span class="loi-kpi">${esc(kpiChu(gi,r))}</span></div>
           <div class="cl-chot-t">Ghi nhận: <b>${esc(boNamNay(fmtNgay(r[iNgayVP])))}</b></div><div class="cl-chot-p">${iCreatedAt>=0&&r[iCreatedAt]?`<span class="cl-sep">|</span> Tạo: <b>${esc(boNamNay(fmtNgay(r[iCreatedAt])))}</b>`:''}</div>
         </div>
-        ${(nameVP(r)||(iQLTT>=0&&r[iQLTT]))?`<div class="cl-kv cl-tach">${nameVP(r)?`<span class="cl-p">Ghi nhận cho: ${nvNgayDs(r)}</span>`:''}${''
-        }${iQLTT>=0&&r[iQLTT]?`${nameVP(r)?' <span class="cl-sep">|</span> ':''}<span class="cl-p">QL: <b>${esc(tenNganDs(r[iQLTT]))}</b></span>`:''}</div>`:''}
-        <div class="cl-kv">Tần suất: ${freqCell(gi,r)}</div>
+        ${theNguoi(gi,r)}
       </div>
     </div>`;
   }).join('') || '<div class="empty-row">'+rongLoc()+'</div>';
@@ -3564,7 +3618,9 @@ function rowsTimelineHTML(rows, kpiOf, them){
   return '<div class="vtl">'+asc.map((r,i)=>({r,lan:i+1})).reverse().map(({r,lan})=>{
     const ph = them==='nv' ? '<b class="vtl-ng">'+esc(nameVP(r))+'</b> · ' : them==='ql' && iQLTT>=0 && r[iQLTT] ? '<b class="vtl-ng">QL '+esc(r[iQLTT])+'</b> · ' : '';   // người của từng lần: đầu dòng lỗi (hàng 1 giữ vị trí · trạng thái · KPI)
     return '<div class="vtl-dong" data-i="'+ROWS.indexOf(r)+'" title="Bấm xem chi tiết task"><div class="vtl-moc"><span class="vd-lan">Lần '+lan+'</span><span class="vd-d">'+ngayNgan(r)+'</span></div>'+
-      '<div class="vtl-nd"><div class="vtl-h1"><span class="vtl-vt">'+esc(r[iViTri]||'—')+'</span>'+statusCell(r)+'<span class="vtl-kpi">'+(kpiOf?kpiOf(r):'')+'</span></div>'+
+      /* 21/11 user: hàng 1 = KPI chốt TRÁI · Location · Trạng thái chốt PHẢI (vd «−0,2% | IT WH ··· Hoàn thành») */
+      '<div class="vtl-nd"><div class="vtl-h1"><span class="vtl-kpi">'+(kpiOf?kpiOf(r):'')+'</span><span class="vtl-sep">|</span>'+
+      '<span class="vtl-vt" title="'+esc(r[iViTri]||'')+'">'+esc(r[iViTri]||'—')+'</span><span class="vtl-tt">'+statusCell(r)+'</span></div>'+
       '<div class="vtl-loi">'+ph+esc(r[iLoi]||'—')+'</div></div></div>';
   }).join('')+'</div>';
 }
@@ -3721,7 +3777,7 @@ function moChiTiet(i){
     <div class="cmt-sec-b">${cmtBody}</div></div>`;
   $('mBody').innerHTML = `<div class="vp-wf"><div class="vp-buoc" role="tablist">${tab}</div><div class="vp-than">
     <div class="vp-chinh">${chung?`<section class="vp-muc"><h3 class="vp-h3">Dữ liệu khai báo</h3>${chung.fail}${dsDL(chung.du)}</section>`:''}${than}${cmtStep}</div>
-    <aside class="vp-ben"><div class="vp-nhom"><h4>Trạng thái &amp; thời gian</h4>${chung&&chung.tt?hang('Trạng thái',tag(chung.tt)):''}${chung?chung.gio.map(x=>hang(x.label,esc(x.v))).join(''):''}</div>
+    <aside class="vp-ben"><div class="vp-nhom"><h4>Trạng thái &amp; thời gian</h4>${chung&&chung.tt?hang('Trạng thái',tag(chung.tt)):''}${chung?chung.gio.map(x=>hang(x.label,esc(x.v))).join(''):''}${hang('Biên bản',bbCell(r,false))}</div>
       <div class="vp-nhom"><h4>Nhân sự</h4>${chung?chung.nguoi.map(x=>hang(x.label,esc(x.v))).join(''):''}${benBoi(r,hang)}${benTanSuat(r)}</div></aside></div></div>`;
   // dải bước = thanh tổng quan: bấm → cuộn tới bước đó trong «Giai đoạn» + nháy nền (bước chưa tới thì không có gì để cuộn)
   $('mBody').querySelectorAll('.vp-tab').forEach(t=>t.onclick=()=>{ const k=t.dataset.vpb, li=$('mBody').querySelector(`.vp-gd-b[data-vpgd="${k}"]`);
@@ -4212,7 +4268,7 @@ let _hxNap=null;
 function napXm(){
   if(!_hxNap){
     _hxNap=new Promise((res,rej)=>{
-      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261118a';
+      const s=document.createElement('script'); s.src='hasaki-xacminh.js?v=20261121c';
       s.onload=res; s.onerror=()=>rej(new Error('Không tải được module hasaki-xacminh.js'));
       document.body.appendChild(s);
     });
@@ -4226,7 +4282,10 @@ function napXm(){
 let XM_TV=new Set(), XM_TM={}, _xmTvHoi=0;
 try{ const c=JSON.parse(localStorage.getItem('xm-tv-nho')||'null'); if(c && Date.now()-c.luc<432e5){ XM_TV=new Set(c.tv||[]); XM_TM=c.tm||{}; } }catch(e){}   // 09/11 vẽ nút ngay từ bản nhớ
 function xmTvNap(){
-  if(_xmTvHoi || window.__HX_MA_HOA || typeof xmDuocXem!=='function' || !xmDuocXem()) return;
+  /* 21/11 user «người có quyền Theo tác vụ vẫn không thấy chip ở Vi phạm — cả web/điện thoại»: trước đây thoát luôn khi đang đọc bản dự phòng MÃ HOÁ
+     (laptop ngủ/tắt → máy trạm dự phòng, hoặc điện thoại lần trước đi kho Drive và đường hầm trả chậm hơn 1,5 s) ⇒ tab Theo tác vụ vẫn xem được mà chip
+     mất hẳn. Module Xác minh đọc bản mã được (goi → hxGuongMa.api) nên chip nạp nền ở mọi đường; quyền vẫn xét từng nút (xmCoMuc). */
+  if(_xmTvHoi || typeof xmDuocXem!=='function' || !xmDuocXem()) return;
   /* máy chủ chưa dò xong lúc bảng vẽ lần đầu (điện thoại qua đường hầm chậm) → dò 1 lần, xong thì hỏi lại */
   const thuLai=()=>setTimeout(()=>{ xmTvNap._do=0; xmTvNap(); },20000);   // máy bận / mạng chập: hỏi lại sau 20 s (không chờ bảng vẽ lại)
   if(!window.__HX_MAY_CHU){ if(!xmTvNap._do && window.hxDoMayChu){ xmTvNap._do=1; window.hxDoMayChu().then(co=>{ if(co) xmTvNap(); else thuLai(); }, thuLai); } return; }
@@ -4239,7 +4298,11 @@ function xmTvNap(){
    bấm cũng kiểm lại; đăng xuất / đổi tài khoản (tk-doi) → bỏ nút ngay + đóng thanh bên Xác minh đang mở. */
 function xmCoMuc(m){ try { return xmDuocXem() && (!window.TK || typeof window.tkCo!=='function' || window.tkCo('r.xm.'+m)); } catch(e){ return false; } }
 function xmTvCapNhat(){
-  const H=window.HXACMINH, moi=new Set(H && H.idTacVu && xmCoMuc('treo') ? H.idTacVu() : []), tm=H && H.idTheoMay && xmCoMuc('cam') ? H.idTheoMay() : {};
+  const H=window.HXACMINH;
+  /* 21/11: tk-doi bắn lúc module CHƯA nạp (mở trang, tk_toi làm tươi) từng xoá trắng bản nhớ xm-tv-nho ⇒ chip vừa vẽ ngay đã biến mất tới khi nạp nền xong
+     (bản dự phòng mã hoá thì mất hẳn). Chưa có module ⇒ giữ danh sách cũ, chỉ vẽ lại — nút vẫn qua xmCoMuc nên đăng xuất / mất quyền là ẩn ngay. */
+  if(!(H && H.idTacVu)){ render(); return; }
+  const moi=new Set(H && H.idTacVu && xmCoMuc('treo') ? H.idTacVu() : []), tm=H && H.idTheoMay && xmCoMuc('cam') ? H.idTheoMay() : {};
   const ky=JSON.stringify(tm), giong=moi.size===XM_TV.size && [...moi].every(x=>XM_TV.has(x)) && ky===xmTvCapNhat._ky;
   XM_TV=moi; XM_TM=tm; xmTvCapNhat._ky=ky;
   if(moi.size || Object.keys(tm).length){ try{ localStorage.setItem('xm-tv-nho', JSON.stringify({ luc: Date.now(), tv: [...moi], tm })); }catch(e){} }
